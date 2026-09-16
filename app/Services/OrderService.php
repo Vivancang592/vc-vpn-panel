@@ -9,6 +9,7 @@ use App\Models\Subscription;
 use App\Models\Payment;
 use App\Models\NodeTask;
 use App\Models\User;
+use App\Models\Setting;
 
 class OrderService
 {
@@ -55,6 +56,9 @@ class OrderService
         }
 
         $finalPrice = max(0.0, $originalPrice - $discountAmount);
+
+        // Quy đổi tiền tệ theo cổng thanh toán: VietQR luôn nhận VND, WeChat/Alipay luôn nhận CNY
+        $finalPrice = $this->convertAmountForGateway($finalPrice, $paymentMethod);
 
         // Đối với WeChat Pay: Tạo số tiền lẻ duy nhất (+0.01 đến +0.99 CNY) để khớp tự động
         if ($paymentMethod === 'wechat') {
@@ -292,5 +296,33 @@ class OrderService
         }
 
         return ['status' => false, 'message' => 'Cập nhật đơn hàng thất bại.'];
+    }
+
+    /**
+     * Quy đổi số tiền gốc (theo đơn vị tiền tệ mặc định của admin) sang đơn vị
+     * tiền tệ mà cổng thanh toán yêu cầu, dùng tỷ giá đã cài trong Cài đặt hệ thống.
+     * VietQR luôn nhận VND, WeChat/Alipay luôn nhận CNY.
+     */
+    private function convertAmountForGateway(float $amount, string $paymentMethod): float
+    {
+        $settingModel = new Setting();
+        $settings = $settingModel->getAllAsKeyValue();
+
+        $baseCurrency = strtoupper(trim((string) ($settings['currency'] ?? 'CNY')));
+        $exchangeRate = (float) ($settings['exchange_rate'] ?? 1);
+
+        if ($exchangeRate <= 0) {
+            return $amount;
+        }
+
+        if ($paymentMethod === 'vietqr' && $baseCurrency === 'CNY') {
+            return round($amount * $exchangeRate);
+        }
+
+        if (in_array($paymentMethod, ['wechat', 'alipay'], true) && $baseCurrency === 'VND') {
+            return round($amount / $exchangeRate, 2);
+        }
+
+        return $amount;
     }
 }
