@@ -50,7 +50,10 @@ if ! command -v composer &> /dev/null; then
     php "$APP_PATH/composer-setup.php" --install-dir=/usr/local/bin --filename=composer
     rm -f "$APP_PATH/composer-setup.php"
 fi
-composer install --no-dev --optimize-autoloader --working-dir="$APP_PATH" > /dev/null 2>&1
+if ! composer install --no-dev --optimize-autoloader --working-dir="$APP_PATH"; then
+    echo -e " ${RED}Lỗi: Không thể cài thư viện Composer, nên chưa thể tạo mã QR liên kết đăng ký.${NC}"
+    exit 1
+fi
 echo -e " ${GREEN}✔ Hoàn tất cập nhật thư viện PHP.${NC}"
 
 # 4. Thiết lập lại phân quyền thư mục
