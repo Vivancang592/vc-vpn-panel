@@ -33,8 +33,17 @@ fi
 echo -e "${CYAN}[1/3] Cập nhật mã nguồn...${NC}"
 if [ -d "$APP_PATH/.git" ]; then
     if command -v git &> /dev/null; then
+        ENV_BACKUP=""
+        if [ -f "$APP_PATH/.env" ]; then
+            ENV_BACKUP="$(mktemp)"
+            cp "$APP_PATH/.env" "$ENV_BACKUP"
+        fi
         git -C "$APP_PATH" fetch --all
         git -C "$APP_PATH" reset --hard origin/main || git -C "$APP_PATH" pull
+        if [ -n "$ENV_BACKUP" ]; then
+            cp "$ENV_BACKUP" "$APP_PATH/.env"
+            rm -f "$ENV_BACKUP"
+        fi
         echo -e " ${GREEN}✔ Cập nhật code từ Git thành công.${NC}"
     else
         echo -e " ${YELLOW}ℹ Hệ thống chưa cài Git, bỏ qua git pull.${NC}"
