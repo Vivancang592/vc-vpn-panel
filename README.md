@@ -42,7 +42,8 @@ URL=https://www.aapanel.com/script/install_panel_en.sh && if [ -f /usr/bin/curl 
    * **mbstring**: Xử lý chuỗi văn bản đa ngôn ngữ (chuẩn UTF-8).
    * **curl**: Gửi yêu cầu API đến các Node VPN và cổng thanh toán.
    * **json**: Đọc/ghi file cấu hình JSON và dữ liệu JSONB.
-   * **fileinfo**: Kiểm tra định dạng an toàn của tệp tải lên (Avatar, chứng từ).
+  * **fileinfo**: Kiểm tra định dạng an toàn của tệp tải lên (Avatar, chứng từ).
+  * Không cần cài thêm extension tạo QR: `vc_install.sh` tự chạy Composer để tải `endroid/qr-code`; mã QR liên kết đăng ký được xuất SVG, không phụ thuộc `gd`.
 
 2. **Cấu hình bảo mật trong file `php.ini`:** Vào **aaPanel > App Store > PHP 8.4 > Configuration / Disabled functions**:
    * **Tắt các hàm nguy hiểm (Disabled functions):**

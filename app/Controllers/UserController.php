@@ -538,10 +538,10 @@ class UserController extends BaseController
             ];
         }
 
-        if (class_exists('\Endroid\QrCode\QrCode') && class_exists('\Endroid\QrCode\Writer\PngWriter')) {
+        if (class_exists('\Endroid\QrCode\QrCode') && class_exists('\Endroid\QrCode\Writer\SvgWriter')) {
             try {
                 $qrCode = \Endroid\QrCode\QrCode::create($subscriptionUrl)->setSize(280)->setMargin(10);
-                $connectionData['qrCodeDataUri'] = (new \Endroid\QrCode\Writer\PngWriter())->write($qrCode)->getDataUri();
+                $connectionData['qrCodeDataUri'] = (new \Endroid\QrCode\Writer\SvgWriter())->write($qrCode)->getDataUri();
             } catch (\Throwable) {
                 $connectionData['qrCodeDataUri'] = '';
             }
