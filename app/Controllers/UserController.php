@@ -11,7 +11,9 @@ use App\Models\SupportTicket;
 use App\Models\Post;
 use App\Models\ServerGroup;
 use App\Models\NodeInbound;
+use App\Models\Coupon;
 use App\Services\VpnService;
+use App\Services\OrderService;
 
 class UserController extends BaseController
 {
@@ -93,13 +95,25 @@ class UserController extends BaseController
     public function plans(): void
     {
         $plans = [];
+        $serverGroups = [];
         if (class_exists('App\Models\VpnPlan')) {
             $planModel = new VpnPlan();
             $plans = $planModel->getAllActive();
         }
 
+        if (class_exists('App\Models\ServerGroup')) {
+            $groupModel = new ServerGroup();
+            if (method_exists($groupModel, 'getAll')) {
+                $serverGroups = array_values(array_filter(
+                    $groupModel->getAll(),
+                    static fn(array $group): bool => ($group['status'] ?? 'active') === 'active'
+                ));
+            }
+        }
+
         $this->render('user.plans.index', [
             'plans' => $plans,
+            'serverGroups' => $serverGroups,
             'activeMenu' => 'plans'
         ]);
     }
@@ -118,24 +132,337 @@ class UserController extends BaseController
             $this->redirect('/user/plans');
         }
 
+        $paymentGateways = $this->getEnabledPaymentGateways();
+        $couponPreview = null;
+        $previewSession = $_SESSION['checkout_coupon_preview'] ?? null;
+        if (is_array($previewSession) && (int) ($previewSession['plan_id'] ?? 0) === $planId) {
+            $couponPreview = $previewSession;
+        }
+
         $this->render('user.plans.checkout', [
             'plan' => $plan,
+            'paymentGateways' => $paymentGateways,
+            'couponPreview' => $couponPreview,
             'activeMenu' => 'plans'
         ]);
     }
 
     public function buyPlan(): void
     {
+        if (!$this->validateCsrfToken($_POST['csrf_token'] ?? '')) {
+            $_SESSION['error'] = 'Phiên làm việc không hợp lệ. Vui lòng tải lại trang và thử lại.';
+            $this->redirect('/user/plans');
+            return;
+        }
+
         $planId = (int)($_POST['plan_id'] ?? 0);
         $couponCode = trim($_POST['coupon_code'] ?? '');
+        $action = trim((string) ($_POST['checkout_action'] ?? 'create_order'));
+        $paymentGateway = trim((string) ($_POST['payment_gateway'] ?? 'vietqr'));
+
+        if ($couponCode !== '') {
+            $couponCode = strtoupper($couponCode);
+        }
 
         if ($planId <= 0) {
             $_SESSION['error'] = 'Gói dịch vụ không hợp lệ.';
             $this->redirect('/user/plans');
+            return;
         }
 
-        $_SESSION['success'] = 'Đăng ký gói dịch vụ thành công!';
-        $this->redirect('/user/subscriptions');
+        if ($action === 'preview_coupon') {
+            $preview = $this->calculateCouponPreview($planId, $couponCode);
+            $_SESSION['checkout_coupon_preview'] = [
+                'plan_id' => $planId,
+                'coupon_code' => $couponCode,
+                ...$preview
+            ];
+
+            if (($preview['valid'] ?? false) === true) {
+                $_SESSION['success'] = $preview['message'] ?? 'Mã giảm giá hợp lệ.';
+            } else {
+                $_SESSION['error'] = $preview['message'] ?? 'Mã giảm giá không hợp lệ.';
+            }
+
+            $this->redirect('/checkout?id=' . $planId);
+            return;
+        }
+
+        $allowedGateways = array_column($this->getEnabledPaymentGateways(), 'id');
+        if (!in_array($paymentGateway, $allowedGateways, true)) {
+            $_SESSION['error'] = 'Cổng thanh toán không hợp lệ hoặc đang tạm tắt.';
+            $this->redirect('/checkout?id=' . $planId);
+            return;
+        }
+
+        $orderModel = new Order();
+        $pendingOrder = $orderModel->findPendingByUserId((int) $_SESSION['user_id']);
+        if ($pendingOrder) {
+            $_SESSION['error'] = 'Bạn đang có một đơn hàng chờ thanh toán. Hãy thanh toán hoặc hủy đơn đó trước khi tạo đơn mới.';
+            $this->redirect('/payment/checkout?order=' . (int) $pendingOrder['id']);
+            return;
+        }
+
+        $orderService = new OrderService();
+        $result = $orderService->createOrder((int) $_SESSION['user_id'], $planId, $couponCode !== '' ? $couponCode : null, $paymentGateway);
+
+        unset($_SESSION['checkout_coupon_preview']);
+
+        if (($result['status'] ?? false) === true) {
+            $orderCode = $result['order_code'] ?? '';
+            $amount = isset($result['amount']) ? number_format((float) $result['amount'], 2, '.', ',') : '0.00';
+            $_SESSION['success'] = 'Đã tạo đơn hàng ' . $orderCode . ' thành công. Số tiền cần thanh toán: ¥' . $amount . '.';
+            if ($paymentGateway === 'balance') {
+                $this->redirect('/subscriptions');
+                return;
+            }
+
+            $this->redirect('/payment/checkout?order=' . (int) ($result['order_id'] ?? 0));
+            return;
+        }
+
+        $_SESSION['error'] = $result['message'] ?? 'Không thể tạo đơn hàng. Vui lòng thử lại.';
+        $this->redirect('/checkout?id=' . $planId);
+    }
+
+    public function previewCoupon(): void
+    {
+        if (!$this->validateCsrfToken($_POST['csrf_token'] ?? '')) {
+            $this->json([
+                'valid' => false,
+                'message' => 'Phiên làm việc đã hết hạn. Vui lòng tải lại trang.'
+            ], 419);
+        }
+
+        $planId = (int) ($_POST['plan_id'] ?? 0);
+        $couponCode = strtoupper(trim((string) ($_POST['coupon_code'] ?? '')));
+        if ($planId <= 0) {
+            $this->json([
+                'valid' => false,
+                'message' => 'Gói dịch vụ không hợp lệ.'
+            ], 422);
+        }
+
+        $preview = $this->calculateCouponPreview($planId, $couponCode);
+        if (($preview['valid'] ?? false) === true) {
+            $_SESSION['checkout_coupon_preview'] = [
+                'plan_id' => $planId,
+                'coupon_code' => $couponCode,
+                ...$preview
+            ];
+        } else {
+            unset($_SESSION['checkout_coupon_preview']);
+        }
+
+        $this->json([
+            ...$preview,
+            'coupon_code' => $couponCode
+        ], ($preview['valid'] ?? false) === true ? 200 : 422);
+    }
+
+    public function paymentCheckout(): void
+    {
+        $orderId = (int) ($_GET['order'] ?? 0);
+        $order = null;
+
+        if ($orderId > 0 && class_exists('App\Models\Order')) {
+            $orderModel = new Order();
+            $candidate = $orderModel->findWithDetails($orderId);
+            if ($candidate && (int) ($candidate['user_id'] ?? 0) === (int) $_SESSION['user_id']) {
+                $order = $candidate;
+            }
+        }
+
+        if ($order === null) {
+            $_SESSION['error'] = 'Không tìm thấy đơn hàng thanh toán.';
+            $this->redirect('/orders');
+            return;
+        }
+
+        if (($order['payment_status'] ?? '') !== 'pending') {
+            $this->redirect('/orders/detail?id=' . (int) $order['id']);
+            return;
+        }
+
+        $this->render('user.payments.checkout', [
+            'order' => $order,
+            'paymentInstructions' => $this->buildPaymentInstructions($order),
+            'activeMenu' => 'orders'
+        ]);
+    }
+
+    public function cancelOrder(): void
+    {
+        if (!$this->validateCsrfToken($_POST['csrf_token'] ?? '')) {
+            $_SESSION['error'] = 'Phiên làm việc không hợp lệ. Vui lòng thử lại.';
+            $this->redirect('/orders');
+            return;
+        }
+
+        $orderId = (int) ($_POST['order_id'] ?? 0);
+        $orderModel = new Order();
+        if ($orderId <= 0 || !$orderModel->cancelPendingForUser($orderId, (int) $_SESSION['user_id'])) {
+            $_SESSION['error'] = 'Không thể hủy đơn hàng này. Chỉ đơn đang chờ thanh toán mới có thể hủy.';
+            $this->redirect('/orders/detail?id=' . $orderId);
+            return;
+        }
+
+        $_SESSION['success'] = 'Đã hủy đơn hàng chờ thanh toán. Bạn có thể tạo đơn mới.';
+        $this->redirect('/orders');
+    }
+
+    private function buildPaymentInstructions(array $order): array
+    {
+        $method = (string) ($order['payment_method'] ?? 'vietqr');
+        $amount = number_format((float) ($order['total_amount'] ?? 0), 2, '.', '');
+        $orderCode = (string) ($order['order_code'] ?? '');
+
+        if ($method === 'wechat') {
+            return [
+                'name' => 'WeChat Pay',
+                'qr_url' => trim((string) ($this->settings['wechat_qr_image'] ?? '')),
+                'account_name' => trim((string) ($this->settings['wechat_account_name'] ?? '')),
+                'transfer_content' => $orderCode
+            ];
+        }
+
+        if ($method === 'alipay') {
+            return [
+                'name' => 'Alipay',
+                'qr_url' => trim((string) ($this->settings['alipay_qr_image'] ?? '')),
+                'account_name' => trim((string) ($this->settings['alipay_account_name'] ?? '')),
+                'transfer_content' => $orderCode
+            ];
+        }
+
+        $bankName = trim((string) ($this->settings['bank_name'] ?? ''));
+        $accountNumber = trim((string) ($this->settings['bank_account_number'] ?? ''));
+        $transferContent = trim((string) ($this->settings['order_transfer_syntax'] ?? 'THANHTOAN')) . ' ' . $orderCode;
+        $qrUrl = '';
+        if ($bankName !== '' && $accountNumber !== '') {
+            $qrUrl = 'https://img.vietqr.io/image/' . rawurlencode($bankName) . '-' . rawurlencode($accountNumber)
+                . '-compact2.jpg?amount=' . rawurlencode($amount) . '&addInfo=' . rawurlencode($transferContent);
+        }
+
+        return [
+            'name' => 'VietQR',
+            'qr_url' => $qrUrl,
+            'bank_name' => $bankName,
+            'account_number' => $accountNumber,
+            'account_name' => trim((string) ($this->settings['bank_account_name'] ?? '')),
+            'transfer_content' => $transferContent
+        ];
+    }
+
+    private function getEnabledPaymentGateways(): array
+    {
+        $gateways = [];
+
+        $currentBalance = 0.0;
+        if (isset($_SESSION['user_id'])) {
+            $userModel = new User();
+            $user = $userModel->findById((int) $_SESSION['user_id']);
+            $currentBalance = (float) ($user['balance'] ?? 0);
+        }
+
+        $gateways[] = [
+            'id' => 'balance',
+            'name' => 'Thanh toán bằng số dư',
+            'hint' => 'Số dư khả dụng: ¥' . number_format($currentBalance, 2, '.', ',')
+        ];
+
+        if (($this->settings['enable_vietqr'] ?? '0') === '1') {
+            $bankLabel = trim((string) ($this->settings['bank_name'] ?? ''));
+            $gateways[] = [
+                'id' => 'vietqr',
+                'name' => 'VietQR' . ($bankLabel !== '' ? ' - ' . $bankLabel : ''),
+                'hint' => 'Chuyển khoản ngân hàng qua mã QR.'
+            ];
+        }
+
+        if (($this->settings['enable_wechat'] ?? '0') === '1') {
+            $gateways[] = [
+                'id' => 'wechat',
+                'name' => 'WeChat Pay',
+                'hint' => 'Thanh toán nhanh bằng ví WeChat.'
+            ];
+        }
+
+        if (($this->settings['enable_alipay'] ?? '0') === '1') {
+            $gateways[] = [
+                'id' => 'alipay',
+                'name' => 'Alipay',
+                'hint' => 'Thanh toán trực tuyến qua Alipay.'
+            ];
+        }
+
+        return $gateways;
+    }
+
+    private function calculateCouponPreview(int $planId, string $couponCode): array
+    {
+        if ($couponCode === '') {
+            return [
+                'valid' => false,
+                'discount_amount' => 0,
+                'final_amount' => 0,
+                'message' => 'Vui lòng nhập mã giảm giá để xác nhận.'
+            ];
+        }
+
+        $planModel = new VpnPlan();
+        $plan = $planModel->find($planId);
+        if (!$plan || ($plan['status'] ?? 'active') !== 'active') {
+            return [
+                'valid' => false,
+                'discount_amount' => 0,
+                'final_amount' => 0,
+                'message' => 'Gói dịch vụ không còn khả dụng.'
+            ];
+        }
+
+        $originalPrice = (float) ($plan['price'] ?? 0);
+        $couponModel = new Coupon();
+        $coupon = $couponModel->findByCode($couponCode);
+
+        if (!$coupon || ($coupon['status'] ?? '') !== 'active') {
+            return [
+                'valid' => false,
+                'discount_amount' => 0,
+                'final_amount' => $originalPrice,
+                'message' => 'Mã giảm giá không hợp lệ hoặc đang bị vô hiệu hóa.'
+            ];
+        }
+
+        $isExpired = !empty($coupon['expires_at']) && strtotime((string) $coupon['expires_at']) < time();
+        $isMaxUsed = !empty($coupon['max_uses']) && ((int) ($coupon['used_count'] ?? 0) >= (int) ($coupon['max_uses']));
+        if ($isExpired || $isMaxUsed) {
+            return [
+                'valid' => false,
+                'discount_amount' => 0,
+                'final_amount' => $originalPrice,
+                'message' => 'Mã giảm giá đã hết hạn hoặc đã đạt giới hạn sử dụng.'
+            ];
+        }
+
+        $discountType = $coupon['discount_type'] ?? 'percent';
+        $discountValue = (float) ($coupon['discount_value'] ?? 0);
+        $discountAmount = $discountType === 'percent'
+            ? ($originalPrice * $discountValue) / 100
+            : $discountValue;
+        $discountAmount = min($discountAmount, $originalPrice);
+        $finalAmount = max(0, $originalPrice - $discountAmount);
+
+        $discountLabel = $discountType === 'percent'
+            ? rtrim(rtrim(number_format($discountValue, 2, '.', ''), '0'), '.') . '%'
+            : '¥' . number_format($discountValue, 2, '.', ',');
+
+        return [
+            'valid' => true,
+            'discount_amount' => $discountAmount,
+            'final_amount' => $finalAmount,
+            'message' => 'Áp dụng mã thành công (' . $discountLabel . ').'
+        ];
     }
 
     public function subscriptions(): void

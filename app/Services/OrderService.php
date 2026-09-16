@@ -8,6 +8,7 @@ use App\Models\Coupon;
 use App\Models\Subscription;
 use App\Models\Payment;
 use App\Models\NodeTask;
+use App\Models\User;
 
 class OrderService
 {
@@ -68,6 +69,7 @@ class OrderService
             'user_id'        => $userId,
             'plan_id'        => $planId,
             'total_amount'   => $finalPrice,
+            'payment_method' => $paymentMethod,
             'payment_status' => 'pending',
             'created_at'     => date('Y-m-d H:i:s')
         ];
@@ -76,10 +78,47 @@ class OrderService
         $created = $orderModel->create($orderData);
 
         if ($created) {
+            if ($paymentMethod === 'balance') {
+                $orderId = $orderModel->lastInsertId();
+                $userModel = new User();
+
+                if (!$userModel->debitBalance($userId, $finalPrice)) {
+                    $orderModel->delete($orderId);
+                    return ['status' => false, 'message' => 'Số dư không đủ để thanh toán gói dịch vụ này.'];
+                }
+
+                if (!$this->activateOrder($orderId)) {
+                    $userModel->creditBalance($userId, $finalPrice);
+                    return ['status' => false, 'message' => 'Không thể kích hoạt gói dịch vụ. Số dư đã được hoàn lại.'];
+                }
+
+                (new Payment())->create([
+                    'user_id' => $userId,
+                    'order_id' => $orderId,
+                    'type' => 'payment',
+                    'payment_method' => 'balance',
+                    'transaction_id' => 'BAL' . date('YmdHis') . rand(100, 999),
+                    'amount' => $finalPrice,
+                    'status' => 'success',
+                    'created_at' => date('Y-m-d H:i:s')
+                ]);
+
+                return [
+                    'status' => true,
+                    'message' => 'Thanh toán bằng số dư thành công. Gói dịch vụ đã được kích hoạt.',
+                    'order_code' => $orderCode,
+                    'order_id' => $orderId,
+                    'payment_method' => $paymentMethod,
+                    'amount' => $finalPrice
+                ];
+            }
+
             return [
                 'status'     => true,
                 'message'    => 'Tạo đơn hàng thành công.',
                 'order_code' => $orderCode,
+                'order_id'   => $orderModel->lastInsertId(),
+                'payment_method' => $paymentMethod,
                 'amount'     => $finalPrice
             ];
         }

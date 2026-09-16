@@ -14,8 +14,25 @@ ob_start();
 		</div>
 	</header>
 
+	<?php if ($status === 'pending'): ?>
+		<div class="user-order-pending-alert" role="alert">
+			<div>
+				<strong>Đơn hàng đang chờ thanh toán</strong>
+				<span>Vui lòng thanh toán hoặc hủy đơn này trước khi tạo đơn hàng mới.</span>
+			</div>
+			<div class="user-order-pending-actions">
+				<a href="/payment/checkout?order=<?= (int) ($order['id'] ?? 0) ?>" class="user-order-pay-button">Thanh toán ngay</a>
+				<form method="post" action="/orders/cancel" onsubmit="return confirm('Bạn có chắc muốn hủy đơn hàng này?');">
+					<input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrf_token ?? '') ?>">
+					<input type="hidden" name="order_id" value="<?= (int) ($order['id'] ?? 0) ?>">
+					<button type="submit" class="user-order-cancel-button">Hủy đơn</button>
+				</form>
+			</div>
+		</div>
+	<?php endif; ?>
+
 	<div class="user-order-detail-grid">
-		<article class="glass-card user-order-detail-card">
+		<article class="glass-card user-order-detail-card user-order-detail-card-<?= htmlspecialchars($status) ?>">
 			<h2>Thông tin gói dịch vụ</h2>
 			<dl class="user-order-detail-list">
 				<div><dt>Gói dịch vụ</dt><dd><?= htmlspecialchars($order['plan_name'] ?? ('Gói dịch vụ #' . ($order['plan_id'] ?? ''))) ?></dd></div>
@@ -23,7 +40,7 @@ ob_start();
 				<div><dt>Mã giảm giá</dt><dd><?= htmlspecialchars($order['coupon_code'] ?? 'Không áp dụng') ?></dd></div>
 			</dl>
 		</article>
-		<article class="glass-card user-order-detail-card">
+		<article class="glass-card user-order-detail-card user-order-detail-card-<?= htmlspecialchars($status) ?>">
 			<h2>Thanh toán</h2>
 			<dl class="user-order-detail-list">
 				<div><dt>Tổng tiền</dt><dd class="user-order-amount"><?= isset($formatMoney) ? $formatMoney($order['total_amount'] ?? 0) : number_format((float) ($order['total_amount'] ?? 0), 2) ?></dd></div>
@@ -33,12 +50,10 @@ ob_start();
 		</article>
 	</div>
 
-	<?php if ($status === 'pending'): ?>
-		<div class="user-orders-alert">Đơn hàng đang chờ xác nhận thanh toán. Dịch vụ sẽ được kích hoạt sau khi thanh toán thành công.</div>
-	<?php endif; ?>
 </section>
 
 <?php
 $content = ob_get_clean();
+$showSidebar = true;
 require_once __DIR__ . '/../../layouts/app.php';
 ?>

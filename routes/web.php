@@ -33,7 +33,9 @@ return [
     // Gói cước & Mua hàng (Plans & Checkout)
     'GET /user/plans'            => ['UserController', 'plans'],
     'GET /checkout'              => ['UserController', 'checkout'],
+    'POST /checkout/coupon'       => ['UserController', 'previewCoupon'],
     'POST /checkout'             => ['UserController', 'buyPlan'],
+    'GET /payment/checkout'      => ['UserController', 'paymentCheckout'],
 
     // Gói dịch vụ đã mua & Kết nối VPN (Subscriptions)
     'GET /subscriptions'         => ['UserController', 'subscriptions'],
@@ -42,6 +44,7 @@ return [
     // Đơn hàng (Orders)
     'GET /orders'                => ['UserController', 'orders'],
     'GET /orders/detail'         => ['UserController', 'orderDetail'],
+    'POST /orders/cancel'        => ['UserController', 'cancelOrder'],
 
     // Lịch sử thanh toán & Nạp tiền (Payments)
     'GET /payments'              => ['UserController', 'payments'],

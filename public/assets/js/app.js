@@ -222,6 +222,115 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     });
 
+    const planGroupTabs = document.querySelectorAll('[data-plan-group-filter]');
+    const planCards = document.querySelectorAll('[data-plan-group-ids]');
+    if (planGroupTabs.length && planCards.length) {
+        planGroupTabs.forEach(function (tab) {
+            tab.addEventListener('click', function () {
+                const selectedGroup = tab.dataset.planGroupFilter || 'all';
+
+                planGroupTabs.forEach(function (item) {
+                    const isSelected = item === tab;
+                    item.classList.toggle('is-active', isSelected);
+                    item.setAttribute('aria-selected', String(isSelected));
+                });
+
+                planCards.forEach(function (card) {
+                    const groupIds = (card.dataset.planGroupIds || '').split(',').filter(Boolean);
+                    card.hidden = selectedGroup !== 'all' && !groupIds.includes(selectedGroup);
+                });
+            });
+        });
+    }
+
+    const checkoutForm = document.querySelector('[data-checkout-form]');
+    if (checkoutForm) {
+        const couponInput = checkoutForm.querySelector('#coupon_code');
+        const applyCouponButton = checkoutForm.querySelector('[data-coupon-apply]');
+        const removeCouponButton = checkoutForm.querySelector('[data-coupon-remove]');
+        const couponFeedback = checkoutForm.querySelector('[data-coupon-feedback]');
+        const couponFeedbackRow = checkoutForm.querySelector('[data-coupon-feedback-row]');
+        const discountAmount = checkoutForm.querySelector('[data-checkout-discount]');
+        const finalAmount = checkoutForm.querySelector('[data-checkout-final]');
+        const originalAmount = Number(checkoutForm.dataset.originalAmount || 0);
+        const csrfToken = checkoutForm.querySelector('[name="csrf_token"]');
+        const planId = checkoutForm.querySelector('[name="plan_id"]');
+
+        function formatAmount(amount) {
+            return '¥' + Number(amount || 0).toLocaleString('en-US', {
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2
+            });
+        }
+
+        function showCouponFeedback(message, state) {
+            if (!couponFeedback) return;
+            if (couponFeedbackRow) couponFeedbackRow.hidden = false;
+            couponFeedback.textContent = message || '';
+            couponFeedback.classList.toggle('is-success', state === 'success');
+            couponFeedback.classList.toggle('is-error', state === 'error');
+        }
+
+        function resetCoupon() {
+            if (couponInput) couponInput.value = '';
+            if (discountAmount) discountAmount.textContent = '-' + formatAmount(0);
+            if (finalAmount) finalAmount.textContent = formatAmount(originalAmount);
+            if (removeCouponButton) removeCouponButton.hidden = true;
+            showCouponFeedback('Đã bỏ mã giảm giá. Tổng tiền đã trở về giá gốc.', 'success');
+        }
+
+        if (removeCouponButton) {
+            removeCouponButton.addEventListener('click', resetCoupon);
+        }
+
+        if (applyCouponButton && couponInput && csrfToken && planId) {
+            applyCouponButton.addEventListener('click', async function () {
+                const couponCode = couponInput.value.trim();
+                if (!couponCode) {
+                    showCouponFeedback('Hãy nhập mã giảm giá trước khi xác nhận.', 'error');
+                    couponInput.focus();
+                    return;
+                }
+
+                applyCouponButton.disabled = true;
+                applyCouponButton.textContent = 'Đang kiểm tra...';
+                showCouponFeedback('Đang kiểm tra mã giảm giá...', '');
+
+                try {
+                    const response = await fetch('/checkout/coupon', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/x-www-form-urlencoded', 'Accept': 'application/json' },
+                        body: new URLSearchParams({
+                            csrf_token: csrfToken.value,
+                            plan_id: planId.value,
+                            coupon_code: couponCode
+                        })
+                    });
+                    const result = await response.json();
+
+                    if (!response.ok || !result.valid) {
+                        if (discountAmount) discountAmount.textContent = '-' + formatAmount(0);
+                        if (finalAmount) finalAmount.textContent = formatAmount(originalAmount);
+                        if (removeCouponButton) removeCouponButton.hidden = true;
+                        showCouponFeedback(result.message || 'Mã giảm giá không hợp lệ.', 'error');
+                        return;
+                    }
+
+                    couponInput.value = result.coupon_code || couponCode.toUpperCase();
+                    if (discountAmount) discountAmount.textContent = '-' + formatAmount(result.discount_amount);
+                    if (finalAmount) finalAmount.textContent = formatAmount(result.final_amount);
+                    if (removeCouponButton) removeCouponButton.hidden = false;
+                    showCouponFeedback(result.message || 'Áp dụng mã giảm giá thành công.', 'success');
+                } catch (error) {
+                    showCouponFeedback('Không thể kiểm tra mã lúc này. Vui lòng thử lại.', 'error');
+                } finally {
+                    applyCouponButton.disabled = false;
+                    applyCouponButton.textContent = 'Xác nhận mã';
+                }
+            });
+        }
+    }
+
     // 7. Logic tự động chạy và đồng bộ Slide Thông báo cho Dashboard
     const slider = document.getElementById('tutorialSlider');
     const dots = document.querySelectorAll('.tutorial-dot');

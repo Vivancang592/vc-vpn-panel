@@ -134,6 +134,7 @@ CREATE TABLE `vc_orders` (
     `plan_id` INT UNSIGNED NOT NULL,
     `coupon_id` INT UNSIGNED NULL,
     `total_amount` DECIMAL(15, 2) NOT NULL,
+    `payment_method` VARCHAR(50) NOT NULL DEFAULT 'vietqr',
     `purchase_ip` VARCHAR(45) NULL,
     `payment_status` ENUM('pending', 'completed', 'failed', 'cancelled') NOT NULL DEFAULT 'pending',
     `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -285,7 +286,10 @@ VALUES
     ('currency', 'CNY', 'Mã đơn vị tiền tệ hệ thống'),
     ('currency_symbol', '¥', 'Ký hiệu tiền tệ hệ thống'),
     ('min_deposit_amount', '10.00', 'Số tiền nạp tối thiểu (CNY)'),
-    ('referral_commission_rate', '10.00', 'Tỷ lệ hoa hồng giới thiệu (%)')
+    ('referral_commission_rate', '10.00', 'Tỷ lệ hoa hồng giới thiệu (%)'),
+    ('enable_vietqr', '1', 'Bật cổng thanh toán VietQR'),
+    ('enable_wechat', '0', 'Bật cổng thanh toán WeChat Pay'),
+    ('enable_alipay', '0', 'Bật cổng thanh toán Alipay')
 ON DUPLICATE KEY UPDATE 
     `setting_value` = VALUES(`setting_value`),
     `description` = VALUES(`description`);
