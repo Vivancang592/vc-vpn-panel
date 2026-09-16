@@ -12,6 +12,8 @@ ob_start();
         <p>Đơn hàng <strong><?= htmlspecialchars((string) ($order['order_code'] ?? '')) ?></strong> đang chờ thanh toán.</p>
     </header>
 
+    <div id="payment-status-banner" class="user-payment-status-banner" hidden>Đang kiểm tra thanh toán...</div>
+
     <div class="user-payment-checkout-grid">
         <article class="glass-card user-payment-qr-card">
             <span class="user-checkout-tab-badge"><?= htmlspecialchars((string) ($paymentInfo['name'] ?? 'Thanh toán')) ?></span>
@@ -31,8 +33,8 @@ ob_start();
                 <?php if (!empty($paymentInfo['bank_name'])): ?><div><dt>Ngân hàng</dt><dd><?= htmlspecialchars((string) $paymentInfo['bank_name']) ?></dd></div><?php endif; ?>
                 <?php if (!empty($paymentInfo['account_number'])): ?><div><dt>Số tài khoản</dt><dd><?= htmlspecialchars((string) $paymentInfo['account_number']) ?></dd></div><?php endif; ?>
                 <?php if (!empty($paymentInfo['account_name'])): ?><div><dt>Chủ tài khoản</dt><dd><?= htmlspecialchars((string) $paymentInfo['account_name']) ?></dd></div><?php endif; ?>
-                <div><dt>Nội dung chuyển khoản</dt><dd class="user-payment-transfer-content"><?= htmlspecialchars((string) ($paymentInfo['transfer_content'] ?? '')) ?></dd></div>
-                <div><dt>Số tiền</dt><dd class="user-order-amount">¥<?= number_format((float) ($order['total_amount'] ?? 0), 2, '.', ',') ?></dd></div>
+                <div class="user-payment-transfer-row"><dt>Nội dung chuyển khoản</dt><dd class="user-payment-transfer-content"><span><?= htmlspecialchars((string) ($paymentInfo['transfer_content'] ?? '')) ?></span><button type="button" class="subscription-copy-button" data-copy-value="<?= htmlspecialchars((string) ($paymentInfo['transfer_content'] ?? '')) ?>">Sao chép</button></dd></div>
+                <div><dt>Số tiền</dt><dd class="user-order-amount"><?= htmlspecialchars((string) ($paymentInfo['amount_display'] ?? number_format((float) ($order['total_amount'] ?? 0), 2, '.', ','))) ?></dd></div>
             </dl>
             <p class="user-payment-checkout-note">Thanh toán đúng số tiền và nội dung để hệ thống tự động xác nhận đơn hàng.</p>
             <a href="/orders/detail?id=<?= (int) ($order['id'] ?? 0) ?>" class="user-payment-order-link">Xem trạng thái đơn hàng</a>
@@ -45,3 +47,29 @@ $content = ob_get_clean();
 $showSidebar = true;
 require_once __DIR__ . '/../../layouts/app.php';
 ?>
+<script>
+(function () {
+	var orderId = <?= (int) ($order['id'] ?? 0) ?>;
+	var banner = document.getElementById('payment-status-banner');
+	if (!orderId || !banner) return;
+
+	var timer = setInterval(function () {
+		fetch('/orders/status?id=' + orderId, { headers: { 'Accept': 'application/json' } })
+			.then(function (res) { return res.json(); })
+			.then(function (data) {
+				if (data.status === 'completed') {
+					clearInterval(timer);
+					banner.textContent = 'Thanh toán thành công! Đang chuyển đến gói dịch vụ...';
+					banner.hidden = false;
+					banner.classList.add('is-success');
+					setTimeout(function () {
+						window.location.href = '/orders/detail?id=' + orderId;
+					}, 1200);
+				} else if (data.status === 'cancelled' || data.status === 'failed') {
+					clearInterval(timer);
+				}
+			})
+			.catch(function () {});
+	}, 5000);
+})();
+</script>

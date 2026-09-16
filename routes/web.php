@@ -44,6 +44,7 @@ return [
     // Đơn hàng (Orders)
     'GET /orders'                => ['UserController', 'orders'],
     'GET /orders/detail'         => ['UserController', 'orderDetail'],
+    'GET /orders/status'         => ['UserController', 'orderStatus'],
     'POST /orders/cancel'        => ['UserController', 'cancelOrder'],
 
     // Lịch sử thanh toán & Nạp tiền (Payments)

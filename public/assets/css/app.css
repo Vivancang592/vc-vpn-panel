@@ -1165,18 +1165,7 @@ body.vpn-theme .user-order-stat-expired { border-top-color: #8e8e93; }
 .user-order-detail-list div { display: flex; justify-content: space-between; gap: 1rem; padding: .75rem 0; border-top: 1px solid var(--glass-border); }
 .user-order-detail-list dt { color: var(--ios-text-secondary); font-size: .85rem; }
 .user-order-detail-list dd { margin: 0; color: var(--ios-text); font-size: .9rem; font-weight: 700; text-align: right; overflow-wrap: anywhere; }
-.user-order-pending-alert { display: flex; align-items: center; justify-content: space-between; gap: 1rem; margin: 0 0 1.25rem; padding: .9rem 1rem; border-left: 3px solid var(--ios-warning); border-radius: var(--radius-sm); background: rgba(255, 149, 0, .1); color: var(--ios-text); }
-.user-order-pending-alert strong, .user-order-pending-alert span { display: block; }
-.user-order-pending-alert strong { font-size: .9rem; }
-.user-order-pending-alert span { margin-top: .2rem; color: var(--ios-text-secondary); font-size: .82rem; }
-.user-order-pending-actions { display: flex; flex: 0 0 auto; gap: .55rem; align-items: center; }
-.user-order-pending-actions form { margin: 0; }
-.user-order-pay-button, .user-order-cancel-button { display: inline-block; border: 0; border-radius: var(--radius-sm); cursor: pointer; font: inherit; font-size: .82rem; font-weight: 700; padding: .55rem .75rem; text-decoration: none; white-space: nowrap; }
-.user-order-pay-button { background: var(--ios-blue); color: #fff; }
-.user-order-pay-button:hover { background: var(--ios-blue-hover); color: #fff; }
-.user-order-cancel-button { background: rgba(255, 59, 48, .1); color: var(--ios-danger); }
-.user-order-cancel-button:hover { background: rgba(255, 59, 48, .18); }
-@media (max-width: 700px) { .user-order-stats { grid-template-columns: repeat(2, minmax(0, 1fr)); } .user-order-detail-grid { grid-template-columns: 1fr; } .user-orders-table-wrap { overflow: visible; } .user-orders-table, .user-orders-table tbody, .user-orders-table tr, .user-orders-table td { display: block; width: 100%; } .user-orders-table thead { display: none; } .user-orders-table tr { padding: .75rem 1rem; border-bottom: 1px solid var(--glass-border); } .user-orders-table tbody tr:last-child { border-bottom: 0; } .user-orders-table td { display: flex; justify-content: space-between; gap: 1rem; padding: .45rem 0; border: 0; white-space: normal; text-align: right; } .user-orders-table td::before { content: attr(data-label); color: var(--ios-text-secondary); font-size: .78rem; text-align: left; } .user-orders-table .user-order-action { justify-content: flex-end; margin-top: .35rem; } .user-orders-table .user-order-action::before { content: ''; } .user-order-pending-alert { align-items: stretch; flex-direction: column; } .user-order-pending-actions { width: 100%; flex-direction: column; align-items: stretch; } .user-order-pending-actions form, .user-order-pay-button, .user-order-cancel-button { width: 100%; box-sizing: border-box; text-align: center; } }
+@media (max-width: 700px) { .user-order-stats { grid-template-columns: repeat(2, minmax(0, 1fr)); } .user-order-detail-grid { grid-template-columns: 1fr; } .user-orders-table-wrap { overflow: visible; } .user-orders-table, .user-orders-table tbody, .user-orders-table tr, .user-orders-table td { display: block; width: 100%; } .user-orders-table thead { display: none; } .user-orders-table tr { padding: .75rem 1rem; border-bottom: 1px solid var(--glass-border); } .user-orders-table tbody tr:last-child { border-bottom: 0; } .user-orders-table td { display: flex; justify-content: space-between; gap: 1rem; padding: .45rem 0; border: 0; white-space: normal; text-align: right; } .user-orders-table td::before { content: attr(data-label); color: var(--ios-text-secondary); font-size: .78rem; text-align: left; } .user-orders-table .user-order-action { justify-content: flex-end; margin-top: .35rem; } .user-orders-table .user-order-action::before { content: ''; } }
 
 /* User wallet */
 .user-subscriptions-page { width: 100%; max-width: 1120px; margin: 0 auto; }
@@ -1267,6 +1256,12 @@ body.vpn-theme .user-subscription-card-status-cancelled { border-top-color: #8e8
 .user-plans-header h1, .user-checkout-header h1 { margin: 0; color: var(--ios-text); font-size: 1.8rem; }
 .user-plans-header > p:last-child, .user-checkout-header > p:last-child { margin: .5rem 0 0; color: var(--ios-text-secondary); }
 .user-plans-alert { margin: 0 0 1.25rem; padding: .9rem 1rem; border-left: 3px solid var(--ios-warning); background: rgba(255, 149, 0, .1); color: var(--ios-text); font-size: .9rem; }
+.user-checkout-pending-notice { margin: 0 0 1.25rem; padding: .75rem 0; border-bottom: 1px solid var(--glass-border); color: var(--ios-text-secondary); font-size: .84rem; line-height: 1.5; }
+.user-checkout-pending-notice strong { color: var(--ios-text); }
+.user-checkout-pending-flag { color: var(--ios-warning); font-weight: 700; }
+.user-checkout-pending-notice form { display: inline; }
+.user-checkout-pending-notice a, .user-checkout-pending-notice button { border: 0; background: transparent; color: var(--ios-blue); cursor: pointer; font: inherit; font-size: inherit; font-weight: 700; padding: 0; text-decoration: underline; }
+.user-checkout-pending-notice button { color: var(--ios-danger); }
 .user-plan-group-tabs { display: flex; gap: .55rem; margin: 0 0 1rem; overflow-x: auto; padding-bottom: .15rem; }
 .user-plan-group-tab { flex: 0 0 auto; min-height: 2.25rem; border: 1px solid var(--glass-border); border-radius: var(--radius-sm); background: rgba(0, 122, 255, .06); color: var(--ios-text-secondary); cursor: pointer; font: inherit; font-size: .85rem; font-weight: 700; padding: .45rem .75rem; }
 .user-plan-group-tab:hover, .user-plan-group-tab.is-active { border-color: var(--ios-blue); background: var(--ios-blue); color: #fff; }
@@ -1341,14 +1336,20 @@ body.vpn-theme .user-subscription-card-status-cancelled { border-top-color: #8e8
 .user-payment-checkout-header { margin-bottom: 1.5rem; text-align: center; }
 .user-payment-checkout-header h1 { margin: 0; color: var(--ios-text); font-size: 1.8rem; }
 .user-payment-checkout-header p:last-child { margin: .5rem 0 0; color: var(--ios-text-secondary); font-size: .9rem; }
-.user-payment-checkout-grid { display: grid; grid-template-columns: minmax(270px, .8fr) minmax(0, 1.2fr); gap: 1rem; align-items: start; }
+.user-payment-status-banner { margin: 0 0 1rem; padding: .75rem 1rem; border-left: 3px solid var(--ios-blue); border-radius: var(--radius-sm); background: rgba(0, 122, 255, .08); color: var(--ios-text); font-size: .88rem; font-weight: 700; }
+.user-payment-status-banner.is-success { border-left-color: var(--ios-success); background: rgba(52, 199, 89, .12); color: var(--ios-success); }
+.user-payment-checkout-grid { display: grid; grid-template-columns: minmax(270px, 1fr) minmax(270px, 1fr); gap: 1rem; align-items: start; }
 .user-payment-qr-card { display: flex; flex-direction: column; align-items: center; padding: 1.25rem; text-align: center; }
 .user-payment-qr-image { display: block; width: min(100%, 300px); aspect-ratio: 1; margin: .9rem auto; object-fit: contain; background: #fff; }
 .user-payment-qr-card > p { margin: 0; color: var(--ios-text-secondary); font-size: .82rem; line-height: 1.5; }
 .user-payment-qr-missing { display: grid; width: min(100%, 300px); aspect-ratio: 1; margin: .9rem auto; place-items: center; border: 1px dashed var(--glass-border); background: rgba(255, 149, 0, .08); color: var(--ios-text-secondary); font-size: .85rem; }
+.user-payment-transfer-row { flex-direction: column; align-items: flex-start; gap: .35rem; }
+.user-payment-transfer-row dd { text-align: left; }
+.user-payment-transfer-content { display: flex; flex-wrap: wrap; align-items: center; gap: .5rem; width: 100%; text-align: left; }
+.user-payment-transfer-content span { color: var(--ios-blue); font-family: monospace; overflow-wrap: break-word; word-break: break-word; }
+.user-payment-transfer-content .subscription-copy-button { flex: 0 0 auto; padding: .2rem .5rem; font-size: .72rem; }
 .user-payment-order-card { padding: 1.25rem; }
 .user-payment-order-card h2 { margin: 0 0 .85rem; color: var(--ios-text); font-size: 1.12rem; }
-.user-payment-transfer-content { color: var(--ios-blue) !important; font-family: monospace; }
 .user-payment-checkout-note { margin: 1rem 0 0; color: var(--ios-text-secondary); font-size: .82rem; line-height: 1.5; }
 .user-payment-order-link { display: inline-block; box-sizing: border-box; width: 100%; margin-top: 1rem; border-radius: var(--radius-sm); background: var(--ios-blue); color: #fff; font-size: .9rem; font-weight: 700; padding: .7rem .9rem; text-align: center; text-decoration: none; }
 .user-payment-order-link:hover { background: var(--ios-blue-hover); color: #fff; }

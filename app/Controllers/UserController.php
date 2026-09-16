@@ -133,6 +133,7 @@ class UserController extends BaseController
         }
 
         $paymentGateways = $this->getEnabledPaymentGateways();
+        $pendingOrder = (new Order())->findPendingByUserId((int) $_SESSION['user_id']);
         $couponPreview = null;
         $previewSession = $_SESSION['checkout_coupon_preview'] ?? null;
         if (is_array($previewSession) && (int) ($previewSession['plan_id'] ?? 0) === $planId) {
@@ -142,6 +143,7 @@ class UserController extends BaseController
         $this->render('user.plans.checkout', [
             'plan' => $plan,
             'paymentGateways' => $paymentGateways,
+            'pendingOrder' => $pendingOrder,
             'couponPreview' => $couponPreview,
             'activeMenu' => 'plans'
         ]);
@@ -199,7 +201,7 @@ class UserController extends BaseController
         $pendingOrder = $orderModel->findPendingByUserId((int) $_SESSION['user_id']);
         if ($pendingOrder) {
             $_SESSION['error'] = 'Bạn đang có một đơn hàng chờ thanh toán. Hãy thanh toán hoặc hủy đơn đó trước khi tạo đơn mới.';
-            $this->redirect('/payment/checkout?order=' . (int) $pendingOrder['id']);
+            $this->redirect('/checkout?id=' . $planId);
             return;
         }
 
@@ -311,10 +313,28 @@ class UserController extends BaseController
         $this->redirect('/orders');
     }
 
+    public function orderStatus(): void
+    {
+        $orderId = (int) ($_GET['id'] ?? 0);
+        if ($orderId <= 0 || !class_exists('App\Models\Order')) {
+            $this->json(['status' => 'not_found'], 404);
+            return;
+        }
+
+        $orderModel = new Order();
+        $order = $orderModel->find($orderId);
+        if (!$order || (int) ($order['user_id'] ?? 0) !== (int) $_SESSION['user_id']) {
+            $this->json(['status' => 'not_found'], 404);
+            return;
+        }
+
+        $this->json(['status' => $order['payment_status'] ?? 'pending']);
+    }
+
     private function buildPaymentInstructions(array $order): array
     {
         $method = (string) ($order['payment_method'] ?? 'vietqr');
-        $amount = number_format((float) ($order['total_amount'] ?? 0), 2, '.', '');
+        $totalAmount = (float) ($order['total_amount'] ?? 0);
         $orderCode = (string) ($order['order_code'] ?? '');
 
         if ($method === 'wechat') {
@@ -322,7 +342,8 @@ class UserController extends BaseController
                 'name' => 'WeChat Pay',
                 'qr_url' => trim((string) ($this->settings['wechat_qr_image'] ?? '')),
                 'account_name' => trim((string) ($this->settings['wechat_account_name'] ?? '')),
-                'transfer_content' => $orderCode
+                'transfer_content' => $orderCode,
+                'amount_display' => '¥' . number_format($totalAmount, 2, '.', ',')
             ];
         }
 
@@ -331,17 +352,19 @@ class UserController extends BaseController
                 'name' => 'Alipay',
                 'qr_url' => trim((string) ($this->settings['alipay_qr_image'] ?? '')),
                 'account_name' => trim((string) ($this->settings['alipay_account_name'] ?? '')),
-                'transfer_content' => $orderCode
+                'transfer_content' => $orderCode,
+                'amount_display' => '¥' . number_format($totalAmount, 2, '.', ',')
             ];
         }
 
         $bankName = trim((string) ($this->settings['bank_name'] ?? ''));
         $accountNumber = trim((string) ($this->settings['bank_account_number'] ?? ''));
         $transferContent = trim((string) ($this->settings['order_transfer_syntax'] ?? 'THANHTOAN')) . ' ' . $orderCode;
+        $qrAmount = number_format($totalAmount, 0, '.', '');
         $qrUrl = '';
         if ($bankName !== '' && $accountNumber !== '') {
             $qrUrl = 'https://img.vietqr.io/image/' . rawurlencode($bankName) . '-' . rawurlencode($accountNumber)
-                . '-compact2.jpg?amount=' . rawurlencode($amount) . '&addInfo=' . rawurlencode($transferContent);
+                . '-compact2.jpg?amount=' . rawurlencode($qrAmount) . '&addInfo=' . rawurlencode($transferContent);
         }
 
         return [
@@ -350,7 +373,8 @@ class UserController extends BaseController
             'bank_name' => $bankName,
             'account_number' => $accountNumber,
             'account_name' => trim((string) ($this->settings['bank_account_name'] ?? '')),
-            'transfer_content' => $transferContent
+            'transfer_content' => $transferContent,
+            'amount_display' => number_format($totalAmount, 0, '.', ',') . ' đ'
         ];
     }
 

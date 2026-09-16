@@ -5,6 +5,7 @@ $bandwidth = (int) ($selectedPlan['bandwidth_limit_gb'] ?? 0);
 $duration = max(1, (int) ($selectedPlan['duration_days'] ?? 30));
 $devices = max(1, (int) ($selectedPlan['max_devices'] ?? 1));
 $paymentGateways = isset($paymentGateways) && is_array($paymentGateways) ? $paymentGateways : [];
+$pendingOrder = isset($pendingOrder) && is_array($pendingOrder) ? $pendingOrder : null;
 $couponPreview = isset($couponPreview) && is_array($couponPreview) ? $couponPreview : null;
 $price = (float) ($selectedPlan['price'] ?? 0);
 $discountAmount = ($couponPreview && ($couponPreview['valid'] ?? false)) ? (float) ($couponPreview['discount_amount'] ?? 0) : 0;
@@ -23,6 +24,22 @@ ob_start();
 	<?php if (!empty($_SESSION['error'])): ?>
 		<div class="user-plans-alert" role="alert"><?= htmlspecialchars($_SESSION['error']) ?></div>
 		<?php unset($_SESSION['error']); ?>
+	<?php endif; ?>
+
+	<?php if ($pendingOrder !== null): ?>
+		<div class="user-checkout-pending-notice" role="status">
+			<div>
+				<span class="user-checkout-pending-flag">Lưu ý:</span>
+				Bạn đang có đơn <strong><?= htmlspecialchars((string) ($pendingOrder['order_code'] ?? '')) ?></strong> (¥<?= number_format((float) ($pendingOrder['total_amount'] ?? 0), 2, '.', ',') ?>) chưa thanh toán. Vui lòng
+				<a href="/payment/checkout?order=<?= (int) ($pendingOrder['id'] ?? 0) ?>">hoàn tất</a> hoặc
+				<form method="post" action="/orders/cancel">
+					<input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrf_token ?? '') ?>">
+					<input type="hidden" name="order_id" value="<?= (int) ($pendingOrder['id'] ?? 0) ?>">
+					<button type="submit">hủy đơn</button>
+				</form>
+				đơn này để tiếp tục mua gói mới.
+			</div>
+		</div>
 	<?php endif; ?>
 
 	<form method="post" action="/checkout" class="user-checkout-shell" data-checkout-form data-original-amount="<?= htmlspecialchars(number_format($price, 2, '.', '')) ?>">
@@ -94,7 +111,7 @@ ob_start();
 				</div>
 
 				<p class="user-checkout-note">Sau khi xác nhận, đơn đăng ký sẽ được tạo và hệ thống xử lý theo cổng thanh toán bạn chọn.</p>
-				<button type="submit" class="user-checkout-submit" onclick="document.getElementById('checkout-action-field').value='create_order';" <?= empty($paymentGateways) ? 'disabled' : '' ?>>Xác nhận thanh toán</button>
+				<button type="submit" class="user-checkout-submit" onclick="document.getElementById('checkout-action-field').value='create_order';" <?= empty($paymentGateways) || $pendingOrder !== null ? 'disabled' : '' ?>>Xác nhận thanh toán</button>
 			</article>
 		</div>
 	</form>

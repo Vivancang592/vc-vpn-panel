@@ -15,18 +15,17 @@ ob_start();
 	</header>
 
 	<?php if ($status === 'pending'): ?>
-		<div class="user-order-pending-alert" role="alert">
+		<div class="user-checkout-pending-notice" role="status">
 			<div>
-				<strong>Đơn hàng đang chờ thanh toán</strong>
-				<span>Vui lòng thanh toán hoặc hủy đơn này trước khi tạo đơn hàng mới.</span>
-			</div>
-			<div class="user-order-pending-actions">
-				<a href="/payment/checkout?order=<?= (int) ($order['id'] ?? 0) ?>" class="user-order-pay-button">Thanh toán ngay</a>
+				<span class="user-checkout-pending-flag">Lưu ý:</span>
+				Đơn hàng này chưa thanh toán. Vui lòng
+				<a href="/payment/checkout?order=<?= (int) ($order['id'] ?? 0) ?>">thanh toán ngay</a> hoặc
 				<form method="post" action="/orders/cancel" onsubmit="return confirm('Bạn có chắc muốn hủy đơn hàng này?');">
 					<input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrf_token ?? '') ?>">
 					<input type="hidden" name="order_id" value="<?= (int) ($order['id'] ?? 0) ?>">
-					<button type="submit" class="user-order-cancel-button">Hủy đơn</button>
+					<button type="submit">hủy đơn</button>
 				</form>
+				đơn này trước khi tạo đơn hàng mới.
 			</div>
 		</div>
 	<?php endif; ?>
