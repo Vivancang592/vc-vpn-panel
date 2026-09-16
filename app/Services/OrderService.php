@@ -1,0 +1,257 @@
+<?php
+
+namespace App\Services;
+
+use App\Models\Order;
+use App\Models\VpnPlan;
+use App\Models\Coupon;
+use App\Models\Subscription;
+use App\Models\Payment;
+use App\Models\NodeTask;
+
+class OrderService
+{
+    /**
+     * Xử lý tạo đơn hàng mới (Hỗ trợ sinh tiền lẻ cho WeChat Pay)
+     */
+    public function createOrder(int $userId, int $planId, ?string $couponCode = null, string $paymentMethod = 'vietqr'): array
+    {
+        $planModel = new VpnPlan();
+        $plan = $planModel->find($planId);
+
+        if (!$plan || ($plan['status'] ?? 'active') !== 'active') {
+            return ['status' => false, 'message' => 'Gói dịch vụ không tồn tại hoặc đã bị ẩn.'];
+        }
+
+        $originalPrice = (float)($plan['price'] ?? 0);
+        $discountAmount = 0.0;
+
+        if (!empty($couponCode)) {
+            $couponModel = new Coupon();
+            $coupon = method_exists($couponModel, 'findByCode') 
+                ? $couponModel->findByCode($couponCode) 
+                : null;
+
+            if ($coupon && ($coupon['status'] ?? '') === 'active') {
+                $isExpired = !empty($coupon['expires_at']) && strtotime($coupon['expires_at']) < time();
+                $isMaxUsed = !empty($coupon['max_uses']) && ((int)($coupon['used_count'] ?? 0) >= (int)($coupon['max_uses']));
+
+                if (!$isExpired && !$isMaxUsed) {
+                    $discountType = $coupon['discount_type'] ?? 'percent';
+                    $discountVal  = (float)($coupon['discount_value'] ?? 0);
+
+                    if ($discountType === 'percent') {
+                        $discountAmount = ($originalPrice * $discountVal) / 100;
+                    } else {
+                        $discountAmount = $discountVal;
+                    }
+
+                    if ($discountAmount > $originalPrice) {
+                        $discountAmount = $originalPrice;
+                    }
+                }
+            }
+        }
+
+        $finalPrice = max(0.0, $originalPrice - $discountAmount);
+
+        // Đối với WeChat Pay: Tạo số tiền lẻ duy nhất (+0.01 đến +0.99 CNY) để khớp tự động
+        if ($paymentMethod === 'wechat') {
+            $randomCent = rand(1, 99) / 100;
+            $finalPrice = round($finalPrice + $randomCent, 2);
+        }
+
+        $orderCode = 'LS' . date('YmdHis') . rand(100, 999);
+
+        $orderData = [
+            'order_code'     => $orderCode,
+            'user_id'        => $userId,
+            'plan_id'        => $planId,
+            'total_amount'   => $finalPrice,
+            'payment_status' => 'pending',
+            'created_at'     => date('Y-m-d H:i:s')
+        ];
+
+        $orderModel = new Order();
+        $created = $orderModel->create($orderData);
+
+        if ($created) {
+            return [
+                'status'     => true,
+                'message'    => 'Tạo đơn hàng thành công.',
+                'order_code' => $orderCode,
+                'amount'     => $finalPrice
+            ];
+        }
+
+        return ['status' => false, 'message' => 'Không thể khởi tạo đơn hàng. Vui lòng thử lại.'];
+    }
+
+    /**
+     * Kích hoạt gói dịch vụ sau khi thanh toán thành công và đồng bộ Task xuống VPS
+     */
+    public function activateOrder(int $orderId): bool
+    {
+        $orderModel = new Order();
+        $order = $orderModel->find($orderId);
+
+        $currentStatus = $order['payment_status'] ?? $order['status'] ?? '';
+        if (!$order || $currentStatus === 'completed') {
+            return false;
+        }
+
+        // 1. Cập nhật trạng thái đơn hàng sang completed
+        $orderModel->update($orderId, [
+            'payment_status' => 'completed',
+            'updated_at'     => date('Y-m-d H:i:s')
+        ]);
+
+        // 2. Lấy thông tin gói cước
+        $planModel = new VpnPlan();
+        $plan = $planModel->find((int)$order['plan_id']);
+        if (!$plan) {
+            return false;
+        }
+
+        $durationDays = (int)($plan['duration_days'] ?? 30);
+        $bandwidthGb  = (int)($plan['bandwidth_limit_gb'] ?? 0);
+
+        // 3. Tạo gói đăng ký (Subscription) cho người dùng
+        $subModel = new Subscription();
+        $vpnService = new VpnService();
+
+        $uuid = method_exists($vpnService, 'generateUuid') 
+            ? $vpnService->generateUuid() 
+            : sprintf('%04x%04x-%04x-%04x-%04x-%04x%04x%04x', mt_rand(0, 0xffff), mt_rand(0, 0xffff), mt_rand(0, 0xffff), mt_rand(0, 0x0fff) | 0x4000, mt_rand(0, 0x3fff) | 0x8000, mt_rand(0, 0xffff), mt_rand(0, 0xffff), mt_rand(0, 0xffff));
+
+        $transferEnable = $bandwidthGb * 1024 * 1024 * 1024;
+        $startDate = date('Y-m-d H:i:s');
+        $endDate = date('Y-m-d H:i:s', strtotime("+{$durationDays} days"));
+
+        $subData = [
+            'user_id'         => $order['user_id'],
+            'plan_id'         => $order['plan_id'],
+            'order_id'        => $order['id'],
+            'uuid'            => $uuid,
+            'transfer_enable' => $transferEnable,
+            'upload'          => 0,
+            'download'        => 0,
+            'start_date'      => $startDate,
+            'end_date'        => $endDate,
+            'status'          => 'active',
+            'created_at'      => $startDate,
+            'updated_at'      => $startDate
+        ];
+
+        $created = (bool)$subModel->create($subData);
+
+        // 4. Đẩy Task tự động xuống tất cả các máy chủ VPS thuộc các group_id được chọn trong gói cước
+        if ($created && class_exists('App\Models\NodeTask') && !empty($plan['group_id'])) {
+            $groupIds = json_decode($plan['group_id'] ?? '[]', true);
+            if (!is_array($groupIds)) {
+                $groupIds = !empty($plan['group_id']) ? [(int)$plan['group_id']] : [];
+            }
+
+            $sub = $subModel->findByUuid($uuid);
+            $subId = $sub['id'] ?? 0;
+
+            if ($subId > 0 && !empty($groupIds)) {
+                $nodeTaskModel = new NodeTask();
+                foreach ($groupIds as $gId) {
+                    $gId = (int)$gId;
+                    if ($gId > 0) {
+                        $nodeTaskModel->createTasksForGroup($gId, 'add_user', [
+                            'uuid'            => $uuid,
+                            'end_date'        => $endDate,
+                            'username'        => 'sub_' . $subId,
+                            'transfer_enable' => $transferEnable
+                        ]);
+                    }
+                }
+            }
+        }
+
+        return $created;
+    }
+
+    /**
+     * Xử lý thanh toán đơn hàng theo mã đơn hàng (VietQR)
+     */
+    public function processPaymentByOrderCode(string $orderCode, float $amount, string $transactionId = ''): array
+    {
+        $orderModel = new Order();
+        $order = method_exists($orderModel, 'findByOrderCode') 
+            ? $orderModel->findByOrderCode($orderCode) 
+            : null;
+
+        if (!$order && method_exists($orderModel, 'where')) {
+            $orders = $orderModel->where('order_code', $orderCode);
+            $order = $orders[0] ?? null;
+        }
+
+        if (!$order) {
+            return ['status' => false, 'message' => 'Đơn hàng ' . $orderCode . ' không tồn tại.'];
+        }
+
+        $currentStatus = $order['payment_status'] ?? $order['status'] ?? '';
+        if ($currentStatus === 'completed') {
+            return ['status' => false, 'message' => 'Đơn hàng ' . $orderCode . ' đã được thanh toán trước đó.'];
+        }
+
+        $expectedAmount = (float)($order['total_amount'] ?? $order['final_amount'] ?? $order['price'] ?? 0);
+        if ($amount < $expectedAmount) {
+            return ['status' => false, 'message' => 'Số tiền chuyển khoản (' . $amount . ') nhỏ hơn số tiền đơn hàng (' . $expectedAmount . ').'];
+        }
+
+        $activated = $this->activateOrder((int)$order['id']);
+        if ($activated) {
+            $paymentModel = new Payment();
+            $paymentModel->create([
+                'user_id'        => $order['user_id'],
+                'order_id'       => $order['id'],
+                'type'           => 'payment',
+                'payment_method' => 'vietqr',
+                'transaction_id' => $transactionId ?: ('TXN' . time() . rand(100, 999)),
+                'amount'         => $amount,
+                'status'         => 'success',
+                'created_at'     => date('Y-m-d H:i:s')
+            ]);
+
+            return ['status' => true, 'message' => 'Kích hoạt đơn hàng ' . $orderCode . ' thành công.'];
+        }
+
+        return ['status' => false, 'message' => 'Cập nhật đơn hàng thất bại.'];
+    }
+
+    /**
+     * Xử lý thanh toán đơn hàng theo số tiền lẻ duy nhất (WeChat Pay)
+     */
+    public function processPaymentByAmount(float $amount, string $transactionId = ''): array
+    {
+        $orderModel = new Order();
+        $order = $orderModel->findByPendingAmount($amount, 15);
+
+        if (!$order) {
+            return ['status' => false, 'message' => "Không tìm thấy đơn hàng chờ thanh toán trùng khớp số tiền {$amount} CNY trong 15 phút gần đây."];
+        }
+
+        $activated = $this->activateOrder((int)$order['id']);
+        if ($activated) {
+            $paymentModel = new Payment();
+            $paymentModel->create([
+                'user_id'        => $order['user_id'],
+                'order_id'       => $order['id'],
+                'type'           => 'payment',
+                'payment_method' => 'wechat',
+                'transaction_id' => $transactionId ?: ('WX' . time() . rand(100, 999)),
+                'amount'         => $amount,
+                'status'         => 'success',
+                'created_at'     => date('Y-m-d H:i:s')
+            ]);
+
+            return ['status' => true, 'message' => "Kích hoạt đơn hàng {$order['order_code']} theo số tiền {$amount} CNY thành công."];
+        }
+
+        return ['status' => false, 'message' => 'Cập nhật đơn hàng thất bại.'];
+    }
+}

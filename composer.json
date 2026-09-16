@@ -1,0 +1,20 @@
+{
+    "name": "vc-vpn/vc-vpn-2027",
+    "description": "VC VPN Management Panel 2027",
+    "type": "project",
+    "license": "MIT",
+    "require": {
+        "endroid/qr-code": "^5.0",
+        "php": ">=8.1"
+    },
+    "autoload": {
+        "psr-4": {
+            "App\\": "app/"
+        }
+    },
+    "config": {
+        "optimize-autoloader": true,
+        "preferred-install": "dist",
+        "sort-packages": true
+    }
+}
