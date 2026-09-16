@@ -73,7 +73,7 @@ cd /www/wwwroot/vpn2s.linksub24h.com
 * **Mục đích:** Clone toàn bộ mã nguồn của dự án về thư mục hiện tại (Lưu ý dấu chấm ` .` ở cuối lệnh).
 
 ```bash
-git clone https://github.com/Vietnamvpn/vc_vpn_2027.git .
+git clone https://github.com/Vivancang592/vc-vpn-panel.git .
 ```
 
 ---
