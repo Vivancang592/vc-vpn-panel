@@ -95,6 +95,21 @@ class Order extends BaseModel
         return $stmt->fetchAll() ?: [];
     }
 
+    public function findPendingByUserId(int $userId): ?array
+    {
+        $stmt = self::$db->prepare("SELECT * FROM `{$this->table}` WHERE `user_id` = :user_id AND `payment_status` = 'pending' ORDER BY `id` DESC LIMIT 1");
+        $stmt->execute(['user_id' => $userId]);
+        $result = $stmt->fetch();
+        return $result ?: null;
+    }
+
+    public function cancelPendingForUser(int $orderId, int $userId): bool
+    {
+        $stmt = self::$db->prepare("UPDATE `{$this->table}` SET `payment_status` = 'cancelled' WHERE `id` = :id AND `user_id` = :user_id AND `payment_status` = 'pending'");
+        $stmt->execute(['id' => $orderId, 'user_id' => $userId]);
+        return $stmt->rowCount() === 1;
+    }
+
     /**
      * Lấy danh sách doanh thu theo từng ngày trong tháng/năm chỉ định
      */

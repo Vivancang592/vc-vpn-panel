@@ -115,6 +115,19 @@ class User extends BaseModel
         ]);
     }
 
+    public function debitBalance(int $id, float $amount): bool
+    {
+        $stmt = self::$db->prepare("UPDATE `{$this->table}` SET `balance` = `balance` - :amount WHERE `id` = :id AND `balance` >= :amount");
+        $stmt->execute(['amount' => $amount, 'id' => $id]);
+        return $stmt->rowCount() === 1;
+    }
+
+    public function creditBalance(int $id, float $amount): bool
+    {
+        $stmt = self::$db->prepare("UPDATE `{$this->table}` SET `balance` = `balance` + :amount WHERE `id` = :id");
+        return $stmt->execute(['amount' => $amount, 'id' => $id]);
+    }
+
     /**
      * Cập nhật thông tin User với Whitelist tên cột chống SQL Injection
      */
