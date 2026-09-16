@@ -44,14 +44,6 @@ class ClientController extends BaseController
             error_log('Không thể ghi nhật ký kéo subscription: ' . $exception->getMessage());
         }
 
-        if ($client['request_type'] !== 'vpn_app') {
-            http_response_code(403);
-            header('Content-Type: text/plain; charset=utf-8');
-            header('Cache-Control: no-store, private');
-            echo 'Liên kết đăng ký chỉ được kéo bằng ứng dụng VPN được hỗ trợ. Vui lòng mở bằng Karing, v2rayNG hoặc ứng dụng VPN tương thích.';
-            exit;
-        }
-
         // Lấy danh sách group_id (mảng) từ gói cước tương ứng với gói đăng ký
         $groupIds = [];
         if (class_exists('App\Models\VpnPlan') && !empty($subscription['plan_id'])) {
