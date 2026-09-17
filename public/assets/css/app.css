@@ -1002,7 +1002,7 @@ body.overlay-open .admin-main {
 
 .plan-item-card {
   border: 1px solid var(--glass-border);
-  border-top: 3px solid var(--ios-blue);
+  border-top: 4px solid var(--ios-blue) !important;
   border-radius: var(--radius-md);
   padding: 1.5rem;
   display: flex;
@@ -1092,7 +1092,7 @@ body.vpn-theme .sidebar-brand { border-bottom-color: rgba(125, 198, 255, 0.2) !i
 body.vpn-theme .sidebar-brand a, body.vpn-theme .admin-sidebar > div { color: #132238 !important; }
 body.vpn-theme .admin-sidebar .nav-item { color: #38536f; }
 body.vpn-theme .admin-sidebar .nav-item:hover { color: #132238; background: #dceefd; border-color: rgba(22, 119, 255, 0.16); }
-body.vpn-theme .admin-sidebar .nav-item.active { color: #ffffff; background: #1677ff; box-shadow: 0 7px 18px rgba(4, 34, 76, 0.3); }
+body.vpn-theme .admin-sidebar .nav-item.active { color: #ffffff; background: linear-gradient(135deg, #0a223c 0%, #005bc5 100%); border: 1px solid rgba(255, 255, 255, 0.2); box-shadow: 0 7px 18px rgba(4, 34, 76, 0.3); }
 body.vpn-theme .festival-moon-mark::after, body.vpn-theme .festival-nav-moon::after, body.vpn-theme .festival-nav-wallet::after { background: #eaf4fb; }
 body.vpn-theme .admin-sidebar .nav-item.active .festival-nav-icon { color: #d8f3ff; }
 body.vpn-theme .admin-sidebar .nav-item.active .festival-nav-moon::after, body.vpn-theme .admin-sidebar .nav-item.active .festival-nav-wallet::after { background: #1677ff; }
@@ -1267,7 +1267,7 @@ body.vpn-theme .user-subscription-card-status-cancelled { border-top-color: #8e8
 .user-plan-group-tab:hover, .user-plan-group-tab.is-active { border-color: var(--ios-blue); background: var(--ios-blue); color: #fff; }
 .user-plans-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(270px, 1fr)); gap: 1rem; }
 .user-plan-card[hidden] { display: none; }
-.user-plan-card { position: relative; display: flex; flex-direction: column; padding: 1.25rem; border-top: 4px solid #ff8a00 !important; box-shadow: 0 10px 22px rgba(255, 138, 0, .2); transition: transform .22s ease, box-shadow .22s ease; }
+.user-plan-card { position: relative; display: flex; flex-direction: column; padding: 1.25rem; border-top: 4px solid #1677ff !important; box-shadow: 0 10px 22px rgba(255, 138, 0, .2); transition: transform .22s ease, box-shadow .22s ease; }
 .user-plan-card:hover { transform: translateY(-6px); box-shadow: 0 16px 28px rgba(255, 138, 0, .28); }
 .user-plan-card-heading { display: flex; align-items: center; justify-content: space-between; gap: .75rem; }
 .user-plan-name { display: flex; min-width: 0; align-items: center; gap: .55rem; }
@@ -1289,7 +1289,7 @@ body.vpn-theme .user-subscription-card-status-cancelled { border-top-color: #8e8
 .user-plan-primary-features dd { text-align: left; }
 .user-plan-features dt { color: var(--ios-text-secondary); font-size: .83rem; }
 .user-plan-features dd { margin: 0; color: var(--ios-text); font-size: .85rem; font-weight: 700; text-align: right; overflow-wrap: anywhere; }
-.user-plan-select-link, .user-checkout-submit { display: block; box-sizing: border-box; width: 100%; margin-top: 1rem; border: 0; border-radius: var(--radius-sm); background: var(--ios-blue); color: #fff; cursor: pointer; font: inherit; font-size: .9rem; font-weight: 700; padding: .7rem .9rem; text-align: center; text-decoration: none; }
+.user-plan-select-link, .user-checkout-submit { display: block; box-sizing: border-box; width: 100%; margin-top: 1rem; border: 0; border-radius: var(--radius-md); background: var(--ios-blue); color: #fff; cursor: pointer; font: inherit; font-size: .9rem; font-weight: 700; padding: .7rem .9rem; text-align: center; text-decoration: none; }
 .user-plan-select-link:hover, .user-checkout-submit:hover { background: var(--ios-blue-hover); color: #fff; }
 .user-plans-empty { padding: 3rem 1.5rem; text-align: center; }
 .user-plans-empty h2 { margin: 0 0 .5rem; color: var(--ios-text); font-size: 1.25rem; }
@@ -1330,7 +1330,7 @@ body.vpn-theme .user-subscription-card-status-cancelled { border-top-color: #8e8
 .user-checkout-gateway-item small { display: block; margin-top: .18rem; color: var(--ios-text-secondary); font-size: .78rem; line-height: 1.45; }
 .user-checkout-no-gateway { margin: 0; padding: .85rem; border-left: 3px solid var(--ios-warning); background: rgba(255, 149, 0, .1); color: var(--ios-text-secondary); font-size: .84rem; line-height: 1.5; }
 .user-checkout-note { margin: .9rem 0 0; color: var(--ios-text-secondary); font-size: .8rem; line-height: 1.5; }
-.user-checkout-submit { margin-top: 1rem; }
+.user-checkout-submit { margin-top: 1rem; border-radius: var(--radius-md); }
 .user-checkout-submit:disabled { cursor: not-allowed; opacity: .55; }
 .user-payment-checkout-page { width: 100%; max-width: 920px; margin: 0 auto; }
 .user-payment-checkout-header { margin-bottom: 1.5rem; text-align: center; }

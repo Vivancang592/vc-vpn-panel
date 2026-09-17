@@ -24,7 +24,7 @@
 
                         <?php if (!empty($settings['zalo_url'])): ?>
                             <a href="<?= htmlspecialchars($settings['zalo_url']) ?>" target="_blank" rel="noopener noreferrer" class="vc-color-green">
-                                <span>💬</span> Zalo
+                                <span>💬</span> Zalo Hỗ Trợ
                             </a>
                         <?php endif; ?>
 

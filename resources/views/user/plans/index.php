@@ -7,8 +7,7 @@ ob_start();
 
 <section class="user-plans-page">
 	<header class="user-plans-header">
-		<p class="user-plans-kicker">DỊCH VỤ VPN</p>
-		<h1>Chọn gói phù hợp với bạn</h1>
+		<h2 style="color: #020af4; font-family: emoji;">CHỌN GÓI DỊCH VỤ PHÙ HỢP VỚI BẠN</h2>
 		<p>Kết nối ổn định, bảo mật và linh hoạt trên mọi thiết bị.</p>
 	</header>
 

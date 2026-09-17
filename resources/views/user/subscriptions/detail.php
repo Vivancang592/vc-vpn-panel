@@ -22,8 +22,8 @@ ob_start();
 
 <section class="user-subscriptions-page">
 	<header class="user-subscriptions-detail-header">
-		<p class="user-subscriptions-kicker">CHI TIẾT GÓI DỊCH VỤ</p>
-		<h1><?= htmlspecialchars($subscription['plan_name'] ?? ('Gói dịch vụ #' . ($subscription['plan_id'] ?? ''))) ?></h1>
+		<h2 style="color: #020af4; font-family: emoji;">CHI TIẾT GÓI DỊCH VỤ</h2>
+		<h1 style ="color: #03b0f5"><span>Gói: </span><?= htmlspecialchars($subscription['plan_name'] ?? ('Gói dịch vụ #' . ($subscription['plan_id'] ?? ''))) ?></h1>
 	</header>
 
 	<div class="user-subscription-detail-grid">
