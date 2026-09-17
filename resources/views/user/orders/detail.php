@@ -8,8 +8,8 @@ ob_start();
 <section class="user-orders-page">
 	<header class="user-orders-header user-orders-detail-header">
 		<div>
-			<p class="user-orders-kicker">CHI TIẾT ĐƠN HÀNG</p>
-			<h1><?= htmlspecialchars($order['order_code'] ?? ('Đơn hàng #' . ($order['id'] ?? ''))) ?></h1>
+			<h2 style="color: #020af4; font-family: emoji;">CHI TIẾT ĐƠN HÀNG</h2>
+			<h4><?= htmlspecialchars($order['order_code'] ?? ('Đơn hàng #' . ($order['id'] ?? ''))) ?></h4>
 			<p>Được tạo lúc <?= !empty($order['created_at']) ? date('H:i, d/m/Y', strtotime($order['created_at'])) : '-' ?></p>
 		</div>
 	</header>

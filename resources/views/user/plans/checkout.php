@@ -16,8 +16,7 @@ ob_start();
 
 <section class="user-checkout-page">
 	<header class="user-checkout-header">
-		<p class="user-plans-kicker">XÁC NHẬN ĐĂNG KÝ</p>
-		<h1>Thanh toán gói dịch vụ</h1>
+		<h2 style="color: #020af4; font-family: emoji;">THANH TOÁN GÓI DỊCH VỤ</h2>
 		<p>Kiểm tra thông tin và chọn cổng thanh toán để hoàn tất đăng ký.</p>
 	</header>
 
@@ -50,11 +49,10 @@ ob_start();
 		<div class="user-checkout-grid">
 			<article class="glass-card user-checkout-tab user-checkout-info-tab">
 				<div class="user-checkout-tab-head">
-					<span class="user-checkout-tab-badge">TAB THÔNG TIN</span>
-					<h2><?= htmlspecialchars($selectedPlan['name'] ?? 'Gói VPN') ?></h2>
+					<h4 style="color: #0702f7; text-align: center;">XÁC NHẬN ĐĂNG KÝ</h4>
+					<hr style="border: 1px solid #0602f72f; margin-top: 0.2em; margin-bottom: 1em; font-family: serif;">
+					<h5 style="text-align: center;"><span style="color: #888;">Tên Gói: </span><?= htmlspecialchars($selectedPlan['name'] ?? 'Gói VPN') ?><span style="margin-left: 1em; color: #888;"> Mã Code: </span><?= htmlspecialchars((string) ($selectedPlan['code'] ?? '')) ?></h5>
 				</div>
-
-				<p class="user-checkout-description"><?= !empty($selectedPlan['description']) ? nl2br(htmlspecialchars($selectedPlan['description'])) : 'Gói kết nối VPN an toàn cho nhu cầu của bạn.' ?></p>
 
 				<dl class="user-plan-features user-checkout-features">
 					<div><dt>Thời hạn</dt><dd><?= $duration ?> ngày</dd></div>
@@ -63,7 +61,7 @@ ob_start();
 				</dl>
 
 				<div class="user-checkout-coupon-wrap">
-					<label for="coupon_code">Mã giảm giá <span>(không bắt buộc)</span></label>
+					<label for="coupon_code">Mã giảm giá nếu có</label>
 					<div class="user-checkout-coupon-row">
 						<input id="coupon_code" name="coupon_code" type="text" class="glass-input" maxlength="50" autocomplete="off" placeholder="Nhập mã giảm giá" value="<?= htmlspecialchars((string)$currentCoupon) ?>">
 						<button type="button" class="user-checkout-coupon-button" data-coupon-apply>Xác nhận mã</button>
@@ -90,8 +88,9 @@ ob_start();
 
 			<article class="glass-card user-checkout-tab user-checkout-pay-tab">
 				<div class="user-checkout-tab-head">
-					<span class="user-checkout-tab-badge">TAB THANH TOÁN</span>
-					<h2>Chọn cổng thanh toán</h2>
+					<h4 style="color: #0702f7; text-align: center; font-family: serif;">CỔNG THANH TOÁN HIỆN HÀNH</h4>
+					<hr style="border: 1px solid #0602f730; margin-top: 0.2em; margin-bottom: 1em;">
+					<h5 style="text-align: center; color: #6f5c7a;">Chọn cổng thanh toán</h5>
 				</div>
 
 				<div class="user-checkout-gateway-list" role="radiogroup" aria-label="Cổng thanh toán">

@@ -16,7 +16,9 @@ ob_start();
 
     <div class="user-payment-checkout-grid">
         <article class="glass-card user-payment-qr-card">
-            <span class="user-checkout-tab-badge"><?= htmlspecialchars((string) ($paymentInfo['name'] ?? 'Thanh toán')) ?></span>
+            <h3 style="text-align: center; color: #0046f6;">CỔNG THANH TOÁN <?= htmlspecialchars((string) ($paymentInfo['name'] ?? '')) ?></h3>
+            <p class="user-payment-qr-instruction" style="color: #00e6f6; text-align: center;">Thanh toán đúng số tiền và nội dung để hệ thống tự động xác nhận đơn hàng.</p>
+            
             <?php if ($qrUrl !== ''): ?>
                 <img src="<?= htmlspecialchars($qrUrl) ?>" alt="Mã QR thanh toán <?= htmlspecialchars((string) ($paymentInfo['name'] ?? '')) ?>" class="user-payment-qr-image">
             <?php else: ?>
@@ -36,7 +38,6 @@ ob_start();
                 <div class="user-payment-transfer-row"><dt>Nội dung chuyển khoản</dt><dd class="user-payment-transfer-content"><span><?= htmlspecialchars((string) ($paymentInfo['transfer_content'] ?? '')) ?></span><button type="button" class="subscription-copy-button" data-copy-value="<?= htmlspecialchars((string) ($paymentInfo['transfer_content'] ?? '')) ?>">Sao chép</button></dd></div>
                 <div><dt>Số tiền</dt><dd class="user-order-amount"><?= htmlspecialchars((string) ($paymentInfo['amount_display'] ?? number_format((float) ($order['total_amount'] ?? 0), 2, '.', ','))) ?></dd></div>
             </dl>
-            <p class="user-payment-checkout-note">Thanh toán đúng số tiền và nội dung để hệ thống tự động xác nhận đơn hàng.</p>
             <a href="/orders/detail?id=<?= (int) ($order['id'] ?? 0) ?>" class="user-payment-order-link">Xem trạng thái đơn hàng</a>
         </article>
     </div>

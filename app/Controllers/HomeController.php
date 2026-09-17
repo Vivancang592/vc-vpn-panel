@@ -45,6 +45,42 @@ class HomeController extends BaseController
         ]);
     }
 
+     public function client(): void
+{
+    $downloads = [
+        // Android
+        'android-stable' => 'https://github.com/KaringX/karing/releases/download/v1.2.25.2802/karing_1.2.25.2802_android_arm64-v8a.apk',
+
+        // iOS
+        'ios-stable' => 'https://apps.apple.com/vn/iphone/search?term=karing',
+
+        // Windows
+        'windows-stable' => 'https://github.com/KaringX/karing/releases/download/v1.2.25.2802/karing_1.2.25.2802_windows_x64.exe',
+
+        // macOS
+        'macos-stable' => 'https://github.com/KaringX/karing/releases/download/v1.2.25.2802/karing_1.2.25.2802_macos_universal.dmg',
+
+        // Linux
+        'linux-stable' => 'https://github.com/KaringX/karing/releases/download/v1.2.25.2802/karing_1.2.25.2802_linux_amd64.AppImage',
+    ];
+
+    $tag = trim((string) ($_GET['tag'] ?? ''));
+
+    if ($tag === '' || !isset($downloads[$tag])) {
+        http_response_code(404);
+        header('Content-Type: text/plain; charset=utf-8');
+        echo '404 | Link tải ứng dụng không tồn tại.';
+        return;
+    }
+
+    $downloadUrl = $downloads[$tag];
+
+    header('Cache-Control: no-store, no-cache, must-revalidate, max-age=0');
+    header('Location: ' . $downloadUrl, true, 302);
+    exit;
+}  
+
+
     public function faq(): void
     {
         $posts = [];
