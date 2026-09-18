@@ -322,7 +322,7 @@ vc-vpn-2027/
 │       │   │   └── connect.php
 │       │   ├── payments/
 │       │   │   ├── index.php
-│       │   │   └── deposit.php
+│       │   │   └── checkout.php
 │       │   ├── wallet/
 │       │   │   └── index.php
 │       │   ├── referrals/

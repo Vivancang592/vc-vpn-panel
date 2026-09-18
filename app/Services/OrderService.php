@@ -82,8 +82,9 @@ class OrderService
         $created = $orderModel->create($orderData);
 
         if ($created) {
+            $orderId = $orderModel->lastInsertId();
+
             if ($paymentMethod === 'balance') {
-                $orderId = $orderModel->lastInsertId();
                 $userModel = new User();
 
                 if (!$userModel->debitBalance($userId, $finalPrice)) {
@@ -107,6 +108,15 @@ class OrderService
                     'created_at' => date('Y-m-d H:i:s')
                 ]);
 
+                $this->notifyAdministratorsAboutNewOrder(
+                    $userId,
+                    $orderCode,
+                    $plan,
+                    $finalPrice,
+                    $paymentMethod,
+                    $orderId
+                );
+
                 return [
                     'status' => true,
                     'message' => 'Thanh toán bằng số dư thành công. Gói dịch vụ đã được kích hoạt.',
@@ -117,17 +127,67 @@ class OrderService
                 ];
             }
 
+            $this->notifyAdministratorsAboutNewOrder(
+                $userId,
+                $orderCode,
+                $plan,
+                $finalPrice,
+                $paymentMethod,
+                $orderId
+            );
+
             return [
                 'status'     => true,
                 'message'    => 'Tạo đơn hàng thành công.',
                 'order_code' => $orderCode,
-                'order_id'   => $orderModel->lastInsertId(),
+                'order_id'   => $orderId,
                 'payment_method' => $paymentMethod,
                 'amount'     => $finalPrice
             ];
         }
 
         return ['status' => false, 'message' => 'Không thể khởi tạo đơn hàng. Vui lòng thử lại.'];
+    }
+
+    private function notifyAdministratorsAboutNewOrder(
+        int $userId,
+        string $orderCode,
+        array $plan,
+        float $amount,
+        string $paymentMethod,
+        int $orderId
+    ): void {
+        $userModel = new User();
+        $buyer = $userModel->findById($userId);
+        $administrators = $userModel->getAll('', 'admin', 'active');
+
+        if (!$buyer || empty($administrators)) {
+            return;
+        }
+
+        $mailService = new MailService();
+        $data = [
+            'orderCode' => $orderCode,
+            'planName' => (string) ($plan['name'] ?? 'Gói VPN'),
+            'amount' => number_format($amount, 2, '.', ','),
+            'paymentMethod' => $paymentMethod,
+            'customerName' => (string) ($buyer['username'] ?? ''),
+            'customerEmail' => (string) ($buyer['email'] ?? ''),
+            'orderId' => $orderId,
+            'siteUrl' => getenv('APP_URL') ?: ''
+        ];
+
+        foreach ($administrators as $administrator) {
+            $email = trim((string) ($administrator['email'] ?? ''));
+            if ($email !== '') {
+                $mailService->send(
+                    $email,
+                    'Đơn hàng mới ' . $orderCode,
+                    'orders.new-order-admin',
+                    $data
+                );
+            }
+        }
     }
 
     /**

@@ -14,6 +14,7 @@ use App\Models\NodeInbound;
 use App\Models\Coupon;
 use App\Services\VpnService;
 use App\Services\OrderService;
+use App\Services\PaymentService;
 
 class UserController extends BaseController
 {
@@ -120,16 +121,68 @@ class UserController extends BaseController
 
     public function checkout(): void
     {
+        $checkoutType = strtolower(trim((string) ($_GET['type'] ?? 'plan')));
+        $subscriptionId = (int) ($_GET['subscription'] ?? 0);
+
+        if ($checkoutType === 'deposit') {
+            $minDeposit = (float) (
+                $this->settings['min_deposit'] ??
+                $this->settings['min_deposit_amount'] ??
+                10
+            );
+            $depositAmount = max(0, (float) ($_GET['amount'] ?? 0));
+
+            $this->render('user.plans.checkout', [
+                'checkoutType' => 'deposit',
+                'plan' => null,
+                'subscription' => null,
+                'depositAmount' => $depositAmount,
+                'minDeposit' => $minDeposit,
+                'paymentGateways' => $this->getEnabledPaymentGateways(false),
+                'pendingOrder' => null,
+                'couponPreview' => null,
+                'activeMenu' => 'wallet'
+            ]);
+            return;
+        }
+
+        if ($checkoutType === 'renewal') {
+            $subscription = $this->getOwnedSubscription($subscriptionId);
+            if ($subscription === null) {
+                $_SESSION['error'] = 'Gói dịch vụ không hợp lệ hoặc không thuộc tài khoản của bạn.';
+                $this->redirect('/subscriptions');
+                return;
+            }
+
+            $planModel = new VpnPlan();
+            $plan = $planModel->find((int) ($subscription['plan_id'] ?? 0));
+            if (!$plan) {
+                $_SESSION['error'] = 'Không tìm thấy gói cước của subscription.';
+                $this->redirect('/subscriptions/detail?id=' . $subscriptionId);
+                return;
+            }
+
+            $this->render('user.plans.checkout', [
+                'checkoutType' => 'renewal',
+                'plan' => $plan,
+                'subscription' => $subscription,
+                'paymentGateways' => $this->getEnabledPaymentGateways(false),
+                'pendingOrder' => null,
+                'couponPreview' => null,
+                'activeMenu' => 'subscriptions'
+            ]);
+            return;
+        }
+
         $planId = (int)($_GET['id'] ?? 0);
         $plan = [];
-
         if ($planId > 0 && class_exists('App\Models\VpnPlan')) {
             $planModel = new VpnPlan();
             $plan = $planModel->find($planId);
         }
-
         if (empty($plan)) {
             $this->redirect('/user/plans');
+            return;
         }
 
         $paymentGateways = $this->getEnabledPaymentGateways();
@@ -141,7 +194,9 @@ class UserController extends BaseController
         }
 
         $this->render('user.plans.checkout', [
+            'checkoutType' => 'plan',
             'plan' => $plan,
+            'subscription' => null,
             'paymentGateways' => $paymentGateways,
             'pendingOrder' => $pendingOrder,
             'couponPreview' => $couponPreview,
@@ -154,6 +209,54 @@ class UserController extends BaseController
         if (!$this->validateCsrfToken($_POST['csrf_token'] ?? '')) {
             $_SESSION['error'] = 'Phiên làm việc không hợp lệ. Vui lòng tải lại trang và thử lại.';
             $this->redirect('/user/plans');
+            return;
+        }
+
+        $checkoutType = strtolower(trim((string) ($_POST['checkout_type'] ?? 'plan')));
+
+        if ($checkoutType === 'deposit') {
+            $this->deposit();
+            return;
+        }
+
+        if ($checkoutType === 'renewal') {
+            $subscriptionId = (int) ($_POST['subscription_id'] ?? 0);
+            $subscription = $this->getOwnedSubscription($subscriptionId);
+            if ($subscription === null) {
+                $_SESSION['error'] = 'Gói dịch vụ không hợp lệ hoặc không thuộc tài khoản của bạn.';
+                $this->redirect('/subscriptions');
+                return;
+            }
+
+            $paymentGateway = trim((string) ($_POST['payment_gateway'] ?? 'vietqr'));
+            $allowedGateways = array_column($this->getEnabledPaymentGateways(false), 'id');
+            if (!in_array($paymentGateway, $allowedGateways, true)) {
+                $_SESSION['error'] = 'Cổng thanh toán không hợp lệ hoặc đang tạm tắt.';
+                $this->redirect('/checkout?type=renewal&subscription=' . $subscriptionId);
+                return;
+            }
+
+            $result = (new PaymentService())->createRenewalTransaction(
+                (int) $_SESSION['user_id'], $subscriptionId, $paymentGateway
+            );
+            if (($result['status'] ?? false) !== true) {
+                $_SESSION['error'] = $result['message'] ?? 'Không thể tạo giao dịch gia hạn.';
+                $this->redirect('/checkout?type=renewal&subscription=' . $subscriptionId);
+                return;
+            }
+
+            $paymentId = (int) ($result['payment_id'] ?? 0);
+            if ($paymentId <= 0 && !empty($result['transaction_code'])) {
+                $payment = (new Payment())->findByTransactionId((string) $result['transaction_code']);
+                $paymentId = (int) ($payment['id'] ?? 0);
+            }
+            if ($paymentId <= 0) {
+                $_SESSION['error'] = 'Đã tạo giao dịch gia hạn nhưng không xác định được giao dịch thanh toán.';
+                $this->redirect('/subscriptions/detail?id=' . $subscriptionId);
+                return;
+            }
+
+            $this->redirect('/payment/checkout?renewal=' . $subscriptionId . '&payment=' . $paymentId);
             return;
         }
 
@@ -212,8 +315,8 @@ class UserController extends BaseController
 
         if (($result['status'] ?? false) === true) {
             $orderCode = $result['order_code'] ?? '';
-            $amount = isset($result['amount']) ? number_format((float) $result['amount'], 2, '.', ',') : '0.00';
-            $_SESSION['success'] = 'Đã tạo đơn hàng ' . $orderCode . ' thành công. Số tiền cần thanh toán: ¥' . $amount . '.';
+            $amount = $this->formatCurrency((float) ($result['amount'] ?? 0));
+$_SESSION['success'] = 'Đã tạo đơn hàng ' . $orderCode . ' thành công. Số tiền cần thanh toán: ' . $amount . '.';
             if ($paymentGateway === 'balance') {
                 $this->redirect('/subscriptions');
                 return;
@@ -257,40 +360,94 @@ class UserController extends BaseController
         }
 
         $this->json([
-            ...$preview,
-            'coupon_code' => $couponCode
-        ], ($preview['valid'] ?? false) === true ? 200 : 422);
+    ...$preview,
+    'coupon_code' => $couponCode,
+    'currency_symbol' => trim((string) ($this->settings['currency_symbol'] ?? 'đ')),
+    'currency_position' => (string) ($this->settings['currency_position'] ?? 'right'),
+    'currency_decimals' => max(
+        0,
+        min(4, (int) ($this->settings['currency_decimals'] ?? 0))
+    )
+], ($preview['valid'] ?? false) === true ? 200 : 422);
     }
 
     public function paymentCheckout(): void
     {
+        $userId = (int) $_SESSION['user_id'];
         $orderId = (int) ($_GET['order'] ?? 0);
-        $order = null;
+        $depositId = (int) ($_GET['deposit'] ?? 0);
+        $renewalId = (int) ($_GET['renewal'] ?? 0);
+        $paymentId = (int) ($_GET['payment'] ?? 0);
 
-        if ($orderId > 0 && class_exists('App\Models\Order')) {
-            $orderModel = new Order();
-            $candidate = $orderModel->findWithDetails($orderId);
-            if ($candidate && (int) ($candidate['user_id'] ?? 0) === (int) $_SESSION['user_id']) {
-                $order = $candidate;
+        if ($orderId > 0) {
+            $order = (new Order())->findWithDetails($orderId);
+            if (!$order || (int) ($order['user_id'] ?? 0) !== $userId) {
+                $_SESSION['error'] = 'Không tìm thấy đơn hàng thanh toán.';
+                $this->redirect('/orders');
+                return;
             }
-        }
-
-        if ($order === null) {
-            $_SESSION['error'] = 'Không tìm thấy đơn hàng thanh toán.';
-            $this->redirect('/orders');
+            if (($order['payment_status'] ?? '') !== 'pending') {
+                $this->redirect('/orders/detail?id=' . (int) $order['id']);
+                return;
+            }
+            $this->render('user.payments.checkout', [
+                'checkoutType' => 'order', 'order' => $order, 'payment' => null,
+                'subscription' => null,
+                'paymentInstructions' => $this->buildPaymentInstructions($order),
+                'activeMenu' => 'orders'
+            ]);
             return;
         }
 
-        if (($order['payment_status'] ?? '') !== 'pending') {
-            $this->redirect('/orders/detail?id=' . (int) $order['id']);
+        if ($depositId > 0) {
+            $paymentModel = new Payment();
+            $payment = method_exists($paymentModel, 'findWithDetails')
+                ? $paymentModel->findWithDetails($depositId) : $paymentModel->find($depositId);
+            if (!$payment || (int) ($payment['user_id'] ?? 0) !== $userId || ($payment['type'] ?? '') !== 'deposit') {
+                $_SESSION['error'] = 'Không tìm thấy giao dịch nạp tiền hoặc giao dịch không thuộc tài khoản của bạn.';
+                $this->redirect('/payments');
+                return;
+            }
+            if (($payment['status'] ?? '') !== 'pending') {
+                $this->redirect('/payments');
+                return;
+            }
+            $this->render('user.payments.checkout', [
+                'checkoutType' => 'deposit', 'order' => null, 'payment' => $payment,
+                'subscription' => null,
+                'paymentInstructions' => $this->buildDepositPaymentInstructions($payment),
+                'activeMenu' => 'payments'
+            ]);
             return;
         }
 
-        $this->render('user.payments.checkout', [
-            'order' => $order,
-            'paymentInstructions' => $this->buildPaymentInstructions($order),
-            'activeMenu' => 'orders'
-        ]);
+        if ($renewalId > 0 && $paymentId > 0) {
+            $subscription = $this->getOwnedSubscription($renewalId);
+            $paymentModel = new Payment();
+            $payment = method_exists($paymentModel, 'findWithDetails')
+                ? $paymentModel->findWithDetails($paymentId) : $paymentModel->find($paymentId);
+            if (!$subscription || !$payment || (int) ($payment['user_id'] ?? 0) !== $userId
+                || ($payment['type'] ?? '') !== 'payment'
+                || (int) ($payment['subscription_id'] ?? 0) !== $renewalId) {
+                $_SESSION['error'] = 'Giao dịch gia hạn không hợp lệ hoặc không thuộc tài khoản của bạn.';
+                $this->redirect('/subscriptions');
+                return;
+            }
+            if (($payment['status'] ?? '') !== 'pending') {
+                $this->redirect('/subscriptions/detail?id=' . $renewalId);
+                return;
+            }
+            $this->render('user.payments.checkout', [
+                'checkoutType' => 'renewal', 'order' => null, 'payment' => $payment,
+                'subscription' => $subscription,
+                'paymentInstructions' => $this->buildDepositPaymentInstructions($payment),
+                'activeMenu' => 'subscriptions'
+            ]);
+            return;
+        }
+
+        $_SESSION['error'] = 'Thiếu thông tin giao dịch thanh toán.';
+        $this->redirect('/payments');
     }
 
     public function cancelOrder(): void
@@ -331,6 +488,22 @@ class UserController extends BaseController
         $this->json(['status' => $order['payment_status'] ?? 'pending']);
     }
 
+    private function formatCurrency(float $amount): string
+{
+    $symbol = trim((string) ($this->settings['currency_symbol'] ?? 'đ'));
+    $position = (string) ($this->settings['currency_position'] ?? 'right');
+    $decimals = max(
+        0,
+        min(4, (int) ($this->settings['currency_decimals'] ?? 0))
+    );
+
+    $formatted = number_format($amount, $decimals, '.', ',');
+
+    return $position === 'left'
+        ? $symbol . $formatted
+        : $formatted . ' ' . $symbol;
+}
+
     private function buildPaymentInstructions(array $order): array
     {
         $method = (string) ($order['payment_method'] ?? 'vietqr');
@@ -343,7 +516,7 @@ class UserController extends BaseController
                 'qr_url' => trim((string) ($this->settings['wechat_qr_image'] ?? '')),
                 'account_name' => trim((string) ($this->settings['wechat_account_name'] ?? '')),
                 'transfer_content' => $orderCode,
-                'amount_display' => '¥' . number_format($totalAmount, 2, '.', ',')
+                'amount_display' => $this->formatCurrency($totalAmount)
             ];
         }
 
@@ -353,7 +526,7 @@ class UserController extends BaseController
                 'qr_url' => trim((string) ($this->settings['alipay_qr_image'] ?? '')),
                 'account_name' => trim((string) ($this->settings['alipay_account_name'] ?? '')),
                 'transfer_content' => $orderCode,
-                'amount_display' => '¥' . number_format($totalAmount, 2, '.', ',')
+                'amount_display' => $this->formatCurrency($totalAmount)
             ];
         }
 
@@ -374,11 +547,60 @@ class UserController extends BaseController
             'account_number' => $accountNumber,
             'account_name' => trim((string) ($this->settings['bank_account_name'] ?? '')),
             'transfer_content' => $transferContent,
-            'amount_display' => number_format($totalAmount, 0, '.', ',') . ' đ'
+            'amount_display' => $this->formatCurrency($totalAmount)
         ];
     }
 
-    private function getEnabledPaymentGateways(): array
+    private function buildDepositPaymentInstructions(array $payment): array
+    {
+        $method = (string) ($payment['payment_method'] ?? 'vietqr');
+        $amount = (float) ($payment['amount'] ?? 0);
+        $transactionCode = (string) ($payment['transaction_id'] ?? '');
+        $syntax = trim((string) ($this->settings['bank_transfer_syntax'] ?? 'NAPTIEN'));
+        $transferContent = trim($syntax . ' ' . $transactionCode);
+
+        if ($method === 'wechat') {
+            return [
+                'name' => 'WeChat Pay',
+                'qr_url' => trim((string) ($this->settings['wechat_qr_image'] ?? '')),
+                'account_name' => trim((string) ($this->settings['wechat_account_name'] ?? '')),
+                'transfer_content' => $transactionCode,
+                'amount_display' => $this->formatCurrency($amount)
+            ];
+        }
+
+        if ($method === 'alipay') {
+            return [
+                'name' => 'Alipay',
+                'qr_url' => trim((string) ($this->settings['alipay_qr_image'] ?? '')),
+                'account_name' => trim((string) ($this->settings['alipay_account_name'] ?? '')),
+                'transfer_content' => $transactionCode,
+                'amount_display' => $this->formatCurrency($amount)
+            ];
+        }
+
+        $bankName = trim((string) ($this->settings['bank_name'] ?? ''));
+        $accountNumber = trim((string) ($this->settings['bank_account_number'] ?? ''));
+        $qrAmount = number_format($amount, 0, '.', '');
+        $qrUrl = '';
+
+        if ($bankName !== '' && $accountNumber !== '') {
+            $qrUrl = 'https://img.vietqr.io/image/' . rawurlencode($bankName) . '-' . rawurlencode($accountNumber)
+                . '-compact2.jpg?amount=' . rawurlencode($qrAmount) . '&addInfo=' . rawurlencode($transferContent);
+        }
+
+        return [
+            'name' => 'VietQR',
+            'qr_url' => $qrUrl,
+            'bank_name' => $bankName,
+            'account_number' => $accountNumber,
+            'account_name' => trim((string) ($this->settings['bank_account_name'] ?? '')),
+            'transfer_content' => $transferContent,
+            'amount_display' => $this->formatCurrency($amount)
+        ];
+    }
+
+    private function getEnabledPaymentGateways(bool $includeBalance = true): array
     {
         $gateways = [];
 
@@ -389,11 +611,13 @@ class UserController extends BaseController
             $currentBalance = (float) ($user['balance'] ?? 0);
         }
 
-        $gateways[] = [
-            'id' => 'balance',
-            'name' => 'Thanh toán bằng số dư',
-            'hint' => 'Số dư khả dụng: ¥' . number_format($currentBalance, 2, '.', ',')
-        ];
+        if ($includeBalance) {
+            $gateways[] = [
+                'id' => 'balance',
+                'name' => 'Thanh toán bằng số dư',
+                'hint' => 'Số dư khả dụng: ' . $this->formatCurrency($currentBalance)
+            ];
+        }
 
         if (($this->settings['enable_vietqr'] ?? '0') === '1') {
             $bankLabel = trim((string) ($this->settings['bank_name'] ?? ''));
@@ -478,8 +702,8 @@ class UserController extends BaseController
         $finalAmount = max(0, $originalPrice - $discountAmount);
 
         $discountLabel = $discountType === 'percent'
-            ? rtrim(rtrim(number_format($discountValue, 2, '.', ''), '0'), '.') . '%'
-            : '¥' . number_format($discountValue, 2, '.', ',');
+    ? rtrim(rtrim(number_format($discountValue, 2, '.', ''), '0'), '.') . '%'
+    : $this->formatCurrency($discountValue);
 
         return [
             'valid' => true,
@@ -666,20 +890,74 @@ class UserController extends BaseController
         ]);
     }
 
+    public function showDeposit(): void
+    {
+        $this->redirect('/checkout?type=deposit');
+    }
+
     public function deposit(): void
     {
-        $amount = (float)($_POST['amount'] ?? 0);
-        $minDeposit = (float)($this->settings['min_deposit'] ?? $this->settings['min_deposit_amount'] ?? 10);
-        $symbol = $this->settings['currency_symbol'] ?? '¥';
-
-        if ($amount < $minDeposit) {
-            $_SESSION['error'] = 'Số tiền nạp tối thiểu là ' . number_format($minDeposit, 2, '.', ',') . ' ' . $symbol . '.';
-            $this->redirect('/user/wallet');
+        if (!$this->validateCsrfToken($_POST['csrf_token'] ?? '')) {
+            $_SESSION['error'] = 'Phiên làm việc không hợp lệ. Vui lòng tải lại trang.';
+            $this->redirect('/checkout?type=deposit');
             return;
         }
 
-        $_SESSION['success'] = 'Yêu cầu nạp tiền đã tạo. Vui lòng hoàn tất thanh toán.';
-        $this->redirect('/user/payments');
+        $amount = (float) ($_POST['amount'] ?? 0);
+        $paymentGateway = trim((string) ($_POST['payment_gateway'] ?? 'vietqr'));
+
+        $minDeposit = (float) (
+            $this->settings['min_deposit'] ??
+            $this->settings['min_deposit_amount'] ??
+            10
+        );
+
+        if ($amount < $minDeposit) {
+            $_SESSION['error'] = 'Số tiền nạp tối thiểu là ' .
+                $this->formatCurrency($minDeposit) . '.';
+            $this->redirect('/checkout?type=deposit&amount=' . rawurlencode((string) $amount));
+            return;
+        }
+
+        $allowedGateways = array_column($this->getEnabledPaymentGateways(false), 'id');
+        if (!in_array($paymentGateway, $allowedGateways, true)) {
+            $_SESSION['error'] = 'Cổng thanh toán không hợp lệ hoặc đang tạm tắt.';
+            $this->redirect('/checkout?type=deposit&amount=' . rawurlencode((string) $amount));
+            return;
+        }
+
+        $paymentService = new PaymentService();
+        $result = $paymentService->createDepositTransaction(
+            (int) $_SESSION['user_id'],
+            $amount,
+            $paymentGateway
+        );
+
+        if (($result['status'] ?? false) !== true) {
+            $_SESSION['error'] = $result['message'] ?? 'Không thể tạo giao dịch nạp tiền.';
+            $this->redirect('/payments/deposit');
+            return;
+        }
+
+        $paymentId = (int) ($result['payment_id'] ?? 0);
+        if ($paymentId <= 0 && !empty($result['transaction_code'])) {
+            $paymentModel = new Payment();
+            $created = $paymentModel->findByTransactionId((string) $result['transaction_code']);
+            $paymentId = (int) ($created['id'] ?? 0);
+        }
+
+        if ($paymentId <= 0) {
+            $_SESSION['error'] = 'Đã tạo giao dịch nhưng không xác định được giao dịch thanh toán.';
+            $this->redirect('/payments');
+            return;
+        }
+
+        $this->redirect('/payment/checkout?deposit=' . $paymentId);
+    }
+
+    public function walletDeposit(): void
+    {
+        $this->deposit();
     }
 
     public function referrals(): void

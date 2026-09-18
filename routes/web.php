@@ -41,6 +41,7 @@ return [
     // Gói dịch vụ đã mua & Kết nối VPN (Subscriptions)
     'GET /subscriptions'         => ['UserController', 'subscriptions'],
     'GET /subscriptions/detail'  => ['UserController', 'subscriptionDetail'],
+    'POST /subscription/renew'    => ['UserController', 'buyPlan'],
 
     // Đơn hàng (Orders)
     'GET /orders'                => ['UserController', 'orders'],
@@ -52,6 +53,7 @@ return [
     'GET /payments'              => ['UserController', 'payments'],
     'GET /payments/deposit'      => ['UserController', 'showDeposit'],
     'POST /payments/deposit'     => ['UserController', 'deposit'],
+    'GET /payments/status'       => ['UserController', 'paymentStatus'],
 
     // Ví tiền (Wallet)
     'GET /wallet'                => ['UserController', 'wallet'],
