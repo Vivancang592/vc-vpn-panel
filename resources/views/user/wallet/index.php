@@ -1,5 +1,14 @@
 <?php
-$minimumDeposit = (float)($settings['min_deposit'] ?? $settings['min_deposit_amount'] ?? 10);
+$currency = strtoupper(trim((string) ($settings['currency'] ?? 'CNY')));
+$defaultMinimumDeposit = $currency === 'VND' ? 10000 : 10;
+$minimumDeposit = (float)($settings['min_deposit'] ?? $settings['min_deposit_amount'] ?? $defaultMinimumDeposit);
+$quickAmountDefaults = $currency === 'VND'
+	? [10000, 20000, 50000, 100000]
+	: [10, 50, 100, 200];
+$quickAmounts = array_values(array_unique(array_merge(
+	[$minimumDeposit],
+	array_filter($quickAmountDefaults, static fn(float|int $amount): bool => $amount >= $minimumDeposit)
+)));
 $formatAmount = isset($formatMoney)
 	? $formatMoney
 	: static fn($amount): string => number_format((float)$amount, 2) . ' ' . ($settings['currency_symbol'] ?? '¥');
@@ -42,7 +51,7 @@ ob_start();
 		<input type="hidden" name="type" value="deposit">
 
 		<div class="wallet-quick-amounts" aria-label="Chọn nhanh số tiền nạp">
-			<?php foreach ([50, 100, 200, 500] as $amount): ?>
+			<?php foreach ($quickAmounts as $amount): ?>
 				<button type="button" class="wallet-quick-amount" data-amount="<?= $amount ?>"><?= $formatAmount($amount) ?></button>
 			<?php endforeach; ?>
 		</div>

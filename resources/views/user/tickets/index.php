@@ -1,0 +1,10 @@
+<?php
+$pageTitle = 'Hỗ trợ - ' . ($settings['site_title'] ?? 'VC VPN 2027');
+$items = is_array($tickets ?? null) ? $tickets : [];
+$labels = ['open' => 'Đang chờ', 'in_progress' => 'Đang xử lý', 'resolved' => 'Đã giải quyết', 'closed' => 'Đã đóng'];
+ob_start();
+?>
+<section class="user-record-page"><header class="user-record-header"><div><h1>Hỗ trợ</h1><p>Gửi và theo dõi yêu cầu hỗ trợ của bạn.</p></div><a class="glass-btn" href="/tickets/create">Tạo yêu cầu</a></header>
+<?php if (!empty($_SESSION['success']) || !empty($_SESSION['error'])): ?><div class="user-record-alert <?= !empty($_SESSION['error']) ? 'is-error' : '' ?>"><?= htmlspecialchars($_SESSION['error'] ?? $_SESSION['success']) ?></div><?php unset($_SESSION['success'], $_SESSION['error']); endif; ?>
+<?php if ($items): ?><div class="glass-card user-record-table-wrap"><table class="user-record-table"><thead><tr><th>Tiêu đề</th><th>Trạng thái</th><th>Nhân viên</th><th>Ngày tạo</th><th></th></tr></thead><tbody><?php foreach ($items as $item): ?><?php $status = $item['status'] ?? 'open'; ?><tr><td data-label="Tiêu đề"><strong><?= htmlspecialchars($item['subject'] ?? '') ?></strong></td><td data-label="Trạng thái"><span class="user-record-status is-<?= htmlspecialchars($status) ?>"><?= htmlspecialchars($labels[$status] ?? $status) ?></span></td><td data-label="Nhân viên"><?= htmlspecialchars($item['staff_name'] ?? 'Chưa phân công') ?></td><td data-label="Ngày tạo"><?= !empty($item['created_at']) ? date('d/m/Y H:i', strtotime($item['created_at'])) : '-' ?></td><td class="user-record-action"><a href="/tickets/detail?id=<?= (int) ($item['id'] ?? 0) ?>">Xem</a></td></tr><?php endforeach; ?></tbody></table></div><?php else: ?><div class="glass-card user-record-empty"><h2>Chưa có yêu cầu hỗ trợ</h2><p>Khi cần trợ giúp, hãy tạo yêu cầu để đội ngũ hỗ trợ phản hồi.</p><a href="/tickets/create" class="glass-btn">Tạo yêu cầu</a></div><?php endif; ?></section>
+<?php $content = ob_get_clean(); $showSidebar = true; require_once __DIR__ . '/../../layouts/app.php'; ?>

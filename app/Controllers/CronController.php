@@ -7,6 +7,8 @@ use App\Models\VpnPlan;
 use App\Models\User;
 use App\Models\NodeTask;
 use App\Models\Setting;
+use App\Models\Order;
+use App\Models\Payment;
 use App\Services\MailService;
 
 class CronController extends BaseController
@@ -57,14 +59,50 @@ class CronController extends BaseController
         $subscriptionModel = new Subscription();
         $nodeTaskModel     = new NodeTask();
         $mailService       = new MailService();
+        $orderModel        = new Order();
 
         $now = date('Y-m-d H:i:s');
         $stats = [
             'expired'        => 0,
             'data_exceeded'  => 0,
             'expiring_soon'  => 0,
+            'cancelled_orders' => 0,
+            'cancelled_subscriptions' => 0,
             'monthly_reset'  => false
         ];
+
+        $pendingOrderTimeout = max(1, (int) $settingModel->get('pending_order_timeout_minutes', '30'));
+        $stats['cancelled_orders'] = $orderModel->cancelExpiredPending($pendingOrderTimeout);
+        (new Payment())->failPendingForCancelledOrders();
+
+        $expiredSubscriptionRetentionDays = max(1, min(3650, (int) $settingModel->get('expired_subscription_cancel_after_days', '30')));
+        $sqlCancelExpiredSubscriptions = "
+            SELECT s.*, p.group_id
+            FROM `vc_subscriptions` s
+            INNER JOIN `vc_vpn_plans` p ON s.plan_id = p.id
+            WHERE s.status = 'expired'
+              AND s.end_date <= DATE_SUB(:now, INTERVAL {$expiredSubscriptionRetentionDays} DAY)
+        ";
+        $stmt = $db->prepare($sqlCancelExpiredSubscriptions);
+        $stmt->execute(['now' => $now]);
+        $expiredSubscriptionsToCancel = $stmt->fetchAll(\PDO::FETCH_ASSOC) ?: [];
+
+        foreach ($expiredSubscriptionsToCancel as $subscription) {
+            if (!$subscriptionModel->update((int) $subscription['id'], [
+                'status' => 'cancelled',
+                'updated_at' => $now
+            ])) {
+                continue;
+            }
+
+            $groupIds = $this->parseGroupIds($subscription['group_id'] ?? []);
+            if (!empty($groupIds)) {
+                $nodeTaskModel->createTasksForGroup($groupIds, 'delete_user', [
+                    'username' => 'sub_' . $subscription['id']
+                ]);
+            }
+            $stats['cancelled_subscriptions']++;
+        }
 
         // -------------------------------------------------------------
         // XỬ LÝ 1: RESET LƯU LƯỢNG VÀO NGÀY 1 HÀNG THÁNG (CHẠY 1 LẦN DUY NHẤT)

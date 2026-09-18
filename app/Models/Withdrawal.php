@@ -6,6 +6,20 @@ class Withdrawal extends BaseModel
 {
     protected string $table = 'vc_withdrawals';
 
+    public function getByUserId(int $userId): array
+    {
+        $stmt = self::$db->prepare("SELECT * FROM `{$this->table}` WHERE `user_id` = :user_id ORDER BY `id` DESC");
+        $stmt->execute(['user_id' => $userId]);
+        return $stmt->fetchAll() ?: [];
+    }
+
+    public function getPendingTotalByUserId(int $userId): float
+    {
+        $stmt = self::$db->prepare("SELECT COALESCE(SUM(`amount`), 0) FROM `{$this->table}` WHERE `user_id` = :user_id AND `status` = 'pending'");
+        $stmt->execute(['user_id' => $userId]);
+        return (float) $stmt->fetchColumn();
+    }
+
     /**
      * Lấy danh sách yêu cầu rút tiền kèm thông tin thành viên
      */

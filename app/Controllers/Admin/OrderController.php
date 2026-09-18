@@ -9,6 +9,8 @@ use App\Models\VpnPlan;
 use App\Models\Subscription;
 use App\Models\Server;
 use App\Models\NodeTask;
+use App\Models\Payment;
+use App\Services\PaymentService;
 
 class OrderController extends BaseController
 {
@@ -149,9 +151,43 @@ class OrderController extends BaseController
             $this->redirect('/admin/orders' . ($userId > 0 ? '?user_id=' . $userId : ''));
         }
 
+        if ($status === 'cancelled' && ($order['payment_status'] ?? '') !== 'pending') {
+            $_SESSION['flash_message'] = 'Chỉ có thể hủy đơn hàng đang chờ thanh toán.';
+            $_SESSION['flash_type'] = 'danger';
+            $this->redirect('/admin/orders' . ($userId > 0 ? '?user_id=' . $userId : ''));
+            return;
+        }
+
+        $renewalPayment = $status === 'completed'
+            ? (new Payment())->findPendingRenewalByOrderId($id)
+            : null;
+        if ($renewalPayment !== null) {
+            $completed = (new PaymentService())->completePayment((int) $renewalPayment['id']);
+            $_SESSION['flash_message'] = $completed
+                ? 'Đã duyệt đơn gia hạn và cập nhật thời hạn gói dịch vụ.'
+                : 'Không thể duyệt đơn gia hạn này.';
+            $_SESSION['flash_type'] = $completed ? 'success' : 'danger';
+            $this->redirect('/admin/orders' . ($userId > 0 ? '?user_id=' . $userId : ''));
+            return;
+        }
+
         if ($this->orderModel->update($id, ['payment_status' => $status])) {
             // 1. Nếu duyệt đơn thành công (completed) -> Kích hoạt Gói Đăng Ký & Phát task add_user
             if ($status === 'completed' && $order['payment_status'] !== 'completed' && class_exists('App\Models\Subscription') && class_exists('App\Models\VpnPlan')) {
+                $paymentModel = new Payment();
+                if ($paymentModel->findSuccessfulByOrderId($id) === null) {
+                    $paymentModel->create([
+                        'user_id' => (int) $order['user_id'],
+                        'order_id' => $id,
+                        'type' => 'payment',
+                        'payment_method' => (string) ($order['payment_method'] ?? 'vietqr'),
+                        'transaction_id' => 'MANUAL-' . (string) ($order['order_code'] ?? $id),
+                        'amount' => (float) ($order['total_amount'] ?? 0),
+                        'status' => 'success',
+                        'created_at' => date('Y-m-d H:i:s')
+                    ]);
+                }
+
                 $planModel = new VpnPlan();
                 $plan      = $planModel->find((int)$order['plan_id']);
 
@@ -193,6 +229,7 @@ class OrderController extends BaseController
 
             // 2. Nếu hủy đơn hàng (cancelled) -> Chuyển trạng thái Subscription sang cancelled & Phát task del_user
             if ($status === 'cancelled' && $order['payment_status'] !== 'cancelled' && class_exists('App\Models\Subscription')) {
+                (new Payment())->failPendingByOrderId($id);
                 $subModel = new Subscription();
                 $sub      = $subModel->findByOrderId($id);
 

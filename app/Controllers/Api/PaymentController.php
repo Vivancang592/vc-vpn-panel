@@ -56,6 +56,39 @@ class PaymentController extends BaseController
 
         $orderService   = new OrderService();
         $paymentService = new PaymentService();
+        $paymentModel = new \App\Models\Payment();
+        $settings = (new \App\Models\Setting())->getAllAsKeyValue();
+
+        $orderSyntax = trim((string) ($settings['order_transfer_syntax'] ?? 'THANHTOAN'));
+        $renewalSyntax = trim((string) ($settings['renewal_transfer_syntax'] ?? 'GAHAN'));
+        $depositSyntax = trim((string) ($settings['bank_transfer_syntax'] ?? 'NAPTIEN'));
+
+        if ($amount > 0 && $orderSyntax !== '' && preg_match('/' . preg_quote($orderSyntax, '/') . '\\s*(\d+)/i', $content, $matches)) {
+            $order = (new \App\Models\Order())->find((int) $matches[1]);
+            if ($order && ($order['payment_status'] ?? '') === 'pending') {
+                $result = $orderService->processPaymentByOrderCode((string) $order['order_code'], $amount, $transId);
+                $this->json(['status' => $result['status'], 'message' => $result['message']], $result['status'] ? 200 : 400);
+                return;
+            }
+        }
+
+        if ($amount > 0 && $renewalSyntax !== '' && preg_match('/' . preg_quote($renewalSyntax, '/') . '\\s*(\d+)/i', $content, $matches)) {
+            $payment = $paymentModel->find((int) $matches[1]);
+            if ($payment && ($payment['type'] ?? '') === 'payment' && !empty($payment['subscription_id'])) {
+                $result = $paymentService->completePaymentByCode((string) $payment['transaction_id'], $amount);
+                $this->json(['status' => $result, 'message' => $result ? 'Gia hạn gói dịch vụ thành công.' : 'Xử lý giao dịch gia hạn thất bại hoặc đã được xử lý.'], $result ? 200 : 400);
+                return;
+            }
+        }
+
+        if ($amount > 0 && $depositSyntax !== '' && preg_match('/' . preg_quote($depositSyntax, '/') . '\\s*(\d+)/i', $content, $matches)) {
+            $payment = $paymentModel->find((int) $matches[1]);
+            if ($payment && ($payment['type'] ?? '') === 'deposit') {
+                $result = $paymentService->completePaymentByCode((string) $payment['transaction_id'], $amount);
+                $this->json(['status' => $result, 'message' => $result ? 'Nạp tiền vào tài khoản thành công.' : 'Xử lý mã nạp tiền thất bại hoặc đã được xử lý.'], $result ? 200 : 400);
+                return;
+            }
+        }
 
         // 4. VietQR: Kiểm tra mã đơn hàng LS...
         if (!empty($content) && preg_match('/LS\d+/i', $content, $matches)) {

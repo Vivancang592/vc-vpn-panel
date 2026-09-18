@@ -101,7 +101,7 @@ ob_start();
 
 <section class="user-payment-checkout-page">
 
-```
+
 <header class="user-payment-checkout-header">
 
     <?php if ($isDeposit): ?>
@@ -481,8 +481,10 @@ ob_start();
                             data-copy-value="<?= htmlspecialchars(
                                 $transferContent
                             ) ?>"
+                            title="Sao chép nội dung chuyển khoản"
+                            aria-label="Sao chép nội dung chuyển khoản"
                         >
-                            Sao chép
+                            &#128203;
                         </button>
 
                     </dd>
@@ -571,7 +573,7 @@ ob_start();
     </article>
 
 </div>
-```
+
 
 </section>
 

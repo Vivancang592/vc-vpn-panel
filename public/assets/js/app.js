@@ -425,4 +425,12 @@ if (!response.ok || !result.valid) {
             });
         });
     }
+
+    document.querySelectorAll('[data-confirm-submit]').forEach(function (form) {
+        form.addEventListener('submit', function (event) {
+            if (!window.confirm(form.dataset.confirmSubmit || 'Bạn có chắc muốn tiếp tục?')) {
+                event.preventDefault();
+            }
+        });
+    });
 });

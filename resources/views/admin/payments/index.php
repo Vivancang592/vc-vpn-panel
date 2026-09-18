@@ -112,6 +112,23 @@ ob_start();
                                         <a href="/admin/payments/detail?id=<?= $payment['id'] ?>" class="action-item">
                                             <span>👁️</span> Xem chi tiết
                                         </a>
+                                        <?php if (($payment['type'] ?? '') === 'deposit' && ($payment['status'] ?? '') === 'pending'): ?>
+                                            <form method="POST" action="/admin/payments/approve-deposit">
+                                                <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrf_token ?? '') ?>">
+                                                <input type="hidden" name="payment_id" value="<?= (int) $payment['id'] ?>">
+                                                <button type="submit" class="action-item" style="width: 100%; border: 0; cursor: pointer; color: var(--ios-success);">
+                                                    <span>✓</span> Duyệt và cộng ví
+                                                </button>
+                                            </form>
+                                        <?php elseif (($payment['type'] ?? '') === 'deposit' && ($payment['status'] ?? '') === 'failed'): ?>
+                                            <form method="POST" action="/admin/payments/delete-cancelled-deposit">
+                                                <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrf_token ?? '') ?>">
+                                                <input type="hidden" name="payment_id" value="<?= (int) $payment['id'] ?>">
+                                                <button type="submit" class="action-item" style="width: 100%; border: 0; cursor: pointer; color: var(--ios-danger);">
+                                                    <span>×</span> Xóa giao dịch
+                                                </button>
+                                            </form>
+                                        <?php endif; ?>
                                     </div>
                                 </div>
                             </td>

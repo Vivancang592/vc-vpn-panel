@@ -7,6 +7,7 @@ use App\Models\User;
 use App\Models\Setting;
 use App\Models\Subscription;
 use App\Models\VpnPlan;
+use App\Models\Order;
 
 class PaymentService
 {
@@ -24,7 +25,7 @@ class PaymentService
         $minDeposit = (float) (
             $settings['min_deposit']
             ?? $settings['min_deposit_amount']
-            ?? 10
+            ?? (strtoupper(trim((string) ($settings['currency'] ?? 'CNY'))) === 'VND' ? 10000 : 10)
         );
 
         $symbol = $settings['currency_symbol'] ?? '¥';
@@ -62,12 +63,14 @@ class PaymentService
         $created = $paymentModel->create($paymentData);
 
         if ($created) {
+            $paymentId = $paymentModel->lastInsertId();
+
             return [
                 'status' => true,
                 'message' => 'Tạo giao dịch nạp tiền thành công.',
                 'transaction_code' => $transCode,
                 'amount' => $amount,
-                'payment_id' => (int) $created
+                'payment_id' => $paymentId
             ];
         }
 
@@ -78,11 +81,7 @@ class PaymentService
     }
 
     /**
-     * Tạo giao dịch thanh toán gia hạn subscription.
-     *
-     * Payment renewal không tạo order mới.
-     * Nó liên kết trực tiếp với subscription hiện tại
-     * thông qua subscription_id.
+     * Tạo đơn hàng và giao dịch thanh toán cho gia hạn subscription.
      */
     public function createRenewalTransaction(
         int $userId,
@@ -125,36 +124,36 @@ class PaymentService
             ];
         }
 
-        /*
-         * Không cho tạo thêm payment renewal nếu subscription
-         * đang có một giao dịch pending.
-         */
         $paymentModel = new Payment();
-
-        if (method_exists($paymentModel, 'where')) {
-            $pendingPayments = $paymentModel->where(
-                'subscription_id',
-                $subscriptionId
-            );
-
-            foreach ($pendingPayments as $pendingPayment) {
-                if (
-                    ($pendingPayment['status'] ?? '') === 'pending'
-                    && ($pendingPayment['type'] ?? '') === 'payment'
-                ) {
-                    return [
-                        'status' => true,
-                        'message' => 'Đã có giao dịch gia hạn đang chờ thanh toán.',
-                        'transaction_code' =>
-                            (string) ($pendingPayment['transaction_id'] ?? ''),
-                        'payment_id' => (int) $pendingPayment['id'],
-                        'subscription_id' => $subscriptionId,
-                        'amount' => (float) $pendingPayment['amount']
-                    ];
-                }
-            }
+        $pendingPayment = $paymentModel->findPendingRenewalBySubscriptionId($subscriptionId);
+        if ($pendingPayment !== null) {
+            return [
+                'status' => true,
+                'message' => 'Đã có đơn gia hạn đang chờ thanh toán.',
+                'transaction_code' => (string) ($pendingPayment['transaction_id'] ?? ''),
+                'payment_id' => (int) $pendingPayment['id'],
+                'order_id' => (int) ($pendingPayment['order_id'] ?? 0),
+                'subscription_id' => $subscriptionId,
+                'amount' => (float) $pendingPayment['amount']
+            ];
         }
 
+        $orderAmount = $this->convertAmountForGateway($amount, $paymentMethod);
+        $orderModel = new Order();
+        $orderCode = 'RE' . date('YmdHis') . rand(100, 999);
+        if (!$orderModel->create([
+            'order_code' => $orderCode,
+            'user_id' => $userId,
+            'plan_id' => (int) $subscription['plan_id'],
+            'total_amount' => $orderAmount,
+            'payment_method' => $paymentMethod,
+            'payment_status' => 'pending',
+            'created_at' => date('Y-m-d H:i:s')
+        ])) {
+            return ['status' => false, 'message' => 'Không thể tạo đơn hàng gia hạn.'];
+        }
+
+        $orderId = $orderModel->lastInsertId();
         $transCode = 'REN'
             . date('YmdHis')
             . rand(100, 999);
@@ -162,7 +161,7 @@ class PaymentService
         $paymentData = [
             'transaction_id' => $transCode,
             'user_id' => $userId,
-            'order_id' => null,
+            'order_id' => $orderId,
             'subscription_id' => $subscriptionId,
             'type' => 'payment',
             'amount' => $amount,
@@ -174,17 +173,21 @@ class PaymentService
         $created = $paymentModel->create($paymentData);
 
         if (!$created) {
+            $orderModel->delete($orderId);
             return [
                 'status' => false,
                 'message' => 'Không thể tạo giao dịch gia hạn.'
             ];
         }
 
+        $paymentId = $paymentModel->lastInsertId();
+
         return [
             'status' => true,
             'message' => 'Tạo giao dịch gia hạn thành công.',
             'transaction_code' => $transCode,
-            'payment_id' => (int) $created,
+            'payment_id' => $paymentId,
+            'order_id' => $orderId,
             'subscription_id' => $subscriptionId,
             'amount' => $amount
         ];
@@ -391,12 +394,21 @@ class PaymentService
          * Chỉ đánh dấu payment success sau khi subscription
          * đã gia hạn thành công.
          */
-        return (bool) $paymentModel->update(
+        $paymentCompleted = (bool) $paymentModel->update(
             (int) $payment['id'],
             [
                 'status' => 'success'
             ]
         );
+
+        if ($paymentCompleted && !empty($payment['order_id'])) {
+            (new Order())->update((int) $payment['order_id'], [
+                'payment_status' => 'completed',
+                'updated_at' => date('Y-m-d H:i:s')
+            ]);
+        }
+
+        return $paymentCompleted;
     }
 
     /**
@@ -435,7 +447,10 @@ class PaymentService
          * Không cho webhook báo số tiền thấp hơn số tiền
          * hệ thống yêu cầu.
          */
-        $requiredAmount = (float) ($payment['amount'] ?? 0);
+        $requiredAmount = $this->convertAmountForGateway(
+            (float) ($payment['amount'] ?? 0),
+            (string) ($payment['payment_method'] ?? 'vietqr')
+        );
 
         if ($requiredAmount <= 0 || $amount < $requiredAmount) {
             return false;
@@ -452,5 +467,28 @@ class PaymentService
         return $this->completePayment(
             (int) $payment['id']
         );
+    }
+
+    private function convertAmountForGateway(
+        float $amount,
+        string $paymentMethod
+    ): float {
+        $settings = (new Setting())->getAllAsKeyValue();
+        $baseCurrency = strtoupper(trim((string) ($settings['currency'] ?? 'CNY')));
+        $exchangeRate = (float) ($settings['exchange_rate'] ?? 1);
+
+        if ($exchangeRate <= 0) {
+            return $amount;
+        }
+
+        if ($paymentMethod === 'vietqr' && $baseCurrency === 'CNY') {
+            return round($amount * $exchangeRate);
+        }
+
+        if (in_array($paymentMethod, ['wechat', 'alipay'], true) && $baseCurrency === 'VND') {
+            return round($amount / $exchangeRate, 2);
+        }
+
+        return $amount;
     }
 }

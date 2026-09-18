@@ -53,6 +53,7 @@ return [
     'GET /payments'              => ['UserController', 'payments'],
     'GET /payments/deposit'      => ['UserController', 'showDeposit'],
     'POST /payments/deposit'     => ['UserController', 'deposit'],
+    'POST /payments/deposit/cancel' => ['UserController', 'cancelDeposit'],
     'GET /payments/status'       => ['UserController', 'paymentStatus'],
 
     // Ví tiền (Wallet)
@@ -140,6 +141,8 @@ return [
     // Quản lý thanh toán (Payments)
     'GET /admin/payments'         => ['Admin\PaymentController', 'index'],
     'GET /admin/payments/detail'  => ['Admin\PaymentController', 'detail'],
+    'POST /admin/payments/approve-deposit' => ['Admin\PaymentController', 'approveDeposit'],
+    'POST /admin/payments/delete-cancelled-deposit' => ['Admin\PaymentController', 'deleteCancelledDeposit'],
 
     // Quản lý gói đăng ký (Subscriptions)
     'GET /admin/subscriptions'                => ['Admin\SubscriptionController', 'index'],
