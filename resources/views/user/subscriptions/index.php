@@ -49,6 +49,9 @@ ob_start();
 					<div class="user-subscription-meta"><span>Hết hạn</span><strong><?= !empty($subscription['end_date']) ? date('d/m/Y', strtotime($subscription['end_date'])) : '-' ?></strong></div>
 					<div class="user-subscription-actions">
 						<a href="/subscriptions/detail?id=<?= (int) ($subscription['id'] ?? 0) ?>" class="user-subscription-detail-button">Chi tiết</a>
+						<?php if ($status !== 'cancelled'): ?>
+							<a href="/checkout?type=renewal&amp;subscription=<?= (int) ($subscription['id'] ?? 0) ?>" class="user-subscription-detail-button">Gia hạn</a>
+						<?php endif; ?>
 					</div>
 				</article>
 			<?php endforeach; ?>

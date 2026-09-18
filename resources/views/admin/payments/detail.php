@@ -12,6 +12,13 @@ ob_start();
     <a href="/admin/payments" class="glass-btn" style="text-decoration: none; white-space: nowrap; flex-shrink: 0;">⬅️ Quay Lại</a>
 </div>
 
+<?php if (!empty($_SESSION['flash_message']) || !empty($_SESSION['error'])): ?>
+    <div class="glass-card glass-alert" style="padding: 1rem 1.25rem; margin-bottom: 1rem; border-left: 4px solid <?= !empty($_SESSION['error']) ? 'var(--ios-danger)' : 'var(--ios-success)' ?>;">
+        <?= htmlspecialchars($_SESSION['error'] ?? $_SESSION['flash_message']) ?>
+    </div>
+    <?php unset($_SESSION['flash_message'], $_SESSION['flash_type'], $_SESSION['error']); ?>
+<?php endif; ?>
+
 <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1.25rem;">
     <!-- Thẻ Thông Tin Giao Dịch & Khách Hàng -->
     <div class="glass-card" style="padding: 1.25rem;">
@@ -81,6 +88,28 @@ ob_start();
         </div>
     </div>
 </div>
+
+<?php if (($payment['type'] ?? '') === 'deposit' && ($payment['status'] ?? '') === 'pending'): ?>
+    <form method="POST" action="/admin/payments/approve-deposit" class="glass-card" style="padding: 1.25rem; margin-top: 1.25rem; display: flex; justify-content: space-between; align-items: center; gap: 1rem; flex-wrap: wrap;">
+        <div>
+            <strong>Duyệt thủ công giao dịch nạp tiền</strong>
+            <p style="margin-top: 0.3rem; color: var(--ios-text-secondary); font-size: 0.85rem;">Số tiền sẽ được cộng vào ví khách hàng ngay sau khi duyệt.</p>
+        </div>
+        <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrf_token ?? '') ?>">
+        <input type="hidden" name="payment_id" value="<?= (int) $payment['id'] ?>">
+        <button type="submit" class="glass-btn" style="border: 0; cursor: pointer; background: var(--ios-success);">Duyệt và cộng ví</button>
+    </form>
+<?php elseif (($payment['type'] ?? '') === 'deposit' && ($payment['status'] ?? '') === 'failed'): ?>
+    <form method="POST" action="/admin/payments/delete-cancelled-deposit" class="glass-card" style="padding: 1.25rem; margin-top: 1.25rem; display: flex; justify-content: space-between; align-items: center; gap: 1rem; flex-wrap: wrap;">
+        <div>
+            <strong>Xóa giao dịch nạp tiền đã hủy</strong>
+            <p style="margin-top: 0.3rem; color: var(--ios-text-secondary); font-size: 0.85rem;">Thao tác này không thể hoàn tác.</p>
+        </div>
+        <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrf_token ?? '') ?>">
+        <input type="hidden" name="payment_id" value="<?= (int) $payment['id'] ?>">
+        <button type="submit" class="glass-btn" style="border: 0; cursor: pointer; background: var(--ios-danger);">Xóa giao dịch</button>
+    </form>
+<?php endif; ?>
 
 <?php
 $content = ob_get_clean();

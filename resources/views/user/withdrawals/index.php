@@ -1,0 +1,10 @@
+<?php
+$pageTitle = 'Rút hoa hồng - ' . ($settings['site_title'] ?? 'VC VPN 2027');
+$items = is_array($withdrawals ?? null) ? $withdrawals : [];
+$labels = ['pending' => 'Chờ duyệt', 'approved' => 'Đã duyệt', 'rejected' => 'Từ chối'];
+ob_start();
+?>
+<section class="user-record-page"><header class="user-record-header"><div><h1>Rút hoa hồng</h1><p>Quản lý các yêu cầu rút tiền hoa hồng.</p></div><a class="glass-btn" href="/withdrawals/create">Tạo yêu cầu</a></header>
+<?php if (!empty($_SESSION['success']) || !empty($_SESSION['error'])): ?><div class="user-record-alert <?= !empty($_SESSION['error']) ? 'is-error' : '' ?>"><?= htmlspecialchars($_SESSION['error'] ?? $_SESSION['success']) ?></div><?php unset($_SESSION['success'], $_SESSION['error']); endif; ?>
+<?php if ($items): ?><div class="glass-card user-record-table-wrap"><table class="user-record-table"><thead><tr><th>Số tiền</th><th>Ngân hàng</th><th>Tài khoản</th><th>Trạng thái</th><th>Thời gian</th></tr></thead><tbody><?php foreach ($items as $item): ?><?php $status = $item['status'] ?? 'pending'; ?><tr><td data-label="Số tiền" class="user-record-amount"><?= $formatMoney($item['amount'] ?? 0) ?></td><td data-label="Ngân hàng"><?= htmlspecialchars($item['bank_name'] ?? '') ?></td><td data-label="Tài khoản"><?= htmlspecialchars($item['bank_account_number'] ?? '') ?><br><small><?= htmlspecialchars($item['bank_account_name'] ?? '') ?></small></td><td data-label="Trạng thái"><span class="user-record-status is-<?= htmlspecialchars($status) ?>"><?= htmlspecialchars($labels[$status] ?? $status) ?></span></td><td data-label="Thời gian"><?= !empty($item['created_at']) ? date('d/m/Y H:i', strtotime($item['created_at'])) : '-' ?></td></tr><?php endforeach; ?></tbody></table></div><?php else: ?><div class="glass-card user-record-empty"><h2>Chưa có yêu cầu rút tiền</h2><p>Yêu cầu rút tiền hoa hồng sẽ hiển thị ở đây.</p></div><?php endif; ?></section>
+<?php $content = ob_get_clean(); $showSidebar = true; require_once __DIR__ . '/../../layouts/app.php'; ?>

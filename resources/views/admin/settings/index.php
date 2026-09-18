@@ -147,6 +147,16 @@ ob_start();
                 </div>
 
                 <div>
+                    <label data-hint="Đơn mua gói chưa thanh toán sau khoảng thời gian này sẽ tự động hủy khi cron chạy." style="display: block; font-weight: 600; font-size: 0.85rem; margin-bottom: 0.4rem;">Thời Gian Tự Hủy Đơn Chờ (phút)</label>
+                    <input type="number" name="settings[pending_order_timeout_minutes]" class="glass-input" value="<?= htmlspecialchars($settings['pending_order_timeout_minutes'] ?? '30') ?>" min="1" max="43200" step="1" style="width: 100%;">
+                </div>
+
+                <div>
+                    <label data-hint="Gói đã hết hạn nhưng không được gia hạn sau số ngày này sẽ tự động hủy và xóa khỏi node VPN khi cron chạy." style="display: block; font-weight: 600; font-size: 0.85rem; margin-bottom: 0.4rem;">Giữ Gói Hết Hạn Trước Khi Hủy (ngày)</label>
+                    <input type="number" name="settings[expired_subscription_cancel_after_days]" class="glass-input" value="<?= htmlspecialchars($settings['expired_subscription_cancel_after_days'] ?? '30') ?>" min="1" max="3650" step="1" style="width: 100%;">
+                </div>
+
+                <div>
                     <label data-hint="Giá trị nhỏ nhất người dùng được phép yêu cầu rút." style="display: block; font-weight: 600; font-size: 0.85rem; margin-bottom: 0.4rem;">Số Tiền Rút Tối Thiểu</label>
                     <input type="number" name="settings[min_withdrawal]" class="glass-input" value="<?= htmlspecialchars($settings['min_withdrawal'] ?? '50000') ?>" min="0" step="any" style="width: 100%;">
                 </div>
@@ -204,7 +214,7 @@ ob_start();
 
     <!-- TAB 4: THÔNG TIN NGÂN HÀNG & ĐA CỔNG (QR) -->
     <div id="tab-bank" class="settings-tab-pane">
-        <form method="POST" action="/admin/settings/save" class="glass-card settings-form" style="padding: 1.5rem; width: 100%; display: flex; flex-direction: column; gap: 1.5rem;">
+        <form method="POST" action="/admin/settings/save" enctype="multipart/form-data" class="glass-card settings-form" style="padding: 1.5rem; width: 100%; display: flex; flex-direction: column; gap: 1.5rem;">
             <h2 style="font-size: 1.1rem; font-weight: 700; margin-bottom: 0; border-bottom: 1px solid var(--glass-border); padding-bottom: 0.5rem; color: #ff9500;">
                 🏦 Cấu Hình Đa Cổng Thanh Toán
             </h2>
@@ -247,8 +257,9 @@ ob_start();
                         <input type="text" class="glass-input" value="WeChat Pay" readonly style="width: 100%; background: rgba(0,0,0,0.1); color: var(--ios-text-secondary); cursor: not-allowed;">
                     </div>
                     <div>
-                        <label style="display: block; font-weight: 600; font-size: 0.85rem; margin-bottom: 0.4rem;">Link Ảnh QR WeChat</label>
-                        <input type="text" name="settings[wechat_qr_image]" class="glass-input" value="<?= htmlspecialchars($settings['wechat_qr_image'] ?? '') ?>" placeholder="https://..." style="width: 100%;">
+                        <label style="display: block; font-weight: 600; font-size: 0.85rem; margin-bottom: 0.4rem;">Tải Ảnh QR WeChat</label>
+                        <input type="file" name="wechat_qr_upload" class="glass-input" accept="image/png,image/jpeg,image/webp" style="width: 100%;">
+                        <?php if (!empty($settings['wechat_qr_image'])): ?><small style="display: block; margin-top: 0.35rem; color: var(--ios-success);">Đã có ảnh QR. Chọn ảnh mới để thay thế.</small><?php endif; ?>
                     </div>
                     <div>
                         <label style="display: block; font-weight: 600; font-size: 0.85rem; margin-bottom: 0.4rem;">Tên Chủ Tài Khoản</label>
@@ -270,8 +281,9 @@ ob_start();
                         <input type="text" class="glass-input" value="Alipay" readonly style="width: 100%; background: rgba(0,0,0,0.1); color: var(--ios-text-secondary); cursor: not-allowed;">
                     </div>
                     <div>
-                        <label style="display: block; font-weight: 600; font-size: 0.85rem; margin-bottom: 0.4rem;">Link Ảnh QR Alipay</label>
-                        <input type="text" name="settings[alipay_qr_image]" class="glass-input" value="<?= htmlspecialchars($settings['alipay_qr_image'] ?? '') ?>" placeholder="https://..." style="width: 100%;">
+                        <label style="display: block; font-weight: 600; font-size: 0.85rem; margin-bottom: 0.4rem;">Tải Ảnh QR Alipay</label>
+                        <input type="file" name="alipay_qr_upload" class="glass-input" accept="image/png,image/jpeg,image/webp" style="width: 100%;">
+                        <?php if (!empty($settings['alipay_qr_image'])): ?><small style="display: block; margin-top: 0.35rem; color: var(--ios-success);">Đã có ảnh QR. Chọn ảnh mới để thay thế.</small><?php endif; ?>
                     </div>
                     <div>
                         <label style="display: block; font-weight: 600; font-size: 0.85rem; margin-bottom: 0.4rem;">Tên Chủ Tài Khoản</label>
@@ -280,14 +292,18 @@ ob_start();
                 </div>
 
                 <!-- Dòng cuối: Cú Pháp Nạp / Thanh Toán -->
-                <div class="settings-field-list" style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; align-items: end; border-top: 1px solid var(--glass-border); padding-top: 1rem;">
+                <div class="settings-field-list" style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1rem; align-items: end; border-top: 1px solid var(--glass-border); padding-top: 1rem;">
                     <div>
-                        <label data-hint="Tiền tố cần có trong nội dung chuyển khoản nạp tiền." style="display: block; font-weight: 600; font-size: 0.85rem; margin-bottom: 0.4rem;">Cú Pháp Nạp Tiền</label>
+                        <label data-hint="Hệ thống tự nối ID giao dịch phía sau, ví dụ NAPTIEN01." style="display: block; font-weight: 600; font-size: 0.85rem; margin-bottom: 0.4rem;">Tiền Tố Nạp Tiền</label>
                         <input type="text" name="settings[bank_transfer_syntax]" class="glass-input" value="<?= htmlspecialchars($settings['bank_transfer_syntax'] ?? 'NAPTIEN') ?>" placeholder="VD: NAPTIEN" style="width: 100%;">
                     </div>
                     <div>
-                        <label data-hint="Tiền tố cần có khi thanh toán một đơn hàng." style="display: block; font-weight: 600; font-size: 0.85rem; margin-bottom: 0.4rem;">Cú Pháp Thanh Toán Đơn</label>
+                        <label data-hint="Hệ thống tự nối ID đơn hàng phía sau, ví dụ THANHTOAN01." style="display: block; font-weight: 600; font-size: 0.85rem; margin-bottom: 0.4rem;">Tiền Tố Thanh Toán Đơn</label>
                         <input type="text" name="settings[order_transfer_syntax]" class="glass-input" value="<?= htmlspecialchars($settings['order_transfer_syntax'] ?? 'THANHTOAN') ?>" placeholder="VD: THANHTOAN" style="width: 100%;">
+                    </div>
+                    <div>
+                        <label data-hint="Hệ thống tự nối ID giao dịch phía sau, ví dụ GAHAN01." style="display: block; font-weight: 600; font-size: 0.85rem; margin-bottom: 0.4rem;">Tiền Tố Gia Hạn</label>
+                        <input type="text" name="settings[renewal_transfer_syntax]" class="glass-input" value="<?= htmlspecialchars($settings['renewal_transfer_syntax'] ?? 'GAHAN') ?>" placeholder="VD: GAHAN" style="width: 100%;">
                     </div>
                 </div>
             </div>

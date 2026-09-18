@@ -6,6 +6,20 @@ class ReferralCommission extends BaseModel
 {
     protected string $table = 'vc_referral_commissions';
 
+    public function getByReferrerId(int $referrerId): array
+    {
+        $stmt = self::$db->prepare("
+            SELECT rc.*, u.username AS referred_username, o.order_code, o.total_amount AS order_total
+            FROM `{$this->table}` rc
+            LEFT JOIN `vc_users` u ON rc.referred_user_id = u.id
+            LEFT JOIN `vc_orders` o ON rc.order_id = o.id
+            WHERE rc.referrer_id = :referrer_id
+            ORDER BY rc.id DESC
+        ");
+        $stmt->execute(['referrer_id' => $referrerId]);
+        return $stmt->fetchAll() ?: [];
+    }
+
     /**
      * Lấy danh sách hoa hồng giới thiệu kèm thông tin chi tiết người giới thiệu, người mua và đơn hàng
      */

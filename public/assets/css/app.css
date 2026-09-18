@@ -1343,18 +1343,19 @@ body.vpn-theme .user-subscription-card-status-cancelled { border-top-color: #8e8
 .user-payment-qr-image { display: block; width: min(100%, 300px); aspect-ratio: 1; margin: .9rem auto; object-fit: contain; background: #fff; }
 .user-payment-qr-card > p { margin: 0; color: var(--ios-text-secondary); font-size: .82rem; line-height: 1.5; }
 .user-payment-qr-missing { display: grid; width: min(100%, 300px); aspect-ratio: 1; margin: .9rem auto; place-items: center; border: 1px dashed var(--glass-border); background: rgba(255, 149, 0, .08); color: var(--ios-text-secondary); font-size: .85rem; }
-.user-payment-transfer-row { flex-direction: column; align-items: flex-start; gap: .35rem; }
-.user-payment-transfer-row dd { text-align: left; }
-.user-payment-transfer-content { display: flex; flex-wrap: wrap; align-items: center; gap: .5rem; width: 100%; text-align: left; }
+.user-payment-transfer-row { align-items: center; }
+.user-payment-transfer-row dt { flex: 0 0 auto; }
+.user-payment-transfer-row dd { min-width: 0; flex: 1; text-align: right; }
+.user-payment-transfer-content { display: flex; flex-wrap: nowrap; justify-content: flex-end; align-items: center; gap: .4rem; width: 100%; text-align: right; }
 .user-payment-transfer-content span { color: var(--ios-blue); font-family: monospace; overflow-wrap: break-word; word-break: break-word; }
-.user-payment-transfer-content .subscription-copy-button { flex: 0 0 auto; padding: .2rem .5rem; font-size: .72rem; }
+.user-payment-transfer-content .subscription-copy-button { display: inline-grid; width: 1.8rem; height: 1.8rem; flex: 0 0 1.8rem; place-items: center; padding: 0; border: 1px solid var(--glass-border); border-radius: var(--radius-sm); background: rgba(0, 122, 255, .08); color: var(--ios-blue); font-size: .9rem; line-height: 1; cursor: pointer; }
 .user-payment-order-card { padding: 1.25rem; }
 .user-payment-order-card h2 { margin: 0 0 .85rem; color: var(--ios-text); font-size: 1.12rem; }
 .user-payment-checkout-note { margin: 1rem 0 0; color: var(--ios-text-secondary); font-size: .82rem; line-height: 1.5; }
 .user-payment-order-link { display: inline-block; box-sizing: border-box; width: 100%; margin-top: 1rem; border-radius: var(--radius-sm); background: var(--ios-blue); color: #fff; font-size: .9rem; font-weight: 700; padding: .7rem .9rem; text-align: center; text-decoration: none; }
 .user-payment-order-link:hover { background: var(--ios-blue-hover); color: #fff; }
 @media (max-width: 700px) { .user-plans-header h1, .user-checkout-header h1 { font-size: 1.5rem; } .user-plan-card-heading { align-items: center; } .user-plan-name { flex: 1; } .user-plan-card h2 { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; } .user-plan-price-duration { gap: .2rem; font-size: .76rem; } .user-plan-price-duration strong { font-size: .9rem; } .user-checkout-grid { grid-template-columns: 1fr; } .user-checkout-coupon-row { grid-template-columns: 1fr; } .user-checkout-coupon-button { width: 100%; } .user-checkout-total strong { font-size: 1.35rem; } .user-checkout-final-total strong { font-size: 1.45rem; } }
-@media (max-width: 700px) { .user-payment-checkout-header h1 { font-size: 1.5rem; } .user-payment-checkout-grid { grid-template-columns: 1fr; } }
+@media (max-width: 700px) { .user-payment-checkout-header h1 { font-size: 1.5rem; } .user-payment-checkout-grid { grid-template-columns: 1fr; } .user-payment-transfer-row { align-items: flex-start; flex-direction: column; gap: .35rem; } .user-payment-transfer-row dd { width: 100%; text-align: left; } .user-payment-transfer-content { flex-wrap: wrap; justify-content: flex-start; text-align: left; } }
 
 /* User wallet */
 .wallet-page-header { margin-bottom: 1.25rem; }
@@ -1383,3 +1384,48 @@ body.vpn-theme .user-subscription-card-status-cancelled { border-top-color: #8e8
 .wallet-alert { margin-bottom: 1.2rem; padding: .85rem 1rem; border-radius: var(--radius-md); font-size: .88rem; font-weight: 600; }
 .wallet-alert.error { border: 1px solid rgba(255, 59, 48, .28); background: rgba(255, 59, 48, .1); color: var(--ios-danger); }
 @media (max-width: 768px) { .wallet-overview { grid-template-columns: 1fr; } .wallet-quick-amounts { grid-template-columns: repeat(2, minmax(0, 1fr)); } .wallet-form-row { flex-direction: column; align-items: stretch; } .wallet-form-row .glass-btn { width: 100%; margin-top: 0; } }
+
+.user-record-page, .user-form-page { width: 100%; }
+.user-record-header { display: flex; justify-content: space-between; align-items: flex-end; gap: 1rem; margin-bottom: 1.25rem; }
+.user-record-header h1 { font-size: 1.55rem; line-height: 1.2; }
+.user-record-header p, .user-record-empty p, .user-notification-item p { color: var(--ios-text-secondary); margin-top: .4rem; }
+.user-record-alert { padding: .85rem 1rem; margin-bottom: 1rem; border-left: 4px solid var(--ios-success); background: rgba(52, 199, 89, .1); }
+.user-record-alert.is-error { border-left-color: var(--ios-danger); background: rgba(255, 59, 48, .1); }
+.user-record-table-wrap { overflow-x: auto; }
+.user-record-table { width: 100%; border-collapse: collapse; min-width: 680px; }
+.user-record-table th, .user-record-table td { padding: .9rem .8rem; border-bottom: 1px solid var(--glass-border); text-align: left; font-size: .88rem; }
+.user-record-table th { color: var(--ios-text-secondary); font-size: .74rem; text-transform: uppercase; letter-spacing: .04em; }
+.user-record-table tr:last-child td { border-bottom: 0; }
+.user-record-amount { color: var(--ios-success); font-weight: 700; }
+.user-record-action a, .user-text-link { color: var(--ios-blue); font-weight: 700; text-decoration: none; }
+.user-record-action form { display: inline; margin-left: .65rem; }
+.user-record-cancel { padding: 0; border: 0; background: transparent; color: var(--ios-danger); font: inherit; font-weight: 700; cursor: pointer; }
+.user-record-status { display: inline-block; padding: .25rem .55rem; border-radius: var(--radius-sm); background: rgba(255, 149, 0, .14); color: var(--ios-warning); font-size: .76rem; font-weight: 700; }
+.user-record-status.is-success, .user-record-status.is-completed, .user-record-status.is-approved, .user-record-status.is-resolved { background: rgba(52, 199, 89, .14); color: var(--ios-success); }
+.user-record-status.is-failed, .user-record-status.is-rejected, .user-record-status.is-closed { background: rgba(255, 59, 48, .12); color: var(--ios-danger); }
+.user-record-status.is-in_progress { background: rgba(0, 122, 255, .14); color: var(--ios-blue); }
+.user-record-empty { padding: 2.25rem; text-align: center; }
+.user-record-empty .glass-btn { display: inline-block; margin-top: 1rem; text-decoration: none; }
+.user-record-stats { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1rem; margin: 1rem 0; }
+.user-record-stats .glass-card, .user-referral-code { padding: 1rem; }
+.user-record-stats span, .user-referral-code span { display: block; color: var(--ios-text-secondary); font-size: .82rem; }
+.user-record-stats strong, .user-referral-code strong { display: block; margin-top: .35rem; font-size: 1.35rem; }
+.user-referral-code { display: flex; align-items: center; gap: 1rem; margin-bottom: 1rem; }
+.user-referral-code strong { margin: 0 auto 0 0; letter-spacing: .06em; }
+.user-referral-code .glass-btn { border: 0; cursor: pointer; }
+.user-notification-list, .user-ticket-thread { display: grid; gap: .85rem; }
+.user-notification-item { padding: 1rem; display: flex; justify-content: space-between; gap: 1rem; border-left: 4px solid var(--ios-blue); }
+.user-notification-item.is-ticket { border-left-color: var(--ios-warning); }
+.user-notification-item h2 { font-size: 1rem; }
+.user-notification-item time, .user-ticket-message time { color: var(--ios-text-secondary); font-size: .78rem; white-space: nowrap; }
+.user-record-form { display: grid; gap: .65rem; padding: 1.25rem; }
+.user-record-form label { font-weight: 700; font-size: .86rem; }
+.user-record-form small { color: var(--ios-text-secondary); }
+.user-record-form textarea { resize: vertical; min-height: 7rem; }
+.user-record-form .glass-btn { justify-self: start; border: 0; cursor: pointer; margin-top: .5rem; }
+.user-ticket-thread { padding: 1.25rem; margin-bottom: 1rem; }
+.user-ticket-message { padding: .9rem; background: rgba(255, 255, 255, .22); border-left: 3px solid var(--ios-text-secondary); }
+.user-ticket-message.is-staff { background: rgba(0, 122, 255, .08); border-left-color: var(--ios-blue); }
+.user-ticket-message header { display: flex; justify-content: space-between; gap: 1rem; margin-bottom: .5rem; }
+.user-ticket-message p { white-space: pre-wrap; }
+@media (max-width: 680px) { .user-record-header { align-items: flex-start; flex-direction: column; } .user-record-header .glass-btn { width: 100%; text-align: center; text-decoration: none; } .user-record-table { min-width: 0; } .user-record-table thead { display: none; } .user-record-table, .user-record-table tbody, .user-record-table tr, .user-record-table td { display: block; width: 100%; } .user-record-table tr { padding: .7rem 0; border-bottom: 1px solid var(--glass-border); } .user-record-table td { display: flex; justify-content: space-between; gap: 1rem; padding: .35rem .8rem; border: 0; text-align: right; } .user-record-table td::before { content: attr(data-label); color: var(--ios-text-secondary); text-align: left; } .user-record-table .user-record-action { justify-content: flex-end; } .user-record-table .user-record-action::before { content: ''; } .user-record-stats { grid-template-columns: 1fr; } .user-referral-code { align-items: flex-start; flex-wrap: wrap; } .user-referral-code strong { width: 100%; } .user-notification-item { flex-direction: column; } }

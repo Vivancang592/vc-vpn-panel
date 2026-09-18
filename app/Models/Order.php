@@ -110,6 +110,14 @@ class Order extends BaseModel
         return $stmt->rowCount() === 1;
     }
 
+    public function cancelExpiredPending(int $minutes): int
+    {
+        $minutes = max(1, min(43200, $minutes));
+        $stmt = self::$db->prepare("UPDATE `{$this->table}` SET `payment_status` = 'cancelled', `updated_at` = NOW() WHERE `payment_status` = 'pending' AND `created_at` <= DATE_SUB(NOW(), INTERVAL {$minutes} MINUTE)");
+        $stmt->execute();
+        return $stmt->rowCount();
+    }
+
     /**
      * Lấy danh sách doanh thu theo từng ngày trong tháng/năm chỉ định
      */

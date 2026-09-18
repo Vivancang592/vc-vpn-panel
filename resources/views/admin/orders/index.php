@@ -111,7 +111,7 @@ ob_start();
                                             </button>
                                         <?php endif; ?>
 
-                                        <?php if (($order['payment_status'] ?? '') !== 'cancelled'): ?>
+                                        <?php if (($order['payment_status'] ?? '') === 'pending'): ?>
                                             <button type="submit" form="cancel-order-form-<?= $order['id'] ?>" class="action-item" style="background: none; border: none; width: 100%; text-align: left; cursor: pointer; color: var(--ios-warning); padding: 0.5rem 1rem; font-size: 0.85rem; display: flex; align-items: center; gap: 0.5rem; white-space: nowrap;">
                                                 <span>❌</span> Hủy đơn hàng
                                             </button>
@@ -148,7 +148,7 @@ ob_start();
             </form>
         <?php endif; ?>
 
-        <?php if (($order['payment_status'] ?? '') !== 'cancelled'): ?>
+        <?php if (($order['payment_status'] ?? '') === 'pending'): ?>
             <form id="cancel-order-form-<?= $order['id'] ?>" method="POST" action="/admin/orders/update-status" onsubmit="return confirm('Hủy đơn hàng này?');" style="display: none;">
                 <input type="hidden" name="id" value="<?= $order['id'] ?>">
                 <input type="hidden" name="status" value="cancelled">

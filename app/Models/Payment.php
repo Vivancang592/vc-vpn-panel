@@ -61,4 +61,55 @@ class Payment extends BaseModel
         $stmt->execute(['user_id' => $userId]);
         return $stmt->fetchAll() ?: [];
     }
+
+    public function findSuccessfulByOrderId(int $orderId): ?array
+    {
+        $stmt = self::$db->prepare("SELECT * FROM `{$this->table}` WHERE `order_id` = :order_id AND `status` = 'success' LIMIT 1");
+        $stmt->execute(['order_id' => $orderId]);
+        $result = $stmt->fetch();
+        return $result ?: null;
+    }
+
+    public function findPendingRenewalBySubscriptionId(int $subscriptionId): ?array
+    {
+        $stmt = self::$db->prepare("SELECT * FROM `{$this->table}` WHERE `subscription_id` = :subscription_id AND `type` = 'payment' AND `status` = 'pending' ORDER BY `id` DESC LIMIT 1");
+        $stmt->execute(['subscription_id' => $subscriptionId]);
+        $result = $stmt->fetch();
+        return $result ?: null;
+    }
+
+    public function findPendingRenewalByOrderId(int $orderId): ?array
+    {
+        $stmt = self::$db->prepare("SELECT * FROM `{$this->table}` WHERE `order_id` = :order_id AND `subscription_id` IS NOT NULL AND `type` = 'payment' AND `status` = 'pending' LIMIT 1");
+        $stmt->execute(['order_id' => $orderId]);
+        $result = $stmt->fetch();
+        return $result ?: null;
+    }
+
+    public function failPendingByOrderId(int $orderId): void
+    {
+        $stmt = self::$db->prepare("UPDATE `{$this->table}` SET `status` = 'failed' WHERE `order_id` = :order_id AND `status` = 'pending'");
+        $stmt->execute(['order_id' => $orderId]);
+    }
+
+    public function failPendingForCancelledOrders(): int
+    {
+        $stmt = self::$db->prepare("UPDATE `{$this->table}` p INNER JOIN `vc_orders` o ON p.order_id = o.id SET p.status = 'failed' WHERE o.payment_status = 'cancelled' AND p.status = 'pending'");
+        $stmt->execute();
+        return $stmt->rowCount();
+    }
+
+    public function cancelPendingDeposit(int $paymentId, int $userId): bool
+    {
+        $stmt = self::$db->prepare("UPDATE `{$this->table}` SET `status` = 'failed' WHERE `id` = :id AND `user_id` = :user_id AND `type` = 'deposit' AND `status` = 'pending'");
+        $stmt->execute(['id' => $paymentId, 'user_id' => $userId]);
+        return $stmt->rowCount() === 1;
+    }
+
+    public function deleteFailedDeposit(int $paymentId): bool
+    {
+        $stmt = self::$db->prepare("DELETE FROM `{$this->table}` WHERE `id` = :id AND `type` = 'deposit' AND `status` = 'failed'");
+        $stmt->execute(['id' => $paymentId]);
+        return $stmt->rowCount() === 1;
+    }
 }

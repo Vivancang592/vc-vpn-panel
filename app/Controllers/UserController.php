@@ -12,6 +12,9 @@ use App\Models\Post;
 use App\Models\ServerGroup;
 use App\Models\NodeInbound;
 use App\Models\Coupon;
+use App\Models\ReferralCommission;
+use App\Models\Withdrawal;
+use App\Models\TicketMessage;
 use App\Services\VpnService;
 use App\Services\OrderService;
 use App\Services\PaymentService;
@@ -128,7 +131,7 @@ class UserController extends BaseController
             $minDeposit = (float) (
                 $this->settings['min_deposit'] ??
                 $this->settings['min_deposit_amount'] ??
-                10
+                (strtoupper(trim((string) ($this->settings['currency'] ?? 'CNY'))) === 'VND' ? 10000 : 10)
             );
             $depositAmount = max(0, (float) ($_GET['amount'] ?? 0));
 
@@ -509,6 +512,7 @@ $_SESSION['success'] = 'Đã tạo đơn hàng ' . $orderCode . ' thành công. 
         $method = (string) ($order['payment_method'] ?? 'vietqr');
         $totalAmount = (float) ($order['total_amount'] ?? 0);
         $orderCode = (string) ($order['order_code'] ?? '');
+        $orderId = (int) ($order['id'] ?? 0);
 
         if ($method === 'wechat') {
             return [
@@ -516,7 +520,8 @@ $_SESSION['success'] = 'Đã tạo đơn hàng ' . $orderCode . ' thành công. 
                 'qr_url' => trim((string) ($this->settings['wechat_qr_image'] ?? '')),
                 'account_name' => trim((string) ($this->settings['wechat_account_name'] ?? '')),
                 'transfer_content' => $orderCode,
-                'amount_display' => $this->formatCurrency($totalAmount)
+                'amount' => $totalAmount,
+                'amount_display' => $this->formatGatewayCurrency($totalAmount, $method)
             ];
         }
 
@@ -526,13 +531,15 @@ $_SESSION['success'] = 'Đã tạo đơn hàng ' . $orderCode . ' thành công. 
                 'qr_url' => trim((string) ($this->settings['alipay_qr_image'] ?? '')),
                 'account_name' => trim((string) ($this->settings['alipay_account_name'] ?? '')),
                 'transfer_content' => $orderCode,
-                'amount_display' => $this->formatCurrency($totalAmount)
+                'amount' => $totalAmount,
+                'amount_display' => $this->formatGatewayCurrency($totalAmount, $method)
             ];
         }
 
         $bankName = trim((string) ($this->settings['bank_name'] ?? ''));
         $accountNumber = trim((string) ($this->settings['bank_account_number'] ?? ''));
-        $transferContent = trim((string) ($this->settings['order_transfer_syntax'] ?? 'THANHTOAN')) . ' ' . $orderCode;
+        $transferContent = trim((string) ($this->settings['order_transfer_syntax'] ?? 'THANHTOAN'))
+            . str_pad((string) $orderId, 2, '0', STR_PAD_LEFT);
         $qrAmount = number_format($totalAmount, 0, '.', '');
         $qrUrl = '';
         if ($bankName !== '' && $accountNumber !== '') {
@@ -547,17 +554,25 @@ $_SESSION['success'] = 'Đã tạo đơn hàng ' . $orderCode . ' thành công. 
             'account_number' => $accountNumber,
             'account_name' => trim((string) ($this->settings['bank_account_name'] ?? '')),
             'transfer_content' => $transferContent,
-            'amount_display' => $this->formatCurrency($totalAmount)
+            'amount' => $totalAmount,
+            'amount_display' => $this->formatGatewayCurrency($totalAmount, $method)
         ];
     }
 
     private function buildDepositPaymentInstructions(array $payment): array
     {
         $method = (string) ($payment['payment_method'] ?? 'vietqr');
-        $amount = (float) ($payment['amount'] ?? 0);
+        $amount = $this->convertAmountForGateway(
+            (float) ($payment['amount'] ?? 0),
+            $method
+        );
         $transactionCode = (string) ($payment['transaction_id'] ?? '');
-        $syntax = trim((string) ($this->settings['bank_transfer_syntax'] ?? 'NAPTIEN'));
-        $transferContent = trim($syntax . ' ' . $transactionCode);
+        $paymentId = (int) ($payment['id'] ?? 0);
+        $isRenewal = ($payment['type'] ?? '') === 'payment' && !empty($payment['subscription_id']);
+        $syntax = trim((string) ($this->settings[
+            $isRenewal ? 'renewal_transfer_syntax' : 'bank_transfer_syntax'
+        ] ?? ($isRenewal ? 'GAHAN' : 'NAPTIEN')));
+        $transferContent = $syntax . str_pad((string) $paymentId, 2, '0', STR_PAD_LEFT);
 
         if ($method === 'wechat') {
             return [
@@ -565,7 +580,8 @@ $_SESSION['success'] = 'Đã tạo đơn hàng ' . $orderCode . ' thành công. 
                 'qr_url' => trim((string) ($this->settings['wechat_qr_image'] ?? '')),
                 'account_name' => trim((string) ($this->settings['wechat_account_name'] ?? '')),
                 'transfer_content' => $transactionCode,
-                'amount_display' => $this->formatCurrency($amount)
+                'amount' => $amount,
+                'amount_display' => $this->formatGatewayCurrency($amount, $method)
             ];
         }
 
@@ -575,7 +591,8 @@ $_SESSION['success'] = 'Đã tạo đơn hàng ' . $orderCode . ' thành công. 
                 'qr_url' => trim((string) ($this->settings['alipay_qr_image'] ?? '')),
                 'account_name' => trim((string) ($this->settings['alipay_account_name'] ?? '')),
                 'transfer_content' => $transactionCode,
-                'amount_display' => $this->formatCurrency($amount)
+                'amount' => $amount,
+                'amount_display' => $this->formatGatewayCurrency($amount, $method)
             ];
         }
 
@@ -596,8 +613,42 @@ $_SESSION['success'] = 'Đã tạo đơn hàng ' . $orderCode . ' thành công. 
             'account_number' => $accountNumber,
             'account_name' => trim((string) ($this->settings['bank_account_name'] ?? '')),
             'transfer_content' => $transferContent,
-            'amount_display' => $this->formatCurrency($amount)
+            'amount' => $amount,
+            'amount_display' => $this->formatGatewayCurrency($amount, $method)
         ];
+    }
+
+    private function convertAmountForGateway(float $amount, string $paymentMethod): float
+    {
+        $baseCurrency = strtoupper(trim((string) ($this->settings['currency'] ?? 'CNY')));
+        $exchangeRate = (float) ($this->settings['exchange_rate'] ?? 1);
+
+        if ($exchangeRate <= 0) {
+            return $amount;
+        }
+
+        if ($paymentMethod === 'vietqr' && $baseCurrency === 'CNY') {
+            return round($amount * $exchangeRate);
+        }
+
+        if (in_array($paymentMethod, ['wechat', 'alipay'], true) && $baseCurrency === 'VND') {
+            return round($amount / $exchangeRate, 2);
+        }
+
+        return $amount;
+    }
+
+    private function formatGatewayCurrency(float $amount, string $paymentMethod): string
+    {
+        if ($paymentMethod === 'vietqr') {
+            return number_format($amount, 0, '.', ',') . ' đ';
+        }
+
+        if (in_array($paymentMethod, ['wechat', 'alipay'], true)) {
+            return '¥' . number_format($amount, 2, '.', ',');
+        }
+
+        return $this->formatCurrency($amount);
     }
 
     private function getEnabledPaymentGateways(bool $includeBalance = true): array
@@ -874,6 +925,26 @@ $_SESSION['success'] = 'Đã tạo đơn hàng ' . $orderCode . ' thành công. 
         ]);
     }
 
+    public function cancelDeposit(): void
+    {
+        if (!$this->validateCsrfToken($_POST['csrf_token'] ?? '')) {
+            $_SESSION['error'] = 'Phiên làm việc không hợp lệ. Vui lòng thử lại.';
+            $this->redirect('/payments');
+            return;
+        }
+
+        $paymentId = (int) ($_POST['payment_id'] ?? 0);
+        $cancelled = $paymentId > 0 && (new Payment())->cancelPendingDeposit(
+            $paymentId,
+            (int) $_SESSION['user_id']
+        );
+
+        $_SESSION[$cancelled ? 'success' : 'error'] = $cancelled
+            ? 'Đã hủy giao dịch nạp tiền đang chờ.'
+            : 'Không thể hủy giao dịch này.';
+        $this->redirect('/payments');
+    }
+
     public function wallet(): void
     {
         $userId = $_SESSION['user_id'];
@@ -909,7 +980,7 @@ $_SESSION['success'] = 'Đã tạo đơn hàng ' . $orderCode . ' thành công. 
         $minDeposit = (float) (
             $this->settings['min_deposit'] ??
             $this->settings['min_deposit_amount'] ??
-            10
+            (strtoupper(trim((string) ($this->settings['currency'] ?? 'CNY'))) === 'VND' ? 10000 : 10)
         );
 
         if ($amount < $minDeposit) {
@@ -964,14 +1035,20 @@ $_SESSION['success'] = 'Đã tạo đơn hàng ' . $orderCode . ' thành công. 
     {
         $userId = $_SESSION['user_id'];
         $user = [];
+        $commissions = [];
 
         if (class_exists('App\Models\User')) {
             $userModel = new User();
             $user = $userModel->findById($userId);
         }
 
+        if (class_exists('App\Models\ReferralCommission')) {
+            $commissions = (new ReferralCommission())->getByReferrerId((int) $userId);
+        }
+
         $this->render('user.referrals.index', [
             'user' => $user,
+            'commissions' => $commissions,
             'activeMenu' => 'referrals'
         ]);
     }
@@ -1004,13 +1081,162 @@ $_SESSION['success'] = 'Đã tạo đơn hàng ' . $orderCode . ' thành công. 
         $title = trim($_POST['title'] ?? '');
         $content = trim($_POST['content'] ?? '');
 
-        if (empty($title) || empty($content)) {
-            $_SESSION['error'] = 'Vui lòng nhập đầy đủ tiêu đề và nội dung.';
-            $this->redirect('/user/tickets');
+        if (!$this->validateCsrfToken($_POST['csrf_token'] ?? '')) {
+            $_SESSION['error'] = 'Phiên làm việc không hợp lệ. Vui lòng thử lại.';
+            $this->redirect('/tickets/create');
+            return;
         }
 
+        if ($title === '' || $content === '') {
+            $_SESSION['error'] = 'Vui lòng nhập đầy đủ tiêu đề và nội dung.';
+            $this->redirect('/tickets/create');
+            return;
+        }
+
+        $ticketModel = new SupportTicket();
+        if (!$ticketModel->create([
+            'user_id' => (int) $_SESSION['user_id'],
+            'subject' => substr($title, 0, 255),
+            'status' => 'open',
+            'created_at' => date('Y-m-d H:i:s')
+        ])) {
+            $_SESSION['error'] = 'Không thể tạo yêu cầu hỗ trợ. Vui lòng thử lại.';
+            $this->redirect('/tickets/create');
+            return;
+        }
+
+        $ticketId = $ticketModel->lastInsertId();
+        (new TicketMessage())->create([
+            'ticket_id' => $ticketId,
+            'sender_id' => (int) $_SESSION['user_id'],
+            'message' => $content,
+            'created_at' => date('Y-m-d H:i:s')
+        ]);
+
         $_SESSION['success'] = 'Đã gửi yêu cầu hỗ trợ thành công.';
-        $this->redirect('/user/tickets');
+        $this->redirect('/tickets/detail?id=' . $ticketId);
+    }
+
+    public function showCreateTicket(): void
+    {
+        $this->render('user.tickets.create', ['activeMenu' => 'tickets']);
+    }
+
+    public function ticketDetail(): void
+    {
+        $ticketId = (int) ($_GET['id'] ?? 0);
+        $ticket = (new SupportTicket())->findWithDetails($ticketId);
+        if (!$ticket || (int) ($ticket['user_id'] ?? 0) !== (int) $_SESSION['user_id']) {
+            $_SESSION['error'] = 'Không tìm thấy yêu cầu hỗ trợ.';
+            $this->redirect('/tickets');
+            return;
+        }
+
+        $this->render('user.tickets.detail', [
+            'ticket' => $ticket,
+            'messages' => (new TicketMessage())->getByTicketId($ticketId),
+            'activeMenu' => 'tickets'
+        ]);
+    }
+
+    public function replyTicket(): void
+    {
+        $ticketId = (int) ($_POST['ticket_id'] ?? 0);
+        $message = trim((string) ($_POST['message'] ?? ''));
+        $ticket = (new SupportTicket())->find($ticketId);
+
+        if (!$this->validateCsrfToken($_POST['csrf_token'] ?? '') || !$ticket
+            || (int) ($ticket['user_id'] ?? 0) !== (int) $_SESSION['user_id'] || $message === '') {
+            $_SESSION['error'] = 'Không thể gửi phản hồi. Vui lòng kiểm tra lại nội dung.';
+            $this->redirect('/tickets/detail?id=' . $ticketId);
+            return;
+        }
+
+        (new TicketMessage())->create([
+            'ticket_id' => $ticketId,
+            'sender_id' => (int) $_SESSION['user_id'],
+            'message' => $message,
+            'created_at' => date('Y-m-d H:i:s')
+        ]);
+        (new SupportTicket())->updateTicket($ticketId, ['status' => 'open']);
+
+        $_SESSION['success'] = 'Đã gửi phản hồi.';
+        $this->redirect('/tickets/detail?id=' . $ticketId);
+    }
+
+    public function withdrawals(): void
+    {
+        $withdrawals = (new Withdrawal())->getByUserId((int) $_SESSION['user_id']);
+        $this->render('user.withdrawals.index', [
+            'withdrawals' => $withdrawals,
+            'activeMenu' => 'withdrawals'
+        ]);
+    }
+
+    public function showCreateWithdrawal(): void
+    {
+        $user = (new User())->findById((int) $_SESSION['user_id']);
+        $this->render('user.withdrawals.create', [
+            'user' => $user ?: [],
+            'minWithdrawal' => (float) ($this->settings['min_withdrawal'] ?? 0),
+            'activeMenu' => 'withdrawals'
+        ]);
+    }
+
+    public function createWithdrawal(): void
+    {
+        if (!$this->validateCsrfToken($_POST['csrf_token'] ?? '')) {
+            $_SESSION['error'] = 'Phiên làm việc không hợp lệ. Vui lòng thử lại.';
+            $this->redirect('/withdrawals/create');
+            return;
+        }
+
+        $amount = (float) ($_POST['amount'] ?? 0);
+        $minWithdrawal = (float) ($this->settings['min_withdrawal'] ?? 0);
+        $bankName = trim((string) ($_POST['bank_name'] ?? ''));
+        $accountNumber = trim((string) ($_POST['bank_account_number'] ?? ''));
+        $accountName = trim((string) ($_POST['bank_account_name'] ?? ''));
+        $userId = (int) $_SESSION['user_id'];
+        $user = (new User())->findById($userId);
+        $withdrawalModel = new Withdrawal();
+        $available = (float) ($user['commission_balance'] ?? 0) - $withdrawalModel->getPendingTotalByUserId($userId);
+
+        if ($amount < $minWithdrawal || $amount > $available || $bankName === '' || $accountNumber === '' || $accountName === '') {
+            $_SESSION['error'] = 'Thông tin rút tiền không hợp lệ hoặc số dư hoa hồng không đủ.';
+            $this->redirect('/withdrawals/create');
+            return;
+        }
+
+        $withdrawalModel->create([
+            'user_id' => $userId,
+            'amount' => $amount,
+            'bank_name' => $bankName,
+            'bank_account_number' => $accountNumber,
+            'bank_account_name' => $accountName,
+            'status' => 'pending',
+            'created_at' => date('Y-m-d H:i:s')
+        ]);
+
+        $_SESSION['success'] = 'Yêu cầu rút tiền đã được gửi.';
+        $this->redirect('/withdrawals');
+    }
+
+    public function notifications(): void
+    {
+        $userId = (int) $_SESSION['user_id'];
+        $notifications = [];
+        foreach ((new Payment())->getByUserId($userId) as $payment) {
+            $notifications[] = ['type' => 'payment', 'title' => 'Cập nhật giao dịch', 'message' => 'Giao dịch ' . ($payment['transaction_id'] ?? '') . ' đang ở trạng thái ' . ($payment['status'] ?? 'pending') . '.', 'created_at' => $payment['created_at'] ?? ''];
+        }
+        foreach ((new SupportTicket())->getByUserId($userId) as $ticket) {
+            $notifications[] = ['type' => 'ticket', 'title' => 'Cập nhật hỗ trợ', 'message' => 'Yêu cầu #' . ($ticket['id'] ?? '') . ' đang ở trạng thái ' . ($ticket['status'] ?? 'open') . '.', 'created_at' => $ticket['created_at'] ?? ''];
+        }
+        usort($notifications, static fn(array $first, array $second): int => strcmp($second['created_at'], $first['created_at']));
+
+        $this->render('user.notifications.index', [
+            'notifications' => array_slice($notifications, 0, 20),
+            'activeMenu' => 'notifications'
+        ]);
     }
 
     public function profile(): void
