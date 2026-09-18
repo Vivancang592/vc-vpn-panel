@@ -65,6 +65,20 @@ if ! composer install --no-dev --optimize-autoloader --working-dir="$APP_PATH"; 
 fi
 echo -e " ${GREEN}✔ Hoàn tất cập nhật thư viện PHP.${NC}"
 
+# 3.1. Áp dụng migration audit đơn hàng (an toàn khi chạy lại nhiều lần)
+ORDER_AUDIT_MIGRATION="$APP_PATH/database/migrations/20260918_add_order_audit_users.sql"
+if [ -f "$ORDER_AUDIT_MIGRATION" ] && [ -f "$APP_PATH/.env" ]; then
+    set -a
+    . "$APP_PATH/.env"
+    set +a
+    MYSQL_PWD="${DB_PASSWORD:-}" mysql \
+        -h "${DB_HOST:-127.0.0.1}" \
+        -P "${DB_PORT:-3306}" \
+        -u "${DB_USERNAME:-root}" \
+        "${DB_DATABASE:-vpn_service}" < "$ORDER_AUDIT_MIGRATION"
+    echo -e " ${GREEN}✔ Hoàn tất cập nhật cấu trúc audit đơn hàng.${NC}"
+fi
+
 # 4. Thiết lập lại phân quyền thư mục
 echo -e "${CYAN}[3/3] Đặt lại phân quyền bảo mật thư mục...${NC}"
 mkdir -p "$APP_PATH/storage/logs"

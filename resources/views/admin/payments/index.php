@@ -120,7 +120,8 @@ ob_start();
                                                     <span>✓</span> Duyệt và cộng ví
                                                 </button>
                                             </form>
-                                        <?php elseif (($payment['type'] ?? '') === 'deposit' && ($payment['status'] ?? '') === 'failed'): ?>
+                                        <?php endif; ?>
+                                        <?php if (in_array(($payment['status'] ?? ''), ['pending', 'failed'], true)): ?>
                                             <form method="POST" action="/admin/payments/delete-cancelled-deposit">
                                                 <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrf_token ?? '') ?>">
                                                 <input type="hidden" name="payment_id" value="<?= (int) $payment['id'] ?>">

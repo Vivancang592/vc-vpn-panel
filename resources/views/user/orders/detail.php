@@ -2,6 +2,10 @@
 $pageTitle = 'Chi Tiết Đơn Hàng - ' . ($settings['site_title'] ?? 'VC VPN 2027');
 $status = $order['payment_status'] ?? 'pending';
 $statusLabels = ['pending' => 'Chờ thanh toán', 'completed' => 'Hoàn tất', 'failed' => 'Thất bại', 'cancelled' => 'Đã hủy'];
+$creatorName = $order['creator_username'] ?? $order['username'] ?? 'Bạn';
+$approverName = $order['approver_username'] ?? ($status === 'completed' ? 'Tự động qua webhook' : 'Chưa duyệt');
+$paymentMethodLabels = ['vietqr' => 'VietQR', 'wechat' => 'WeChat Pay', 'alipay' => 'Alipay', 'balance' => 'Số dư tài khoản'];
+$paymentMethod = strtolower((string) ($order['payment_method'] ?? 'vietqr'));
 ob_start();
 ?>
 
@@ -43,7 +47,11 @@ ob_start();
 			<h2>Thanh toán</h2>
 			<dl class="user-order-detail-list">
 				<div><dt>Tổng tiền</dt><dd class="user-order-amount"><?= isset($formatMoney) ? $formatMoney($order['total_amount'] ?? 0) : number_format((float) ($order['total_amount'] ?? 0), 2) ?></dd></div>
+				<div><dt>Cổng thanh toán</dt><dd><?= htmlspecialchars($paymentMethodLabels[$paymentMethod] ?? strtoupper($paymentMethod)) ?></dd></div>
 				<div><dt>Trạng thái</dt><dd><?= htmlspecialchars($statusLabels[$status] ?? ucfirst($status)) ?></dd></div>
+				<div><dt>IP đặt hàng</dt><dd><?= htmlspecialchars($order['purchase_ip'] ?? 'Chưa lưu') ?></dd></div>
+				<div><dt>Người tạo đơn</dt><dd><?= htmlspecialchars($creatorName) ?></dd></div>
+				<div><dt>Người duyệt đơn</dt><dd><?= htmlspecialchars($approverName) ?></dd></div>
 				<div><dt>Cập nhật</dt><dd><?= !empty($order['updated_at']) ? date('H:i, d/m/Y', strtotime($order['updated_at'])) : '-' ?></dd></div>
 			</dl>
 		</article>

@@ -1,6 +1,10 @@
 <?php
 $pageTitle = "Chi Tiết Đơn Hàng - Quản Trị Hệ Thống";
 $activeMenu = "orders";
+$creatorName = $order['creator_username'] ?? $order['username'] ?? 'Không xác định';
+$approverName = $order['approver_username'] ?? (($order['payment_status'] ?? '') === 'completed' ? 'Tự động qua webhook' : 'Chưa duyệt');
+$paymentMethodLabels = ['vietqr' => 'VietQR', 'wechat' => 'WeChat Pay', 'alipay' => 'Alipay', 'balance' => 'Số dư tài khoản'];
+$paymentMethod = strtolower((string) ($order['payment_method'] ?? 'vietqr'));
 
 ob_start();
 ?>
@@ -25,6 +29,8 @@ ob_start();
             </div>
             <div><strong>Tài Khoản Mua:</strong> <?= htmlspecialchars($order['username'] ?? 'N/A') ?> (ID #<?= $order['user_id'] ?>)</div>
             <div><strong>Email:</strong> <?= htmlspecialchars($order['email'] ?? 'N/A') ?></div>
+            <div><strong>Người tạo đơn:</strong> <?= htmlspecialchars($creatorName) ?></div>
+            <div><strong>Người duyệt đơn:</strong> <?= htmlspecialchars($approverName) ?></div>
             <div>
                 <strong>IP Đặt Hàng:</strong> 
                 <code style="background: rgba(0, 0, 0, 0.1); padding: 0.15rem 0.35rem; border-radius: var(--radius-sm);">
@@ -59,6 +65,7 @@ ob_start();
                     <?= isset($formatMoney) ? $formatMoney($order['total_amount']) : number_format($order['total_amount'], 2) ?>
                 </span>
             </div>
+            <div><strong>Cổng Thanh Toán:</strong> <?= htmlspecialchars($paymentMethodLabels[$paymentMethod] ?? strtoupper($paymentMethod)) ?></div>
             <div>
                 <strong>Trạng Thái Thanh Toán:</strong> 
                 <?php

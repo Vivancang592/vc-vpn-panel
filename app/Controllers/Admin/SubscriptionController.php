@@ -265,7 +265,9 @@ class SubscriptionController extends BaseController
             'plan_id'        => (int)$sub['plan_id'],
             'total_amount'   => $totalAmount,
             'payment_status' => 'completed',
-            'purchase_ip'    => $_SERVER['REMOTE_ADDR'] ?? '127.0.0.1'
+            'purchase_ip'    => $_SERVER['REMOTE_ADDR'] ?? '127.0.0.1',
+            'created_by'     => (int) $_SESSION['user_id'],
+            'approved_by'    => (int) $_SESSION['user_id'],
         ]);
 
         if ($orderCreated) {

@@ -106,9 +106,9 @@ class Payment extends BaseModel
         return $stmt->rowCount() === 1;
     }
 
-    public function deleteFailedDeposit(int $paymentId): bool
+    public function deletePendingOrFailed(int $paymentId): bool
     {
-        $stmt = self::$db->prepare("DELETE FROM `{$this->table}` WHERE `id` = :id AND `type` = 'deposit' AND `status` = 'failed'");
+        $stmt = self::$db->prepare("DELETE FROM `{$this->table}` WHERE `id` = :id AND `status` IN ('pending', 'failed')");
         $stmt->execute(['id' => $paymentId]);
         return $stmt->rowCount() === 1;
     }

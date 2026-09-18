@@ -45,10 +45,14 @@ class Order extends BaseModel
         $sql = "
             SELECT o.*, 
                    u.username, u.email, 
+                     creator.username AS creator_username,
+                     approver.username AS approver_username,
                    p.name AS plan_name, p.code AS plan_code, 
                    c.code AS coupon_code
             FROM `{$this->table}` o
             LEFT JOIN `vc_users` u ON o.user_id = u.id
+                 LEFT JOIN `vc_users` creator ON o.created_by = creator.id
+                 LEFT JOIN `vc_users` approver ON o.approved_by = approver.id
             LEFT JOIN `vc_vpn_plans` p ON o.plan_id = p.id
             LEFT JOIN `vc_coupons` c ON o.coupon_id = c.id
         ";
@@ -74,10 +78,14 @@ class Order extends BaseModel
         $stmt = self::$db->prepare("
             SELECT o.*, 
                    u.username, u.email, 
+                     creator.username AS creator_username,
+                     approver.username AS approver_username,
                    p.name AS plan_name, p.code AS plan_code, 
                    c.code AS coupon_code
             FROM `{$this->table}` o
             LEFT JOIN `vc_users` u ON o.user_id = u.id
+                 LEFT JOIN `vc_users` creator ON o.created_by = creator.id
+                 LEFT JOIN `vc_users` approver ON o.approved_by = approver.id
             LEFT JOIN `vc_vpn_plans` p ON o.plan_id = p.id
             LEFT JOIN `vc_coupons` c ON o.coupon_id = c.id
             WHERE o.id = :id
