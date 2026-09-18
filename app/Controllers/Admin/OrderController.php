@@ -186,7 +186,12 @@ class OrderController extends BaseController
             return;
         }
 
-        if ($this->orderModel->update($id, ['payment_status' => $status])) {
+        $orderUpdate = ['payment_status' => $status];
+        if ($status === 'completed' && ($order['payment_status'] ?? '') !== 'completed') {
+            $orderUpdate['approved_by'] = (int) $_SESSION['user_id'];
+        }
+
+        if ($this->orderModel->update($id, $orderUpdate)) {
             // 1. Nếu duyệt đơn thành công (completed) -> Kích hoạt Gói Đăng Ký & Phát task add_user
             if ($status === 'completed' && $order['payment_status'] !== 'completed' && class_exists('App\Models\Subscription') && class_exists('App\Models\VpnPlan')) {
                 $paymentModel = new Payment();
@@ -342,6 +347,8 @@ class OrderController extends BaseController
                 'total_amount'   => $totalAmount,
                 'payment_status' => $paymentStatus,
                 'purchase_ip'    => $_SERVER['REMOTE_ADDR'] ?? '127.0.0.1',
+                'created_by'     => (int) $_SESSION['user_id'],
+                'approved_by'    => $paymentStatus === 'completed' ? (int) $_SESSION['user_id'] : null,
                 'created_at'     => date('Y-m-d H:i:s')
             ];
 

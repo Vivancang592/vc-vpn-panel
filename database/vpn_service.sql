@@ -136,12 +136,16 @@ CREATE TABLE `vc_orders` (
     `total_amount` DECIMAL(15, 2) NOT NULL,
     `payment_method` VARCHAR(50) NOT NULL DEFAULT 'vietqr',
     `purchase_ip` VARCHAR(45) NULL,
+    `created_by` BIGINT UNSIGNED NULL,
+    `approved_by` BIGINT UNSIGNED NULL,
     `payment_status` ENUM('pending', 'completed', 'failed', 'cancelled') NOT NULL DEFAULT 'pending',
     `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     `updated_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     FOREIGN KEY (`user_id`) REFERENCES `vc_users`(`id`) ON DELETE CASCADE,
     FOREIGN KEY (`plan_id`) REFERENCES `vc_vpn_plans`(`id`) ON DELETE CASCADE,
-    FOREIGN KEY (`coupon_id`) REFERENCES `vc_coupons`(`id`) ON DELETE SET NULL
+    FOREIGN KEY (`coupon_id`) REFERENCES `vc_coupons`(`id`) ON DELETE SET NULL,
+    FOREIGN KEY (`created_by`) REFERENCES `vc_users`(`id`) ON DELETE SET NULL,
+    FOREIGN KEY (`approved_by`) REFERENCES `vc_users`(`id`) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE `vc_payments` (

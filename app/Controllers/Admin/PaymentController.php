@@ -73,14 +73,14 @@ class PaymentController extends BaseController
         $paymentId = (int) ($_POST['payment_id'] ?? 0);
         $deleted = $this->validateCsrfToken($_POST['csrf_token'] ?? '')
             && $paymentId > 0
-            && $this->paymentModel->deleteFailedDeposit($paymentId);
+            && $this->paymentModel->deletePendingOrFailed($paymentId);
 
         $_SESSION[$deleted ? 'flash_message' : 'error'] = $deleted
-            ? 'Đã xóa giao dịch nạp tiền đã hủy.'
-            : 'Chỉ có thể xóa giao dịch nạp tiền đã hủy.';
+            ? 'Đã xóa giao dịch thanh toán.'
+            : 'Chỉ có thể xóa giao dịch đang chờ hoặc đã thất bại.';
         if ($deleted) {
             $_SESSION['flash_type'] = 'success';
-            $this->logActivity('DELETE_CANCELLED_DEPOSIT', 'Xóa giao dịch nạp tiền đã hủy #' . $paymentId);
+            $this->logActivity('DELETE_PAYMENT', 'Xóa giao dịch thanh toán #' . $paymentId);
         }
         $this->redirect('/admin/payments');
     }

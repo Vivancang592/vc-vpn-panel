@@ -150,6 +150,7 @@ class PaymentService
             'payment_method' => $paymentMethod,
             'payment_status' => 'pending',
             'purchase_ip' => $purchaseIp !== '' ? $purchaseIp : null,
+            'created_by' => $userId,
             'created_at' => date('Y-m-d H:i:s')
         ])) {
             return ['status' => false, 'message' => 'Không thể tạo đơn hàng gia hạn.'];
