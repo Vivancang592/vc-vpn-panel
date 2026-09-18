@@ -38,8 +38,8 @@ ob_start();
 	<h2 id="wallet-deposit-heading">Nạp tiền vào ví</h2>
 	<p>Chọn nhanh số tiền hoặc nhập số tiền bạn muốn nạp.</p>
 
-	<form action="/payments/deposit" method="POST">
-		<input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrf_token ?? '') ?>">
+	<form action="/checkout" method="GET">
+		<input type="hidden" name="type" value="deposit">
 
 		<div class="wallet-quick-amounts" aria-label="Chọn nhanh số tiền nạp">
 			<?php foreach ([50, 100, 200, 500] as $amount): ?>

@@ -256,12 +256,38 @@ document.addEventListener('DOMContentLoaded', function () {
         const csrfToken = checkoutForm.querySelector('[name="csrf_token"]');
         const planId = checkoutForm.querySelector('[name="plan_id"]');
 
-        function formatAmount(amount) {
-            return '¥' + Number(amount || 0).toLocaleString('en-US', {
-                minimumFractionDigits: 2,
-                maximumFractionDigits: 2
-            });
-        }
+        let currencySymbol = 'đ';
+let currencyPosition = 'right';
+let currencyDecimals = 0;
+
+function setCurrency(data) {
+    if (!data) return;
+
+    if (typeof data.currency_symbol === 'string' && data.currency_symbol.trim() !== '') {
+        currencySymbol = data.currency_symbol.trim();
+    }
+
+    if (data.currency_position === 'left' || data.currency_position === 'right') {
+        currencyPosition = data.currency_position;
+    }
+
+    const decimals = Number.parseInt(data.currency_decimals, 10);
+
+    if (Number.isFinite(decimals)) {
+        currencyDecimals = Math.max(0, Math.min(4, decimals));
+    }
+}
+
+function formatAmount(amount) {
+    const formatted = Number(amount || 0).toLocaleString('en-US', {
+        minimumFractionDigits: currencyDecimals,
+        maximumFractionDigits: currencyDecimals
+    });
+
+    return currencyPosition === 'left'
+        ? currencySymbol + formatted
+        : formatted + ' ' + currencySymbol;
+}
 
         function showCouponFeedback(message, state) {
             if (!couponFeedback) return;
@@ -308,7 +334,9 @@ document.addEventListener('DOMContentLoaded', function () {
                     });
                     const result = await response.json();
 
-                    if (!response.ok || !result.valid) {
+setCurrency(result);
+
+if (!response.ok || !result.valid) {
                         if (discountAmount) discountAmount.textContent = '-' + formatAmount(0);
                         if (finalAmount) finalAmount.textContent = formatAmount(originalAmount);
                         if (removeCouponButton) removeCouponButton.hidden = true;

@@ -64,7 +64,7 @@ ob_start();
     <div class="glass-card" style="padding: 1.25rem;">
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
             <h2 style="font-size: 1.1rem; font-weight: 700;">Đơn Hàng Gần Đây</h2>
-            <a href="/admin/orders" style="font-size: 0.85rem; color: var(--ios-blue); text-decoration: none; font-weight: 600;">Xem tất cả &rarr;</a>
+            <a href="/admin/orders" style="font-size: 0.85rem; color: var(--ios-blue); text-decoration: none; font-weight: 600;">Xem tất cả</a>
         </div>
         <div class="table-responsive">
             <table class="glass-table">

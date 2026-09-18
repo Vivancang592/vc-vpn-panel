@@ -25,6 +25,8 @@ abstract class BaseModel
                     PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
                     PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
                 ]);
+                $databaseTimezone = $_ENV['DB_TIMEZONE'] ?? '+07:00';
+                self::$db->exec("SET time_zone = " . self::$db->quote($databaseTimezone));
             } catch (PDOException $e) {
                 die("Lỗi kết nối cơ sở dữ liệu: " . $e->getMessage());
             }

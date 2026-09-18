@@ -5,7 +5,8 @@ return [
     'env' => getenv('APP_ENV') ?: 'production',
     'debug' => filter_var(getenv('APP_DEBUG') ?: false, FILTER_VALIDATE_BOOLEAN),
     'url' => getenv('APP_URL') ?: 'http://localhost',
-    'timezone' => 'Asia/Ho_Chi_Minh',
+    'timezone' => getenv('APP_TIMEZONE') ?: 'Asia/Ho_Chi_Minh',
+    'database_timezone' => getenv('DB_TIMEZONE') ?: '+07:00',
     'locale' => 'vi',
 
     /*

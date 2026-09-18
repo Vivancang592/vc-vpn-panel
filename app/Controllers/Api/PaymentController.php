@@ -70,7 +70,20 @@ class PaymentController extends BaseController
             return;
         }
 
-        // 5. VietQR: Kiểm tra mã nạp tiền DEP...
+        // 5. Thanh toán gia hạn subscription REN...
+        if (!empty($content) && preg_match('/REN\d+/i', $content, $matches)) {
+            $transCode = strtoupper($matches[0]);
+            $result = $paymentService->completePaymentByCode($transCode, $amount);
+
+            if ($result) {
+                $this->json(['status' => true, 'message' => 'Gia hạn gói dịch vụ thành công.']);
+            } else {
+                $this->json(['status' => false, 'message' => 'Xử lý giao dịch gia hạn thất bại hoặc đã được xử lý.'], 400);
+            }
+            return;
+        }
+
+        // 6. VietQR: Kiểm tra mã nạp tiền DEP...
         if (!empty($content) && preg_match('/DEP\d+/i', $content, $matches)) {
             $transCode = strtoupper($matches[0]);
             $result = $paymentService->completePaymentByCode($transCode, $amount);
@@ -83,7 +96,7 @@ class PaymentController extends BaseController
             return;
         }
 
-        // 6. WeChat Pay / VietQR: Tự động bóc tách số tiền từ nội dung thông báo
+        // 7. WeChat Pay / VietQR: Tự động bóc tách số tiền từ nội dung thông báo
         if ($amount <= 0 && !empty($content)) {
             $cleanContent = str_replace(',', '.', $content);
             
@@ -109,7 +122,7 @@ class PaymentController extends BaseController
             return;
         }
 
-        // 7. Khớp đơn tự động WeChat Pay theo số tiền
+        // 8. Khớp đơn tự động WeChat Pay theo số tiền
         $result = $orderService->processPaymentByAmount($amount, $transId);
         $this->json(['status' => $result['status'], 'message' => $result['message']], $result['status'] ? 200 : 404);
     }

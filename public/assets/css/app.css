@@ -241,7 +241,7 @@ body.user-festival .festival-stat-card { position: relative; overflow: hidden; p
 body.user-festival .festival-stat-card:nth-child(2) { border-top-color: #b74445; } body.user-festival .festival-stat-card:nth-child(3) { border-top-color: #638756; } body.user-festival .festival-stat-card:nth-child(4) { border-top-color: #9a5c85; }
 .festival-stat-icon { position: absolute; top: .9rem; right: 1rem; width: 30px; height: 30px; color: #b77722; opacity: .9; }
 .festival-stat-moon { border-radius: 50%; background: #f6c75f; box-shadow: 0 0 0 5px rgba(246, 199, 95, 0.15); } .festival-stat-moon::after { content: ''; position: absolute; width: 24px; height: 24px; top: -4px; right: -7px; border-radius: 50%; background: #fff8e8; }
-.festival-stat-lantern { width: 22px; height: 28px; right: 1.2rem; border: 2px solid #c95344; border-radius: 9px; background: #eead48; box-shadow: inset 0 0 0 4px #f9d67a; } .festival-stat-lantern::before, .festival-stat-lantern::after { content: ''; position: absolute; left: 8px; width: 3px; background: #c95344; } .festival-stat-lantern::before { top: -7px; height: 5px; } .festival-stat-lantern::after { bottom: -7px; height: 5px; }
+.festival-stat-lantern { width: 22px; height: 28px; right: 1.2rem; border: 2px solid #c95344; border-radius: 999px; background: #eead48; box-shadow: inset 0 0 0 4px #f9d67a; } .festival-stat-lantern::before, .festival-stat-lantern::after { content: ''; position: absolute; left: 8px; width: 3px; background: #c95344; } .festival-stat-lantern::before { top: -7px; height: 5px; } .festival-stat-lantern::after { bottom: -7px; height: 5px; }
 .festival-stat-star::before { content: '*'; display: block; font-size: 43px; font-weight: 700; line-height: 31px; text-align: center; color: #668d56; } .festival-stat-coin { border: 3px solid #9a5c85; border-radius: 50%; } .festival-stat-coin::after { content: ''; position: absolute; inset: 6px; border: 2px solid #9a5c85; border-radius: 50%; }
 body.user-festival .plan-item-card:hover, body.user-festival .festival-stat-card:hover { transform: translateY(-4px); border-color: rgba(185, 113, 34, 0.4); box-shadow: 0 15px 26px rgba(110, 38, 43, 0.13); }
 
@@ -252,8 +252,8 @@ body.user-festival .plan-item-card:hover, body.user-festival .festival-stat-card
 /* Public policy pages */
 .policy-page {
   width: 100%;
-  max-width: 900px;
-  margin: 0 auto;
+  max-width: 100%;
+  margin: 0;
 }
 
 .policy-hero {
@@ -661,8 +661,8 @@ body.overlay-open .admin-main {
 /* Container giới hạn nội dung ở giữa */
 .vc-footer-container {
     width: 100%;
-    max-width: 1100px;
-    margin: 0 auto;
+    max-width: 100%;
+    margin: 0;
     display: flex;
     flex-direction: column;
     gap: 0.85rem;
@@ -1118,7 +1118,7 @@ body.vpn-theme .festival-stat-star::before { color: #22a66f; } body.vpn-theme .f
 body.vpn-theme .plan-item-card:hover, body.vpn-theme .festival-stat-card:hover { border-color: rgba(22, 119, 255, 0.38); box-shadow: 0 15px 26px rgba(22, 119, 255, 0.12); }
 
 /* User orders */
-.user-orders-page { width: 100%; max-width: 1120px; margin: 0 auto; }
+.user-orders-page { width: 100%; max-width: 100%; margin: 0; }
 .user-orders-header { margin-bottom: 1.5rem; }
 .user-orders-header h1 { margin: .3rem 0; color: var(--ios-text); font-size: 1.8rem; }
 .user-orders-header p { margin: 0; color: var(--ios-text-secondary); }
@@ -1168,7 +1168,7 @@ body.vpn-theme .user-order-stat-expired { border-top-color: #8e8e93; }
 @media (max-width: 700px) { .user-order-stats { grid-template-columns: repeat(2, minmax(0, 1fr)); } .user-order-detail-grid { grid-template-columns: 1fr; } .user-orders-table-wrap { overflow: visible; } .user-orders-table, .user-orders-table tbody, .user-orders-table tr, .user-orders-table td { display: block; width: 100%; } .user-orders-table thead { display: none; } .user-orders-table tr { padding: .75rem 1rem; border-bottom: 1px solid var(--glass-border); } .user-orders-table tbody tr:last-child { border-bottom: 0; } .user-orders-table td { display: flex; justify-content: space-between; gap: 1rem; padding: .45rem 0; border: 0; white-space: normal; text-align: right; } .user-orders-table td::before { content: attr(data-label); color: var(--ios-text-secondary); font-size: .78rem; text-align: left; } .user-orders-table .user-order-action { justify-content: flex-end; margin-top: .35rem; } .user-orders-table .user-order-action::before { content: ''; } }
 
 /* User wallet */
-.user-subscriptions-page { width: 100%; max-width: 1120px; margin: 0 auto; }
+.user-subscriptions-page { width: 100%; max-width: 100%; margin: 0; }
 .user-subscriptions-header { margin-bottom: 1.25rem; }
 .user-subscriptions-header h1, .user-subscriptions-detail-header h1 { margin: .3rem 0; color: var(--ios-text); font-size: 1.8rem; }
 .user-subscriptions-header p, .user-subscriptions-detail-header > p:last-child { margin: 0; color: var(--ios-text-secondary); }
@@ -1241,7 +1241,7 @@ body.vpn-theme .user-subscription-card-status-cancelled { border-top-color: #8e8
 .user-subscription-inbound-item span { margin-top: .2rem; color: var(--ios-text-secondary); font-size: .72rem; font-weight: 700; }
 .user-subscription-inbound-item code { display: block; margin-top: .6rem; overflow: hidden; color: var(--ios-text-secondary); font-size: .75rem; filter: blur(3px); opacity: .72; text-overflow: ellipsis; user-select: none; white-space: nowrap; }
 .user-subscription-empty-inbounds { color: var(--ios-text-secondary); font-size: .9rem; }
-.user-subscription-connect-page { max-width: 760px; }
+.user-subscription-connect-page { max-width: 100%; }
 .user-subscription-connect-card { padding: 1.5rem; }
 .user-subscription-connect-card label { display: block; margin-bottom: .5rem; color: var(--ios-text); font-size: .9rem; font-weight: 700; }
 .user-subscription-copy-row { display: flex; gap: .65rem; margin-bottom: .85rem; }
@@ -1250,7 +1250,7 @@ body.vpn-theme .user-subscription-card-status-cancelled { border-top-color: #8e8
 @media (max-width: 700px) { .user-subscriptions-header h1 { font-size: 1.5rem; } .user-subscriptions-title-row { gap: .65rem; } .user-subscriptions-buy-link { padding: .55rem .7rem; font-size: .8rem; } .user-subscription-detail-grid { grid-template-columns: 1fr; } .user-subscription-copy-row { align-items: stretch; flex-direction: column; } .subscription-copy-button { width: 100%; } .user-subscription-inbound-item code { max-width: 100%; } }
 
 /* User plans */
-.user-plans-page, .user-checkout-page { width: 100%; max-width: 1120px; margin: 0 auto; }
+.user-plans-page, .user-checkout-page { width: 100%; max-width: 100%; margin: 0; }
 .user-plans-header, .user-checkout-header { margin-bottom: 1.5rem; text-align: center; }
 .user-plans-kicker { margin: 0 0 .35rem; color: var(--ios-blue); font-size: .75rem; font-weight: 800; letter-spacing: .08em; }
 .user-plans-header h1, .user-checkout-header h1 { margin: 0; color: var(--ios-text); font-size: 1.8rem; }
@@ -1332,7 +1332,7 @@ body.vpn-theme .user-subscription-card-status-cancelled { border-top-color: #8e8
 .user-checkout-note { margin: .9rem 0 0; color: var(--ios-text-secondary); font-size: .8rem; line-height: 1.5; }
 .user-checkout-submit { margin-top: 1rem; border-radius: var(--radius-md); }
 .user-checkout-submit:disabled { cursor: not-allowed; opacity: .55; }
-.user-payment-checkout-page { width: 100%; max-width: 920px; margin: 0 auto; }
+.user-payment-checkout-page { width: 100%; max-width: 100%; margin: 0; }
 .user-payment-checkout-header { margin-bottom: 1.5rem; text-align: center; }
 .user-payment-checkout-header h1 { margin: 0; color: var(--ios-text); font-size: 1.8rem; }
 .user-payment-checkout-header p:last-child { margin: .5rem 0 0; color: var(--ios-text-secondary); font-size: .9rem; }

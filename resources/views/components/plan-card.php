@@ -27,7 +27,7 @@ $plan = $plan ?? [];
         </ul>
     </div>
 
-    <a href="/user/plans/checkout?id=<?= $plan['id'] ?? 0 ?>" class="glass-btn" style="width: 100%; text-align: center; text-decoration: none;">
+    <a href="/checkout?id=<?= $plan['id'] ?? 0 ?>" class="glass-btn" style="width: 100%; text-align: center; text-decoration: none;">
         Chọn Gói Này
     </a>
 </div>
