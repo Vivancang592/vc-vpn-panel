@@ -240,7 +240,7 @@ class UserController extends BaseController
             }
 
             $result = (new PaymentService())->createRenewalTransaction(
-                (int) $_SESSION['user_id'], $subscriptionId, $paymentGateway
+                (int) $_SESSION['user_id'], $subscriptionId, $paymentGateway, $this->getClientIp()
             );
             if (($result['status'] ?? false) !== true) {
                 $_SESSION['error'] = $result['message'] ?? 'Không thể tạo giao dịch gia hạn.';
@@ -312,7 +312,7 @@ class UserController extends BaseController
         }
 
         $orderService = new OrderService();
-        $result = $orderService->createOrder((int) $_SESSION['user_id'], $planId, $couponCode !== '' ? $couponCode : null, $paymentGateway);
+        $result = $orderService->createOrder((int) $_SESSION['user_id'], $planId, $couponCode !== '' ? $couponCode : null, $paymentGateway, $this->getClientIp());
 
         unset($_SESSION['checkout_coupon_preview']);
 
@@ -513,13 +513,15 @@ $_SESSION['success'] = 'Đã tạo đơn hàng ' . $orderCode . ' thành công. 
         $totalAmount = (float) ($order['total_amount'] ?? 0);
         $orderCode = (string) ($order['order_code'] ?? '');
         $orderId = (int) ($order['id'] ?? 0);
+        $transferContent = trim((string) ($this->settings['order_transfer_syntax'] ?? 'THANHTOAN'))
+            . str_pad((string) $orderId, 2, '0', STR_PAD_LEFT);
 
         if ($method === 'wechat') {
             return [
                 'name' => 'WeChat Pay',
                 'qr_url' => trim((string) ($this->settings['wechat_qr_image'] ?? '')),
                 'account_name' => trim((string) ($this->settings['wechat_account_name'] ?? '')),
-                'transfer_content' => $orderCode,
+                'transfer_content' => $transferContent,
                 'amount' => $totalAmount,
                 'amount_display' => $this->formatGatewayCurrency($totalAmount, $method)
             ];
@@ -530,7 +532,7 @@ $_SESSION['success'] = 'Đã tạo đơn hàng ' . $orderCode . ' thành công. 
                 'name' => 'Alipay',
                 'qr_url' => trim((string) ($this->settings['alipay_qr_image'] ?? '')),
                 'account_name' => trim((string) ($this->settings['alipay_account_name'] ?? '')),
-                'transfer_content' => $orderCode,
+                'transfer_content' => $transferContent,
                 'amount' => $totalAmount,
                 'amount_display' => $this->formatGatewayCurrency($totalAmount, $method)
             ];
@@ -538,8 +540,6 @@ $_SESSION['success'] = 'Đã tạo đơn hàng ' . $orderCode . ' thành công. 
 
         $bankName = trim((string) ($this->settings['bank_name'] ?? ''));
         $accountNumber = trim((string) ($this->settings['bank_account_number'] ?? ''));
-        $transferContent = trim((string) ($this->settings['order_transfer_syntax'] ?? 'THANHTOAN'))
-            . str_pad((string) $orderId, 2, '0', STR_PAD_LEFT);
         $qrAmount = number_format($totalAmount, 0, '.', '');
         $qrUrl = '';
         if ($bankName !== '' && $accountNumber !== '') {
@@ -579,7 +579,7 @@ $_SESSION['success'] = 'Đã tạo đơn hàng ' . $orderCode . ' thành công. 
                 'name' => 'WeChat Pay',
                 'qr_url' => trim((string) ($this->settings['wechat_qr_image'] ?? '')),
                 'account_name' => trim((string) ($this->settings['wechat_account_name'] ?? '')),
-                'transfer_content' => $transactionCode,
+                'transfer_content' => $transferContent,
                 'amount' => $amount,
                 'amount_display' => $this->formatGatewayCurrency($amount, $method)
             ];
@@ -590,7 +590,7 @@ $_SESSION['success'] = 'Đã tạo đơn hàng ' . $orderCode . ' thành công. 
                 'name' => 'Alipay',
                 'qr_url' => trim((string) ($this->settings['alipay_qr_image'] ?? '')),
                 'account_name' => trim((string) ($this->settings['alipay_account_name'] ?? '')),
-                'transfer_content' => $transactionCode,
+                'transfer_content' => $transferContent,
                 'amount' => $amount,
                 'amount_display' => $this->formatGatewayCurrency($amount, $method)
             ];

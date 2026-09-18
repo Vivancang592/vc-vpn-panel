@@ -28,6 +28,7 @@ if (isset($_SESSION['user_id'])) {
         Quản Trị Hệ Thống
     </div>
     <hr style="border-color: var(--glass-border); margin-bottom: 0.5rem">
+    <?php if ($userRole === 'admin'): ?>
     <a href="/admin" class="nav-item <?= $activeMenu === 'dashboard' ? 'active' : '' ?>"><span class="sidebar-nav-icon" aria-hidden="true">📊</span>Dashboard</a>
     <a href="/admin/settings" class="nav-item <?= $activeMenu === 'settings' ? 'active' : '' ?>"><span class="sidebar-nav-icon" aria-hidden="true">⚙️</span>Cài Đặt Hệ Thống</a>
     <a href="/admin/server-groups" class="nav-item <?= in_array($activeMenu, $infrastructureMenus, true) ? 'active' : '' ?>"><span class="sidebar-nav-icon" aria-hidden="true">🗄️</span>Q.Lý Hạ Tầng</a>
@@ -37,4 +38,12 @@ if (isset($_SESSION['user_id'])) {
     <a href="/admin/posts" class="nav-item <?= $activeMenu === 'posts' ? 'active' : '' ?>"><span class="sidebar-nav-icon" aria-hidden="true">🗞️</span>Q.Lý Bài Viết</a>
     <a href="/admin/expenses" class="nav-item <?= $activeMenu === 'expenses' ? 'active' : '' ?>"><span class="sidebar-nav-icon" aria-hidden="true">📉</span>Q.Lý Chi Phí</a>    
     <a href="/admin/logs" class="nav-item <?= $activeMenu === 'logs' ? 'active' : '' ?>"><span class="sidebar-nav-icon" aria-hidden="true">📋</span>Nhật Ký Hệ Thống</a>
+    <?php elseif ($userRole === 'staff'): ?>
+    <a href="/admin" class="nav-item <?= $activeMenu === 'dashboard' ? 'active' : '' ?>"><span class="sidebar-nav-icon" aria-hidden="true">📊</span>Dashboard</a>
+    <a href="/admin/users" class="nav-item <?= $activeMenu === 'users' ? 'active' : '' ?>"><span class="sidebar-nav-icon" aria-hidden="true">👤</span>Người Dùng</a>
+    <a href="/admin/orders" class="nav-item <?= $activeMenu === 'orders' ? 'active' : '' ?>"><span class="sidebar-nav-icon" aria-hidden="true">🧾</span>Đơn Hàng</a>
+    <a href="/admin/payments" class="nav-item <?= $activeMenu === 'payments' ? 'active' : '' ?>"><span class="sidebar-nav-icon" aria-hidden="true">💳</span>Thanh Toán</a>
+    <a href="/admin/subscriptions" class="nav-item <?= $activeMenu === 'subscriptions' ? 'active' : '' ?>"><span class="sidebar-nav-icon" aria-hidden="true">🛡️</span>Gói Dịch Vụ</a>
+    <a href="/admin/tickets" class="nav-item <?= $activeMenu === 'tickets' ? 'active' : '' ?>"><span class="sidebar-nav-icon" aria-hidden="true">🎟️</span>Ticket Hỗ Trợ</a>
+    <?php endif; ?>
 </aside>

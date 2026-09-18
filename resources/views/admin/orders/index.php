@@ -140,6 +140,7 @@ ob_start();
     <?php foreach ($orders as $order): ?>
         <?php if (($order['payment_status'] ?? '') === 'pending'): ?>
             <form id="approve-order-form-<?= $order['id'] ?>" method="POST" action="/admin/orders/update-status" onsubmit="return confirm('Duyệt thành công đơn hàng này và cấp gói dịch vụ cho người dùng?');" style="display: none;">
+                <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrf_token ?? '') ?>">
                 <input type="hidden" name="id" value="<?= $order['id'] ?>">
                 <input type="hidden" name="status" value="completed">
                 <?php if (!empty($userId)): ?>
@@ -150,6 +151,7 @@ ob_start();
 
         <?php if (($order['payment_status'] ?? '') === 'pending'): ?>
             <form id="cancel-order-form-<?= $order['id'] ?>" method="POST" action="/admin/orders/update-status" onsubmit="return confirm('Hủy đơn hàng này?');" style="display: none;">
+                <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrf_token ?? '') ?>">
                 <input type="hidden" name="id" value="<?= $order['id'] ?>">
                 <input type="hidden" name="status" value="cancelled">
                 <?php if (!empty($userId)): ?>
@@ -159,6 +161,7 @@ ob_start();
         <?php endif; ?>
 
         <form id="delete-order-form-<?= $order['id'] ?>" method="POST" action="/admin/orders/delete" onsubmit="return confirm('Bạn có chắc chắn muốn xóa vĩnh viễn đơn hàng này?');" style="display: none;">
+            <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrf_token ?? '') ?>">
             <input type="hidden" name="id" value="<?= $order['id'] ?>">
             <?php if (!empty($userId)): ?>
                 <input type="hidden" name="user_id" value="<?= $userId ?>">
