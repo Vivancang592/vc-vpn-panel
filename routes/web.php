@@ -172,6 +172,7 @@ return [
     // Quản lý hỗ trợ (Tickets)
     'GET /admin/tickets'          => ['Admin\TicketController', 'index'],
     'GET /admin/tickets/detail'   => ['Admin\TicketController', 'detail'],
+    'POST /admin/tickets/detail'  => ['Admin\TicketController', 'detail'],
 
     // Quản lý chi phí (Expenses)
     'GET /admin/expenses'         => ['Admin\ExpenseController', 'index'],

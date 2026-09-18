@@ -11,7 +11,7 @@ class UserController extends BaseController
 
     public function __construct()
     {
-        if (!isset($_SESSION['user_id']) || ($_SESSION['role'] ?? '') !== 'admin') {
+        if (!isset($_SESSION['user_id']) || !in_array($_SESSION['role'] ?? '', ['admin', 'staff'], true)) {
             $this->redirect('/login');
         }
         $this->userModel = new User();

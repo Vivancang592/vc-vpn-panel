@@ -16,7 +16,7 @@ class OrderService
     /**
      * Xử lý tạo đơn hàng mới (Hỗ trợ sinh tiền lẻ cho WeChat Pay)
      */
-    public function createOrder(int $userId, int $planId, ?string $couponCode = null, string $paymentMethod = 'vietqr'): array
+    public function createOrder(int $userId, int $planId, ?string $couponCode = null, string $paymentMethod = 'vietqr', string $purchaseIp = ''): array
     {
         $planModel = new VpnPlan();
         $plan = $planModel->find($planId);
@@ -75,6 +75,7 @@ class OrderService
             'total_amount'   => $finalPrice,
             'payment_method' => $paymentMethod,
             'payment_status' => 'pending',
+            'purchase_ip' => $purchaseIp !== '' ? $purchaseIp : null,
             'created_at'     => date('Y-m-d H:i:s')
         ];
 

@@ -86,7 +86,8 @@ class PaymentService
     public function createRenewalTransaction(
         int $userId,
         int $subscriptionId,
-        string $paymentMethod
+        string $paymentMethod,
+        string $purchaseIp = ''
     ): array {
         $subscriptionModel = new Subscription();
         $subscription = $subscriptionModel->find($subscriptionId);
@@ -148,6 +149,7 @@ class PaymentService
             'total_amount' => $orderAmount,
             'payment_method' => $paymentMethod,
             'payment_status' => 'pending',
+            'purchase_ip' => $purchaseIp !== '' ? $purchaseIp : null,
             'created_at' => date('Y-m-d H:i:s')
         ])) {
             return ['status' => false, 'message' => 'Không thể tạo đơn hàng gia hạn.'];
@@ -428,16 +430,7 @@ class PaymentService
         }
 
         $paymentModel = new Payment();
-        $payment = null;
-
-        if (method_exists($paymentModel, 'where')) {
-            $payments = $paymentModel->where(
-                'transaction_id',
-                $transCode
-            );
-
-            $payment = $payments[0] ?? null;
-        }
+        $payment = $paymentModel->findByTransactionId($transCode);
 
         if (!$payment) {
             return false;
