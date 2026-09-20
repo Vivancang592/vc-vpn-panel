@@ -57,6 +57,31 @@ class PaymentController extends BaseController
             return;
         }
 
+        // --- BẮT ĐẦU FIX QUY ĐỔI TIỀN TỆ TRƯỚC KHI DUYỆT ---
+        $settings = (new \App\Models\Setting())->getAllAsKeyValue();
+        $baseCurrency = strtoupper(trim((string) ($settings['currency'] ?? 'CNY')));
+        $exchangeRate = (float) ($settings['exchange_rate'] ?? 1);
+        
+        $rawAmount = (float)($payment['amount'] ?? 0);
+        $paymentMethod = (string)($payment['payment_method'] ?? 'vietqr');
+        $sysAmount = $rawAmount;
+
+        if ($exchangeRate > 0) {
+            // Hệ thống CNY, thanh toán VietQR (VND) -> Chia tỷ giá về CNY
+            if ($paymentMethod === 'vietqr' && $baseCurrency === 'CNY') {
+                $sysAmount = round($rawAmount / $exchangeRate, 2);
+            } 
+            // Hệ thống VND, thanh toán Wechat/Alipay (CNY) -> Nhân tỷ giá ra VND
+            elseif (in_array($paymentMethod, ['wechat', 'alipay'], true) && $baseCurrency === 'VND') {
+                $sysAmount = round($rawAmount * $exchangeRate);
+            }
+        }
+
+        if ($sysAmount !== $rawAmount) {
+            $this->paymentModel->update($paymentId, ['amount' => $sysAmount]);
+        }
+        // --- KẾT THÚC FIX ---
+
         $approved = (new PaymentService())->completePayment($paymentId);
         $_SESSION[$approved ? 'flash_message' : 'error'] = $approved
             ? 'Đã duyệt và cộng tiền vào ví của khách hàng.'
