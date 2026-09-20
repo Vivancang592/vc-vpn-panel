@@ -12,13 +12,13 @@ class TicketMessage extends BaseModel
     public function getByTicketId(int $ticketId): array
     {
         $stmt = self::$db->prepare("
-            SELECT m.*, u.username, u.role, u.full_name
+            SELECT m.*, u.username, u.role
             FROM `{$this->table}` m
             LEFT JOIN `vc_users` u ON m.sender_id = u.id
             WHERE m.ticket_id = :ticket_id
             ORDER BY m.id ASC
         ");
-        $stmt->execute(['ticket_id' => $ticketId]);
+        $stmt->execute(['ticket_id' =>$ticketId]);
         return $stmt->fetchAll() ?: [];
     }
 
