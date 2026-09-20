@@ -233,7 +233,7 @@ class OrderController extends BaseController
                         'order_id' => $id,
                         'type' => 'payment',
                         'payment_method' => (string) ($order['payment_method'] ?? 'vietqr'),
-                        'transaction_id' => 'MANUAL-' . (string) ($order['order_code'] ?? $id),
+                        'transaction_id' => 'MN-' . (string) ($order['order_code'] ?? $id),
                         'amount' => $sysAmount, // Dùng số tiền đã quy đổi
                         'status' => 'success',
                         'created_at' => date('Y-m-d H:i:s')
