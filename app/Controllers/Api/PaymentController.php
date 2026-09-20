@@ -59,6 +59,12 @@ class PaymentController extends BaseController
         $paymentModel = new \App\Models\Payment();
         $settings = (new \App\Models\Setting())->getAllAsKeyValue();
 
+        // Xử lý quy đổi ngược số tiền từ cổng thanh toán về tiền tệ hệ thống
+        $convertToSystemCurrency = function(float $rawAmount, string $paymentMethod) use ($settings): float {
+            // Không quy đổi tỷ giá nữa, số tiền cổng gửi về cũng chính là số tiền trên hệ thống
+            return $rawAmount;
+        };
+
         $orderSyntax = trim((string) ($settings['order_transfer_syntax'] ?? 'THANHTOAN'));
         $renewalSyntax = trim((string) ($settings['renewal_transfer_syntax'] ?? 'GAHAN'));
         $depositSyntax = trim((string) ($settings['bank_transfer_syntax'] ?? 'NAPTIEN'));
@@ -66,7 +72,8 @@ class PaymentController extends BaseController
         if ($amount > 0 && $orderSyntax !== '' && preg_match('/' . preg_quote($orderSyntax, '/') . '\\s*(\d+)/i', $content, $matches)) {
             $order = (new \App\Models\Order())->find((int) $matches[1]);
             if ($order && ($order['payment_status'] ?? '') === 'pending') {
-                $result = $orderService->processPaymentByOrderCode((string) $order['order_code'], $amount, $transId);
+                $sysAmount = $convertToSystemCurrency($amount, (string) ($order['payment_method'] ?? 'vietqr'));
+                $result = $orderService->processPaymentByOrderCode((string) $order['order_code'], $sysAmount, $transId);
                 $this->json(['status' => $result['status'], 'message' => $result['message']], $result['status'] ? 200 : 400);
                 return;
             }
@@ -75,7 +82,8 @@ class PaymentController extends BaseController
         if ($amount > 0 && $renewalSyntax !== '' && preg_match('/' . preg_quote($renewalSyntax, '/') . '\\s*(\d+)/i', $content, $matches)) {
             $payment = $paymentModel->find((int) $matches[1]);
             if ($payment && ($payment['type'] ?? '') === 'payment' && !empty($payment['subscription_id'])) {
-                $result = $paymentService->completePaymentByCode((string) $payment['transaction_id'], $amount);
+                $sysAmount = $convertToSystemCurrency($amount, (string) ($payment['payment_method'] ?? 'vietqr'));
+                $result = $paymentService->completePaymentByCode((string) $payment['transaction_id'], $sysAmount);
                 $this->json(['status' => $result, 'message' => $result ? 'Gia hạn gói dịch vụ thành công.' : 'Xử lý giao dịch gia hạn thất bại hoặc đã được xử lý.'], $result ? 200 : 400);
                 return;
             }
@@ -84,7 +92,8 @@ class PaymentController extends BaseController
         if ($amount > 0 && $depositSyntax !== '' && preg_match('/' . preg_quote($depositSyntax, '/') . '\\s*(\d+)/i', $content, $matches)) {
             $payment = $paymentModel->find((int) $matches[1]);
             if ($payment && ($payment['type'] ?? '') === 'deposit') {
-                $result = $paymentService->completePaymentByCode((string) $payment['transaction_id'], $amount);
+                $sysAmount = $convertToSystemCurrency($amount, (string) ($payment['payment_method'] ?? 'vietqr'));
+                $result = $paymentService->completePaymentByCode((string) $payment['transaction_id'], $sysAmount);
                 $this->json(['status' => $result, 'message' => $result ? 'Nạp tiền vào tài khoản thành công.' : 'Xử lý mã nạp tiền thất bại hoặc đã được xử lý.'], $result ? 200 : 400);
                 return;
             }
@@ -98,7 +107,8 @@ class PaymentController extends BaseController
                 $amount = (float)$amtMatches[1];
             }
 
-            $result = $orderService->processPaymentByOrderCode($orderCode, $amount, $transId ?: $orderCode);
+            $sysAmount = $convertToSystemCurrency($amount, 'vietqr');
+            $result = $orderService->processPaymentByOrderCode($orderCode, $sysAmount, $transId ?: $orderCode);
             $this->json(['status' => $result['status'], 'message' => $result['message']], $result['status'] ? 200 : 400);
             return;
         }
@@ -106,7 +116,13 @@ class PaymentController extends BaseController
         // 5. Thanh toán gia hạn subscription REN...
         if (!empty($content) && preg_match('/REN\d+/i', $content, $matches)) {
             $transCode = strtoupper($matches[0]);
-            $result = $paymentService->completePaymentByCode($transCode, $amount);
+            $paymentMethod = 'vietqr';
+            if (method_exists($paymentModel, 'findByTransactionId')) {
+                $paymentInfo = $paymentModel->findByTransactionId($transCode);
+                if ($paymentInfo) $paymentMethod = $paymentInfo['payment_method'] ?? 'vietqr';
+            }
+            $sysAmount = $convertToSystemCurrency($amount, $paymentMethod);
+            $result = $paymentService->completePaymentByCode($transCode, $sysAmount);
 
             if ($result) {
                 $this->json(['status' => true, 'message' => 'Gia hạn gói dịch vụ thành công.']);
@@ -119,7 +135,13 @@ class PaymentController extends BaseController
         // 6. VietQR: Kiểm tra mã nạp tiền DEP...
         if (!empty($content) && preg_match('/DEP\d+/i', $content, $matches)) {
             $transCode = strtoupper($matches[0]);
-            $result = $paymentService->completePaymentByCode($transCode, $amount);
+            $paymentMethod = 'vietqr';
+            if (method_exists($paymentModel, 'findByTransactionId')) {
+                $paymentInfo = $paymentModel->findByTransactionId($transCode);
+                if ($paymentInfo) $paymentMethod = $paymentInfo['payment_method'] ?? 'vietqr';
+            }
+            $sysAmount = $convertToSystemCurrency($amount, $paymentMethod);
+            $result = $paymentService->completePaymentByCode($transCode, $sysAmount);
 
             if ($result) {
                 $this->json(['status' => true, 'message' => 'Nạp tiền vào tài khoản thành công.']);
@@ -156,7 +178,8 @@ class PaymentController extends BaseController
         }
 
         // 8. Khớp đơn tự động WeChat Pay theo số tiền
-        $result = $orderService->processPaymentByAmount($amount, $transId);
+        $sysAmount = $convertToSystemCurrency($amount, 'wechat');
+        $result = $orderService->processPaymentByAmount($sysAmount, $transId);
         $this->json(['status' => $result['status'], 'message' => $result['message']], $result['status'] ? 200 : 404);
     }
 }

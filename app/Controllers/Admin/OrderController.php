@@ -173,10 +173,36 @@ class OrderController extends BaseController
             return;
         }
 
+        // --- BẮT ĐẦU FIX QUY ĐỔI ---
+        $settings = (new \App\Models\Setting())->getAllAsKeyValue();
+        $convertToSystemCurrency = function(float $rawAmount, string $paymentMethod) use ($settings): float {
+            $baseCurrency = strtoupper(trim((string) ($settings['currency'] ?? 'CNY')));
+            $exchangeRate = (float) ($settings['exchange_rate'] ?? 1);
+
+            if ($exchangeRate <= 0) return $rawAmount;
+
+            // Hệ thống CNY, thanh toán VietQR (VND) -> Chia tỷ giá
+            if ($paymentMethod === 'vietqr' && $baseCurrency === 'CNY') {
+                return round($rawAmount / $exchangeRate, 2);
+            }
+            // Hệ thống VND, thanh toán Wechat/Alipay (CNY) -> Nhân tỷ giá
+            if (in_array($paymentMethod, ['wechat', 'alipay'], true) && $baseCurrency === 'VND') {
+                return round($rawAmount * $exchangeRate);
+            }
+            
+            return $rawAmount;
+        };
+
+        // 1. Xử lý gia hạn (Renewal)
         $renewalPayment = $status === 'completed'
             ? (new Payment())->findPendingRenewalByOrderId($id)
             : null;
         if ($renewalPayment !== null) {
+            $sysAmount = $convertToSystemCurrency((float)($renewalPayment['amount'] ?? 0), (string)($renewalPayment['payment_method'] ?? 'vietqr'));
+            if ($sysAmount !== (float)$renewalPayment['amount']) {
+                (new Payment())->update((int)$renewalPayment['id'], ['amount' => $sysAmount]);
+            }
+
             $completed = (new PaymentService())->completePayment((int) $renewalPayment['id']);
             $_SESSION['flash_message'] = $completed
                 ? 'Đã duyệt đơn gia hạn và cập nhật thời hạn gói dịch vụ.'
@@ -186,13 +212,19 @@ class OrderController extends BaseController
             return;
         }
 
-        $orderUpdate = ['payment_status' => $status];
+        // 2. Xử lý đơn hàng mua mới
+        $sysAmount = $convertToSystemCurrency((float)($order['total_amount'] ?? 0), (string)($order['payment_method'] ?? 'vietqr'));
+        
+        $orderUpdate = [
+            'payment_status' => $status,
+            'total_amount'   => $sysAmount // Ép lại số tiền chuẩn vào DB
+        ];
+        
         if ($status === 'completed' && ($order['payment_status'] ?? '') !== 'completed') {
             $orderUpdate['approved_by'] = (int) $_SESSION['user_id'];
         }
 
         if ($this->orderModel->update($id, $orderUpdate)) {
-            // 1. Nếu duyệt đơn thành công (completed) -> Kích hoạt Gói Đăng Ký & Phát task add_user
             if ($status === 'completed' && $order['payment_status'] !== 'completed' && class_exists('App\Models\Subscription') && class_exists('App\Models\VpnPlan')) {
                 $paymentModel = new Payment();
                 if ($paymentModel->findSuccessfulByOrderId($id) === null) {
@@ -202,7 +234,7 @@ class OrderController extends BaseController
                         'type' => 'payment',
                         'payment_method' => (string) ($order['payment_method'] ?? 'vietqr'),
                         'transaction_id' => 'MANUAL-' . (string) ($order['order_code'] ?? $id),
-                        'amount' => (float) ($order['total_amount'] ?? 0),
+                        'amount' => $sysAmount, // Dùng số tiền đã quy đổi
                         'status' => 'success',
                         'created_at' => date('Y-m-d H:i:s')
                     ]);
@@ -247,7 +279,6 @@ class OrderController extends BaseController
                 }
             }
 
-            // 2. Nếu hủy đơn hàng (cancelled) -> Chuyển trạng thái Subscription sang cancelled & Phát task del_user
             if ($status === 'cancelled' && $order['payment_status'] !== 'cancelled' && class_exists('App\Models\Subscription')) {
                 (new Payment())->failPendingByOrderId($id);
                 $subModel = new Subscription();

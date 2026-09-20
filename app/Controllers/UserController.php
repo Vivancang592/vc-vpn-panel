@@ -620,40 +620,20 @@ $_SESSION['success'] = 'Đã tạo đơn hàng ' . $orderCode . ' thành công. 
 
     private function convertAmountForGateway(float $amount, string $paymentMethod): float
     {
-        $baseCurrency = strtoupper(trim((string) ($this->settings['currency'] ?? 'CNY')));
-        $exchangeRate = (float) ($this->settings['exchange_rate'] ?? 1);
-
-        if ($exchangeRate <= 0) {
-            return $amount;
-        }
-
-        if ($paymentMethod === 'vietqr' && $baseCurrency === 'CNY') {
-            return round($amount * $exchangeRate);
-        }
-
-        if (in_array($paymentMethod, ['wechat', 'alipay'], true) && $baseCurrency === 'VND') {
-            return round($amount / $exchangeRate, 2);
-        }
-
+        // Không quy đổi tỷ giá nữa, giữ nguyên giá trị gốc theo đơn vị tiền tệ hệ thống
         return $amount;
     }
 
     private function formatGatewayCurrency(float $amount, string $paymentMethod): string
     {
-        if ($paymentMethod === 'vietqr') {
-            return number_format($amount, 0, '.', ',') . ' đ';
-        }
-
-        if (in_array($paymentMethod, ['wechat', 'alipay'], true)) {
-            return '¥' . number_format($amount, 2, '.', ',');
-        }
-
+        // Vì không quy đổi tỷ giá, định dạng tiền tệ hiển thị sẽ đi theo chuẩn của hệ thống
         return $this->formatCurrency($amount);
     }
 
     private function getEnabledPaymentGateways(bool $includeBalance = true): array
     {
         $gateways = [];
+        $baseCurrency = strtoupper(trim((string) ($this->settings['currency'] ?? 'VND')));
 
         $currentBalance = 0.0;
         if (isset($_SESSION['user_id'])) {
@@ -670,29 +650,34 @@ $_SESSION['success'] = 'Đã tạo đơn hàng ' . $orderCode . ' thành công. 
             ];
         }
 
-        if (($this->settings['enable_vietqr'] ?? '0') === '1') {
-            $bankLabel = trim((string) ($this->settings['bank_name'] ?? ''));
-            $gateways[] = [
-                'id' => 'vietqr',
-                'name' => 'VietQR' . ($bankLabel !== '' ? ' - ' . $bankLabel : ''),
-                'hint' => 'Chuyển khoản ngân hàng qua mã QR.'
-            ];
-        }
+        // Nếu tiền tệ hệ thống là VND thì chỉ hiển thị VietQR
+        if ($baseCurrency === 'VND') {
+            if (($this->settings['enable_vietqr'] ?? '0') === '1') {
+                $bankLabel = trim((string) ($this->settings['bank_name'] ?? ''));
+                $gateways[] = [
+                    'id' => 'vietqr',
+                    'name' => 'VietQR' . ($bankLabel !== '' ? ' - ' . $bankLabel : ''),
+                    'hint' => 'Chuyển khoản ngân hàng qua mã QR.'
+                ];
+            }
+        } 
+        // Nếu tiền tệ hệ thống là CNY thì chỉ hiển thị WeChat và Alipay
+        elseif ($baseCurrency === 'CNY') {
+            if (($this->settings['enable_wechat'] ?? '0') === '1') {
+                $gateways[] = [
+                    'id' => 'wechat',
+                    'name' => 'WeChat Pay',
+                    'hint' => 'Thanh toán nhanh bằng ví WeChat.'
+                ];
+            }
 
-        if (($this->settings['enable_wechat'] ?? '0') === '1') {
-            $gateways[] = [
-                'id' => 'wechat',
-                'name' => 'WeChat Pay',
-                'hint' => 'Thanh toán nhanh bằng ví WeChat.'
-            ];
-        }
-
-        if (($this->settings['enable_alipay'] ?? '0') === '1') {
-            $gateways[] = [
-                'id' => 'alipay',
-                'name' => 'Alipay',
-                'hint' => 'Thanh toán trực tuyến qua Alipay.'
-            ];
+            if (($this->settings['enable_alipay'] ?? '0') === '1') {
+                $gateways[] = [
+                    'id' => 'alipay',
+                    'name' => 'Alipay',
+                    'hint' => 'Thanh toán trực tuyến qua Alipay.'
+                ];
+            }
         }
 
         return $gateways;
