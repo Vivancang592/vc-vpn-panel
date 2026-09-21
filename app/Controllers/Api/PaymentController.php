@@ -119,7 +119,7 @@ class PaymentController extends BaseController
         $renewalSyntax = trim((string) ($settings['renewal_transfer_syntax'] ?? 'GAHAN'));
         $depositSyntax = trim((string) ($settings['bank_transfer_syntax'] ?? 'NAPTIEN'));
 
-        // 4.1 Khớp đơn hàng theo tiền tố cấu hình hoặc các tiền tố chuẩn (VCTT, THANHTOAN, TT, DH, VC)
+        // 4.1 Khớp đơn hàng theo transfer_content, tiền tố cấu hình hoặc các tiền tố chuẩn (VCTT, THANHTOAN, TT, DH, VC)
         $orderPrefixes = array_unique(array_filter([$orderSyntax, 'VCTT', 'THANHTOAN', 'TT', 'DH', 'VC']));
         $orderPattern = '/(?:' . implode('|', array_map(fn($p) => preg_quote($p, '/'), $orderPrefixes)) . ')\s*0*(\d+)/i';
 
@@ -132,9 +132,10 @@ class PaymentController extends BaseController
                 return;
             }
 
-            // Kiểm tra trạng thái đơn hàng
-            if (($order['payment_status'] ?? '') === 'completed') {
-                $respond(true, 'Đơn hàng #' . $orderId . ' (' . ($order['order_code'] ?? '') . ') đã được kích hoạt thành công trước đó.', 200);
+            // Chỉ kích hoạt nếu đơn hàng đang ở trạng thái pending (chờ thanh toán)
+            $orderStatus = $order['payment_status'] ?? $order['status'] ?? '';
+            if ($orderStatus !== 'pending') {
+                $respond(true, 'Đơn hàng #' . $orderId . ' (' . ($order['order_code'] ?? '') . ') không ở trạng thái chờ thanh toán (trạng thái hiện tại: ' . $orderStatus . ').', 200);
                 return;
             }
 

@@ -310,13 +310,17 @@ class OrderService
             $order = $orders[0] ?? null;
         }
 
+        if (!$order && method_exists($orderModel, 'findByTransferContent')) {
+            $order = $orderModel->findByTransferContent($orderCode);
+        }
+
         if (!$order) {
             return ['status' => false, 'message' => 'Đơn hàng ' . $orderCode . ' không tồn tại.'];
         }
 
         $currentStatus = $order['payment_status'] ?? $order['status'] ?? '';
-        if ($currentStatus === 'completed') {
-            return ['status' => false, 'message' => 'Đơn hàng ' . $orderCode . ' đã được thanh toán trước đó.'];
+        if ($currentStatus !== 'pending') {
+            return ['status' => false, 'message' => 'Đơn hàng ' . $orderCode . ' không ở trạng thái chờ thanh toán (trạng thái: ' . $currentStatus . ').'];
         }
 
         $expectedAmount = (float)($order['total_amount'] ?? $order['final_amount'] ?? $order['price'] ?? 0);
