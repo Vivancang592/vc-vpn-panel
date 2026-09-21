@@ -139,12 +139,12 @@ class PaymentController extends BaseController
                 return;
             }
 
-            // Kiểm tra số tiền chuyển khoản với tổng tiền đơn hàng
+            // Kiểm tra số tiền chuyển khoản phải khớp tuyệt đối với tổng tiền đơn hàng
             $expectedAmount = (float)($order['total_amount'] ?? $order['final_amount'] ?? $order['price'] ?? 0);
             $sysAmount = $convertToSystemCurrency($amount, (string) ($order['payment_method'] ?? 'vietqr'));
 
-            if ($sysAmount < $expectedAmount) {
-                $respond(false, 'Số tiền chuyển khoản (' . number_format($sysAmount, 0, ',', '.') . ' VNĐ) nhỏ hơn số tiền đơn hàng #' . $orderId . ' (' . number_format($expectedAmount, 0, ',', '.') . ' VNĐ).', 400);
+            if (abs($sysAmount - $expectedAmount) > 0.001) {
+                $respond(false, 'Số tiền chuyển khoản (' . number_format($sysAmount, 0, ',', '.') . ' VNĐ) không khớp chính xác với số tiền đơn hàng #' . $orderId . ' (' . number_format($expectedAmount, 0, ',', '.') . ' VNĐ).', 400);
                 return;
             }
 
