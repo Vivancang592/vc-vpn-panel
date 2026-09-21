@@ -324,8 +324,8 @@ class OrderService
         }
 
         $expectedAmount = (float)($order['total_amount'] ?? $order['final_amount'] ?? $order['price'] ?? 0);
-        if ($amount < $expectedAmount) {
-            return ['status' => false, 'message' => 'Số tiền chuyển khoản (' . $amount . ') nhỏ hơn số tiền đơn hàng (' . $expectedAmount . ').'];
+        if (abs($amount - $expectedAmount) > 0.001) {
+            return ['status' => false, 'message' => 'Số tiền chuyển khoản (' . $amount . ') không khớp chính xác với số tiền đơn hàng (' . $expectedAmount . ').'];
         }
 
         $activated = $this->activateOrder((int)$order['id']);
