@@ -161,13 +161,18 @@ class PaymentController extends BaseController
         if ($amount > 0 && preg_match($renewalPattern, $searchContent, $matches)) {
             $payment = $paymentModel->find((int) $matches[1]);
             if ($payment && ($payment['type'] ?? '') === 'payment' && !empty($payment['subscription_id'])) {
-                if (($payment['status'] ?? '') === 'success') {
-                    $respond(true, 'Giao dịch gia hạn đã hoàn tất trước đó.', 200);
+                if (($payment['status'] ?? '') !== 'pending') {
+                    $respond(true, 'Giao dịch gia hạn không ở trạng thái chờ thanh toán (trạng thái: ' . ($payment['status'] ?? '') . ').', 200);
                     return;
                 }
                 $sysAmount = $convertToSystemCurrency($amount, (string) ($payment['payment_method'] ?? 'vietqr'));
-                $result = $paymentService->completePaymentByCode((string) $payment['transaction_id'], $sysAmount);
-                $respond($result, $result ? 'Gia hạn gói dịch vụ thành công.' : 'Xử lý giao dịch gia hạn thất bại hoặc đã được xử lý.', $result ? 200 : 400);
+                $expectedAmount = (float) ($payment['amount'] ?? 0);
+                if (abs($sysAmount - $expectedAmount) > 0.001) {
+                    $respond(false, 'Số tiền chuyển khoản (' . number_format($sysAmount, 0, ',', '.') . ' VNĐ) không khớp chính xác với số tiền giao dịch gia hạn #' . $matches[1] . ' (' . number_format($expectedAmount, 0, ',', '.') . ' VNĐ).', 400);
+                    return;
+                }
+                $result = $paymentService->completePaymentByCode((string) ($payment['transfer_content'] ?? $payment['transaction_id']), $sysAmount);
+                $respond($result, $result ? 'Gia hạn gói dịch vụ thành công.' : 'Xử lý giao dịch gia hạn thất bại.', $result ? 200 : 400);
                 return;
             }
         }
@@ -179,13 +184,18 @@ class PaymentController extends BaseController
         if ($amount > 0 && preg_match($depositPattern, $searchContent, $matches)) {
             $payment = $paymentModel->find((int) $matches[1]);
             if ($payment && ($payment['type'] ?? '') === 'deposit') {
-                if (($payment['status'] ?? '') === 'success') {
-                    $respond(true, 'Mã nạp tiền đã hoàn tất trước đó.', 200);
+                if (($payment['status'] ?? '') !== 'pending') {
+                    $respond(true, 'Mã nạp tiền không ở trạng thái chờ thanh toán (trạng thái: ' . ($payment['status'] ?? '') . ').', 200);
                     return;
                 }
                 $sysAmount = $convertToSystemCurrency($amount, (string) ($payment['payment_method'] ?? 'vietqr'));
-                $result = $paymentService->completePaymentByCode((string) $payment['transaction_id'], $sysAmount);
-                $respond($result, $result ? 'Nạp tiền vào tài khoản thành công.' : 'Xử lý mã nạp tiền thất bại hoặc đã được xử lý.', $result ? 200 : 400);
+                $expectedAmount = (float) ($payment['amount'] ?? 0);
+                if (abs($sysAmount - $expectedAmount) > 0.001) {
+                    $respond(false, 'Số tiền chuyển khoản (' . number_format($sysAmount, 0, ',', '.') . ' VNĐ) không khớp chính xác với số tiền nạp #' . $matches[1] . ' (' . number_format($expectedAmount, 0, ',', '.') . ' VNĐ).', 400);
+                    return;
+                }
+                $result = $paymentService->completePaymentByCode((string) ($payment['transfer_content'] ?? $payment['transaction_id']), $sysAmount);
+                $respond($result, $result ? 'Nạp tiền vào tài khoản thành công.' : 'Xử lý mã nạp tiền thất bại.', $result ? 200 : 400);
                 return;
             }
         }

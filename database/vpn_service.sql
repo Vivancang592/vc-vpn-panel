@@ -178,6 +178,7 @@ CREATE TABLE `vc_payments` (
     `type` ENUM('deposit', 'payment') NOT NULL,
     `payment_method` VARCHAR(50) NOT NULL,
     `transaction_id` VARCHAR(100) NULL UNIQUE,
+    `transfer_content` VARCHAR(100) NULL,
     `amount` DECIMAL(15, 2) NOT NULL,
     `status` ENUM('pending', 'success', 'failed') NOT NULL DEFAULT 'pending',
     `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,

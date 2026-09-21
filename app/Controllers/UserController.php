@@ -574,7 +574,9 @@ $_SESSION['success'] = 'Đã tạo đơn hàng ' . $orderCode . ' thành công. 
         $syntax = trim((string) ($this->settings[
             $isRenewal ? 'renewal_transfer_syntax' : 'bank_transfer_syntax'
         ] ?? ($isRenewal ? 'GAHAN' : 'NAPTIEN')));
-        $transferContent = $syntax . str_pad((string) $paymentId, 2, '0', STR_PAD_LEFT);
+        $transferContent = !empty($payment['transfer_content'])
+            ? (string)$payment['transfer_content']
+            : ($syntax . str_pad((string) $paymentId, 2, '0', STR_PAD_LEFT));
 
         if ($method === 'wechat') {
             return [
