@@ -40,19 +40,33 @@ class PaymentController extends BaseController
             return;
         }
 
-        // 3. Kiểm tra Secret Token
+        // 3. Kiểm tra Secret Token / API Key (Hỗ trợ SePay & MacroDroid)
         $config = require __DIR__ . '/../../../config/app.php';
         $expectedSecret = $config['macrodroid_secret'] ?? '';
         $providedSecret = $payload['secret'] ?? $_SERVER['HTTP_X_MACRODROID_SECRET'] ?? '';
+
+        if (empty($providedSecret)) {
+            $authHeader = $_SERVER['HTTP_AUTHORIZATION'] ?? $_SERVER['REDIRECT_HTTP_AUTHORIZATION'] ?? '';
+            if (preg_match('/^(?:Apikey|Bearer)\s+(.*)$/i', $authHeader, $matches)) {
+                $providedSecret = trim($matches[1]);
+            }
+        }
 
         if (!empty($expectedSecret) && !hash_equals($expectedSecret, $providedSecret)) {
             $this->json(['status' => false, 'message' => 'Mã xác thực Webhook không hợp lệ.'], 403);
             return;
         }
 
-        $content = trim($payload['content'] ?? $payload['description'] ?? '');
-        $amount  = (float)($payload['amount'] ?? 0);
-        $transId = $payload['transaction_id'] ?? '';
+        // Bỏ qua nếu là giao dịch tiền ra từ SePay (transferType != in)
+        if (isset($payload['transferType']) && strtolower((string)$payload['transferType']) !== 'in') {
+            $this->json(['status' => false, 'message' => 'Bỏ qua giao dịch không phải tiền vào.'], 200);
+            return;
+        }
+
+        $content = trim((string)($payload['content'] ?? $payload['description'] ?? ''));
+        $searchContent = trim($content . ' ' . (string)($payload['description'] ?? '') . ' ' . (string)($payload['code'] ?? ''));
+        $amount  = (float)($payload['transferAmount'] ?? $payload['amount'] ?? 0);
+        $transId = (string)($payload['referenceCode'] ?? $payload['id'] ?? $payload['transaction_id'] ?? $payload['code'] ?? '');
 
         $orderService   = new OrderService();
         $paymentService = new PaymentService();
@@ -69,7 +83,7 @@ class PaymentController extends BaseController
         $renewalSyntax = trim((string) ($settings['renewal_transfer_syntax'] ?? 'GAHAN'));
         $depositSyntax = trim((string) ($settings['bank_transfer_syntax'] ?? 'NAPTIEN'));
 
-        if ($amount > 0 && $orderSyntax !== '' && preg_match('/' . preg_quote($orderSyntax, '/') . '\\s*(\d+)/i', $content, $matches)) {
+        if ($amount > 0 && $orderSyntax !== '' && preg_match('/' . preg_quote($orderSyntax, '/') . '\\s*(\d+)/i', $searchContent, $matches)) {
             $order = (new \App\Models\Order())->find((int) $matches[1]);
             if ($order && ($order['payment_status'] ?? '') === 'pending') {
                 $sysAmount = $convertToSystemCurrency($amount, (string) ($order['payment_method'] ?? 'vietqr'));
@@ -79,7 +93,7 @@ class PaymentController extends BaseController
             }
         }
 
-        if ($amount > 0 && $renewalSyntax !== '' && preg_match('/' . preg_quote($renewalSyntax, '/') . '\\s*(\d+)/i', $content, $matches)) {
+        if ($amount > 0 && $renewalSyntax !== '' && preg_match('/' . preg_quote($renewalSyntax, '/') . '\\s*(\d+)/i', $searchContent, $matches)) {
             $payment = $paymentModel->find((int) $matches[1]);
             if ($payment && ($payment['type'] ?? '') === 'payment' && !empty($payment['subscription_id'])) {
                 $sysAmount = $convertToSystemCurrency($amount, (string) ($payment['payment_method'] ?? 'vietqr'));
@@ -89,7 +103,7 @@ class PaymentController extends BaseController
             }
         }
 
-        if ($amount > 0 && $depositSyntax !== '' && preg_match('/' . preg_quote($depositSyntax, '/') . '\\s*(\d+)/i', $content, $matches)) {
+        if ($amount > 0 && $depositSyntax !== '' && preg_match('/' . preg_quote($depositSyntax, '/') . '\\s*(\d+)/i', $searchContent, $matches)) {
             $payment = $paymentModel->find((int) $matches[1]);
             if ($payment && ($payment['type'] ?? '') === 'deposit') {
                 $sysAmount = $convertToSystemCurrency($amount, (string) ($payment['payment_method'] ?? 'vietqr'));
@@ -100,10 +114,10 @@ class PaymentController extends BaseController
         }
 
         // 4. VietQR: Kiểm tra mã đơn hàng LS...
-        if (!empty($content) && preg_match('/LS\d+/i', $content, $matches)) {
+        if (!empty($searchContent) && preg_match('/LS\d+/i', $searchContent, $matches)) {
             $orderCode = strtoupper($matches[0]);
             
-            if ($amount <= 0 && preg_match('/(?:\+|KH:\s*|TIEN:\s*|^)(\d+(?:\.\d+)?)/i', $content, $amtMatches)) {
+            if ($amount <= 0 && preg_match('/(?:\+|KH:\s*|TIEN:\s*|^)(\d+(?:\.\d+)?)/i', $searchContent, $amtMatches)) {
                 $amount = (float)$amtMatches[1];
             }
 
@@ -114,7 +128,7 @@ class PaymentController extends BaseController
         }
 
         // 5. Thanh toán gia hạn subscription REN...
-        if (!empty($content) && preg_match('/REN\d+/i', $content, $matches)) {
+        if (!empty($searchContent) && preg_match('/REN\d+/i', $searchContent, $matches)) {
             $transCode = strtoupper($matches[0]);
             $paymentMethod = 'vietqr';
             if (method_exists($paymentModel, 'findByTransactionId')) {
