@@ -221,73 +221,106 @@ ob_start();
 
             <div class="settings-payment-list" style="display: flex; flex-direction: column; gap: 1rem; width: 100%; overflow-x: auto;">
                 <!-- Dòng 1: Ngân Hàng VN -->
-                <div class="settings-payment-gateway" data-title="Ngân hàng Việt Nam" data-hint="Thiết lập tài khoản nhận thanh toán qua VietQR." style="display: grid; grid-template-columns: 120px 1fr 1fr 1fr; gap: 1rem; align-items: end; background: rgba(255,255,255,0.02); padding: 1rem; border-radius: 8px; border: 1px solid var(--glass-border); min-width: 800px;">
-                    <div>
-                        <label style="display: block; font-weight: 600; font-size: 0.85rem; margin-bottom: 0.4rem;">Trạng Thái</label>
-                        <select name="settings[enable_vietqr]" class="glass-input" style="width: 100%; cursor: pointer;">
-                            <option value="1" <?= ($settings['enable_vietqr'] ?? '1') == '1' ? 'selected' : '' ?>>Bật</option>
-                            <option value="0" <?= ($settings['enable_vietqr'] ?? '1') == '0' ? 'selected' : '' ?>>Tắt</option>
-                        </select>
+                <div class="settings-payment-gateway" data-title="Ngân hàng Việt Nam" data-hint="Thiết lập tài khoản nhận thanh toán qua VietQR và API Key SePay / Webhook." style="background: rgba(255,255,255,0.02); padding: 1rem; border-radius: 8px; border: 1px solid var(--glass-border); min-width: 800px; display: flex; flex-direction: column; gap: 1rem;">
+                    <div style="display: grid; grid-template-columns: 120px 1fr 1fr 1fr; gap: 1rem; align-items: end;">
+                        <div>
+                            <label style="display: block; font-weight: 600; font-size: 0.85rem; margin-bottom: 0.4rem;">Trạng Thái</label>
+                            <select name="settings[enable_vietqr]" class="glass-input" style="width: 100%; cursor: pointer;">
+                                <option value="1" <?= ($settings['enable_vietqr'] ?? '1') == '1' ? 'selected' : '' ?>>Bật</option>
+                                <option value="0" <?= ($settings['enable_vietqr'] ?? '1') == '0' ? 'selected' : '' ?>>Tắt</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label style="display: block; font-weight: 600; font-size: 0.85rem; margin-bottom: 0.4rem;">Tên Ngân Hàng (Mã BIN)</label>
+                            <input type="text" name="settings[bank_name]" class="glass-input" value="<?= htmlspecialchars($settings['bank_name'] ?? '') ?>" placeholder="VD: MB, VCB..." style="width: 100%;">
+                        </div>
+                        <div>
+                            <label style="display: block; font-weight: 600; font-size: 0.85rem; margin-bottom: 0.4rem;">Số Tài Khoản</label>
+                            <input type="text" name="settings[bank_account_number]" class="glass-input" value="<?= htmlspecialchars($settings['bank_account_number'] ?? '') ?>" placeholder="Nhập số tài khoản" style="width: 100%;">
+                        </div>
+                        <div>
+                            <label style="display: block; font-weight: 600; font-size: 0.85rem; margin-bottom: 0.4rem;">Tên Chủ Tài Khoản</label>
+                            <input type="text" name="settings[bank_account_name]" class="glass-input" value="<?= htmlspecialchars($settings['bank_account_name'] ?? '') ?>" placeholder="VD: NGUYEN VAN A" style="width: 100%; text-transform: uppercase;">
+                        </div>
                     </div>
                     <div>
-                        <label style="display: block; font-weight: 600; font-size: 0.85rem; margin-bottom: 0.4rem;">Tên Ngân Hàng (Mã BIN)</label>
-                        <input type="text" name="settings[bank_name]" class="glass-input" value="<?= htmlspecialchars($settings['bank_name'] ?? '') ?>" placeholder="VD: MB, VCB..." style="width: 100%;">
-                    </div>
-                    <div>
-                        <label style="display: block; font-weight: 600; font-size: 0.85rem; margin-bottom: 0.4rem;">Số Tài Khoản</label>
-                        <input type="text" name="settings[bank_account_number]" class="glass-input" value="<?= htmlspecialchars($settings['bank_account_number'] ?? '') ?>" placeholder="Nhập số tài khoản" style="width: 100%;">
-                    </div>
-                    <div>
-                        <label style="display: block; font-weight: 600; font-size: 0.85rem; margin-bottom: 0.4rem;">Tên Chủ Tài Khoản</label>
-                        <input type="text" name="settings[bank_account_name]" class="glass-input" value="<?= htmlspecialchars($settings['bank_account_name'] ?? '') ?>" placeholder="VD: NGUYEN VAN A" style="width: 100%; text-transform: uppercase;">
+                        <label style="display: block; font-weight: 600; font-size: 0.85rem; margin-bottom: 0.4rem;">API Key / Secret Token (SePay / Webhook)</label>
+                        <div style="display: flex; gap: 0.5rem;">
+                            <input type="text" id="sepay_api_key_input" name="settings[sepay_api_key]" class="glass-input" value="<?= htmlspecialchars($settings['sepay_api_key'] ?? '') ?>" placeholder="Nhập API Key SePay hoặc tạo ngẫu nhiên" style="flex: 1;">
+                            <button type="button" class="glass-btn" onclick="generateRandomApiKey('sepay_api_key_input')" style="padding: 0 1rem; white-space: nowrap; cursor: pointer; background: rgba(255,255,255,0.08);">
+                                🎲 Tạo ngẫu nhiên
+                            </button>
+                        </div>
                     </div>
                 </div>
 
                 <!-- Dòng 2: WeChat -->
-                <div class="settings-payment-gateway" data-title="WeChat Pay" data-hint="Bật cổng và cung cấp mã QR để nhận thanh toán WeChat." style="display: grid; grid-template-columns: 120px 1fr 1fr 1fr; gap: 1rem; align-items: end; background: rgba(255,255,255,0.02); padding: 1rem; border-radius: 8px; border: 1px solid var(--glass-border); min-width: 800px;">
-                    <div>
-                        <label style="display: block; font-weight: 600; font-size: 0.85rem; margin-bottom: 0.4rem;">Trạng Thái</label>
-                        <select name="settings[enable_wechat]" class="glass-input" style="width: 100%; cursor: pointer;">
-                            <option value="1" <?= ($settings['enable_wechat'] ?? '0') == '1' ? 'selected' : '' ?>>Bật</option>
-                            <option value="0" <?= ($settings['enable_wechat'] ?? '0') == '0' ? 'selected' : '' ?>>Tắt</option>
-                        </select>
+                <div class="settings-payment-gateway" data-title="WeChat Pay" data-hint="Bật cổng và cung cấp mã QR để nhận thanh toán WeChat." style="background: rgba(255,255,255,0.02); padding: 1rem; border-radius: 8px; border: 1px solid var(--glass-border); min-width: 800px; display: flex; flex-direction: column; gap: 1rem;">
+                    <div style="display: grid; grid-template-columns: 120px 1fr 1fr 1fr; gap: 1rem; align-items: end;">
+                        <div>
+                            <label style="display: block; font-weight: 600; font-size: 0.85rem; margin-bottom: 0.4rem;">Trạng Thái</label>
+                            <select name="settings[enable_wechat]" class="glass-input" style="width: 100%; cursor: pointer;">
+                                <option value="1" <?= ($settings['enable_wechat'] ?? '0') == '1' ? 'selected' : '' ?>>Bật</option>
+                                <option value="0" <?= ($settings['enable_wechat'] ?? '0') == '0' ? 'selected' : '' ?>>Tắt</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label style="display: block; font-weight: 600; font-size: 0.85rem; margin-bottom: 0.4rem;">Tên Ngân Hàng / Cổng</label>
+                            <input type="text" class="glass-input" value="WeChat Pay" readonly style="width: 100%; background: rgba(0,0,0,0.1); color: var(--ios-text-secondary); cursor: not-allowed;">
+                        </div>
+                        <div>
+                            <label style="display: block; font-weight: 600; font-size: 0.85rem; margin-bottom: 0.4rem;">Tải Ảnh QR WeChat</label>
+                            <input type="file" name="wechat_qr_upload" class="glass-input" accept="image/png,image/jpeg,image/webp" style="width: 100%;">
+                            <?php if (!empty($settings['wechat_qr_image'])): ?><small style="display: block; margin-top: 0.35rem; color: var(--ios-success);">Đã có ảnh QR. Chọn ảnh mới để thay thế.</small><?php endif; ?>
+                        </div>
+                        <div>
+                            <label style="display: block; font-weight: 600; font-size: 0.85rem; margin-bottom: 0.4rem;">Tên Chủ Tài Khoản</label>
+                            <input type="text" name="settings[wechat_account_name]" class="glass-input" value="<?= htmlspecialchars($settings['wechat_account_name'] ?? '') ?>" placeholder="Tên hiển thị WeChat" style="width: 100%;">
+                        </div>
                     </div>
                     <div>
-                        <label style="display: block; font-weight: 600; font-size: 0.85rem; margin-bottom: 0.4rem;">Tên Ngân Hàng / Cổng</label>
-                        <input type="text" class="glass-input" value="WeChat Pay" readonly style="width: 100%; background: rgba(0,0,0,0.1); color: var(--ios-text-secondary); cursor: not-allowed;">
-                    </div>
-                    <div>
-                        <label style="display: block; font-weight: 600; font-size: 0.85rem; margin-bottom: 0.4rem;">Tải Ảnh QR WeChat</label>
-                        <input type="file" name="wechat_qr_upload" class="glass-input" accept="image/png,image/jpeg,image/webp" style="width: 100%;">
-                        <?php if (!empty($settings['wechat_qr_image'])): ?><small style="display: block; margin-top: 0.35rem; color: var(--ios-success);">Đã có ảnh QR. Chọn ảnh mới để thay thế.</small><?php endif; ?>
-                    </div>
-                    <div>
-                        <label style="display: block; font-weight: 600; font-size: 0.85rem; margin-bottom: 0.4rem;">Tên Chủ Tài Khoản</label>
-                        <input type="text" name="settings[wechat_account_name]" class="glass-input" value="<?= htmlspecialchars($settings['wechat_account_name'] ?? '') ?>" placeholder="Tên hiển thị WeChat" style="width: 100%;">
+                        <label style="display: block; font-weight: 600; font-size: 0.85rem; margin-bottom: 0.4rem;">API Key / Secret Token (MacroDroid Webhook WeChat)</label>
+                        <div style="display: flex; gap: 0.5rem;">
+                            <input type="text" id="wechat_api_key_input" name="settings[macrodroid_secret]" class="glass-input" value="<?= htmlspecialchars($settings['macrodroid_secret'] ?? '') ?>" placeholder="Nhập Secret Token webhook hoặc tạo ngẫu nhiên" style="flex: 1;">
+                            <button type="button" class="glass-btn" onclick="generateRandomApiKey('wechat_api_key_input')" style="padding: 0 1rem; white-space: nowrap; cursor: pointer; background: rgba(255,255,255,0.08);">
+                                🎲 Tạo ngẫu nhiên
+                            </button>
+                        </div>
                     </div>
                 </div>
 
                 <!-- Dòng 3: Alipay -->
-                <div class="settings-payment-gateway" data-title="Alipay" data-hint="Bật cổng và cung cấp mã QR để nhận thanh toán Alipay." style="display: grid; grid-template-columns: 120px 1fr 1fr 1fr; gap: 1rem; align-items: end; background: rgba(255,255,255,0.02); padding: 1rem; border-radius: 8px; border: 1px solid var(--glass-border); min-width: 800px;">
-                    <div>
-                        <label style="display: block; font-weight: 600; font-size: 0.85rem; margin-bottom: 0.4rem;">Trạng Thái</label>
-                        <select name="settings[enable_alipay]" class="glass-input" style="width: 100%; cursor: pointer;">
-                            <option value="1" <?= ($settings['enable_alipay'] ?? '0') == '1' ? 'selected' : '' ?>>Bật</option>
-                            <option value="0" <?= ($settings['enable_alipay'] ?? '0') == '0' ? 'selected' : '' ?>>Tắt</option>
-                        </select>
+                <div class="settings-payment-gateway" data-title="Alipay" data-hint="Bật cổng và cung cấp mã QR để nhận thanh toán Alipay." style="background: rgba(255,255,255,0.02); padding: 1rem; border-radius: 8px; border: 1px solid var(--glass-border); min-width: 800px; display: flex; flex-direction: column; gap: 1rem;">
+                    <div style="display: grid; grid-template-columns: 120px 1fr 1fr 1fr; gap: 1rem; align-items: end;">
+                        <div>
+                            <label style="display: block; font-weight: 600; font-size: 0.85rem; margin-bottom: 0.4rem;">Trạng Thái</label>
+                            <select name="settings[enable_alipay]" class="glass-input" style="width: 100%; cursor: pointer;">
+                                <option value="1" <?= ($settings['enable_alipay'] ?? '0') == '1' ? 'selected' : '' ?>>Bật</option>
+                                <option value="0" <?= ($settings['enable_alipay'] ?? '0') == '0' ? 'selected' : '' ?>>Tắt</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label style="display: block; font-weight: 600; font-size: 0.85rem; margin-bottom: 0.4rem;">Tên Ngân Hàng / Cổng</label>
+                            <input type="text" class="glass-input" value="Alipay" readonly style="width: 100%; background: rgba(0,0,0,0.1); color: var(--ios-text-secondary); cursor: not-allowed;">
+                        </div>
+                        <div>
+                            <label style="display: block; font-weight: 600; font-size: 0.85rem; margin-bottom: 0.4rem;">Tải Ảnh QR Alipay</label>
+                            <input type="file" name="alipay_qr_upload" class="glass-input" accept="image/png,image/jpeg,image/webp" style="width: 100%;">
+                            <?php if (!empty($settings['alipay_qr_image'])): ?><small style="display: block; margin-top: 0.35rem; color: var(--ios-success);">Đã có ảnh QR. Chọn ảnh mới để thay thế.</small><?php endif; ?>
+                        </div>
+                        <div>
+                            <label style="display: block; font-weight: 600; font-size: 0.85rem; margin-bottom: 0.4rem;">Tên Chủ Tài Khoản</label>
+                            <input type="text" name="settings[alipay_account_name]" class="glass-input" value="<?= htmlspecialchars($settings['alipay_account_name'] ?? '') ?>" placeholder="Tên hiển thị Alipay" style="width: 100%;">
+                        </div>
                     </div>
                     <div>
-                        <label style="display: block; font-weight: 600; font-size: 0.85rem; margin-bottom: 0.4rem;">Tên Ngân Hàng / Cổng</label>
-                        <input type="text" class="glass-input" value="Alipay" readonly style="width: 100%; background: rgba(0,0,0,0.1); color: var(--ios-text-secondary); cursor: not-allowed;">
-                    </div>
-                    <div>
-                        <label style="display: block; font-weight: 600; font-size: 0.85rem; margin-bottom: 0.4rem;">Tải Ảnh QR Alipay</label>
-                        <input type="file" name="alipay_qr_upload" class="glass-input" accept="image/png,image/jpeg,image/webp" style="width: 100%;">
-                        <?php if (!empty($settings['alipay_qr_image'])): ?><small style="display: block; margin-top: 0.35rem; color: var(--ios-success);">Đã có ảnh QR. Chọn ảnh mới để thay thế.</small><?php endif; ?>
-                    </div>
-                    <div>
-                        <label style="display: block; font-weight: 600; font-size: 0.85rem; margin-bottom: 0.4rem;">Tên Chủ Tài Khoản</label>
-                        <input type="text" name="settings[alipay_account_name]" class="glass-input" value="<?= htmlspecialchars($settings['alipay_account_name'] ?? '') ?>" placeholder="Tên hiển thị Alipay" style="width: 100%;">
+                        <label style="display: block; font-weight: 600; font-size: 0.85rem; margin-bottom: 0.4rem;">API Key / Secret Token (Alipay Webhook)</label>
+                        <div style="display: flex; gap: 0.5rem;">
+                            <input type="text" id="alipay_api_key_input" name="settings[payment_api_key]" class="glass-input" value="<?= htmlspecialchars($settings['payment_api_key'] ?? '') ?>" placeholder="Nhập API Key webhook hoặc tạo ngẫu nhiên" style="flex: 1;">
+                            <button type="button" class="glass-btn" onclick="generateRandomApiKey('alipay_api_key_input')" style="padding: 0 1rem; white-space: nowrap; cursor: pointer; background: rgba(255,255,255,0.08);">
+                                🎲 Tạo ngẫu nhiên
+                            </button>
+                        </div>
                     </div>
                 </div>
 
@@ -377,6 +410,31 @@ ob_start();
     </div>
 
 </div>
+
+<script>
+function generateRandomApiKey(inputId) {
+    var chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+    var length = 32;
+    var result = '';
+    var cryptoObj = window.crypto || window.msCrypto;
+    if (cryptoObj && cryptoObj.getRandomValues) {
+        var values = new Uint32Array(length);
+        cryptoObj.getRandomValues(values);
+        for (var i = 0; i < length; i++) {
+            result += chars[values[i] % chars.length];
+        }
+    } else {
+        for (var i = 0; i < length; i++) {
+            result += chars.charAt(Math.floor(Math.random() * chars.length));
+        }
+    }
+    var input = document.getElementById(inputId);
+    if (input) {
+        input.value = result;
+        input.focus();
+    }
+}
+</script>
 
 <?php
 $content = ob_get_clean();
