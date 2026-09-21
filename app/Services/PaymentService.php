@@ -63,12 +63,16 @@ class PaymentService
         $created = $paymentModel->create($paymentData);
 
         if ($created) {
-            $paymentId = $paymentModel->lastInsertId();
+            $paymentId = (int) $paymentModel->lastInsertId();
+            $depositSyntax = trim((string) ($settings['bank_transfer_syntax'] ?? 'NAPTIEN'));
+            $transferContent = $depositSyntax . str_pad((string) $paymentId, 2, '0', STR_PAD_LEFT);
+            $paymentModel->update($paymentId, ['transfer_content' => $transferContent]);
 
             return [
                 'status' => true,
                 'message' => 'Tạo giao dịch nạp tiền thành công.',
                 'transaction_code' => $transCode,
+                'transfer_content' => $transferContent,
                 'amount' => $amount,
                 'payment_id' => $paymentId
             ];
@@ -183,12 +187,17 @@ class PaymentService
             ];
         }
 
-        $paymentId = $paymentModel->lastInsertId();
+        $paymentId = (int) $paymentModel->lastInsertId();
+        $renewalSyntax = trim((string) ($settings['renewal_transfer_syntax'] ?? 'GAHAN'));
+        $transferContent = $renewalSyntax . str_pad((string) $paymentId, 2, '0', STR_PAD_LEFT);
+        $paymentModel->update($paymentId, ['transfer_content' => $transferContent]);
+        $orderModel->update($orderId, ['transfer_content' => $transferContent]);
 
         return [
             'status' => true,
             'message' => 'Tạo giao dịch gia hạn thành công.',
             'transaction_code' => $transCode,
+            'transfer_content' => $transferContent,
             'payment_id' => $paymentId,
             'order_id' => $orderId,
             'subscription_id' => $subscriptionId,
@@ -433,20 +442,23 @@ class PaymentService
         $paymentModel = new Payment();
         $payment = $paymentModel->findByTransactionId($transCode);
 
+        if (!$payment && method_exists($paymentModel, 'findByTransferContent')) {
+            $payment = $paymentModel->findByTransferContent($transCode);
+        }
+
         if (!$payment) {
             return false;
         }
 
         /*
-         * Không cho webhook báo số tiền thấp hơn số tiền
-         * hệ thống yêu cầu.
+         * Kiểm tra số tiền webhook gửi về phải khớp chính xác với số tiền giao dịch
          */
         $requiredAmount = $this->convertAmountForGateway(
             (float) ($payment['amount'] ?? 0),
             (string) ($payment['payment_method'] ?? 'vietqr')
         );
 
-        if ($requiredAmount <= 0 || $amount < $requiredAmount) {
+        if ($requiredAmount <= 0 || abs($amount - $requiredAmount) > 0.001) {
             return false;
         }
 

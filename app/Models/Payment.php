@@ -18,6 +18,17 @@ class Payment extends BaseModel
     }
 
     /**
+     * Tìm giao dịch thanh toán / nạp tiền theo nội dung chuyển khoản (transfer_content)
+     */
+    public function findByTransferContent(string $transferContent): ?array
+    {
+        $stmt = self::$db->prepare("SELECT * FROM `{$this->table}` WHERE `transfer_content` = :transfer_content LIMIT 1");
+        $stmt->execute(['transfer_content' => $transferContent]);
+        $result = $stmt->fetch();
+        return $result ?: null;
+    }
+
+    /**
      * Lấy toàn bộ danh sách thanh toán kèm thông tin người dùng và mã đơn hàng
      */
     public function allWithDetails(): array
