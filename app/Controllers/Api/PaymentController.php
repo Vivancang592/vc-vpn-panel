@@ -35,14 +35,23 @@ class PaymentController extends BaseController
         $logData .= "-------------------------------------------\n\n";
         @file_put_contents($logFile, $logData, FILE_APPEND);
 
+        $respond = function(bool $success, string $message, int $statusCode = 200) {
+            $this->json([
+                'success' => $success,
+                'status'  => $success,
+                'message' => $message
+            ], $statusCode);
+        };
+
         if (empty($payload)) {
-            $this->json(['status' => false, 'message' => 'Dữ liệu Webhook không hợp lệ.'], 400);
+            $respond(false, 'Dữ liệu Webhook không hợp lệ.', 400);
             return;
         }
 
         $orderService   = new OrderService();
         $paymentService = new PaymentService();
         $paymentModel   = new \App\Models\Payment();
+        $orderModel     = new \App\Models\Order();
         $settings       = (new \App\Models\Setting())->getAllAsKeyValue();
         $config         = require __DIR__ . '/../../../config/app.php';
 
@@ -84,14 +93,14 @@ class PaymentController extends BaseController
             }
 
             if (!$isAuthenticated) {
-                $this->json(['status' => false, 'message' => 'API Key hoặc mã xác thực Webhook không hợp lệ.'], 403);
+                $respond(false, 'API Key hoặc mã xác thực Webhook không hợp lệ.', 403);
                 return;
             }
         }
 
         // Bỏ qua nếu là giao dịch tiền ra từ SePay (transferType != in)
         if (isset($payload['transferType']) && strtolower((string)$payload['transferType']) !== 'in') {
-            $this->json(['status' => false, 'message' => 'Bỏ qua giao dịch không phải tiền vào.'], 200);
+            $respond(true, 'Bỏ qua giao dịch không phải tiền vào.', 200);
             return;
         }
 
@@ -99,10 +108,10 @@ class PaymentController extends BaseController
         $searchContent = trim($content . ' ' . (string)($payload['description'] ?? '') . ' ' . (string)($payload['code'] ?? ''));
         $amount  = (float)($payload['transferAmount'] ?? $payload['amount'] ?? 0);
         $transId = (string)($payload['referenceCode'] ?? $payload['id'] ?? $payload['transaction_id'] ?? $payload['code'] ?? '');
+        $isBankGateway = !empty($payload['gateway']) || !empty($payload['accountNumber']) || isset($payload['transferAmount']) || isset($payload['referenceCode']);
 
         // Xử lý quy đổi ngược số tiền từ cổng thanh toán về tiền tệ hệ thống
         $convertToSystemCurrency = function(float $rawAmount, string $paymentMethod) use ($settings): float {
-            // Không quy đổi tỷ giá nữa, số tiền cổng gửi về cũng chính là số tiền trên hệ thống
             return $rawAmount;
         };
 
@@ -110,38 +119,78 @@ class PaymentController extends BaseController
         $renewalSyntax = trim((string) ($settings['renewal_transfer_syntax'] ?? 'GAHAN'));
         $depositSyntax = trim((string) ($settings['bank_transfer_syntax'] ?? 'NAPTIEN'));
 
-        if ($amount > 0 && $orderSyntax !== '' && preg_match('/' . preg_quote($orderSyntax, '/') . '\\s*(\d+)/i', $searchContent, $matches)) {
-            $order = (new \App\Models\Order())->find((int) $matches[1]);
-            if ($order && ($order['payment_status'] ?? '') === 'pending') {
-                $sysAmount = $convertToSystemCurrency($amount, (string) ($order['payment_method'] ?? 'vietqr'));
-                $result = $orderService->processPaymentByOrderCode((string) $order['order_code'], $sysAmount, $transId);
-                $this->json(['status' => $result['status'], 'message' => $result['message']], $result['status'] ? 200 : 400);
+        // 4.1 Khớp đơn hàng theo tiền tố cấu hình hoặc các tiền tố chuẩn (VCTT, THANHTOAN, TT, DH, VC)
+        $orderPrefixes = array_unique(array_filter([$orderSyntax, 'VCTT', 'THANHTOAN', 'TT', 'DH', 'VC']));
+        $orderPattern = '/(?:' . implode('|', array_map(fn($p) => preg_quote($p, '/'), $orderPrefixes)) . ')\s*0*(\d+)/i';
+
+        if ($amount > 0 && preg_match($orderPattern, $searchContent, $matches)) {
+            $orderId = (int) $matches[1];
+            $order = $orderModel->find($orderId);
+            
+            if (!$order) {
+                $respond(false, 'Không tìm thấy đơn hàng #' . $orderId . ' trong hệ thống.', 404);
                 return;
             }
+
+            // Kiểm tra trạng thái đơn hàng
+            if (($order['payment_status'] ?? '') === 'completed') {
+                $respond(true, 'Đơn hàng #' . $orderId . ' (' . ($order['order_code'] ?? '') . ') đã được kích hoạt thành công trước đó.', 200);
+                return;
+            }
+
+            // Kiểm tra số tiền chuyển khoản với tổng tiền đơn hàng
+            $expectedAmount = (float)($order['total_amount'] ?? $order['final_amount'] ?? $order['price'] ?? 0);
+            $sysAmount = $convertToSystemCurrency($amount, (string) ($order['payment_method'] ?? 'vietqr'));
+
+            if ($sysAmount < $expectedAmount) {
+                $respond(false, 'Số tiền chuyển khoản (' . number_format($sysAmount, 0, ',', '.') . ' VNĐ) nhỏ hơn số tiền đơn hàng #' . $orderId . ' (' . number_format($expectedAmount, 0, ',', '.') . ' VNĐ).', 400);
+                return;
+            }
+
+            // Kích hoạt đơn hàng và lưu lịch sử thanh toán
+            $result = $orderService->processPaymentByOrderCode((string) $order['order_code'], $sysAmount, $transId);
+            $respond($result['status'], $result['message'], $result['status'] ? 200 : 400);
+            return;
         }
 
-        if ($amount > 0 && $renewalSyntax !== '' && preg_match('/' . preg_quote($renewalSyntax, '/') . '\\s*(\d+)/i', $searchContent, $matches)) {
+        // 4.2 Khớp gia hạn gói theo tiền tố cấu hình hoặc GAHAN / REN
+        $renewalPrefixes = array_unique(array_filter([$renewalSyntax, 'GAHAN', 'GH', 'REN']));
+        $renewalPattern = '/(?:' . implode('|', array_map(fn($p) => preg_quote($p, '/'), $renewalPrefixes)) . ')\s*0*(\d+)/i';
+
+        if ($amount > 0 && preg_match($renewalPattern, $searchContent, $matches)) {
             $payment = $paymentModel->find((int) $matches[1]);
             if ($payment && ($payment['type'] ?? '') === 'payment' && !empty($payment['subscription_id'])) {
+                if (($payment['status'] ?? '') === 'success') {
+                    $respond(true, 'Giao dịch gia hạn đã hoàn tất trước đó.', 200);
+                    return;
+                }
                 $sysAmount = $convertToSystemCurrency($amount, (string) ($payment['payment_method'] ?? 'vietqr'));
                 $result = $paymentService->completePaymentByCode((string) $payment['transaction_id'], $sysAmount);
-                $this->json(['status' => $result, 'message' => $result ? 'Gia hạn gói dịch vụ thành công.' : 'Xử lý giao dịch gia hạn thất bại hoặc đã được xử lý.'], $result ? 200 : 400);
+                $respond($result, $result ? 'Gia hạn gói dịch vụ thành công.' : 'Xử lý giao dịch gia hạn thất bại hoặc đã được xử lý.', $result ? 200 : 400);
                 return;
             }
         }
 
-        if ($amount > 0 && $depositSyntax !== '' && preg_match('/' . preg_quote($depositSyntax, '/') . '\\s*(\d+)/i', $searchContent, $matches)) {
+        // 4.3 Khớp nạp tiền theo tiền tố cấu hình hoặc NAPTIEN / NAP / DEP
+        $depositPrefixes = array_unique(array_filter([$depositSyntax, 'NAPTIEN', 'NAP', 'DEP']));
+        $depositPattern = '/(?:' . implode('|', array_map(fn($p) => preg_quote($p, '/'), $depositPrefixes)) . ')\s*0*(\d+)/i';
+
+        if ($amount > 0 && preg_match($depositPattern, $searchContent, $matches)) {
             $payment = $paymentModel->find((int) $matches[1]);
             if ($payment && ($payment['type'] ?? '') === 'deposit') {
+                if (($payment['status'] ?? '') === 'success') {
+                    $respond(true, 'Mã nạp tiền đã hoàn tất trước đó.', 200);
+                    return;
+                }
                 $sysAmount = $convertToSystemCurrency($amount, (string) ($payment['payment_method'] ?? 'vietqr'));
                 $result = $paymentService->completePaymentByCode((string) $payment['transaction_id'], $sysAmount);
-                $this->json(['status' => $result, 'message' => $result ? 'Nạp tiền vào tài khoản thành công.' : 'Xử lý mã nạp tiền thất bại hoặc đã được xử lý.'], $result ? 200 : 400);
+                $respond($result, $result ? 'Nạp tiền vào tài khoản thành công.' : 'Xử lý mã nạp tiền thất bại hoặc đã được xử lý.', $result ? 200 : 400);
                 return;
             }
         }
 
-        // 4. VietQR: Kiểm tra mã đơn hàng LS...
-        if (!empty($searchContent) && preg_match('/LS\d+/i', $searchContent, $matches)) {
+        // 4.4 VietQR / SePay: Kiểm tra trực tiếp theo mã đơn hàng LS... / ORD...
+        if (!empty($searchContent) && preg_match('/(?:LS|ORD)\d+/i', $searchContent, $matches)) {
             $orderCode = strtoupper($matches[0]);
             
             if ($amount <= 0 && preg_match('/(?:\+|KH:\s*|TIEN:\s*|^)(\d+(?:\.\d+)?)/i', $searchContent, $amtMatches)) {
@@ -150,11 +199,11 @@ class PaymentController extends BaseController
 
             $sysAmount = $convertToSystemCurrency($amount, 'vietqr');
             $result = $orderService->processPaymentByOrderCode($orderCode, $sysAmount, $transId ?: $orderCode);
-            $this->json(['status' => $result['status'], 'message' => $result['message']], $result['status'] ? 200 : 400);
+            $respond($result['status'], $result['message'], $result['status'] ? 200 : 400);
             return;
         }
 
-        // 5. Thanh toán gia hạn subscription REN...
+        // 4.5 Thanh toán gia hạn subscription theo mã giao dịch REN...
         if (!empty($searchContent) && preg_match('/REN\d+/i', $searchContent, $matches)) {
             $transCode = strtoupper($matches[0]);
             $paymentMethod = 'vietqr';
@@ -164,17 +213,12 @@ class PaymentController extends BaseController
             }
             $sysAmount = $convertToSystemCurrency($amount, $paymentMethod);
             $result = $paymentService->completePaymentByCode($transCode, $sysAmount);
-
-            if ($result) {
-                $this->json(['status' => true, 'message' => 'Gia hạn gói dịch vụ thành công.']);
-            } else {
-                $this->json(['status' => false, 'message' => 'Xử lý giao dịch gia hạn thất bại hoặc đã được xử lý.'], 400);
-            }
+            $respond($result, $result ? 'Gia hạn gói dịch vụ thành công.' : 'Xử lý giao dịch gia hạn thất bại hoặc đã được xử lý.', $result ? 200 : 400);
             return;
         }
 
-        // 6. VietQR: Kiểm tra mã nạp tiền DEP...
-        if (!empty($content) && preg_match('/DEP\d+/i', $content, $matches)) {
+        // 4.6 VietQR: Kiểm tra mã nạp tiền DEP...
+        if (!empty($searchContent) && preg_match('/DEP\d+/i', $searchContent, $matches)) {
             $transCode = strtoupper($matches[0]);
             $paymentMethod = 'vietqr';
             if (method_exists($paymentModel, 'findByTransactionId')) {
@@ -183,44 +227,11 @@ class PaymentController extends BaseController
             }
             $sysAmount = $convertToSystemCurrency($amount, $paymentMethod);
             $result = $paymentService->completePaymentByCode($transCode, $sysAmount);
-
-            if ($result) {
-                $this->json(['status' => true, 'message' => 'Nạp tiền vào tài khoản thành công.']);
-            } else {
-                $this->json(['status' => false, 'message' => 'Xử lý mã nạp tiền thất bại hoặc đã được xử lý.'], 400);
-            }
+            $respond($result, $result ? 'Nạp tiền vào tài khoản thành công.' : 'Xử lý mã nạp tiền thất bại hoặc đã được xử lý.', $result ? 200 : 400);
             return;
         }
 
-        // 7. WeChat Pay / VietQR: Tự động bóc tách số tiền từ nội dung thông báo
-        if ($amount <= 0 && !empty($content)) {
-            $cleanContent = str_replace(',', '.', $content);
-            
-            // Ưu tiên 1: Tìm số đứng ngay trước chữ 元 (Ví dụ: 0.10元, 0.50元)
-            if (preg_match('/(\d+(?:\.\d+)?)\s*元/u', $cleanContent, $amtMatches)) {
-                $amount = (float)$amtMatches[1];
-            } 
-            // Ưu tiên 2: Tìm số có dấu chấm thập phân (VD: 0.10) để né số chỉ mục [2] ở đầu
-            elseif (preg_match('/(\d+\.\d+)/', $cleanContent, $amtMatches)) {
-                $amount = (float)$amtMatches[1];
-            }
-            // Ưu tiên 3: Lấy số bất kỳ
-            elseif (preg_match('/(\d+(?:\.\d+)?)/', $cleanContent, $amtMatches)) {
-                $amount = (float)$amtMatches[1];
-            }
-        }
-
-        if ($amount <= 0) {
-            $this->json([
-                'status' => false, 
-                'message' => 'Không bóc tách được số tiền.'
-            ], 400);
-            return;
-        }
-
-        // 8. Khớp đơn tự động WeChat Pay theo số tiền
-        $sysAmount = $convertToSystemCurrency($amount, 'wechat');
-        $result = $orderService->processPaymentByAmount($sysAmount, $transId);
-        $this->json(['status' => $result['status'], 'message' => $result['message']], $result['status'] ? 200 : 404);
+        // 5. Tuyệt đối không tự ý duyệt đơn nếu nội dung chuyển khoản không khớp bất kỳ cú pháp nào
+        $respond(false, 'Nội dung chuyển khoản không khớp với bất kỳ đơn hàng hoặc giao dịch nào trong hệ thống: ' . ($content ?: $searchContent), 400);
     }
 }

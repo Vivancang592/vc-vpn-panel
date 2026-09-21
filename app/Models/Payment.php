@@ -70,6 +70,14 @@ class Payment extends BaseModel
         return $result ?: null;
     }
 
+    public function findPendingByOrderId(int $orderId): ?array
+    {
+        $stmt = self::$db->prepare("SELECT * FROM `{$this->table}` WHERE `order_id` = :order_id AND `status` = 'pending' LIMIT 1");
+        $stmt->execute(['order_id' => $orderId]);
+        $result = $stmt->fetch();
+        return $result ?: null;
+    }
+
     public function findPendingRenewalBySubscriptionId(int $subscriptionId): ?array
     {
         $stmt = self::$db->prepare("SELECT * FROM `{$this->table}` WHERE `subscription_id` = :subscription_id AND `type` = 'payment' AND `status` = 'pending' ORDER BY `id` DESC LIMIT 1");

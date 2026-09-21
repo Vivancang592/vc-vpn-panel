@@ -129,6 +129,17 @@ class OrderService
                 ];
             }
 
+            (new Payment())->create([
+                'user_id'        => $userId,
+                'order_id'       => $orderId,
+                'type'           => 'payment',
+                'payment_method' => $paymentMethod,
+                'transaction_id' => $orderCode,
+                'amount'         => $finalPrice,
+                'status'         => 'pending',
+                'created_at'     => date('Y-m-d H:i:s')
+            ]);
+
             $this->notifyAdministratorsAboutNewOrder(
                 $userId,
                 $orderCode,
@@ -311,16 +322,29 @@ class OrderService
         $activated = $this->activateOrder((int)$order['id']);
         if ($activated) {
             $paymentModel = new Payment();
-            $paymentModel->create([
-                'user_id'        => $order['user_id'],
-                'order_id'       => $order['id'],
-                'type'           => 'payment',
-                'payment_method' => 'vietqr',
-                'transaction_id' => $transactionId ?: ('TXN' . time() . rand(100, 999)),
-                'amount'         => $amount,
-                'status'         => 'success',
-                'created_at'     => date('Y-m-d H:i:s')
-            ]);
+            $existingPayment = method_exists($paymentModel, 'findPendingByOrderId')
+                ? $paymentModel->findPendingByOrderId((int)$order['id'])
+                : null;
+
+            if ($existingPayment) {
+                $paymentModel->update((int)$existingPayment['id'], [
+                    'status'         => 'success',
+                    'transaction_id' => $transactionId ?: ($existingPayment['transaction_id'] ?? $orderCode),
+                    'amount'         => $amount,
+                    'payment_method' => $existingPayment['payment_method'] ?? ($order['payment_method'] ?? 'vietqr'),
+                ]);
+            } else {
+                $paymentModel->create([
+                    'user_id'        => $order['user_id'],
+                    'order_id'       => $order['id'],
+                    'type'           => 'payment',
+                    'payment_method' => $order['payment_method'] ?? 'vietqr',
+                    'transaction_id' => $transactionId ?: ('TXN' . time() . rand(100, 999)),
+                    'amount'         => $amount,
+                    'status'         => 'success',
+                    'created_at'     => date('Y-m-d H:i:s')
+                ]);
+            }
 
             return ['status' => true, 'message' => 'Kích hoạt đơn hàng ' . $orderCode . ' thành công.'];
         }
@@ -343,16 +367,29 @@ class OrderService
         $activated = $this->activateOrder((int)$order['id']);
         if ($activated) {
             $paymentModel = new Payment();
-            $paymentModel->create([
-                'user_id'        => $order['user_id'],
-                'order_id'       => $order['id'],
-                'type'           => 'payment',
-                'payment_method' => 'wechat',
-                'transaction_id' => $transactionId ?: ('WX' . time() . rand(100, 999)),
-                'amount'         => $amount,
-                'status'         => 'success',
-                'created_at'     => date('Y-m-d H:i:s')
-            ]);
+            $existingPayment = method_exists($paymentModel, 'findPendingByOrderId')
+                ? $paymentModel->findPendingByOrderId((int)$order['id'])
+                : null;
+
+            if ($existingPayment) {
+                $paymentModel->update((int)$existingPayment['id'], [
+                    'status'         => 'success',
+                    'transaction_id' => $transactionId ?: ($existingPayment['transaction_id'] ?? ('WX' . time() . rand(100, 999))),
+                    'amount'         => $amount,
+                    'payment_method' => 'wechat'
+                ]);
+            } else {
+                $paymentModel->create([
+                    'user_id'        => $order['user_id'],
+                    'order_id'       => $order['id'],
+                    'type'           => 'payment',
+                    'payment_method' => 'wechat',
+                    'transaction_id' => $transactionId ?: ('WX' . time() . rand(100, 999)),
+                    'amount'         => $amount,
+                    'status'         => 'success',
+                    'created_at'     => date('Y-m-d H:i:s')
+                ]);
+            }
 
             return ['status' => true, 'message' => "Kích hoạt đơn hàng {$order['order_code']} theo số tiền {$amount} CNY thành công."];
         }
