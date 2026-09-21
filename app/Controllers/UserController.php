@@ -514,8 +514,9 @@ $_SESSION['success'] = 'Đã tạo đơn hàng ' . $orderCode . ' thành công. 
         $totalAmount = (float) ($order['total_amount'] ?? 0);
         $orderCode = (string) ($order['order_code'] ?? '');
         $orderId = (int) ($order['id'] ?? 0);
-        $transferContent = trim((string) ($this->settings['order_transfer_syntax'] ?? 'THANHTOAN'))
-            . str_pad((string) $orderId, 2, '0', STR_PAD_LEFT);
+        $transferContent = !empty($order['transfer_content'])
+            ? (string)$order['transfer_content']
+            : (trim((string) ($this->settings['order_transfer_syntax'] ?? 'THANHTOAN')) . str_pad((string) $orderId, 2, '0', STR_PAD_LEFT));
 
         if ($method === 'wechat') {
             return [

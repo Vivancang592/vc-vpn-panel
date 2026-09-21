@@ -135,6 +135,7 @@ CREATE TABLE `vc_orders` (
     `coupon_id` INT UNSIGNED NULL,
     `total_amount` DECIMAL(15, 2) NOT NULL,
     `payment_method` VARCHAR(50) NOT NULL DEFAULT 'vietqr',
+    `transfer_content` VARCHAR(100) NULL,
     `purchase_ip` VARCHAR(45) NULL,
     `created_by` BIGINT UNSIGNED NULL,
     `approved_by` BIGINT UNSIGNED NULL,

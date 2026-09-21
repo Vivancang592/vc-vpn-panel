@@ -18,6 +18,17 @@ class Order extends BaseModel
     }
 
     /**
+     * Tìm đơn hàng theo nội dung chuyển khoản (transfer_content)
+     */
+    public function findByTransferContent(string $transferContent): ?array
+    {
+        $stmt = self::$db->prepare("SELECT * FROM `{$this->table}` WHERE `transfer_content` = :transfer_content LIMIT 1");
+        $stmt->execute(['transfer_content' => $transferContent]);
+        $result = $stmt->fetch();
+        return $result ?: null;
+    }
+
+    /**
      * Tìm đơn hàng pending theo đúng số tiền (áp dụng cho WeChat Pay khớp tiền lẻ)
      */
     public function findByPendingAmount(float $amount, int $minutes = 15): ?array
