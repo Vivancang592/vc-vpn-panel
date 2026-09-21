@@ -148,23 +148,6 @@ CREATE TABLE `vc_orders` (
     FOREIGN KEY (`approved_by`) REFERENCES `vc_users`(`id`) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
-CREATE TABLE `vc_payments` (
-    `id` BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-    `user_id` BIGINT UNSIGNED NOT NULL,
-    `order_id` BIGINT UNSIGNED NULL,
-    `subscription_id` BIGINT UNSIGNED NULL,
-    `type` ENUM('deposit', 'payment') NOT NULL,
-    `payment_method` VARCHAR(50) NOT NULL,
-    `transaction_id` VARCHAR(100) NULL UNIQUE,
-    `amount` DECIMAL(15, 2) NOT NULL,
-    `status` ENUM('pending', 'success', 'failed') NOT NULL DEFAULT 'pending',
-    `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-
-    FOREIGN KEY (`user_id`) REFERENCES `vc_users`(`id`) ON DELETE CASCADE,
-    FOREIGN KEY (`order_id`) REFERENCES `vc_orders`(`id`) ON DELETE CASCADE,
-    FOREIGN KEY (`subscription_id`) REFERENCES `vc_subscriptions`(`id`) ON DELETE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
 CREATE TABLE `vc_subscriptions` (
     `id` BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     `user_id` BIGINT UNSIGNED NOT NULL,
@@ -184,6 +167,23 @@ CREATE TABLE `vc_subscriptions` (
     FOREIGN KEY (`user_id`) REFERENCES `vc_users`(`id`) ON DELETE CASCADE,
     FOREIGN KEY (`plan_id`) REFERENCES `vc_vpn_plans`(`id`) ON DELETE RESTRICT,
     FOREIGN KEY (`order_id`) REFERENCES `vc_orders`(`id`) ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE `vc_payments` (
+    `id` BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    `user_id` BIGINT UNSIGNED NOT NULL,
+    `order_id` BIGINT UNSIGNED NULL,
+    `subscription_id` BIGINT UNSIGNED NULL,
+    `type` ENUM('deposit', 'payment') NOT NULL,
+    `payment_method` VARCHAR(50) NOT NULL,
+    `transaction_id` VARCHAR(100) NULL UNIQUE,
+    `amount` DECIMAL(15, 2) NOT NULL,
+    `status` ENUM('pending', 'success', 'failed') NOT NULL DEFAULT 'pending',
+    `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+
+    FOREIGN KEY (`user_id`) REFERENCES `vc_users`(`id`) ON DELETE CASCADE,
+    FOREIGN KEY (`order_id`) REFERENCES `vc_orders`(`id`) ON DELETE CASCADE,
+    FOREIGN KEY (`subscription_id`) REFERENCES `vc_subscriptions`(`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE `vc_subscription_access_logs` (
