@@ -5,11 +5,8 @@ $activeMenu = "tickets";
 ob_start();
 ?>
 
-<div style="margin-bottom: 1rem; display: flex; justify-content: space-between; align-items: center; gap: 0.75rem;">
-    <div>
-        <h1 style="font-size: 1.5rem; font-weight: 700; word-break: break-word;">Ticket #<?= $ticket['id'] ?>: <?= htmlspecialchars($ticket['subject']) ?></h1>
-    </div>
-    <a href="/admin/tickets" class="glass-btn" style="text-decoration: none; white-space: nowrap; flex-shrink: 0;">⬅️ Quay Lại</a>
+<div style="margin-bottom: 1rem;">
+    <h1 style="font-size: 1.5rem; font-weight: 700; word-break: break-word;">Ticket #<?= $ticket['id'] ?>: <?= htmlspecialchars($ticket['subject']) ?></h1>
 </div>
 
 <?php if (!empty($_SESSION['flash_message'])): ?>

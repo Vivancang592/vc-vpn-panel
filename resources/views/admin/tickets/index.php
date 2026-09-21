@@ -91,6 +91,14 @@ ob_start();
                                         <a href="/admin/tickets/detail?id=<?= $ticket['id'] ?>" class="action-item">
                                             <span>💬</span> Xem & Phản hồi
                                         </a>
+                                        <?php if (($ticket['status'] ?? '') === 'closed'): ?>
+                                            <form method="POST" action="/admin/tickets/delete" onsubmit="return confirm('Bạn có chắc chắn muốn xóa ticket đã đóng này? Hành động này không thể hoàn tác!');">
+                                                <input type="hidden" name="id" value="<?= (int)$ticket['id'] ?>">
+                                                <button type="submit" class="action-item delete" style="background: none; border: none; width: 100%; text-align: left; cursor: pointer; color: var(--ios-danger); padding: 0.5rem 1rem; font-size: 0.85rem; display: flex; align-items: center; gap: 0.5rem; white-space: nowrap;">
+                                                    <span>🗑️</span> Xóa ticket
+                                                </button>
+                                            </form>
+                                        <?php endif; ?>
                                     </div>
                                 </div>
                             </td>

@@ -224,6 +224,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
     const planGroupTabs = document.querySelectorAll('[data-plan-group-filter]');
     const planCards = document.querySelectorAll('[data-plan-group-ids]');
+    const planEmptyBlock = document.querySelector('[data-plan-empty]');
     if (planGroupTabs.length && planCards.length) {
         planGroupTabs.forEach(function (tab) {
             tab.addEventListener('click', function () {
@@ -235,10 +236,18 @@ document.addEventListener('DOMContentLoaded', function () {
                     item.setAttribute('aria-selected', String(isSelected));
                 });
 
+                let visibleCount = 0;
                 planCards.forEach(function (card) {
                     const groupIds = (card.dataset.planGroupIds || '').split(',').filter(Boolean);
-                    card.hidden = selectedGroup !== 'all' && !groupIds.includes(selectedGroup);
+                    const shouldShow = selectedGroup === 'all' || groupIds.includes(selectedGroup);
+                    card.hidden = !shouldShow;
+                    card.style.display = shouldShow ? 'flex' : 'none';
+                    if (shouldShow) visibleCount++;
                 });
+
+                if (planEmptyBlock) {
+                    planEmptyBlock.style.display = visibleCount === 0 ? 'block' : 'none';
+                }
             });
         });
     }
@@ -433,4 +442,74 @@ if (!response.ok || !result.valid) {
             }
         });
     });
+
+    // 9. Tự động ẩn thông báo sau 4 giây
+    document.querySelectorAll('.user-record-alert').forEach(function (alert) {
+        setTimeout(function () {
+            alert.style.transition = 'opacity 0.4s ease, transform 0.4s ease';
+            alert.style.opacity = '0';
+            alert.style.transform = 'translateY(-15px)';
+            setTimeout(function () {
+                alert.remove();
+            }, 400);
+        }, 4000);
+    });
+
+    // 10. Xử lý toggle Menu Ba Chấm (Action Dropdown)
+    const actionBtns = document.querySelectorAll('.action-btn');
+
+    function closeAllActionMenus() {
+        document.querySelectorAll('.action-menu.show').forEach(menu => {
+            menu.classList.remove('show');
+            if (menu._triggerBtn) {
+                menu._triggerBtn.classList.remove('active');
+            } else if (menu.previousElementSibling) {
+                menu.previousElementSibling.classList.remove('active');
+            }
+        });
+    }
+
+    actionBtns.forEach(btn => {
+        if (btn.dataset.actionBound) return;
+        btn.dataset.actionBound = '1';
+
+        btn.addEventListener('click', function (e) {
+            e.stopPropagation();
+
+            let currentMenu = this.nextElementSibling;
+            if (!currentMenu || !currentMenu.classList.contains('action-menu')) {
+                currentMenu = this._actionMenu;
+            }
+
+            if (!currentMenu) return;
+
+            this._actionMenu = currentMenu;
+            currentMenu._triggerBtn = this;
+
+            const isCurrentlyShown = currentMenu.classList.contains('show');
+
+            closeAllActionMenus();
+
+            if (!isCurrentlyShown) {
+                if (currentMenu.parentNode !== document.body) {
+                    document.body.appendChild(currentMenu);
+                }
+
+                currentMenu.classList.add('show');
+                this.classList.add('active');
+
+                const rect = this.getBoundingClientRect();
+                currentMenu.style.top = (rect.bottom + 4) + 'px';
+                currentMenu.style.left = 'auto';
+                currentMenu.style.right = (window.innerWidth - rect.right) + 'px';
+            }
+        });
+    });
+
+    if (!window._actionDropdownEventsBound) {
+        window._actionDropdownEventsBound = true;
+        document.addEventListener('click', closeAllActionMenus);
+        window.addEventListener('scroll', closeAllActionMenus, true);
+        window.addEventListener('resize', closeAllActionMenus);
+    }
 });

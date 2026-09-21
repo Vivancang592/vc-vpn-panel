@@ -287,14 +287,14 @@ CREATE TABLE `vc_expenses` (
     `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- Cấu hình đơn vị tiền tệ mặc định sang CNY (¥)
+-- Cấu hình đơn vị tiền tệ mặc định sang VND (đ)
 INSERT INTO `vc_settings` (`setting_key`, `setting_value`, `description`) 
 VALUES 
-    ('currency', 'CNY', 'Mã đơn vị tiền tệ hệ thống'),
-    ('currency_symbol', '¥', 'Ký hiệu tiền tệ hệ thống'),
-    ('min_deposit_amount', '10.00', 'Số tiền nạp tối thiểu (CNY)'),
+    ('currency', 'VND', 'Mã đơn vị tiền tệ hệ thống'),
+    ('currency_symbol', 'đ', 'Ký hiệu tiền tệ hệ thống'),
+    ('min_deposit_amount', '10000', 'Số tiền nạp tối thiểu (VND)'),
     ('referral_commission_rate', '10.00', 'Tỷ lệ hoa hồng giới thiệu (%)'),
-    ('enable_vietqr', '1', 'Bật cổng thanh toán VietQR'),
+    ('enable_vietqr', '0', 'Bật cổng thanh toán VietQR'),
     ('enable_wechat', '0', 'Bật cổng thanh toán WeChat Pay'),
     ('enable_alipay', '0', 'Bật cổng thanh toán Alipay')
 ON DUPLICATE KEY UPDATE 

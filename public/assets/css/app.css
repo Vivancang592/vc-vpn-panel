@@ -1389,8 +1389,58 @@ body.vpn-theme .user-subscription-card-status-cancelled { border-top-color: #8e8
 .user-record-header { display: flex; justify-content: space-between; align-items: flex-end; gap: 1rem; margin-bottom: 1.25rem; }
 .user-record-header h1 { font-size: 1.55rem; line-height: 1.2; }
 .user-record-header p, .user-record-empty p, .user-notification-item p { color: var(--ios-text-secondary); margin-top: .4rem; }
-.user-record-alert { padding: .85rem 1rem; margin-bottom: 1rem; border-left: 4px solid var(--ios-success); background: rgba(52, 199, 89, .1); }
-.user-record-alert.is-error { border-left-color: var(--ios-danger); background: rgba(255, 59, 48, .1); }
+.user-record-alert {
+    position: fixed;
+    top: 4.5rem;
+    right: 1.5rem;
+    z-index: 99;
+    min-width: 280px;
+    max-width: calc(100vw - 3rem);
+    padding: .9rem 2.5rem .9rem 1.15rem;
+    border-radius: 5px;
+    border-left: 4px solid var(--ios-success);
+    background: rgba(255, 255, 255, .92);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    color: var(--ios-text);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, .15);
+    font-size: .9rem;
+    font-weight: 500;
+    line-height: 1.4;
+    animation: slideInNotif .3s ease forwards;
+}
+.user-record-alert.is-error {
+    border-left-color: var(--ios-danger);
+    background: rgba(255, 255, 255, .92);
+}
+.user-record-alert .alert-close-btn {
+    position: absolute;
+    top: 50%;
+    right: .65rem;
+    transform: translateY(-50%);
+    width: 22px;
+    height: 22px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: transparent;
+    border: none;
+    color: var(--ios-text-secondary);
+    font-size: 1.25rem;
+    line-height: 1;
+    cursor: pointer;
+    border-radius: 50%;
+    transition: all .2s ease;
+    padding: 0;
+}
+.user-record-alert .alert-close-btn:hover {
+    color: var(--ios-danger);
+    background: rgba(255, 59, 48, .1);
+}
+@keyframes slideInNotif {
+    from { opacity: 0; transform: translateY(-15px); }
+    to { opacity: 1; transform: translateY(0); }
+}
 .user-record-table-wrap { overflow-x: auto; }
 .user-record-table { width: 100%; border-collapse: collapse; min-width: 680px; }
 .user-record-table th, .user-record-table td { padding: .9rem .8rem; border-bottom: 1px solid var(--glass-border); text-align: left; font-size: .88rem; }
@@ -1413,9 +1463,84 @@ body.vpn-theme .user-subscription-card-status-cancelled { border-top-color: #8e8
 .user-referral-code { display: flex; align-items: center; gap: 1rem; margin-bottom: 1rem; }
 .user-referral-code strong { margin: 0 auto 0 0; letter-spacing: .06em; }
 .user-referral-code .glass-btn { border: 0; cursor: pointer; }
+/* Action Menu Dropdown (Menu Ba Chấm) */
+.action-dropdown {
+  position: relative;
+  display: inline-block;
+}
+
+.action-btn {
+  background: rgba(255, 255, 255, 0.25);
+  border: 1px solid var(--glass-border);
+  color: var(--ios-text);
+  border-radius: var(--radius-sm);
+  padding: 0.2rem 0.5rem;
+  cursor: pointer;
+  font-size: 1rem;
+  font-weight: bold;
+  line-height: 1;
+  transition: var(--transition);
+}
+
+.action-btn:hover,
+.action-btn.active {
+  background: rgba(0, 122, 255, 0.2);
+  color: var(--ios-blue);
+  border-color: var(--ios-blue);
+}
+
+.action-menu {
+  display: none;
+  position: fixed;
+  margin-top: 0;
+  background: rgba(255, 255, 255, 0.96);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-md);
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+  min-width: 150px;
+  z-index: 9999;
+  overflow: hidden;
+}
+
+.action-menu.show {
+  display: block;
+}
+
+.action-item {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.55rem 0.85rem;
+  color: var(--ios-text);
+  text-decoration: none;
+  font-size: 0.85rem;
+  font-weight: 500;
+  border: none;
+  background: transparent;
+  width: 100%;
+  text-align: left;
+  cursor: pointer;
+  box-sizing: border-box;
+  transition: var(--transition);
+}
+
+.action-item:hover {
+  background: rgba(0, 122, 255, 0.1);
+  color: var(--ios-blue);
+}
+
+.action-item.delete:hover,
+.action-item.cancel:hover {
+  background: rgba(255, 59, 48, 0.1);
+  color: var(--ios-danger);
+}
+
 .user-notification-list, .user-ticket-thread { display: grid; gap: .85rem; }
-.user-notification-item { padding: 1rem; display: flex; justify-content: space-between; gap: 1rem; border-left: 4px solid var(--ios-blue); }
-.user-notification-item.is-ticket { border-left-color: var(--ios-warning); }
+.user-notification-item { position: relative; padding: 1rem 2.25rem 1rem 1.25rem; border-left: 4px solid var(--ios-blue); border-radius: var(--radius-md); }
+.user-notification-item.is-unread { background: rgba(255, 255, 255, .35); box-shadow: 0 4px 15px rgba(0, 122, 255, .1); }
+.user-notification-item.is-read { opacity: .85; }
 .user-notification-item h2 { font-size: 1rem; }
 .user-notification-item time, .user-ticket-message time { color: var(--ios-text-secondary); font-size: .78rem; white-space: nowrap; }
 .user-record-form { display: grid; gap: .65rem; padding: 1.25rem; }

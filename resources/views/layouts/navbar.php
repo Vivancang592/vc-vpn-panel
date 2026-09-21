@@ -30,6 +30,34 @@ $homeAnchorPrefix = ($activeMenu ?? '') === 'home' ? '' : '/';
     <!-- Bên phải: Profile khi đã đăng nhập OR Đăng nhập/Đăng ký khi chưa đăng nhập -->
     <div style="display: flex; align-items: center; gap: 0.75rem;">
         <?php if (isset($_SESSION['user_id'])): ?>
+            <?php
+                $currentUri = (string) ($_SERVER['REQUEST_URI'] ?? '/');
+                $isAdminRoute = (strncmp($currentUri, '/admin', 6) === 0);
+                $notifUid = (int) $_SESSION['user_id'];
+
+                if ($isAdminRoute && in_array($_SESSION['role'] ?? '', ['admin', 'staff'], true)) {
+                    $notifHref = '/admin/notifications';
+                    $notifTitle = 'Thông báo Quản trị';
+                    $notifCount = class_exists(\App\Services\NotificationService::class)
+                        ? \App\Services\NotificationService::getAdminPendingCount($notifUid)
+                        : 0;
+                } else {
+                    $notifHref = '/notifications';
+                    $notifTitle = 'Thông báo';
+                    $notifCount = class_exists(\App\Services\NotificationService::class) 
+                        ? \App\Services\NotificationService::getUnreadCount($notifUid) 
+                        : 0;
+                }
+            ?>
+            <a href="<?= $notifHref ?>" title="<?= htmlspecialchars($notifTitle) ?>" style="position: relative; display: flex; align-items: center; justify-content: center; width: 34px; height: 34px; border-radius: 50%; background: rgba(255, 255, 255, 0.25); border: 1px solid var(--glass-border); color: var(--ios-text); text-decoration: none; font-size: 1rem; transition: var(--transition);">
+                🔔
+                <?php if ($notifCount > 0): ?>
+                    <span style="position: absolute; top: -3px; right: -3px; min-width: 17px; height: 17px; padding: 0 4px; background: var(--ios-danger, #ff3b30); color: #fff; font-size: 0.65rem; font-weight: 700; border-radius: 9999px; display: flex; align-items: center; justify-content: center; line-height: 1;">
+                        <?= $notifCount ?>
+                    </span>
+                <?php endif; ?>
+            </a>
+
             <div class="profile-dropdown-wrapper" style="position: relative; z-index: 1001;">
                 <button type="button" id="profile-dropdown-btn" class="profile-trigger" style="display: flex; align-items: center; gap: 0.5rem; background: rgba(255, 255, 255, 0.25); border: 1px solid var(--glass-border); padding: 0.4rem 0.8rem; border-radius: 9999px; cursor: pointer; color: var(--ios-text); font-weight: 600; font-size: 0.85rem;">
                     <span style="width: 24px; height: 24px; border-radius: 50%; background: var(--ios-blue); color: #fff; display: flex; align-items: center; justify-content: center; font-size: 0.75rem; font-weight: 700;">
