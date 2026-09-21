@@ -40,21 +40,53 @@ class PaymentController extends BaseController
             return;
         }
 
-        // 3. Kiểm tra Secret Token / API Key (Hỗ trợ SePay & MacroDroid)
-        $config = require __DIR__ . '/../../../config/app.php';
-        $expectedSecret = $config['macrodroid_secret'] ?? '';
-        $providedSecret = $payload['secret'] ?? $_SERVER['HTTP_X_MACRODROID_SECRET'] ?? '';
+        $orderService   = new OrderService();
+        $paymentService = new PaymentService();
+        $paymentModel   = new \App\Models\Payment();
+        $settings       = (new \App\Models\Setting())->getAllAsKeyValue();
+        $config         = require __DIR__ . '/../../../config/app.php';
 
-        if (empty($providedSecret)) {
+        // 3. Kiểm tra API Key / Secret Token (Hỗ trợ SePay & MacroDroid)
+        $providedKey = (string)($payload['api_key'] ?? $payload['apiKey'] ?? $payload['apikey'] ?? $payload['secret'] ?? $payload['token'] ?? '');
+        
+        if ($providedKey === '') {
             $authHeader = $_SERVER['HTTP_AUTHORIZATION'] ?? $_SERVER['REDIRECT_HTTP_AUTHORIZATION'] ?? '';
             if (preg_match('/^(?:Apikey|Bearer)\s+(.*)$/i', $authHeader, $matches)) {
-                $providedSecret = trim($matches[1]);
+                $providedKey = trim($matches[1]);
+            } elseif (!empty($authHeader)) {
+                $providedKey = trim($authHeader);
             }
         }
 
-        if (!empty($expectedSecret) && !hash_equals($expectedSecret, $providedSecret)) {
-            $this->json(['status' => false, 'message' => 'Mã xác thực Webhook không hợp lệ.'], 403);
-            return;
+        if ($providedKey === '') {
+            $providedKey = (string)($_SERVER['HTTP_X_API_KEY'] ?? $_SERVER['HTTP_APIKEY'] ?? $_SERVER['HTTP_X_MACRODROID_SECRET'] ?? $_GET['api_key'] ?? $_GET['apiKey'] ?? $_GET['key'] ?? $_GET['secret'] ?? '');
+        }
+
+        // Danh sách các API Key / Secret hợp lệ được cấu hình
+        $validKeys = array_filter([
+            trim((string)($config['macrodroid_secret'] ?? '')),
+            trim((string)($config['sepay_api_key'] ?? '')),
+            trim((string)getenv('SEPAY_API_KEY')),
+            trim((string)getenv('MACRODROID_SECRET')),
+            trim((string)($settings['sepay_api_key'] ?? '')),
+            trim((string)($settings['payment_api_key'] ?? '')),
+            trim((string)($settings['webhook_api_key'] ?? '')),
+            trim((string)($settings['macrodroid_secret'] ?? '')),
+        ]);
+
+        if (!empty($validKeys)) {
+            $isAuthenticated = false;
+            foreach ($validKeys as $validKey) {
+                if (hash_equals($validKey, $providedKey)) {
+                    $isAuthenticated = true;
+                    break;
+                }
+            }
+
+            if (!$isAuthenticated) {
+                $this->json(['status' => false, 'message' => 'API Key hoặc mã xác thực Webhook không hợp lệ.'], 403);
+                return;
+            }
         }
 
         // Bỏ qua nếu là giao dịch tiền ra từ SePay (transferType != in)
@@ -67,11 +99,6 @@ class PaymentController extends BaseController
         $searchContent = trim($content . ' ' . (string)($payload['description'] ?? '') . ' ' . (string)($payload['code'] ?? ''));
         $amount  = (float)($payload['transferAmount'] ?? $payload['amount'] ?? 0);
         $transId = (string)($payload['referenceCode'] ?? $payload['id'] ?? $payload['transaction_id'] ?? $payload['code'] ?? '');
-
-        $orderService   = new OrderService();
-        $paymentService = new PaymentService();
-        $paymentModel = new \App\Models\Payment();
-        $settings = (new \App\Models\Setting())->getAllAsKeyValue();
 
         // Xử lý quy đổi ngược số tiền từ cổng thanh toán về tiền tệ hệ thống
         $convertToSystemCurrency = function(float $rawAmount, string $paymentMethod) use ($settings): float {
