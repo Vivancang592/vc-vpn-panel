@@ -368,6 +368,11 @@ class OrderController extends BaseController
                 $this->redirect('/admin/orders/create?user_id=' . $userId);
             }
 
+            $customAmount    = isset($_POST['amount']) && $_POST['amount'] !== '' ? (float)$_POST['amount'] : null;
+            $customEndDate   = !empty($_POST['end_date']) ? trim($_POST['end_date']) : null;
+            $customDataGb    = isset($_POST['bandwidth_gb']) && $_POST['bandwidth_gb'] !== '' ? (float)$_POST['bandwidth_gb'] : null;
+            $customDevices   = isset($_POST['max_devices']) && $_POST['max_devices'] !== '' ? (int)$_POST['max_devices'] : null;
+
             $totalAmount = $customAmount !== null ? $customAmount : (float)$plan['price'];
             $orderCode   = 'AD' . date('YmdHis') . rand(100, 999);
 
@@ -389,10 +394,10 @@ class OrderController extends BaseController
                 if ($paymentStatus === 'completed' && class_exists('App\Models\Subscription')) {
                     $subModel       = new Subscription();
                     $durationDays   = (int)($plan['duration_days'] ?? 30);
-                    $bandwidthLimit = (int)($plan['bandwidth_limit_gb'] ?? 0);
+                    $bandwidthLimit = $customDataGb !== null ? $customDataGb : (float)($plan['bandwidth_limit_gb'] ?? 0);
                     $groupIds       = $this->parseGroupIds($plan['group_id'] ?? []);
                     
-                    $bytesTotal = $bandwidthLimit > 0 ? ($bandwidthLimit * 1073741824) : 0;
+                    $bytesTotal = $bandwidthLimit > 0 ? (int)round($bandwidthLimit * 1073741824) : 0;
                     $uuid       = sprintf('%04x%04x-%04x-%04x-%04x-%04x%04x%04x', 
                                     mt_rand(0, 0xffff), mt_rand(0, 0xffff), 
                                     mt_rand(0, 0xffff), 
@@ -401,9 +406,13 @@ class OrderController extends BaseController
                                     mt_rand(0, 0xffff), mt_rand(0, 0xffff), mt_rand(0, 0xffff));
 
                     $startDate  = date('Y-m-d H:i:s');
-                    $endDate    = date('Y-m-d H:i:s', strtotime("+{$durationDays} days"));
+                    if (!empty($customEndDate)) {
+                        $endDate = date('Y-m-d H:i:s', strtotime($customEndDate));
+                    } else {
+                        $endDate = date('Y-m-d H:i:s', strtotime("+{$durationDays} days"));
+                    }
 
-                    $created = $subModel->create([
+                    $subData = [
                         'user_id'         => $userId,
                         'plan_id'         => $planId,
                         'order_id'        => $orderId ?: null,
@@ -412,7 +421,9 @@ class OrderController extends BaseController
                         'start_date'      => $startDate,
                         'end_date'        => $endDate,
                         'status'          => 'active'
-                    ]);
+                    ];
+
+                    $created = $subModel->create($subData);
 
                     if ($created) {
                         $subId = method_exists($subModel, 'lastInsertId') ? $subModel->lastInsertId() : 0;

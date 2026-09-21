@@ -52,6 +52,9 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     actionBtns.forEach(btn => {
+        if (btn.dataset.actionBound) return;
+        btn.dataset.actionBound = '1';
+
         btn.addEventListener('click', function (e) {
             e.stopPropagation();
 
@@ -89,10 +92,13 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     });
 
-    // Bấm ra ngoài vùng menu, cuộn trang hoặc đổi kích thước màn hình -> Tự động đóng tất cả dropdown
-    document.addEventListener('click', closeAllActionMenus);
-    window.addEventListener('scroll', closeAllActionMenus, true);
-    window.addEventListener('resize', closeAllActionMenus);
+    if (!window._actionDropdownEventsBound) {
+        window._actionDropdownEventsBound = true;
+        // Bấm ra ngoài vùng menu, cuộn trang hoặc đổi kích thước màn hình -> Tự động đóng tất cả dropdown
+        document.addEventListener('click', closeAllActionMenus);
+        window.addEventListener('scroll', closeAllActionMenus, true);
+        window.addEventListener('resize', closeAllActionMenus);
+    }
 
     // 3. Xử lý Tự động ẩn và Nút đóng (✕) cho Thông Báo Flash
     const alerts = document.querySelectorAll('.glass-alert');

@@ -18,6 +18,7 @@ use App\Models\TicketMessage;
 use App\Services\VpnService;
 use App\Services\OrderService;
 use App\Services\PaymentService;
+use App\Services\NotificationService;
 
 class UserController extends BaseController
 {
@@ -1018,7 +1019,7 @@ $_SESSION['success'] = 'Đã tạo đơn hàng ' . $orderCode . ' thành công. 
 
     public function referrals(): void
     {
-        $userId = $_SESSION['user_id'];
+        $userId = (int) $_SESSION['user_id'];
         $user = [];
         $commissions = [];
 
@@ -1028,12 +1029,22 @@ $_SESSION['success'] = 'Đã tạo đơn hàng ' . $orderCode . ' thành công. 
         }
 
         if (class_exists('App\Models\ReferralCommission')) {
-            $commissions = (new ReferralCommission())->getByReferrerId((int) $userId);
+            $commissions = (new ReferralCommission())->getByReferrerId($userId);
         }
+
+        $minWithdrawal = (float) ($this->settings['min_withdrawal'] ?? 0);
+        $pendingWithdrawal = 0.0;
+        if (class_exists('App\Models\Withdrawal')) {
+            $pendingWithdrawal = (new Withdrawal())->getPendingTotalByUserId($userId);
+        }
+        $availableCommission = max(0.0, (float) ($user['commission_balance'] ?? 0) - $pendingWithdrawal);
 
         $this->render('user.referrals.index', [
             'user' => $user,
             'commissions' => $commissions,
+            'minWithdrawal' => $minWithdrawal,
+            'pendingWithdrawal' => $pendingWithdrawal,
+            'availableCommission' => $availableCommission,
             'activeMenu' => 'referrals'
         ]);
     }
@@ -1149,6 +1160,23 @@ $_SESSION['success'] = 'Đã tạo đơn hàng ' . $orderCode . ' thành công. 
         $this->redirect('/tickets/detail?id=' . $ticketId);
     }
 
+    public function closeTicket(): void
+    {
+        $ticketId = (int) ($_POST['ticket_id'] ?? 0);
+        $ticket = (new SupportTicket())->find($ticketId);
+
+        if (!$this->validateCsrfToken($_POST['csrf_token'] ?? '') || !$ticket
+            || (int) ($ticket['user_id'] ?? 0) !== (int) $_SESSION['user_id']) {
+            $_SESSION['error'] = 'Không thể đóng yêu cầu hỗ trợ này.';
+            $this->redirect('/tickets');
+            return;
+        }
+
+        (new SupportTicket())->updateTicket($ticketId, ['status' => 'closed']);
+        $_SESSION['success'] = 'Đã hủy/đóng yêu cầu hỗ trợ #' . $ticketId . '.';
+        $this->redirect('/tickets');
+    }
+
     public function withdrawals(): void
     {
         $withdrawals = (new Withdrawal())->getByUserId((int) $_SESSION['user_id']);
@@ -1172,23 +1200,56 @@ $_SESSION['success'] = 'Đã tạo đơn hàng ' . $orderCode . ' thành công. 
     {
         if (!$this->validateCsrfToken($_POST['csrf_token'] ?? '')) {
             $_SESSION['error'] = 'Phiên làm việc không hợp lệ. Vui lòng thử lại.';
-            $this->redirect('/withdrawals/create');
+            $this->redirect($_SERVER['HTTP_REFERER'] ?? '/withdrawals');
             return;
         }
 
         $amount = (float) ($_POST['amount'] ?? 0);
         $minWithdrawal = (float) ($this->settings['min_withdrawal'] ?? 0);
+        $withdrawType = trim((string) ($_POST['withdraw_type'] ?? 'bank')); // 'balance' hoặc 'bank'
         $bankName = trim((string) ($_POST['bank_name'] ?? ''));
         $accountNumber = trim((string) ($_POST['bank_account_number'] ?? ''));
         $accountName = trim((string) ($_POST['bank_account_name'] ?? ''));
         $userId = (int) $_SESSION['user_id'];
-        $user = (new User())->findById($userId);
+        $userModel = new User();
+        $user = $userModel->findById($userId);
         $withdrawalModel = new Withdrawal();
         $available = (float) ($user['commission_balance'] ?? 0) - $withdrawalModel->getPendingTotalByUserId($userId);
 
-        if ($amount < $minWithdrawal || $amount > $available || $bankName === '' || $accountNumber === '' || $accountName === '') {
-            $_SESSION['error'] = 'Thông tin rút tiền không hợp lệ hoặc số dư hoa hồng không đủ.';
-            $this->redirect('/withdrawals/create');
+        if ($amount <= 0 || $amount < $minWithdrawal || $amount > $available) {
+            $_SESSION['error'] = 'Số tiền rút không hợp lệ (tối thiểu ' . (isset($this->settings['currency_symbol']) ? number_format($minWithdrawal) . $this->settings['currency_symbol'] : number_format($minWithdrawal)) . ') hoặc số dư hoa hồng không đủ.';
+            $this->redirect($_SERVER['HTTP_REFERER'] ?? '/withdrawals');
+            return;
+        }
+
+        // 1. Rút về số dư tài khoản chính (cộng tiền vào balance ngay lập tức, tự hoàn tất)
+        if ($withdrawType === 'balance') {
+            $userModel->update($userId, [
+                'commission_balance' => (float) ($user['commission_balance'] ?? 0) - $amount,
+                'balance' => (float) ($user['balance'] ?? 0) + $amount
+            ]);
+
+            $withdrawalModel->create([
+                'user_id' => $userId,
+                'amount' => $amount,
+                'bank_name' => 'Ví số dư tài khoản',
+                'bank_account_number' => $user['username'] ?? ('USER#' . $userId),
+                'bank_account_name' => $user['email'] ?? 'Chuyển sang số dư',
+                'status' => 'approved',
+                'created_at' => date('Y-m-d H:i:s')
+            ]);
+
+            $_SESSION['balance'] = (float) ($user['balance'] ?? 0) + $amount;
+            $_SESSION['commission_balance'] = (float) ($user['commission_balance'] ?? 0) - $amount;
+            $_SESSION['success'] = 'Đã rút hoa hồng về số dư tài khoản thành công.';
+            $this->redirect($_SERVER['HTTP_REFERER'] ?? '/referrals');
+            return;
+        }
+
+        // 2. Rút về tài khoản ngân hàng (tạo lệnh chờ duyệt)
+        if ($bankName === '' || $accountNumber === '' || $accountName === '') {
+            $_SESSION['error'] = 'Vui lòng nhập đầy đủ thông tin tài khoản ngân hàng.';
+            $this->redirect($_SERVER['HTTP_REFERER'] ?? '/withdrawals');
             return;
         }
 
@@ -1202,26 +1263,62 @@ $_SESSION['success'] = 'Đã tạo đơn hàng ' . $orderCode . ' thành công. 
             'created_at' => date('Y-m-d H:i:s')
         ]);
 
-        $_SESSION['success'] = 'Yêu cầu rút tiền đã được gửi.';
-        $this->redirect('/withdrawals');
+        $_SESSION['success'] = 'Yêu cầu rút hoa hồng về tài khoản ngân hàng đã được gửi và đang chờ xử lý.';
+        $this->redirect($_SERVER['HTTP_REFERER'] ?? '/referrals');
     }
 
     public function notifications(): void
     {
         $userId = (int) $_SESSION['user_id'];
-        $notifications = [];
-        foreach ((new Payment())->getByUserId($userId) as $payment) {
-            $notifications[] = ['type' => 'payment', 'title' => 'Cập nhật giao dịch', 'message' => 'Giao dịch ' . ($payment['transaction_id'] ?? '') . ' đang ở trạng thái ' . ($payment['status'] ?? 'pending') . '.', 'created_at' => $payment['created_at'] ?? ''];
-        }
-        foreach ((new SupportTicket())->getByUserId($userId) as $ticket) {
-            $notifications[] = ['type' => 'ticket', 'title' => 'Cập nhật hỗ trợ', 'message' => 'Yêu cầu #' . ($ticket['id'] ?? '') . ' đang ở trạng thái ' . ($ticket['status'] ?? 'open') . '.', 'created_at' => $ticket['created_at'] ?? ''];
-        }
-        usort($notifications, static fn(array $first, array $second): int => strcmp($second['created_at'], $first['created_at']));
+        $notifications = NotificationService::getNotifications($userId);
+        $unreadCount = NotificationService::getUnreadCount($userId);
 
         $this->render('user.notifications.index', [
-            'notifications' => array_slice($notifications, 0, 20),
+            'notifications' => $notifications,
+            'unreadCount' => $unreadCount,
             'activeMenu' => 'notifications'
         ]);
+    }
+
+    public function markNotificationAsRead(): void
+    {
+        $userId = (int) $_SESSION['user_id'];
+        $id = trim((string) ($_REQUEST['id'] ?? ''));
+        if ($id !== '') {
+            NotificationService::markAsRead($userId, $id);
+        }
+
+        $redirect = $_SERVER['HTTP_REFERER'] ?? '/notifications';
+        $this->redirect($redirect);
+    }
+
+    public function markAllNotificationsAsRead(): void
+    {
+        $userId = (int) $_SESSION['user_id'];
+        NotificationService::markAllAsRead($userId);
+        $_SESSION['success'] = 'Đã đánh dấu tất cả thông báo là đã xem.';
+        $this->redirect('/notifications');
+    }
+
+    public function deleteNotification(): void
+    {
+        $userId = (int) $_SESSION['user_id'];
+        $id = trim((string) ($_REQUEST['id'] ?? ''));
+        if ($id !== '') {
+            NotificationService::deleteNotification($userId, $id);
+            $_SESSION['success'] = 'Đã xóa thông báo.';
+        }
+
+        $redirect = $_SERVER['HTTP_REFERER'] ?? '/notifications';
+        $this->redirect($redirect);
+    }
+
+    public function clearAllNotifications(): void
+    {
+        $userId = (int) $_SESSION['user_id'];
+        NotificationService::clearAll($userId);
+        $_SESSION['success'] = 'Đã xóa tất cả thông báo.';
+        $this->redirect('/notifications');
     }
 
     public function profile(): void

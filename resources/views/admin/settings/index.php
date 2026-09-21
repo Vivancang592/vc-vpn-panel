@@ -49,8 +49,8 @@ ob_start();
             <div class="settings-field-list" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1.25rem;">
                 <div>
                     <label data-hint="Tên hiển thị trên tiêu đề, thanh điều hướng và footer." style="display: block; font-weight: 600; font-size: 0.85rem; margin-bottom: 0.4rem;">Tên Trang Web (Site Title)</label>
-                    <input type="text" name="settings[site_title]" class="glass-input" value="<?= htmlspecialchars($settings['site_title'] ?? 'VC VPN 2027') ?>" style="width: 100%;">
-                </div>
+                    <input type="text" name="settings[site_title]" class="glass-input" value="<?= htmlspecialchars($settings['site_title'] ?? 'VC VPN PANEL') ?>" style="width: 100%;">
+                </div>  
 
                 <div>
                     <label data-hint="Địa chỉ nhận các yêu cầu hỗ trợ từ người dùng." style="display: block; font-weight: 600; font-size: 0.85rem; margin-bottom: 0.4rem;">Email Liên Hệ Hỗ Trợ</label>
@@ -133,12 +133,12 @@ ob_start();
 
                 <div>
                     <label data-hint="Phần trăm hoa hồng cho đơn hàng giới thiệu thành công." style="display: block; font-weight: 600; font-size: 0.85rem; margin-bottom: 0.4rem;">Tỷ Lệ Hoa Hồng Giới Thiệu (%)</label>
-                    <input type="number" name="settings[commission_rate]" class="glass-input" value="<?= htmlspecialchars($settings['commission_rate'] ?? '10') ?>" min="0" max="100" step="0.1" style="width: 100%;">
+                    <input type="number" name="settings[commission_rate]" class="glass-input" value="<?= htmlspecialchars($settings['commission_rate'] ?? '30') ?>" min="0" max="100" step="0.1" style="width: 100%;">
                 </div>
 
                 <div>
                     <label data-hint="Số dư tặng cho tài khoản đăng ký bằng mã giới thiệu." style="display: block; font-weight: 600; font-size: 0.85rem; margin-bottom: 0.4rem;">Thưởng Khi Đăng Ký Có Mã Giới Thiệu</label>
-                    <input type="number" name="settings[referral_bonus]" class="glass-input" value="<?= htmlspecialchars($settings['referral_bonus'] ?? '0') ?>" min="0" step="any" style="width: 100%;">
+                    <input type="number" name="settings[referral_bonus]" class="glass-input" value="<?= htmlspecialchars($settings['referral_bonus'] ?? '10000') ?>" min="0" step="any" style="width: 100%;">
                 </div>
 
                 <div>

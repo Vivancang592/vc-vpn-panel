@@ -33,16 +33,19 @@ ob_start();
 		<div class="glass-card user-order-stat user-order-stat-expired"><span>Hết hạn</span><strong><?= $expiredCount ?></strong></div>
 	</div>
 
-	<?php if (!empty($_SESSION['error'])): ?>
-		<div class="user-orders-alert" role="alert"><?= htmlspecialchars($_SESSION['error']) ?></div>
-		<?php unset($_SESSION['error']); ?>
+	<?php if (!empty($_SESSION['success']) || !empty($_SESSION['error'])): ?>
+		<div class="user-record-alert <?= !empty($_SESSION['error']) ? 'is-error' : '' ?>">
+			<span><?= htmlspecialchars($_SESSION['error'] ?? $_SESSION['success']) ?></span>
+			<button type="button" class="alert-close-btn" onclick="this.parentElement.remove();" aria-label="Đóng">&times;</button>
+		</div>
+		<?php unset($_SESSION['success'], $_SESSION['error']); ?>
 	<?php endif; ?>
 
 	<?php if (!empty($userOrders)): ?>
 		<div class="glass-card user-orders-table-wrap">
 			<table class="user-orders-table">
 				<thead>
-					<tr><th>Mã đơn hàng</th><th>Gói dịch vụ</th><th>Tổng tiền</th><th>Trạng thái</th><th>Ngày tạo</th><th></th></tr>
+					<tr><th>Mã đơn hàng</th><th>Gói dịch vụ</th><th>Tổng tiền</th><th>Trạng thái</th><th>Ngày tạo</th><th style="text-align: right;">Thao tác</th></tr>
 				</thead>
 				<tbody>
 					<?php foreach ($userOrders as $order): ?>
@@ -53,7 +56,28 @@ ob_start();
 							<td data-label="Tổng tiền" class="user-order-amount"><?= isset($formatMoney) ? $formatMoney($order['total_amount'] ?? 0) : number_format((float) ($order['total_amount'] ?? 0), 2) ?></td>
 							<td data-label="Trạng thái"><span class="user-order-status user-order-status-<?= htmlspecialchars($status) ?>"><?= htmlspecialchars($statusLabels[$status] ?? ucfirst($status)) ?></span></td>
 							<td data-label="Ngày tạo"><?= !empty($order['created_at']) ? date('d/m/Y H:i', strtotime($order['created_at'])) : '-' ?></td>
-							<td class="user-order-action"><a href="/orders/detail?id=<?= (int) ($order['id'] ?? 0) ?>">Xem chi tiết</a></td>
+							<td class="user-order-action" style="text-align: right;">
+								<div class="action-dropdown">
+									<button type="button" class="action-btn" title="Thao tác">⋮</button>
+									<div class="action-menu" style="min-width: 165px; white-space: nowrap;">
+										<a href="/orders/detail?id=<?= (int) ($order['id'] ?? 0) ?>" class="action-item">
+											<span>👁️</span> Xem chi tiết
+										</a>
+										<?php if ($status === 'pending'): ?>
+											<a href="/payment/checkout?order=<?= (int) ($order['id'] ?? 0) ?>" class="action-item" style="color: var(--ios-blue);">
+												<span>💳</span> Thanh toán ngay
+											</a>
+											<form method="post" action="/orders/cancel" style="margin: 0;" data-confirm-submit="Bạn có chắc chắn muốn hủy đơn hàng này không?">
+												<input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrf_token ?? '') ?>">
+												<input type="hidden" name="order_id" value="<?= (int) ($order['id'] ?? 0) ?>">
+												<button type="submit" class="action-item cancel" style="color: var(--ios-danger);">
+													<span>❌</span> Hủy đơn hàng
+												</button>
+											</form>
+										<?php endif; ?>
+									</div>
+								</div>
+							</td>
 						</tr>
 					<?php endforeach; ?>
 				</tbody>

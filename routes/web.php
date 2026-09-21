@@ -74,12 +74,24 @@ return [
     'POST /tickets/create'       => ['UserController', 'createTicket'],
     'GET /tickets/detail'        => ['UserController', 'ticketDetail'],
     'POST /tickets/reply'        => ['UserController', 'replyTicket'],
+    'POST /tickets/close'        => ['UserController', 'closeTicket'],
 
     // Thông báo (Notifications)
-    'GET /notifications'         => ['UserController', 'notifications'],
+    'GET /notifications'              => ['UserController', 'notifications'],
+    'POST /notifications/read-all'    => ['UserController', 'markAllNotificationsAsRead'],
+    'POST /notifications/read'        => ['UserController', 'markNotificationAsRead'],
+    'GET /notifications/read'         => ['UserController', 'markNotificationAsRead'],
+    'POST /notifications/delete'      => ['UserController', 'deleteNotification'],
+    'GET /notifications/delete'       => ['UserController', 'deleteNotification'],
+    'POST /notifications/clear'       => ['UserController', 'clearAllNotifications'],
 
     // Quản trị viên (Admin Panel)
-    'GET /admin'                 => ['Admin\DashboardController', 'index'],
+    'GET /admin'                          => ['Admin\DashboardController', 'index'],
+    'GET /admin/notifications'            => ['Admin\DashboardController', 'notifications'],
+    'POST /admin/notifications/read-all'  => ['Admin\DashboardController', 'markAllNotificationsAsRead'],
+    'GET /admin/notifications/delete'     => ['Admin\DashboardController', 'deleteNotification'],
+    'POST /admin/notifications/delete'    => ['Admin\DashboardController', 'deleteNotification'],
+    'POST /admin/notifications/clear'     => ['Admin\DashboardController', 'clearAllNotifications'],
     
     // Quản lý người dùng (Users)
     'GET /admin/users'           => ['Admin\UserController', 'index'],
@@ -173,6 +185,7 @@ return [
     'GET /admin/tickets'          => ['Admin\TicketController', 'index'],
     'GET /admin/tickets/detail'   => ['Admin\TicketController', 'detail'],
     'POST /admin/tickets/detail'  => ['Admin\TicketController', 'detail'],
+    'POST /admin/tickets/delete'  => ['Admin\TicketController', 'delete'],
 
     // Quản lý chi phí (Expenses)
     'GET /admin/expenses'         => ['Admin\ExpenseController', 'index'],

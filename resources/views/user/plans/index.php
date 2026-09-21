@@ -113,17 +113,17 @@ ob_start();
 					<!-- Khối cố định phía dưới thẻ gói -->
 					<div>
 						<!-- Khối Thiết bị và Lưu lượng nằm CÙNG 1 HÀNG (2 cột) -->
-						<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; margin-top: 0.75rem; padding-top: 0.75rem; border-top: 1px solid var(--glass-border, rgba(255, 255, 255, 0.15)); font-size: 0.85rem;">
-							<div style="display: flex; align-items: center; gap: 0.4rem;">
+						<div style="display: flex; justify-content: space-between; align-items: center; gap: 0.5rem; margin-top: 0.75rem; padding-top: 0.75rem; border-top: 1px solid var(--glass-border, rgba(255, 255, 255, 0.15)); font-size: 0.85rem;">
+							<div style="display: flex; align-items: center; gap: 0.4rem; justify-content: flex-start;">
 								<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#34c759" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect><line x1="8" y1="21" x2="16" y2="21"></line><line x1="12" y1="17" x2="12" y2="21"></line></svg>
 								<div style="text-align: left;">
 									<span style="display: block; font-size: 0.75rem; color: var(--ios-text-secondary, #636366); font-weight: 600;">Thiết bị</span>
 									<strong style="color: #34c759; font-size: 0.9rem;"><?= $devices ?> thiết bị</strong>
 								</div>
 							</div>
-							<div style="display: flex; align-items: center; gap: 0.4rem;">
+							<div style="display: flex; align-items: center; gap: 0.4rem; justify-content: flex-end;">
 								<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#007aff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path></svg>
-								<div style="text-align: left;">
+								<div style="text-align: right;">
 									<span style="display: block; font-size: 0.75rem; color: var(--ios-text-secondary, #636366); font-weight: 600;">Lưu lượng</span>
 									<strong style="color: #007aff; font-size: 0.9rem;"><?= $bandwidth > 0 ? number_format($bandwidth) . ' GB' : 'Không giới hạn' ?></strong>
 								</div>
@@ -142,6 +142,11 @@ ob_start();
 					</div>
 				</article>
 			<?php endforeach; ?>
+		</div>
+
+		<div class="glass-card user-plans-empty" data-plan-empty style="display: none; margin-top: 1rem; text-align: center; padding: 2.5rem 1.5rem; border-radius: var(--radius-md, 12px);">
+			<h2>Không có gói dịch vụ nào trong nhóm này</h2>
+			<p>Hiện nhóm máy chủ được chọn chưa có gói cước tương ứng. Vui lòng chọn nhóm khác hoặc nhấn "Tất cả".</p>
 		</div>
 	<?php else: ?>
 		<div class="glass-card user-plans-empty">

@@ -30,6 +30,39 @@ class TicketController extends BaseController
         ]);
     }
 
+    public function delete(): void
+    {
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            $this->redirect('/admin/tickets');
+            return;
+        }
+
+        $id = (int)($_POST['id'] ?? 0);
+        $ticket = $this->ticketModel->findWithDetails($id);
+
+        if (!$ticket) {
+            $_SESSION['error'] = 'Ticket không tồn tại!';
+            $this->redirect('/admin/tickets');
+            return;
+        }
+
+        if (($ticket['status'] ?? '') !== 'closed') {
+            $_SESSION['error'] = 'Chỉ có thể xóa ticket đã đóng!';
+            $this->redirect('/admin/tickets');
+            return;
+        }
+
+        if ($this->ticketModel->delete($id)) {
+            $this->logActivity('DELETE_TICKET', 'Xóa ticket #' . $id . ' (' . ($ticket['subject'] ?? '') . ')');
+            $_SESSION['flash_message'] = 'Đã xóa ticket đã đóng thành công!';
+            $_SESSION['flash_type']    = 'success';
+        } else {
+            $_SESSION['error'] = 'Không thể xóa ticket này!';
+        }
+
+        $this->redirect('/admin/tickets');
+    }
+
     public function detail(): void
     {
         $id = (int)($_GET['id'] ?? 0);

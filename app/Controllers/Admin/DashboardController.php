@@ -8,6 +8,7 @@ use App\Models\User;
 use App\Models\Subscription;
 use App\Models\Server;
 use App\Models\NodeInbound;
+use App\Services\NotificationService;
 
 class DashboardController extends BaseController
 {
@@ -19,6 +20,51 @@ class DashboardController extends BaseController
             $this->redirect('/login');
         }
         $this->orderModel = new Order();
+    }
+
+    public function notifications(): void
+    {
+        $adminId = (int) $_SESSION['user_id'];
+        $notifications = NotificationService::getAdminNotifications($adminId);
+        $unreadCount = NotificationService::getAdminPendingCount($adminId);
+
+        $this->render('admin.notifications.index', [
+            'notifications' => $notifications,
+            'unreadCount' => $unreadCount,
+            'activeMenu' => 'dashboard'
+        ]);
+    }
+
+    public function markAllNotificationsAsRead(): void
+    {
+        $adminId = (int) $_SESSION['user_id'];
+        NotificationService::markAdminAllAsRead($adminId);
+        $_SESSION['flash_message'] = 'Đã đánh dấu tất cả thông báo là đã xem.';
+        $_SESSION['flash_type'] = 'success';
+        $this->redirect('/admin/notifications');
+    }
+
+    public function deleteNotification(): void
+    {
+        $adminId = (int) $_SESSION['user_id'];
+        $id = trim((string) ($_REQUEST['id'] ?? ''));
+        if ($id !== '') {
+            NotificationService::deleteAdminNotification($adminId, $id);
+            $_SESSION['flash_message'] = 'Đã xóa thông báo.';
+            $_SESSION['flash_type'] = 'success';
+        }
+
+        $redirect = $_SERVER['HTTP_REFERER'] ?? '/admin/notifications';
+        $this->redirect($redirect);
+    }
+
+    public function clearAllNotifications(): void
+    {
+        $adminId = (int) $_SESSION['user_id'];
+        NotificationService::clearAdminAll($adminId);
+        $_SESSION['flash_message'] = 'Đã xóa tất cả thông báo.';
+        $_SESSION['flash_type'] = 'success';
+        $this->redirect('/admin/notifications');
     }
 
     public function index(): void
