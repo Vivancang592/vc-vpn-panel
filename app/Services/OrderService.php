@@ -84,7 +84,12 @@ class OrderService
         $created = $orderModel->create($orderData);
 
         if ($created) {
-            $orderId = $orderModel->lastInsertId();
+            $orderId = (int)$orderModel->lastInsertId();
+
+            $settingModel = new Setting();
+            $orderSyntax = trim((string)($settingModel->get('order_transfer_syntax', 'THANHTOAN') ?? 'THANHTOAN'));
+            $transferContent = $orderSyntax . str_pad((string)$orderId, 2, '0', STR_PAD_LEFT);
+            $orderModel->update($orderId, ['transfer_content' => $transferContent]);
 
             if ($paymentMethod === 'balance') {
                 $userModel = new User();
