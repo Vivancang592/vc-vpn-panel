@@ -247,6 +247,7 @@ class OrderController extends BaseController
                     $subModel       = new Subscription();
                     $durationDays   = (int)($plan['duration_days'] ?? 30);
                     $bandwidthLimit = (int)($plan['bandwidth_limit_gb'] ?? 0);
+                    $maxDevices     = (int)($plan['max_devices'] ?? 1);
                     $groupIds       = $this->parseGroupIds($plan['group_id'] ?? []);
                     $bytesTotal     = $bandwidthLimit > 0 ? ($bandwidthLimit * 1073741824) : 0;
                     $uuid           = sprintf('%04x%04x-%04x-%04x-%04x-%04x%04x%04x', 
@@ -264,6 +265,7 @@ class OrderController extends BaseController
                         'plan_id'         => $order['plan_id'],
                         'order_id'        => $id,
                         'uuid'            => $uuid,
+                        'max_devices'     => $maxDevices,
                         'transfer_enable' => $bytesTotal,
                         'start_date'      => $startDate,
                         'end_date'        => $endDate,
@@ -395,6 +397,7 @@ class OrderController extends BaseController
                     $subModel       = new Subscription();
                     $durationDays   = (int)($plan['duration_days'] ?? 30);
                     $bandwidthLimit = $customDataGb !== null ? $customDataGb : (float)($plan['bandwidth_limit_gb'] ?? 0);
+                    $maxDevices     = $customDevices !== null ? $customDevices : (int)($plan['max_devices'] ?? 1);
                     $groupIds       = $this->parseGroupIds($plan['group_id'] ?? []);
                     
                     $bytesTotal = $bandwidthLimit > 0 ? (int)round($bandwidthLimit * 1073741824) : 0;
@@ -417,6 +420,7 @@ class OrderController extends BaseController
                         'plan_id'         => $planId,
                         'order_id'        => $orderId ?: null,
                         'uuid'            => $uuid,
+                        'max_devices'     => $maxDevices,
                         'transfer_enable' => $bytesTotal,
                         'start_date'      => $startDate,
                         'end_date'        => $endDate,

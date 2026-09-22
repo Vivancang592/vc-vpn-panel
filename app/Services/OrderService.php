@@ -135,14 +135,15 @@ class OrderService
             }
 
             (new Payment())->create([
-                'user_id'        => $userId,
-                'order_id'       => $orderId,
-                'type'           => 'payment',
-                'payment_method' => $paymentMethod,
-                'transaction_id' => $orderCode,
-                'amount'         => $finalPrice,
-                'status'         => 'pending',
-                'created_at'     => date('Y-m-d H:i:s')
+                'user_id'          => $userId,
+                'order_id'         => $orderId,
+                'type'             => 'payment',
+                'payment_method'   => $paymentMethod,
+                'transaction_id'   => null,
+                'transfer_content' => $transferContent,
+                'amount'           => $finalPrice,
+                'status'           => 'pending',
+                'created_at'       => date('Y-m-d H:i:s')
             ]);
 
             $this->notifyAdministratorsAboutNewOrder(
@@ -236,6 +237,7 @@ class OrderService
 
         $durationDays = (int)($plan['duration_days'] ?? 30);
         $bandwidthGb  = (int)($plan['bandwidth_limit_gb'] ?? 0);
+        $maxDevices   = (int)($plan['max_devices'] ?? 1);
 
         // 3. Tạo gói đăng ký (Subscription) cho người dùng
         $subModel = new Subscription();
@@ -254,6 +256,7 @@ class OrderService
             'plan_id'         => $order['plan_id'],
             'order_id'        => $order['id'],
             'uuid'            => $uuid,
+            'max_devices'     => $maxDevices,
             'transfer_enable' => $transferEnable,
             'upload'          => 0,
             'download'        => 0,
@@ -335,23 +338,27 @@ class OrderService
                 ? $paymentModel->findPendingByOrderId((int)$order['id'])
                 : null;
 
+            $transId = !empty($transactionId) ? $transactionId : null;
+
             if ($existingPayment) {
                 $paymentModel->update((int)$existingPayment['id'], [
-                    'status'         => 'success',
-                    'transaction_id' => $transactionId ?: ($existingPayment['transaction_id'] ?? $orderCode),
-                    'amount'         => $amount,
-                    'payment_method' => $existingPayment['payment_method'] ?? ($order['payment_method'] ?? 'vietqr'),
+                    'status'           => 'success',
+                    'transaction_id'   => $transId ?? ($existingPayment['transaction_id'] ?? null),
+                    'transfer_content' => $existingPayment['transfer_content'] ?? ($order['transfer_content'] ?? null),
+                    'amount'           => $amount,
+                    'payment_method'   => $existingPayment['payment_method'] ?? ($order['payment_method'] ?? 'vietqr'),
                 ]);
             } else {
                 $paymentModel->create([
-                    'user_id'        => $order['user_id'],
-                    'order_id'       => $order['id'],
-                    'type'           => 'payment',
-                    'payment_method' => $order['payment_method'] ?? 'vietqr',
-                    'transaction_id' => $transactionId ?: ('TXN' . time() . rand(100, 999)),
-                    'amount'         => $amount,
-                    'status'         => 'success',
-                    'created_at'     => date('Y-m-d H:i:s')
+                    'user_id'          => $order['user_id'],
+                    'order_id'         => $order['id'],
+                    'type'             => 'payment',
+                    'payment_method'   => $order['payment_method'] ?? 'vietqr',
+                    'transaction_id'   => $transId,
+                    'transfer_content' => $order['transfer_content'] ?? null,
+                    'amount'           => $amount,
+                    'status'           => 'success',
+                    'created_at'       => date('Y-m-d H:i:s')
                 ]);
             }
 
@@ -380,23 +387,27 @@ class OrderService
                 ? $paymentModel->findPendingByOrderId((int)$order['id'])
                 : null;
 
+            $transId = !empty($transactionId) ? $transactionId : null;
+
             if ($existingPayment) {
                 $paymentModel->update((int)$existingPayment['id'], [
-                    'status'         => 'success',
-                    'transaction_id' => $transactionId ?: ($existingPayment['transaction_id'] ?? ('WX' . time() . rand(100, 999))),
-                    'amount'         => $amount,
-                    'payment_method' => 'wechat'
+                    'status'           => 'success',
+                    'transaction_id'   => $transId ?? ($existingPayment['transaction_id'] ?? null),
+                    'transfer_content' => $existingPayment['transfer_content'] ?? ($order['transfer_content'] ?? null),
+                    'amount'           => $amount,
+                    'payment_method'   => 'wechat'
                 ]);
             } else {
                 $paymentModel->create([
-                    'user_id'        => $order['user_id'],
-                    'order_id'       => $order['id'],
-                    'type'           => 'payment',
-                    'payment_method' => 'wechat',
-                    'transaction_id' => $transactionId ?: ('WX' . time() . rand(100, 999)),
-                    'amount'         => $amount,
-                    'status'         => 'success',
-                    'created_at'     => date('Y-m-d H:i:s')
+                    'user_id'          => $order['user_id'],
+                    'order_id'         => $order['id'],
+                    'type'             => 'payment',
+                    'payment_method'   => 'wechat',
+                    'transaction_id'   => $transId,
+                    'transfer_content' => $order['transfer_content'] ?? null,
+                    'amount'           => $amount,
+                    'status'           => 'success',
+                    'created_at'       => date('Y-m-d H:i:s')
                 ]);
             }
 

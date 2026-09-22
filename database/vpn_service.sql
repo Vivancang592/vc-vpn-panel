@@ -155,6 +155,7 @@ CREATE TABLE `vc_subscriptions` (
     `plan_id` INT UNSIGNED NOT NULL,
     `order_id` BIGINT UNSIGNED NULL,
     `uuid` VARCHAR(36) NOT NULL UNIQUE,
+    `max_devices` INT NOT NULL DEFAULT 1,
     `transfer_enable` BIGINT UNSIGNED NOT NULL DEFAULT 0,
     `upload` BIGINT UNSIGNED NOT NULL DEFAULT 0,
     `download` BIGINT UNSIGNED NOT NULL DEFAULT 0,
