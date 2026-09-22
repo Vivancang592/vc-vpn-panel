@@ -120,8 +120,8 @@ class PaymentController extends BaseController
         $renewalSyntax = trim((string) ($settings['renewal_transfer_syntax'] ?? 'GAHAN'));
         $depositSyntax = trim((string) ($settings['bank_transfer_syntax'] ?? 'NAPTIEN'));
 
-        // 4.1 Khớp đơn hàng mua mới theo cú pháp (THANHTOAN{order_id}, VCTT{order_id}, TT{order_id}, DH{order_id})
-        $orderPrefixes = array_unique(array_filter([$orderSyntax, 'VCTT', 'THANHTOAN', 'TT', 'DH']));
+        // 4.1 Khớp đơn hàng theo Order ID (THANHTOAN{order_id}, NAPTIEN{order_id}, VCTT{order_id}, TT{order_id}, DH{order_id}, NAP{order_id})
+        $orderPrefixes = array_unique(array_filter([$orderSyntax, $depositSyntax, 'VCTT', 'THANHTOAN', 'NAPTIEN', 'TT', 'DH', 'NAP']));
         $orderPattern = '/\b(?:' . implode('|', array_map(fn($p) => preg_quote($p, '/'), $orderPrefixes)) . ')\s*0*(\d+)\b/i';
 
         if ($amount > 0 && preg_match($orderPattern, $searchContent, $matches)) {
@@ -129,13 +129,23 @@ class PaymentController extends BaseController
             $order = $orderModel->find($orderId);
             
             if (!$order) {
+                // Thử tìm trong bảng Payment dự phòng
+                $payment = $paymentModel->find($orderId);
+                if ($payment && ($payment['status'] ?? '') === 'pending') {
+                    $expectedAmount = (float) ($payment['amount'] ?? 0);
+                    if (abs($amount - $expectedAmount) <= 1.0) {
+                        $result = $paymentService->completePaymentByCode((string) ($payment['transfer_content'] ?? $payment['transaction_id']), $amount);
+                        $respond($result, $result ? 'Xử lý giao dịch thanh toán thành công.' : 'Xử lý thất bại.', $result ? 200 : 400);
+                        return;
+                    }
+                }
                 $respond(false, 'Không tìm thấy đơn hàng #' . $orderId . ' trong hệ thống.', 404);
                 return;
             }
 
             $orderStatus = $order['payment_status'] ?? $order['status'] ?? '';
             if ($orderStatus === 'completed') {
-                $respond(true, 'Đơn hàng #' . $orderId . ' (' . ($order['order_code'] ?? '') . ') đã được kích hoạt trước đó.', 200);
+                $respond(true, 'Đơn hàng #' . $orderId . ' (' . ($order['order_code'] ?? '') . ') đã được xử lý trước đó.', 200);
                 return;
             }
 
@@ -178,33 +188,6 @@ class PaymentController extends BaseController
                 }
                 $result = $paymentService->completePaymentByCode((string) ($payment['transfer_content'] ?? $payment['transaction_id']), $amount);
                 $respond($result, $result ? 'Gia hạn gói dịch vụ thành công.' : 'Xử lý giao dịch gia hạn thất bại.', $result ? 200 : 400);
-                return;
-            }
-        }
-
-        // 4.3 Khớp nạp tiền theo cú pháp (NAPTIEN{payment_id}, NAP{payment_id})
-        $depositPrefixes = array_unique(array_filter([$depositSyntax, 'NAPTIEN', 'NAP']));
-        $depositPattern = '/\b(?:' . implode('|', array_map(fn($p) => preg_quote($p, '/'), $depositPrefixes)) . ')\s*0*(\d+)\b/i';
-
-        if ($amount > 0 && preg_match($depositPattern, $searchContent, $matches)) {
-            $paymentId = (int) $matches[1];
-            $payment = $paymentModel->find($paymentId);
-            if ($payment && ($payment['type'] ?? '') === 'deposit') {
-                if (($payment['status'] ?? '') === 'success') {
-                    $respond(true, 'Giao dịch nạp tiền #' . $paymentId . ' đã được cộng ví trước đó.', 200);
-                    return;
-                }
-                if (($payment['status'] ?? '') !== 'pending') {
-                    $respond(false, 'Giao dịch nạp tiền #' . $paymentId . ' không ở trạng thái chờ thanh toán.', 400);
-                    return;
-                }
-                $expectedAmount = (float) ($payment['amount'] ?? 0);
-                if (abs($amount - $expectedAmount) > 1.0) {
-                    $respond(false, 'Số tiền chuyển khoản (' . number_format($amount, 0, ',', '.') . ' đ) không khớp với số tiền nạp #' . $paymentId . ' (' . number_format($expectedAmount, 0, ',', '.') . ' đ).', 400);
-                    return;
-                }
-                $result = $paymentService->completePaymentByCode((string) ($payment['transfer_content'] ?? $payment['transaction_id']), $amount);
-                $respond($result, $result ? 'Nạp tiền vào tài khoản thành công.' : 'Xử lý mã nạp tiền thất bại.', $result ? 200 : 400);
                 return;
             }
         }

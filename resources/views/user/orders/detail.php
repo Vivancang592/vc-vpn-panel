@@ -20,11 +20,16 @@ ob_start();
 
 	<div class="user-order-detail-grid">
 		<article class="glass-card user-order-detail-card user-order-detail-card-<?= htmlspecialchars($status) ?>">
-			<h2>Thông tin gói dịch vụ</h2>
+			<h2>Thông tin đơn hàng</h2>
 			<dl class="user-order-detail-list">
-				<div><dt>Gói dịch vụ</dt><dd><?= htmlspecialchars($order['plan_name'] ?? ('Gói dịch vụ #' . ($order['plan_id'] ?? ''))) ?></dd></div>
-				<div><dt>Mã gói</dt><dd><?= htmlspecialchars($order['plan_code'] ?? '-') ?></dd></div>
-				<div><dt>Mã giảm giá</dt><dd><?= htmlspecialchars($order['coupon_code'] ?? 'Không áp dụng') ?></dd></div>
+				<?php if (!empty($order['plan_id'])): ?>
+					<div><dt>Gói dịch vụ</dt><dd><?= htmlspecialchars($order['plan_name'] ?? ('Gói dịch vụ #' . ($order['plan_id'] ?? ''))) ?></dd></div>
+					<div><dt>Mã gói</dt><dd><?= htmlspecialchars($order['plan_code'] ?? '-') ?></dd></div>
+					<div><dt>Mã giảm giá</dt><dd><?= htmlspecialchars($order['coupon_code'] ?? 'Không áp dụng') ?></dd></div>
+				<?php else: ?>
+					<div><dt>Loại giao dịch</dt><dd style="color: var(--ios-blue); font-weight: 700;">Nạp tiền vào ví tài khoản</dd></div>
+					<div><dt>Mục đích</dt><dd>Cộng số dư ví sau khi thanh toán</dd></div>
+				<?php endif; ?>
 			</dl>
 		</article>
 		<article class="glass-card user-order-detail-card user-order-detail-card-<?= htmlspecialchars($status) ?>">

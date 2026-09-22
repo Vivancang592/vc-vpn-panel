@@ -52,7 +52,13 @@ ob_start();
 						<?php $status = $order['payment_status'] ?? 'pending'; ?>
 						<tr>
 							<td data-label="Mã đơn hàng"><code><?= htmlspecialchars($order['order_code'] ?? ('#' . ($order['id'] ?? ''))) ?></code></td>
-							<td data-label="Gói dịch vụ"><strong><?= htmlspecialchars($order['plan_name'] ?? ('Gói dịch vụ #' . ($order['plan_id'] ?? ''))) ?></strong></td>
+							<td data-label="Gói dịch vụ">
+								<?php if (!empty($order['plan_id'])): ?>
+									<strong><?= htmlspecialchars($order['plan_name'] ?? ('Gói dịch vụ #' . ($order['plan_id'] ?? ''))) ?></strong>
+								<?php else: ?>
+									<strong style="color: var(--ios-blue);">💰 Nạp tiền vào ví</strong>
+								<?php endif; ?>
+							</td>
 							<td data-label="Tổng tiền" class="user-order-amount"><?= isset($formatMoney) ? $formatMoney($order['total_amount'] ?? 0) : number_format((float) ($order['total_amount'] ?? 0), 2) ?></td>
 							<td data-label="Trạng thái"><span class="user-order-status user-order-status-<?= htmlspecialchars($status) ?>"><?= htmlspecialchars($statusLabels[$status] ?? ucfirst($status)) ?></span></td>
 							<td data-label="Ngày tạo"><?= !empty($order['created_at']) ? date('d/m/Y H:i', strtotime($order['created_at'])) : '-' ?></td>
