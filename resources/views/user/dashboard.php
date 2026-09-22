@@ -209,7 +209,7 @@ function getNoticeFallbackThumb($id) {
                         </div>
 
                         <!-- Danh sách Content mô tả -->
-                        <ul class="info-list" style="list-style: none; padding: 0; margin: 0 0 1rem 0; display: flex; flex-direction: column; gap: 0.65rem; text-align: left !important; width: 100%;">
+                        <ul class="info-list" style="list-style: none; padding: 0; margin: 0 0 0.75rem 0; display: flex; flex-direction: column; gap: 0.4rem; text-align: left !important; width: 100%;">
                             <?php if (!empty($plan['description'])): ?>
                                 <?php 
                                 $lines = explode("\n", trim($plan['description'])); 
@@ -264,7 +264,7 @@ function getNoticeFallbackThumb($id) {
                     <!-- Khối cố định phía dưới thẻ gói -->
                     <div>
                         <!-- Khối Thiết bị và Lưu lượng nằm CÙNG 1 HÀNG (2 cột) -->
-                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; margin-top: 0.75rem; padding-top: 0.75rem; border-top: 1px solid var(--glass-border, rgba(255, 255, 255, 0.15)); font-size: 0.85rem;">
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; margin-top: 0.5rem; padding-top: 0.5rem; border-top: 1px solid var(--glass-border, rgba(255, 255, 255, 0.15)); font-size: 0.85rem;">
                             <div style="display: flex; align-items: center; gap: 0.4rem;">
                                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#34c759" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect><line x1="8" y1="21" x2="16" y2="21"></line><line x1="12" y1="17" x2="12" y2="21"></line></svg>
                                 <div style="text-align: left;">
@@ -272,9 +272,9 @@ function getNoticeFallbackThumb($id) {
                                     <strong style="color: #34c759; font-size: 0.9rem;"><?= (int)($plan['max_devices'] ?? 1) ?> thiết bị</strong>
                                 </div>
                             </div>
-                            <div style="display: flex; align-items: center; gap: 0.4rem;">
+                            <div style="display: flex; align-items: center; justify-content: flex-end; gap: 0.4rem;">
                                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#007aff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path></svg>
-                                <div style="text-align: left;">
+                                <div style="text-align: right;">
                                     <span style="display: block; font-size: 0.75rem; color: var(--ios-text-secondary, #636366); font-weight: 600;">Lưu lượng</span>
                                     <strong style="color: #007aff; font-size: 0.9rem;"><?= ((int)($plan['bandwidth_limit_gb'] ?? 0) > 0) ? (int)$plan['bandwidth_limit_gb'] . ' GB' : 'Không giới hạn' ?></strong>
                                 </div>
