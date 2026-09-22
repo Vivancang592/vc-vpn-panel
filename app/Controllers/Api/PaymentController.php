@@ -154,6 +154,20 @@ class PaymentController extends BaseController
                 return;
             }
 
+            if ((int) ($order['subscription_id'] ?? 0) > 0) {
+                $result = $paymentService->completeRenewalOrder(
+                    $orderId,
+                    $amount,
+                    $transId
+                );
+                $respond(
+                    $result,
+                    $result ? 'Gia hạn gói dịch vụ thành công.' : 'Xử lý giao dịch gia hạn thất bại.',
+                    $result ? 200 : 400
+                );
+                return;
+            }
+
             $expectedAmount = (float)($order['total_amount'] ?? $order['final_amount'] ?? $order['price'] ?? 0);
             if (abs($amount - $expectedAmount) > 1.0) {
                 $respond(false, 'Số tiền chuyển khoản (' . number_format($amount, 0, ',', '.') . ' đ) không khớp với số tiền đơn hàng #' . $orderId . ' (' . number_format($expectedAmount, 0, ',', '.') . ' đ).', 400);
