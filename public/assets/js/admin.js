@@ -85,7 +85,11 @@ document.addEventListener('DOMContentLoaded', function () {
                 this.classList.add('active');
 
                 const rect = this.getBoundingClientRect();
-                currentMenu.style.top = (rect.bottom + 4) + 'px';
+                const menuHeight = currentMenu.offsetHeight;
+                const spaceBelow = window.innerHeight - rect.bottom;
+                currentMenu.style.top = (spaceBelow >= menuHeight + 8
+                    ? rect.bottom + 4
+                    : Math.max(8, rect.top - menuHeight - 4)) + 'px';
                 currentMenu.style.left = 'auto';
                 currentMenu.style.right = (window.innerWidth - rect.right) + 'px';
             }

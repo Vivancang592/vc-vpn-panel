@@ -105,7 +105,9 @@
   box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
   min-width: 120px;
   z-index: 9999;
-  overflow: hidden;
+  max-height: calc(100vh - 16px);
+  overflow-y: auto;
+  overflow-x: hidden;
 }
 
 @media (prefers-color-scheme: dark) {
