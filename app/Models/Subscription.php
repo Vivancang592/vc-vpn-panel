@@ -14,7 +14,7 @@ class Subscription extends BaseModel
         $sql = "
             SELECT s.*, 
                    u.username, u.email, 
-                   p.name AS plan_name, p.code AS plan_code, p.max_devices AS device_limit
+                   p.name AS plan_name, p.code AS plan_code, COALESCE(s.max_devices, p.max_devices, 1) AS device_limit
             FROM `{$this->table}` s
             LEFT JOIN `vc_users` u ON s.user_id = u.id
             LEFT JOIN `vc_vpn_plans` p ON s.plan_id = p.id
@@ -41,7 +41,7 @@ class Subscription extends BaseModel
         $stmt = self::$db->prepare("
             SELECT s.*, 
                    u.username, u.email, 
-                   p.name AS plan_name, p.code AS plan_code, p.max_devices AS device_limit, p.group_id,
+                   p.name AS plan_name, p.code AS plan_code, COALESCE(s.max_devices, p.max_devices, 1) AS device_limit, p.group_id,
                    o.order_code
             FROM `{$this->table}` s
             LEFT JOIN `vc_users` u ON s.user_id = u.id
@@ -58,7 +58,7 @@ class Subscription extends BaseModel
     public function getByUserId(int $userId): array
     {
         $stmt = self::$db->prepare("
-            SELECT s.*, p.name AS plan_name, p.code AS plan_code, p.max_devices AS device_limit
+            SELECT s.*, p.name AS plan_name, p.code AS plan_code, COALESCE(s.max_devices, p.max_devices, 1) AS device_limit
             FROM `{$this->table}` s
             LEFT JOIN `vc_vpn_plans` p ON s.plan_id = p.id
             WHERE s.user_id = :user_id

@@ -209,7 +209,7 @@ class PaymentController extends BaseController
             }
 
             $sysAmount = $convertToSystemCurrency($amount, 'vietqr');
-            $result = $orderService->processPaymentByOrderCode($orderCode, $sysAmount, $transId ?: $orderCode);
+            $result = $orderService->processPaymentByOrderCode($orderCode, $sysAmount, $transId);
             $respond($result['status'], $result['message'], $result['status'] ? 200 : 400);
             return;
         }

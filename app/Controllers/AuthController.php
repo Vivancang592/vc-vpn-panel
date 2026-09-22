@@ -623,6 +623,7 @@ class AuthController extends BaseController
         $uuid = vsprintf('%s%s-%s-%s-%s-%s%s%s', str_split(bin2hex($bytes), 4));
 
         $bandwidthGb = (int)($plan['bandwidth_limit_gb'] ?? 0);
+        $maxDevices = (int)($plan['max_devices'] ?? 1);
         $transferEnable = $bandwidthGb * 1073741824;
 
         $now = date('Y-m-d H:i:s');
@@ -633,6 +634,7 @@ class AuthController extends BaseController
             'plan_id'         => (int)$plan['id'],
             'order_id'        => null,
             'uuid'            => $uuid,
+            'max_devices'     => $maxDevices,
             'transfer_enable' => $transferEnable,
             'upload'          => 0,
             'download'        => 0,
