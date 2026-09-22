@@ -171,6 +171,22 @@ class PaymentController extends BaseController
 
         if ($amount > 0 && preg_match($renewalPattern, $searchContent, $matches)) {
             $referenceId = (int) $matches[1];
+            $renewalOrder = $orderModel->find($referenceId);
+
+            if ((int) ($renewalOrder['subscription_id'] ?? 0) > 0) {
+                $result = $paymentService->completeRenewalOrder(
+                    $referenceId,
+                    $amount,
+                    $transId
+                );
+                $respond(
+                    $result,
+                    $result ? 'Gia hạn gói dịch vụ thành công.' : 'Xử lý giao dịch gia hạn thất bại.',
+                    $result ? 200 : 400
+                );
+                return;
+            }
+
             $payment = $paymentModel->findPendingRenewalByOrderId($referenceId);
 
             if ($payment === null) {
