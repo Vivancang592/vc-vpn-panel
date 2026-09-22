@@ -87,9 +87,14 @@ document.addEventListener('DOMContentLoaded', function () {
                 const rect = this.getBoundingClientRect();
                 const menuHeight = currentMenu.offsetHeight;
                 const spaceBelow = window.innerHeight - rect.bottom;
-                currentMenu.style.top = (spaceBelow >= menuHeight + 8
+                const spaceAbove = rect.top;
+                const openBelow = spaceBelow >= menuHeight + 8 || spaceBelow >= spaceAbove;
+                const availableHeight = openBelow ? spaceBelow : spaceAbove;
+
+                currentMenu.style.maxHeight = Math.max(80, availableHeight - 8) + 'px';
+                currentMenu.style.top = (openBelow
                     ? rect.bottom + 4
-                    : Math.max(8, rect.top - menuHeight - 4)) + 'px';
+                    : Math.max(8, rect.top - Math.min(menuHeight, availableHeight - 8) - 4)) + 'px';
                 currentMenu.style.left = 'auto';
                 currentMenu.style.right = (window.innerWidth - rect.right) + 'px';
             }
