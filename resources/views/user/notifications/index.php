@@ -7,7 +7,7 @@ ob_start();
 <section class="user-record-page">
     <header class="user-record-header" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem; margin-bottom: 1.25rem;">
         <div>
-            <h1 style="display: flex; align-items: center; gap: 0.5rem; font-size: 1.5rem; font-weight: 700; margin: 0;">
+            <h1 style="font-size: 1.5rem; font-weight: 700; margin: 0;">
                 <span>🔔 Trung tâm Thông báo</span>
                 <?php if ($unreadCount > 0): ?>
                     <span style="font-size: 0.75rem; background: var(--ios-danger, #ff3b30); color: #fff; padding: 0.2rem 0.6rem; border-radius: 9999px; font-weight: 700;">

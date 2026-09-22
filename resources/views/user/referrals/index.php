@@ -16,7 +16,7 @@ ob_start();
 <section class="user-record-page" style="width: 100%;">
 	<header class="user-record-header" style="margin-bottom: 1.25rem;">
 		<div>
-			<h1 style="font-size: 1.5rem; font-weight: 700; margin: 0; color: var(--ios-text); display: flex; align-items: center; gap: 0.5rem;">
+			<h1 style="font-size: 1.5rem; font-weight: 700; margin: 0;">
 				<span>🤝 Tiếp thị liên kết & Hoa hồng</span>
 			</h1>
 			<p style="margin: 0.25rem 0 0; color: var(--ios-text-secondary); font-size: 0.9rem;">

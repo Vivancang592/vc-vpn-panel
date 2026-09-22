@@ -5,7 +5,7 @@ ob_start();
 <section class="user-record-page" style="width: 100%;">
     <header class="user-record-header" style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 1rem; margin-bottom: 1.25rem;">
         <div>
-            <h1 style="font-size: 1.4rem; font-weight: 700; margin: 0; color: var(--ios-text); line-height: 1.3;">
+            <h1 style="font-size: 1.5rem; font-weight: 700; margin: 0;">
                 🎟️ Tạo yêu cầu hỗ trợ mới
             </h1>
             <p style="margin: 0.35rem 0 0; color: var(--ios-text-secondary); font-size: 0.85rem;">
