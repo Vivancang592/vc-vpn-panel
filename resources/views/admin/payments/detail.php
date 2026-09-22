@@ -7,9 +7,8 @@ ob_start();
 
 <div style="margin-bottom: 1rem; display: flex; justify-content: space-between; align-items: center; gap: 0.75rem;">
     <div>
-        <h1 style="font-size: 1.5rem; font-weight: 700; word-break: break-word;">Giao Dịch Thanh Toán: #<?= $payment['id'] ?></h1>
+        <h1 style="font-size: 1.5rem; font-weight: 700; word-break: break-word;">Chi Tiết Giao Dịch: #<?= $payment['id'] ?></h1>
     </div>
-    <a href="/admin/payments" class="glass-btn" style="text-decoration: none; white-space: nowrap; flex-shrink: 0;">⬅️ Quay Lại</a>
 </div>
 
 <?php if (!empty($_SESSION['flash_message']) || !empty($_SESSION['error'])): ?>

@@ -59,7 +59,7 @@ ob_start();
                                 <?php if (!empty($ticket['staff_name'])): ?>
                                     <span style="font-weight: 600; color: var(--ios-blue);"><?= htmlspecialchars($ticket['staff_name']) ?></span>
                                 <?php else: ?>
-                                    <span style="color: var(--ios-text-secondary); italic">Chưa gán</span>
+                                    <span style="color: var(--ios-text-secondary); font-style: italic;">Chưa gán</span>
                                 <?php endif; ?>
                             </td>
                             <td style="text-align: center;">

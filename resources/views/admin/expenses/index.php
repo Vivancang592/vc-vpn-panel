@@ -48,7 +48,6 @@ $totalExpenseAmount = array_sum(array_column($expenses ?? [], 'amount'));
                     <th>Số Tiền</th>
                     <th>Ngày Chi</th>
                     <th>Ghi Chú</th>
-                    <th>Ngày Tạo</th>
                     <th style="text-align: right;">Thao Tác</th>
                 </tr>
             </thead>
@@ -74,9 +73,6 @@ $totalExpenseAmount = array_sum(array_column($expenses ?? [], 'amount'));
                             <td style="font-size: 0.82rem; color: var(--ios-text-secondary); max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
                                 <?= htmlspecialchars($expense['note'] ?: '-') ?>
                             </td>
-                            <td style="font-size: 0.8rem; color: var(--ios-text-secondary);">
-                                <?= date('d/m/Y H:i', strtotime($expense['created_at'])) ?>
-                            </td>
                             <td style="text-align: right;">
                                 <div class="action-dropdown">
                                     <button type="button" class="action-btn" title="Thao tác">⋮</button>
@@ -97,7 +93,7 @@ $totalExpenseAmount = array_sum(array_column($expenses ?? [], 'amount'));
                     <?php endforeach; ?>
                 <?php else: ?>
                     <tr>
-                        <td colspan="8" style="text-align: center; padding: 2rem; color: var(--ios-text-secondary);">Chưa có khoản chi phí nào được ghi nhận.</td>
+                        <td colspan="7" style="text-align: center; padding: 2rem; color: var(--ios-text-secondary);">Chưa có khoản chi phí nào được ghi nhận.</td>
                     </tr>
                 <?php endif; ?>
             </tbody>

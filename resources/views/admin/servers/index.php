@@ -48,11 +48,9 @@ ob_start();
                     <th>ID</th>
                     <th>Tên Máy Chủ</th>
                     <th>Nhóm</th>
-                    <th>Quốc Gia</th>
                     <th>Vị Trí</th>
                     <th>IP Address</th>
-                    <th>API Port</th>
-                    <th>Trạng Thái</th>
+                    <th style="text-align: center;">Trạng Thái</th>
                     <th style="text-align: right;">Thao Tác</th>
                 </tr>
             </thead>
@@ -64,18 +62,19 @@ ob_start();
                             <td style="font-weight: 700; font-size: 0.9rem; color: var(--ios-text);"><?= htmlspecialchars($server['name']) ?></td>
                             <td style="color: var(--ios-text-secondary); font-size: 0.85rem;"><?= htmlspecialchars($server['group_name'] ?? 'Chưa phân nhóm') ?></td>
                             <td>
-                                <span style="padding: 0.2rem 0.5rem; border-radius: var(--radius-sm); font-size: 0.75rem; font-weight: 700; background: rgba(0, 122, 255, 0.15); color: var(--ios-blue); text-transform: uppercase;">
-                                    <?= htmlspecialchars($server['country_code']) ?>
-                                </span>
+                                <div style="display: flex; align-items: center; gap: 0.4rem;">
+                                    <span style="padding: 0.15rem 0.4rem; border-radius: var(--radius-sm); font-size: 0.72rem; font-weight: 700; background: rgba(0, 122, 255, 0.15); color: var(--ios-blue); text-transform: uppercase;">
+                                        <?= htmlspecialchars($server['country_code']) ?>
+                                    </span>
+                                    <span style="font-size: 0.85rem; color: var(--ios-text);"><?= htmlspecialchars($server['location']) ?></span>
+                                </div>
                             </td>
-                            <td style="font-size: 0.85rem; color: var(--ios-text);"><?= htmlspecialchars($server['location']) ?></td>
                             <td style="font-size: 0.85rem;">
                                 <code style="background: rgba(0, 122, 255, 0.08); padding: 0.2rem 0.4rem; border-radius: var(--radius-sm); font-weight: 600; color: var(--ios-text);">
                                     <?= htmlspecialchars($server['ip_address']) ?>
                                 </code>
                             </td>
-                            <td style="font-weight: 600; font-size: 0.85rem;"><?= htmlspecialchars($server['api_port']) ?></td>
-                            <td>
+                            <td style="text-align: center;">
                                 <?php
                                 $statusBadge = [
                                     'active'      => 'background: rgba(52, 199, 89, 0.15); color: var(--ios-success);',
@@ -116,7 +115,7 @@ ob_start();
                     <?php endforeach; ?>
                 <?php else: ?>
                     <tr>
-                        <td colspan="9" style="text-align: center; padding: 2rem; color: var(--ios-text-secondary);">Chưa có máy chủ nào được khởi tạo.</td>
+                        <td colspan="7" style="text-align: center; padding: 2rem; color: var(--ios-text-secondary);">Chưa có máy chủ nào được khởi tạo.</td>
                     </tr>
                 <?php endif; ?>
             </tbody>

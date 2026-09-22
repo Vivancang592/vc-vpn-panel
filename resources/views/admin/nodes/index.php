@@ -55,9 +55,7 @@ ob_start();
                         <th>Máy Chủ</th>
                         <th style="text-align: center;">Cổng (Port)</th>
                         <th>Giao Thức</th>
-                        <th>Mạng (Network)</th>
                         <th style="text-align: center;">TLS</th>
-                        <th>SNI / Host</th>
                         <th style="text-align: center;">Trạng Thái</th>
                         <th style="text-align: right;">Thao Tác</th>
                     </tr>
@@ -83,18 +81,12 @@ ob_start();
                                         <?= htmlspecialchars($node['protocol']) ?>
                                     </span>
                                 </td>
-                                <td style="font-weight: 600; text-transform: uppercase; color: var(--ios-text-secondary); font-size: 0.85rem;">
-                                    <?= htmlspecialchars($node['network']) ?>
-                                </td>
                                 <td style="text-align: center;">
                                     <?php if (!empty($node['tls'])): ?>
                                         <span style="color: var(--ios-success); font-weight: 700; font-size: 0.85rem;">✓ Bật</span>
                                     <?php else: ?>
                                         <span style="color: var(--ios-text-secondary); font-size: 0.85rem;">✕ Tắt</span>
                                     <?php endif; ?>
-                                </td>
-                                <td style="font-size: 0.85rem; color: var(--ios-text-secondary);">
-                                    <code style="font-size: 0.8rem;"><?= htmlspecialchars($node['sni'] ?: ($node['host'] ?: '-')) ?></code>
                                 </td>
                                 <td style="text-align: center;">
                                     <?php
@@ -124,7 +116,7 @@ ob_start();
                         <?php endforeach; ?>
                     <?php else: ?>
                         <tr>
-                            <td colspan="10" style="text-align: center; padding: 2rem; color: var(--ios-text-secondary);">Chưa có nút kết nối nào được đồng bộ từ VPS.</td>
+                            <td colspan="8" style="text-align: center; padding: 2rem; color: var(--ios-text-secondary);">Chưa có nút kết nối nào được đồng bộ từ VPS.</td>
                         </tr>
                     <?php endif; ?>
                 </tbody>

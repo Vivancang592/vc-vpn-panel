@@ -38,8 +38,6 @@ ob_start();
                     <th>Khách Hàng</th>
                     <th>Số Tiền Rút</th>
                     <th>Ngân Hàng</th>
-                    <th>Số Tài Khoản</th>
-                    <th>Tên Tài Khoản</th>
                     <th style="text-align: center;">Trạng Thái</th>
                     <th>Ngày Tạo</th>
                     <th style="text-align: right;">Thao Tác</th>
@@ -58,15 +56,10 @@ ob_start();
                                 <?= isset($formatMoney) ? $formatMoney($w['amount']) : number_format($w['amount'], 2) ?>
                             </td>
                             <td style="font-weight: 600; font-size: 0.85rem; color: var(--ios-text);">
-                                <?= htmlspecialchars($w['bank_name']) ?>
-                            </td>
-                            <td>
-                                <code style="background: rgba(0, 122, 255, 0.08); padding: 0.15rem 0.4rem; border-radius: var(--radius-sm); font-weight: 700; color: var(--ios-blue); font-size: 0.85rem;">
+                                <div><?= htmlspecialchars($w['bank_name']) ?></div>
+                                <code style="background: rgba(0, 122, 255, 0.08); padding: 0.1rem 0.35rem; border-radius: var(--radius-sm); font-weight: 700; color: var(--ios-blue); font-size: 0.8rem;">
                                     <?= htmlspecialchars($w['bank_account_number']) ?>
                                 </code>
-                            </td>
-                            <td style="font-weight: 600; font-size: 0.85rem; text-transform: uppercase;">
-                                <?= htmlspecialchars($w['bank_account_name']) ?>
                             </td>
                             <td style="text-align: center;">
                                 <?php
@@ -97,7 +90,7 @@ ob_start();
                     <?php endforeach; ?>
                 <?php else: ?>
                     <tr>
-                        <td colspan="9" style="text-align: center; padding: 2rem; color: var(--ios-text-secondary);">Chưa có yêu cầu rút tiền nào.</td>
+                        <td colspan="7" style="text-align: center; padding: 2rem; color: var(--ios-text-secondary);">Chưa có yêu cầu rút tiền nào.</td>
                     </tr>
                 <?php endif; ?>
             </tbody>

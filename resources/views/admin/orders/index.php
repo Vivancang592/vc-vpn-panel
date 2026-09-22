@@ -44,8 +44,7 @@ ob_start();
                     <th>ID</th>
                     <th>Mã Đơn Hàng</th>
                     <th>Khách Hàng</th>
-                    <th>Gói Cước</th>
-                    <th>Mã Giảm Giá</th>
+                    <th>Gói Dịch Vụ</th>
                     <th>Tổng Tiền</th>
                     <th style="text-align: center;">Trạng Thái</th>
                     <th>Ngày Tạo</th>
@@ -71,15 +70,6 @@ ob_start();
                                     <?= htmlspecialchars($order['plan_name'] ?? ('Gói #' . $order['plan_id'])) ?>
                                 <?php else: ?>
                                     <span style="color: var(--ios-blue); font-weight: 700;">💰 Nạp tiền vào ví</span>
-                                <?php endif; ?>
-                            </td>
-                            <td>
-                                <?php if (!empty($order['coupon_code'])): ?>
-                                    <span style="background: rgba(255, 149, 0, 0.12); color: var(--ios-warning); padding: 0.15rem 0.45rem; border-radius: var(--radius-sm); font-weight: 700; font-size: 0.75rem;">
-                                        <?= htmlspecialchars($order['coupon_code']) ?>
-                                    </span>
-                                <?php else: ?>
-                                    <span style="color: var(--ios-text-secondary); font-size: 0.8rem;">-</span>
                                 <?php endif; ?>
                             </td>
                             <td style="font-weight: 700; color: var(--ios-success);">
@@ -131,7 +121,7 @@ ob_start();
                     <?php endforeach; ?>
                 <?php else: ?>
                     <tr>
-                        <td colspan="9" style="text-align: center; padding: 2rem; color: var(--ios-text-secondary);">Chưa có đơn hàng nào.</td>
+                        <td colspan="8" style="text-align: center; padding: 2rem; color: var(--ios-text-secondary);">Chưa có đơn hàng nào.</td>
                     </tr>
                 <?php endif; ?>
             </tbody>
