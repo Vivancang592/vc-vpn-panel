@@ -14,14 +14,17 @@ $refLink = $refCode !== '' ? ($protocol . $host . '/register?ref=' . urlencode($
 ob_start();
 ?>
 <section class="user-record-page" style="width: 100%;">
-	<header class="user-record-header" style="margin-bottom: 1.25rem;">
-		<div>
+	<header class="user-orders-header">
+		<div class="user-orders-intro">
+			<h2 style="color: #020af4; font-family: emoji;">TIẾP THỊ LIÊN KẾT</h2>
+			<p style="margin: 0;">
+				Chia sẻ liên kết giới thiệu để nhận hoa hồng trọn đời từ các đơn hàng thành công.
+			</p>
+		</div>
+		<div class="user-orders-title-row">
 			<h1 style="font-size: 1.5rem; font-weight: 700; margin: 0;">
 				<span>🤝 Tiếp thị liên kết & Hoa hồng</span>
 			</h1>
-			<p style="margin: 0.25rem 0 0; color: var(--ios-text-secondary); font-size: 0.9rem;">
-				Chia sẻ liên kết giới thiệu để nhận hoa hồng trọn đời từ các đơn hàng thành công.
-			</p>
 		</div>
 	</header>
 

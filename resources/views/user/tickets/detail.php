@@ -22,8 +22,9 @@ $currentLabel = $statusLabels[$status] ?? ucfirst($status);
 ob_start();
 ?>
 <section class="user-record-page" style="width: 100%;">
-    <header class="user-record-header" style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 1rem; margin-bottom: 1.25rem;">
-        <div>
+    <header class="user-orders-header">
+        <div class="user-orders-intro"><h2 style="color: #020af4; font-family: emoji;">CHI TIẾT YÊU CẦU HỖ TRỢ</h2></div>
+        <div class="user-orders-title-row">
             <div style="display: flex; align-items: center; gap: 0.6rem; flex-wrap: wrap; margin-bottom: 0.35rem;">
                 <span style="font-size: 0.8rem; font-weight: 700; background: <?= $currentBadge['bg'] ?>; color: <?= $currentBadge['color'] ?>; border: 1px solid <?= $currentBadge['border'] ?>; padding: 0.2rem 0.65rem; border-radius: 9999px;">
                     <?= htmlspecialchars($currentLabel) ?>
@@ -32,7 +33,7 @@ ob_start();
                     Mã Ticket: #<?= (int) ($ticket['id'] ?? 0) ?>
                 </span>
             </div>
-            <h1 style="font-size: 1.5rem; font-weight: 700; margin: 0;">
+            <h1 style="font-size: 1.8rem; font-weight: 700; margin: .3rem 0;">
                 <?= htmlspecialchars($ticket['subject'] ?? 'Yêu cầu hỗ trợ') ?>
             </h1>
             <p style="margin: 0.35rem 0 0; color: var(--ios-text-secondary); font-size: 0.85rem;">

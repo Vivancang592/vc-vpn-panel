@@ -24,10 +24,10 @@ ob_start();
 .alert-success { background: rgba(52, 199, 89, 0.15); color: var(--ios-success); padding: 0.8rem; border-radius: var(--radius-md); margin-bottom: 1.2rem; font-size: 0.9rem; font-weight: 600; border: 1px solid rgba(52, 199, 89, 0.3); }
 </style>
 
-<div class="profile-page-header">
-    <h1>Tài Khoản</h1>
-    <p>Quản lý thông tin cá nhân và bảo mật tài khoản.</p>
-</div>
+<header class="user-orders-header">
+    <div class="user-orders-intro"><h2 style="color: #020af4; font-family: emoji;">TÀI KHOẢN</h2><p>Quản lý thông tin cá nhân và bảo mật tài khoản.</p></div>
+    <div class="user-orders-title-row"><h1>Tài Khoản</h1></div>
+</header>
 
 <?php if (isset($_SESSION['success'])): ?>
     <div class="alert-success">

@@ -5,8 +5,14 @@ $unreadCount = (int)($unreadCount ?? 0);
 ob_start();
 ?>
 <section class="user-record-page">
-    <header class="user-record-header" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem; margin-bottom: 1.25rem;">
-        <div>
+    <header class="user-orders-header">
+        <div class="user-orders-intro">
+            <h2 style="color: #020af4; font-family: emoji;">TRUNG TÂM THÔNG BÁO</h2>
+            <p style="margin: 0;">
+                Cập nhật đơn hàng, gói cước, hỗ trợ kỹ thuật và biến động dịch vụ.
+            </p>
+        </div>
+        <div class="user-orders-title-row">
             <h1 style="font-size: 1.5rem; font-weight: 700; margin: 0;">
                 <span>🔔 Trung tâm Thông báo</span>
                 <?php if ($unreadCount > 0): ?>
@@ -15,12 +21,7 @@ ob_start();
                     </span>
                 <?php endif; ?>
             </h1>
-            <p style="margin: 0.25rem 0 0; color: var(--ios-text-secondary); font-size: 0.9rem;">
-                Cập nhật đơn hàng, gói cước, hỗ trợ kỹ thuật và biến động dịch vụ.
-            </p>
-        </div>
-
-        <?php if (!empty($items)): ?>
+            <?php if (!empty($items)): ?>
             <div style="display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap;">
                 <?php if ($unreadCount > 0): ?>
                     <form method="POST" action="/notifications/read-all" style="margin: 0;">
@@ -35,7 +36,8 @@ ob_start();
                     </button>
                 </form>
             </div>
-        <?php endif; ?>
+            <?php endif; ?>
+        </div>
     </header>
 
     <?php if (!empty($_SESSION['success']) || !empty($_SESSION['error'])): ?>
