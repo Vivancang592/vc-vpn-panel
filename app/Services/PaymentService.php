@@ -210,6 +210,7 @@ class PaymentService
             'order_code'     => $orderCode,
             'user_id'        => $userId,
             'plan_id'        => (int) $subscription['plan_id'],
+            'subscription_id'=> $subscriptionId,
             'total_amount'   => $amount,
             'payment_method' => $paymentMethod,
             'payment_status' => 'pending',
@@ -221,46 +222,16 @@ class PaymentService
         }
 
         $orderId = (int)$orderModel->lastInsertId();
-        $transCode = 'REN'
-            . date('YmdHis')
-            . rand(100, 999);
-
-        $paymentData = [
-            'transaction_id'  => $transCode,
-            'user_id'         => $userId,
-            'order_id'        => $orderId,
-            'subscription_id' => $subscriptionId,
-            'type'            => 'payment',
-            'amount'          => $amount,
-            'payment_method'  => $paymentMethod,
-            'status'          => 'pending',
-            'created_at'      => date('Y-m-d H:i:s')
-        ];
-
-        $created = $paymentModel->create($paymentData);
-
-        if (!$created) {
-            $orderModel->delete($orderId);
-            return [
-                'status' => false,
-                'message' => 'Không thể tạo giao dịch gia hạn.'
-            ];
-        }
-
-        $paymentId = (int) $paymentModel->lastInsertId();
         $settingModel = new Setting();
         $settings = $settingModel->getAllAsKeyValue();
         $renewalSyntax = trim((string) ($settings['renewal_transfer_syntax'] ?? 'GAHAN'));
         $transferContent = $renewalSyntax . str_pad((string) $orderId, 2, '0', STR_PAD_LEFT);
-        $paymentModel->update($paymentId, ['transfer_content' => $transferContent]);
         $orderModel->update($orderId, ['transfer_content' => $transferContent]);
 
         return [
             'status'           => true,
-            'message'          => 'Tạo giao dịch gia hạn thành công.',
-            'transaction_code' => $transCode,
+            'message'          => 'Tạo đơn gia hạn thành công.',
             'transfer_content' => $transferContent,
-            'payment_id'       => $paymentId,
             'order_id'         => $orderId,
             'subscription_id'  => $subscriptionId,
             'amount'           => $amount
@@ -276,6 +247,56 @@ class PaymentService
      * - payment + subscription_id:
      *   gia hạn subscription hiện tại và đồng bộ VPS NodeTask.
      */
+    public function completeRenewalOrder(
+        int $orderId,
+        float $amount,
+        string $transactionId = ''
+    ): bool {
+        $orderModel = new Order();
+        $order = $orderModel->find($orderId);
+
+        if (!$order || (int) ($order['subscription_id'] ?? 0) <= 0) {
+            return false;
+        }
+
+        if (($order['payment_status'] ?? '') === 'completed') {
+            return true;
+        }
+
+        if (($order['payment_status'] ?? '') !== 'pending'
+            || abs($amount - (float) ($order['total_amount'] ?? 0)) > 1.0) {
+            return false;
+        }
+
+        $paymentModel = new Payment();
+        $payment = $paymentModel->findPendingRenewalByOrderId($orderId);
+        if ($payment === null) {
+            $transactionId = trim($transactionId);
+            if ($transactionId === '') {
+                $transactionId = 'REN' . date('YmdHis') . random_int(100, 99999);
+            }
+
+            if (!$paymentModel->create([
+                'transaction_id'   => $transactionId,
+                'user_id'          => (int) $order['user_id'],
+                'order_id'         => $orderId,
+                'subscription_id'  => (int) $order['subscription_id'],
+                'type'             => 'payment',
+                'amount'           => (float) $order['total_amount'],
+                'payment_method'   => (string) ($order['payment_method'] ?? 'vietqr'),
+                'transfer_content' => (string) ($order['transfer_content'] ?? ''),
+                'status'           => 'pending',
+                'created_at'       => date('Y-m-d H:i:s')
+            ])) {
+                return false;
+            }
+
+            $payment = $paymentModel->find($paymentModel->lastInsertId());
+        }
+
+        return $payment !== null && $this->completePayment((int) $payment['id']);
+    }
+
     public function completePayment(int $paymentId): bool
     {
         $paymentModel = new Payment();

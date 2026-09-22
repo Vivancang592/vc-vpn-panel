@@ -132,6 +132,7 @@ CREATE TABLE `vc_orders` (
     `order_code` VARCHAR(50) NOT NULL UNIQUE,
     `user_id` BIGINT UNSIGNED NOT NULL,
     `plan_id` INT UNSIGNED NULL,
+    `subscription_id` BIGINT UNSIGNED NULL,
     `coupon_id` INT UNSIGNED NULL,
     `total_amount` DECIMAL(15, 0) NOT NULL,
     `payment_method` VARCHAR(50) NOT NULL DEFAULT 'vietqr',

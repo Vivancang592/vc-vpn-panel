@@ -261,8 +261,7 @@ class UserController extends BaseController
                 $paymentId = (int) ($payment['id'] ?? 0);
             }
             if ($paymentId <= 0) {
-                $_SESSION['error'] = 'Đã tạo giao dịch gia hạn nhưng không xác định được giao dịch thanh toán.';
-                $this->redirect('/subscriptions/detail?id=' . $subscriptionId);
+                $this->redirect('/payment/checkout?order=' . (int) ($result['order_id'] ?? 0) . '&renewal=' . $subscriptionId);
                 return;
             }
 
@@ -400,14 +399,18 @@ $_SESSION['success'] = 'Đã tạo đơn hàng ' . $orderCode . ' thành công. 
                 $this->redirect('/orders/detail?id=' . (int) $order['id']);
                 return;
             }
+            $orderSubscriptionId = (int) ($order['subscription_id'] ?? 0);
+            $renewalSubscription = $orderSubscriptionId > 0
+                ? $this->getOwnedSubscription($orderSubscriptionId)
+                : null;
             $isDepositOrder = empty($order['plan_id']);
             $this->render('user.payments.checkout', [
-                'checkoutType' => $isDepositOrder ? 'deposit' : 'order',
+                'checkoutType' => $isDepositOrder ? 'deposit' : ($renewalSubscription ? 'renewal' : 'order'),
                 'order' => $order,
                 'payment' => null,
-                'subscription' => null,
+                'subscription' => $renewalSubscription,
                 'paymentInstructions' => $this->buildPaymentInstructions($order),
-                'activeMenu' => $isDepositOrder ? 'wallet' : 'orders'
+                'activeMenu' => $isDepositOrder ? 'wallet' : ($renewalSubscription ? 'subscriptions' : 'orders')
             ]);
             return;
         }
