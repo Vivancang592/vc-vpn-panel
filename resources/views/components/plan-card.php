@@ -11,7 +11,7 @@ $plan = $plan ?? [];
         </div>
         
         <div style="font-size: 1.8rem; font-weight: 800; color: var(--ios-blue); margin-bottom: 1rem;">
-            ¥<?= number_format($plan['price'] ?? 0, 2, '.', ',') ?> <span style="font-size: 0.85rem; font-weight: 400; color: var(--ios-text-secondary);">CNY / <?= $plan['duration_days'] ?? 30 ?> ngày</span>
+            <?= number_format($plan['price'] ?? 0, 0, '.', ',') ?>đ <span style="font-size: 0.85rem; font-weight: 400; color: var(--ios-text-secondary);">/ <?= $plan['duration_days'] ?? 30 ?> ngày</span>
         </div>
 
         <ul style="list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 0.65rem; font-size: 0.88rem;">

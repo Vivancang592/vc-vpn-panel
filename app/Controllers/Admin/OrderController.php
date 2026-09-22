@@ -173,36 +173,11 @@ class OrderController extends BaseController
             return;
         }
 
-        // --- BẮT ĐẦU FIX QUY ĐỔI ---
-        $settings = (new \App\Models\Setting())->getAllAsKeyValue();
-        $convertToSystemCurrency = function(float $rawAmount, string $paymentMethod) use ($settings): float {
-            $baseCurrency = strtoupper(trim((string) ($settings['currency'] ?? 'CNY')));
-            $exchangeRate = (float) ($settings['exchange_rate'] ?? 1);
-
-            if ($exchangeRate <= 0) return $rawAmount;
-
-            // Hệ thống CNY, thanh toán VietQR (VND) -> Chia tỷ giá
-            if ($paymentMethod === 'vietqr' && $baseCurrency === 'CNY') {
-                return round($rawAmount / $exchangeRate, 2);
-            }
-            // Hệ thống VND, thanh toán Wechat/Alipay (CNY) -> Nhân tỷ giá
-            if (in_array($paymentMethod, ['wechat', 'alipay'], true) && $baseCurrency === 'VND') {
-                return round($rawAmount * $exchangeRate);
-            }
-            
-            return $rawAmount;
-        };
-
         // 1. Xử lý gia hạn (Renewal)
         $renewalPayment = $status === 'completed'
             ? (new Payment())->findPendingRenewalByOrderId($id)
             : null;
         if ($renewalPayment !== null) {
-            $sysAmount = $convertToSystemCurrency((float)($renewalPayment['amount'] ?? 0), (string)($renewalPayment['payment_method'] ?? 'vietqr'));
-            if ($sysAmount !== (float)$renewalPayment['amount']) {
-                (new Payment())->update((int)$renewalPayment['id'], ['amount' => $sysAmount]);
-            }
-
             $completed = (new PaymentService())->completePayment((int) $renewalPayment['id']);
             $_SESSION['flash_message'] = $completed
                 ? 'Đã duyệt đơn gia hạn và cập nhật thời hạn gói dịch vụ.'
@@ -213,11 +188,11 @@ class OrderController extends BaseController
         }
 
         // 2. Xử lý đơn hàng mua mới
-        $sysAmount = $convertToSystemCurrency((float)($order['total_amount'] ?? 0), (string)($order['payment_method'] ?? 'vietqr'));
+        $amount = (float)($order['total_amount'] ?? 0);
         
         $orderUpdate = [
             'payment_status' => $status,
-            'total_amount'   => $sysAmount // Ép lại số tiền chuẩn vào DB
+            'total_amount'   => $amount
         ];
         
         if ($status === 'completed' && ($order['payment_status'] ?? '') !== 'completed') {
@@ -225,58 +200,30 @@ class OrderController extends BaseController
         }
 
         if ($this->orderModel->update($id, $orderUpdate)) {
-            if ($status === 'completed' && $order['payment_status'] !== 'completed' && class_exists('App\Models\Subscription') && class_exists('App\Models\VpnPlan')) {
+            if ($status === 'completed' && $order['payment_status'] !== 'completed') {
+                $orderService = new \App\Services\OrderService();
+                $orderService->activateOrder($id);
+
                 $paymentModel = new Payment();
                 if ($paymentModel->findSuccessfulByOrderId($id) === null) {
-                    $paymentModel->create([
-                        'user_id' => (int) $order['user_id'],
-                        'order_id' => $id,
-                        'type' => 'payment',
-                        'payment_method' => (string) ($order['payment_method'] ?? 'vietqr'),
-                        'transaction_id' => 'MN-' . (string) ($order['order_code'] ?? $id),
-                        'amount' => $sysAmount, // Dùng số tiền đã quy đổi
-                        'status' => 'success',
-                        'created_at' => date('Y-m-d H:i:s')
-                    ]);
-                }
-
-                $planModel = new VpnPlan();
-                $plan      = $planModel->find((int)$order['plan_id']);
-
-                if ($plan) {
-                    $subModel       = new Subscription();
-                    $durationDays   = (int)($plan['duration_days'] ?? 30);
-                    $bandwidthLimit = (int)($plan['bandwidth_limit_gb'] ?? 0);
-                    $maxDevices     = (int)($plan['max_devices'] ?? 1);
-                    $groupIds       = $this->parseGroupIds($plan['group_id'] ?? []);
-                    $bytesTotal     = $bandwidthLimit > 0 ? ($bandwidthLimit * 1073741824) : 0;
-                    $uuid           = sprintf('%04x%04x-%04x-%04x-%04x-%04x%04x%04x', 
-                                        mt_rand(0, 0xffff), mt_rand(0, 0xffff), 
-                                        mt_rand(0, 0xffff), 
-                                        mt_rand(0, 0x0fff) | 0x4000, 
-                                        mt_rand(0, 0x3fff) | 0x8000, 
-                                        mt_rand(0, 0xffff), mt_rand(0, 0xffff), mt_rand(0, 0xffff));
-
-                    $startDate = date('Y-m-d H:i:s');
-                    $endDate   = date('Y-m-d H:i:s', strtotime("+{$durationDays} days"));
-
-                    $created = $subModel->create([
-                        'user_id'         => $order['user_id'],
-                        'plan_id'         => $order['plan_id'],
-                        'order_id'        => $id,
-                        'uuid'            => $uuid,
-                        'max_devices'     => $maxDevices,
-                        'transfer_enable' => $bytesTotal,
-                        'start_date'      => $startDate,
-                        'end_date'        => $endDate,
-                        'status'          => 'active'
-                    ]);
-
-                    if ($created) {
-                        $subId = method_exists($subModel, 'lastInsertId') ? $subModel->lastInsertId() : 0;
-                        if ($subId > 0 && !empty($groupIds)) {
-                            $this->dispatchAddUserTask($subId, $uuid, $bytesTotal, $endDate, $groupIds);
-                        }
+                    $existingPending = $paymentModel->findPendingByOrderId($id);
+                    if ($existingPending) {
+                        $paymentModel->update((int)$existingPending['id'], [
+                            'status' => 'success',
+                            'transaction_id' => $existingPending['transaction_id'] ?? ('MN-' . ($order['order_code'] ?? $id))
+                        ]);
+                    } else {
+                        $paymentModel->create([
+                            'user_id'          => (int) $order['user_id'],
+                            'order_id'         => $id,
+                            'type'             => 'payment',
+                            'payment_method'   => (string) ($order['payment_method'] ?? 'vietqr'),
+                            'transaction_id'   => 'MN-' . (string) ($order['order_code'] ?? $id),
+                            'transfer_content' => $order['transfer_content'] ?? null,
+                            'amount'           => $amount,
+                            'status'           => 'success',
+                            'created_at'       => date('Y-m-d H:i:s')
+                        ]);
                     }
                 }
             }
@@ -374,8 +321,12 @@ class OrderController extends BaseController
             $customEndDate   = !empty($_POST['end_date']) ? trim($_POST['end_date']) : null;
             $customDataGb    = isset($_POST['bandwidth_gb']) && $_POST['bandwidth_gb'] !== '' ? (float)$_POST['bandwidth_gb'] : null;
             $customDevices   = isset($_POST['max_devices']) && $_POST['max_devices'] !== '' ? (int)$_POST['max_devices'] : null;
+            $paymentMethod   = trim((string)($_POST['payment_method'] ?? 'vietqr'));
+            if ($paymentMethod === '') {
+                $paymentMethod = 'vietqr';
+            }
 
-            $totalAmount = $customAmount !== null ? $customAmount : (float)$plan['price'];
+            $totalAmount = $customAmount !== null ? round($customAmount, 0) : round((float)$plan['price'], 0);
             $orderCode   = 'AD' . date('YmdHis') . rand(100, 999);
 
             $orderData = [
@@ -383,6 +334,7 @@ class OrderController extends BaseController
                 'user_id'        => $userId,
                 'plan_id'        => $planId,
                 'total_amount'   => $totalAmount,
+                'payment_method' => $paymentMethod,
                 'payment_status' => $paymentStatus,
                 'purchase_ip'    => $_SERVER['REMOTE_ADDR'] ?? '127.0.0.1',
                 'created_by'     => (int) $_SESSION['user_id'],
@@ -391,9 +343,29 @@ class OrderController extends BaseController
             ];
 
             if ($this->orderModel->create($orderData)) {
-                $orderId = method_exists($this->orderModel, 'lastInsertId') ? $this->orderModel->lastInsertId() : 0;
+                $orderId = method_exists($this->orderModel, 'lastInsertId') ? (int)$this->orderModel->lastInsertId() : 0;
+
+                if ($orderId > 0) {
+                    $settingModel = new \App\Models\Setting();
+                    $orderSyntax = trim((string)($settingModel->get('order_transfer_syntax', 'THANHTOAN') ?? 'THANHTOAN'));
+                    $transferContent = $orderSyntax . str_pad((string)$orderId, 2, '0', STR_PAD_LEFT);
+                    $this->orderModel->update($orderId, ['transfer_content' => $transferContent]);
+                }
 
                 if ($paymentStatus === 'completed' && class_exists('App\Models\Subscription')) {
+                    $paymentModel = new Payment();
+                    $paymentModel->create([
+                        'user_id'          => $userId,
+                        'order_id'         => $orderId ?: null,
+                        'type'             => 'payment',
+                        'payment_method'   => $paymentMethod,
+                        'transaction_id'   => 'ADM-' . $orderCode,
+                        'transfer_content' => $transferContent ?? null,
+                        'amount'           => $totalAmount,
+                        'status'           => 'success',
+                        'created_at'       => date('Y-m-d H:i:s')
+                    ]);
+
                     $subModel       = new Subscription();
                     $durationDays   = (int)($plan['duration_days'] ?? 30);
                     $bandwidthLimit = $customDataGb !== null ? $customDataGb : (float)($plan['bandwidth_limit_gb'] ?? 0);
@@ -430,7 +402,7 @@ class OrderController extends BaseController
                     $created = $subModel->create($subData);
 
                     if ($created) {
-                        $subId = method_exists($subModel, 'lastInsertId') ? $subModel->lastInsertId() : 0;
+                        $subId = method_exists($subModel, 'lastInsertId') ? (int)$subModel->lastInsertId() : 0;
                         if ($subId > 0 && !empty($groupIds)) {
                             $this->dispatchAddUserTask($subId, $uuid, $bytesTotal, $endDate, $groupIds);
                         }

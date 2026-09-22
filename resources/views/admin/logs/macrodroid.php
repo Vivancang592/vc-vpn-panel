@@ -15,8 +15,8 @@ ob_start();
 
 <div style="margin-bottom: 1rem; width: 100%; box-sizing: border-box; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.75rem;">
     <div>
-        <h1 style="font-size: 1.5rem; font-weight: 700; word-break: break-word;">Nhật Ký MacroDroid Webhook</h1>
-        <p style="color: var(--ios-text-secondary); font-size: 0.85rem;">Kiểm tra toàn bộ dữ liệu phản hồi từ thiết bị nạp tự động WeChat Pay</p>
+        <h1 style="font-size: 1.5rem; font-weight: 700; word-break: break-word;">Nhật Ký Webhook Thanh Toán</h1>
+        <p style="color: var(--ios-text-secondary); font-size: 0.85rem;">Kiểm tra toàn bộ dữ liệu phản hồi từ cổng thanh toán / ngân hàng tự động</p>
     </div>
     <div style="display: flex; gap: 0.5rem; align-items: center;">
         <a href="/admin/logs/macrodroid" class="glass-btn" style="text-decoration: none; white-space: nowrap;">🔄 Tải lại Log</a>

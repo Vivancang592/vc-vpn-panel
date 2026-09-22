@@ -252,7 +252,7 @@ document.addEventListener('DOMContentLoaded', function () {
         const lastMonthData = JSON.parse(chartCanvas.dataset.last || '[]');
         const selectedMonth = chartCanvas.dataset.month;
         const selectedYear = chartCanvas.dataset.year;
-        const currencySymbol = chartCanvas.dataset.symbol || '¥';
+        const currencySymbol = chartCanvas.dataset.symbol || 'đ';
         const daysLabels = Array.from({ length: 31 }, (_, i) => 'Ngày ' + (i + 1));
 
         new Chart(ctx, {

@@ -2,40 +2,42 @@
 
 namespace App\Services;
 
+use App\Models\BaseModel;
 use App\Models\Payment;
 use App\Models\User;
 use App\Models\Setting;
 use App\Models\Subscription;
 use App\Models\VpnPlan;
 use App\Models\Order;
+use App\Models\NodeTask;
 
 class PaymentService
 {
     /**
-     * Tạo giao dịch nạp tiền vào ví
+     * Tạo giao dịch nạp tiền vào ví (Đơn vị duy nhất VND)
      */
     public function createDepositTransaction(
         int $userId,
         float $amount,
-        string $paymentMethod
+        string $paymentMethod = 'vietqr'
     ): array {
         $settingModel = new Setting();
         $settings = $settingModel->getAllAsKeyValue();
 
         $minDeposit = (float) (
-            $settings['min_deposit']
-            ?? $settings['min_deposit_amount']
-            ?? (strtoupper(trim((string) ($settings['currency'] ?? 'CNY'))) === 'VND' ? 10000 : 10)
+            $settings['min_deposit_amount']
+            ?? $settings['min_deposit']
+            ?? 10000
         );
 
-        $symbol = $settings['currency_symbol'] ?? '¥';
+        $symbol = $settings['currency_symbol'] ?? 'đ';
 
         if ($amount < $minDeposit) {
             return [
                 'status' => false,
                 'message' =>
                     'Số tiền nạp tối thiểu là '
-                    . number_format($minDeposit, 2, '.', ',')
+                    . number_format($minDeposit, 0, '.', ',')
                     . ' '
                     . $symbol
                     . '.'
@@ -44,22 +46,21 @@ class PaymentService
 
         $transCode = 'DEP'
             . date('YmdHis')
-            . rand(100, 999);
+            . random_int(100, 99999);
 
         $paymentData = [
             'transaction_id' => $transCode,
-            'user_id' => $userId,
-            'order_id' => null,
-            'subscription_id' => null,
-            'type' => 'deposit',
-            'amount' => $amount,
+            'user_id'        => $userId,
+            'order_id'       => null,
+            'subscription_id'=> null,
+            'type'           => 'deposit',
+            'amount'         => round($amount, 0),
             'payment_method' => $paymentMethod,
-            'status' => 'pending',
-            'created_at' => date('Y-m-d H:i:s')
+            'status'         => 'pending',
+            'created_at'     => date('Y-m-d H:i:s')
         ];
 
         $paymentModel = new Payment();
-
         $created = $paymentModel->create($paymentData);
 
         if ($created) {
@@ -69,12 +70,12 @@ class PaymentService
             $paymentModel->update($paymentId, ['transfer_content' => $transferContent]);
 
             return [
-                'status' => true,
-                'message' => 'Tạo giao dịch nạp tiền thành công.',
+                'status'           => true,
+                'message'          => 'Tạo giao dịch nạp tiền thành công.',
                 'transaction_code' => $transCode,
                 'transfer_content' => $transferContent,
-                'amount' => $amount,
-                'payment_id' => $paymentId
+                'amount'           => $amount,
+                'payment_id'       => $paymentId
             ];
         }
 
@@ -90,7 +91,7 @@ class PaymentService
     public function createRenewalTransaction(
         int $userId,
         int $subscriptionId,
-        string $paymentMethod,
+        string $paymentMethod = 'vietqr',
         string $purchaseIp = ''
     ): array {
         $subscriptionModel = new Subscription();
@@ -116,7 +117,7 @@ class PaymentService
         if (!$plan) {
             return [
                 'status' => false,
-                'message' => 'Không tìm thấy gói cước của subscription.'
+                'message' => 'Không tìm thấy gói cước của gói dịch vụ.'
             ];
         }
 
@@ -129,52 +130,107 @@ class PaymentService
             ];
         }
 
+        $amount = round($amount, 0);
+
+        // Hỗ trợ gia hạn trực tiếp bằng số dư ví (Balance)
+        if ($paymentMethod === 'balance') {
+            $userModel = new User();
+            if (!$userModel->debitBalance($userId, $amount)) {
+                return ['status' => false, 'message' => 'Số dư trong ví không đủ để gia hạn gói dịch vụ này.'];
+            }
+
+            $orderModel = new Order();
+            $orderCode = 'RE' . date('YmdHis') . rand(100, 999);
+            $orderModel->create([
+                'order_code'     => $orderCode,
+                'user_id'        => $userId,
+                'plan_id'        => (int) $subscription['plan_id'],
+                'total_amount'   => $amount,
+                'payment_method' => 'balance',
+                'payment_status' => 'completed',
+                'purchase_ip'    => $purchaseIp !== '' ? $purchaseIp : null,
+                'created_by'     => $userId,
+                'created_at'     => date('Y-m-d H:i:s')
+            ]);
+            $orderId = (int)$orderModel->lastInsertId();
+
+            $transCode = 'BAL-REN' . date('YmdHis') . rand(100, 999);
+            $paymentModel = new Payment();
+            $paymentModel->create([
+                'transaction_id'  => $transCode,
+                'user_id'         => $userId,
+                'order_id'        => $orderId,
+                'subscription_id' => $subscriptionId,
+                'type'            => 'payment',
+                'amount'          => $amount,
+                'payment_method'  => 'balance',
+                'status'          => 'pending',
+                'created_at'      => date('Y-m-d H:i:s')
+            ]);
+            $paymentId = (int)$paymentModel->lastInsertId();
+
+            $payment = $paymentModel->find($paymentId);
+            if ($payment && $this->completeRenewalPayment($payment)) {
+                return [
+                    'status'           => true,
+                    'message'          => 'Gia hạn gói dịch vụ bằng số dư thành công!',
+                    'payment_id'       => $paymentId,
+                    'order_id'         => $orderId,
+                    'subscription_id'  => $subscriptionId,
+                    'amount'           => $amount,
+                    'is_completed'     => true
+                ];
+            } else {
+                $userModel->creditBalance($userId, $amount);
+                return ['status' => false, 'message' => 'Gia hạn thất bại. Số dư đã được hoàn lại ví.'];
+            }
+        }
+
         $paymentModel = new Payment();
         $pendingPayment = $paymentModel->findPendingRenewalBySubscriptionId($subscriptionId);
         if ($pendingPayment !== null) {
             return [
-                'status' => true,
-                'message' => 'Đã có đơn gia hạn đang chờ thanh toán.',
+                'status'           => true,
+                'message'          => 'Đã có đơn gia hạn đang chờ thanh toán.',
                 'transaction_code' => (string) ($pendingPayment['transaction_id'] ?? ''),
-                'payment_id' => (int) $pendingPayment['id'],
-                'order_id' => (int) ($pendingPayment['order_id'] ?? 0),
-                'subscription_id' => $subscriptionId,
-                'amount' => (float) $pendingPayment['amount']
+                'payment_id'       => (int) $pendingPayment['id'],
+                'order_id'         => (int) ($pendingPayment['order_id'] ?? 0),
+                'subscription_id'  => $subscriptionId,
+                'amount'           => (float) $pendingPayment['amount']
             ];
         }
 
-        $orderAmount = $this->convertAmountForGateway($amount, $paymentMethod);
         $orderModel = new Order();
         $orderCode = 'RE' . date('YmdHis') . rand(100, 999);
         if (!$orderModel->create([
-            'order_code' => $orderCode,
-            'user_id' => $userId,
-            'plan_id' => (int) $subscription['plan_id'],
-            'total_amount' => $orderAmount,
+            'order_code'     => $orderCode,
+            'user_id'        => $userId,
+            'plan_id'        => (int) $subscription['plan_id'],
+            'total_amount'   => $amount,
             'payment_method' => $paymentMethod,
             'payment_status' => 'pending',
-            'purchase_ip' => $purchaseIp !== '' ? $purchaseIp : null,
-            'created_by' => $userId,
-            'created_at' => date('Y-m-d H:i:s')
+            'purchase_ip'    => $purchaseIp !== '' ? $purchaseIp : null,
+            'created_by'     => $userId,
+            'created_at'     => date('Y-m-d H:i:s')
         ])) {
             return ['status' => false, 'message' => 'Không thể tạo đơn hàng gia hạn.'];
         }
 
-        $orderId = $orderModel->lastInsertId();
+        $orderId = (int)$orderModel->lastInsertId();
         $transCode = 'REN'
             . date('YmdHis')
             . rand(100, 999);
 
         $paymentData = [
-            'transaction_id' => $transCode,
-            'user_id' => $userId,
-            'order_id' => $orderId,
+            'transaction_id'  => $transCode,
+            'user_id'         => $userId,
+            'order_id'        => $orderId,
             'subscription_id' => $subscriptionId,
-            'type' => 'payment',
-            'amount' => $amount,
-            'payment_method' => $paymentMethod,
-            'status' => 'pending',
-            'created_at' => date('Y-m-d H:i:s')
+            'type'            => 'payment',
+            'amount'          => $amount,
+            'payment_method'  => $paymentMethod,
+            'status'          => 'pending',
+            'created_at'      => date('Y-m-d H:i:s')
         ];
 
         $created = $paymentModel->create($paymentData);
@@ -188,20 +244,22 @@ class PaymentService
         }
 
         $paymentId = (int) $paymentModel->lastInsertId();
+        $settingModel = new Setting();
+        $settings = $settingModel->getAllAsKeyValue();
         $renewalSyntax = trim((string) ($settings['renewal_transfer_syntax'] ?? 'GAHAN'));
         $transferContent = $renewalSyntax . str_pad((string) $paymentId, 2, '0', STR_PAD_LEFT);
         $paymentModel->update($paymentId, ['transfer_content' => $transferContent]);
         $orderModel->update($orderId, ['transfer_content' => $transferContent]);
 
         return [
-            'status' => true,
-            'message' => 'Tạo giao dịch gia hạn thành công.',
+            'status'           => true,
+            'message'          => 'Tạo giao dịch gia hạn thành công.',
             'transaction_code' => $transCode,
             'transfer_content' => $transferContent,
-            'payment_id' => $paymentId,
-            'order_id' => $orderId,
-            'subscription_id' => $subscriptionId,
-            'amount' => $amount
+            'payment_id'       => $paymentId,
+            'order_id'         => $orderId,
+            'subscription_id'  => $subscriptionId,
+            'amount'           => $amount
         ];
     }
 
@@ -209,13 +267,10 @@ class PaymentService
      * Hoàn tất một payment.
      *
      * - deposit:
-     *   cộng tiền vào balance.
-     *
-     * - payment + order_id:
-     *   để OrderService xử lý activation order.
+     *   cộng tiền vào balance nguyên tử (Atomic credit).
      *
      * - payment + subscription_id:
-     *   gia hạn subscription hiện tại.
+     *   gia hạn subscription hiện tại và đồng bộ VPS NodeTask.
      */
     public function completePayment(int $paymentId): bool
     {
@@ -250,66 +305,58 @@ class PaymentService
         }
 
         /*
-         * PAYMENT NẠP TIỀN
+         * PAYMENT NẠP TIỀN VÀO VÍ
          */
         if (($payment['type'] ?? '') === 'deposit') {
-            $paymentUpdated = $paymentModel->update($paymentId, [
-                'status' => 'success'
-            ]);
+            BaseModel::beginTransaction();
+            try {
+                $paymentUpdated = $paymentModel->update($paymentId, [
+                    'status' => 'success'
+                ]);
 
-            if (!$paymentUpdated) {
+                if (!$paymentUpdated) {
+                    BaseModel::rollBack();
+                    return false;
+                }
+
+                $userModel = new User();
+                $credited = $userModel->creditBalance((int) $payment['user_id'], (float) $payment['amount']);
+
+                if (!$credited) {
+                    BaseModel::rollBack();
+                    return false;
+                }
+
+                BaseModel::commit();
+                return true;
+            } catch (\Throwable $e) {
+                BaseModel::rollBack();
+                error_log('Error in completePayment deposit: ' . $e->getMessage());
                 return false;
             }
-
-            $userModel = new User();
-            $user = $userModel->find((int) $payment['user_id']);
-
-            if (!$user) {
-                return false;
-            }
-
-            $newBalance =
-                (float) ($user['balance'] ?? 0)
-                + (float) $payment['amount'];
-
-            return $userModel->update(
-                (int) $user['id'],
-                [
-                    'balance' => $newBalance,
-                    'updated_at' => date('Y-m-d H:i:s')
-                ]
-            );
         }
 
         /*
          * Payment của order mua gói mới:
-         * PaymentService không tự activate order ở đây.
-         * OrderService / webhook order flow hiện tại tiếp tục
-         * chịu trách nhiệm xử lý order.
+         * Nếu có order_id, gọi OrderService để kích hoạt order
          */
         if (
             ($payment['type'] ?? '') === 'payment'
             && !empty($payment['order_id'])
         ) {
-            return $paymentModel->update($paymentId, [
-                'status' => 'success'
-            ]);
+            $orderService = new OrderService();
+            $activated = $orderService->activateOrder((int) $payment['order_id']);
+            if ($activated) {
+                return $paymentModel->update($paymentId, ['status' => 'success']);
+            }
         }
 
         return false;
     }
 
     /**
-     * Hoàn tất payment gia hạn.
-     *
-     * Nếu subscription còn hạn:
-     *     end_date = end_date + duration
-     *
-     * Nếu subscription đã hết hạn:
-     *     end_date = NOW() + duration
-     *
-     * Như vậy người dùng gia hạn trước ngày hết hạn
-     * sẽ không bị mất số ngày còn lại.
+     * Hoàn tất payment gia hạn an toàn trong Transaction.
+     * Đồng bộ Task cập nhật thời hạn xuống VPS.
      */
     private function completeRenewalPayment(array $payment): bool
     {
@@ -321,7 +368,6 @@ class PaymentService
         }
 
         $subscriptionModel = new Subscription();
-
         $subscription = $subscriptionModel->find($subscriptionId);
 
         if (!$subscription) {
@@ -333,101 +379,103 @@ class PaymentService
         }
 
         $planModel = new VpnPlan();
-
         $plan = $planModel->find((int) $subscription['plan_id']);
 
         if (!$plan) {
             return false;
         }
 
-        $durationDays = max(
-            1,
-            (int) ($plan['duration_days'] ?? 30)
-        );
-
+        $durationDays = max(1, (int) ($plan['duration_days'] ?? 30));
         $now = new \DateTimeImmutable();
-
         $currentEndDate = null;
 
         if (!empty($subscription['end_date'])) {
             try {
-                $currentEndDate = new \DateTimeImmutable(
-                    (string) $subscription['end_date']
-                );
+                $currentEndDate = new \DateTimeImmutable((string) $subscription['end_date']);
             } catch (\Throwable $e) {
                 $currentEndDate = null;
             }
         }
 
         /*
-         * Còn hạn:
-         * cộng thêm vào end_date hiện tại.
-         *
-         * Hết hạn:
-         * tính từ thời điểm hiện tại.
+         * Còn hạn: cộng thêm vào end_date hiện tại.
+         * Hết hạn: tính từ thời điểm hiện tại.
          */
-        if (
-            $currentEndDate !== null
-            && $currentEndDate > $now
-        ) {
-            $newEndDate = $currentEndDate->modify(
-                '+' . $durationDays . ' days'
-            );
+        if ($currentEndDate !== null && $currentEndDate > $now) {
+            $newEndDate = $currentEndDate->modify('+' . $durationDays . ' days');
         } else {
-            $newEndDate = $now->modify(
-                '+' . $durationDays . ' days'
-            );
+            $newEndDate = $now->modify('+' . $durationDays . ' days');
         }
 
-        /*
-         * Nếu subscription đang suspended do hết traffic,
-         * chỉ gia hạn thời gian không nên tự ý bật lại.
-         *
-         * Nếu đã expired thì chuyển lại active.
-         */
         $newStatus = ($subscription['status'] ?? '') === 'expired'
             ? 'active'
             : ($subscription['status'] ?? 'active');
 
-        $updatedSubscription = $subscriptionModel->update(
-            $subscriptionId,
-            [
-                'end_date' => $newEndDate->format('Y-m-d H:i:s'),
-                'status' => $newStatus,
-                'updated_at' => date('Y-m-d H:i:s')
-            ]
-        );
+        BaseModel::beginTransaction();
 
-        if (!$updatedSubscription) {
+        try {
+            $updatedSubscription = $subscriptionModel->update(
+                $subscriptionId,
+                [
+                    'end_date'   => $newEndDate->format('Y-m-d H:i:s'),
+                    'status'     => $newStatus,
+                    'updated_at' => date('Y-m-d H:i:s')
+                ]
+            );
+
+            if (!$updatedSubscription) {
+                BaseModel::rollBack();
+                return false;
+            }
+
+            // Đồng bộ tác vụ xuống máy chủ VPS để cập nhật hạn dùng
+            if (class_exists('App\Models\NodeTask') && !empty($plan['group_id'])) {
+                $groupIds = json_decode($plan['group_id'] ?? '[]', true);
+                if (!is_array($groupIds)) {
+                    $groupIds = !empty($plan['group_id']) ? [(int)$plan['group_id']] : [];
+                }
+
+                if (!empty($groupIds)) {
+                    $nodeTaskModel = new NodeTask();
+                    foreach ($groupIds as $gId) {
+                        $gId = (int)$gId;
+                        if ($gId > 0) {
+                            $nodeTaskModel->createTasksForGroup($gId, 'add_user', [
+                                'uuid'            => $subscription['uuid'],
+                                'end_date'        => $newEndDate->format('Y-m-d H:i:s'),
+                                'username'        => 'sub_' . $subscriptionId,
+                                'transfer_enable' => (int)($subscription['transfer_enable'] ?? 0)
+                            ]);
+                        }
+                    }
+                }
+            }
+
+            $paymentCompleted = (bool) $paymentModel->update(
+                (int) $payment['id'],
+                [
+                    'status' => 'success'
+                ]
+            );
+
+            if ($paymentCompleted && !empty($payment['order_id'])) {
+                (new Order())->update((int) $payment['order_id'], [
+                    'payment_status' => 'completed',
+                    'updated_at'     => date('Y-m-d H:i:s')
+                ]);
+            }
+
+            BaseModel::commit();
+            return $paymentCompleted;
+        } catch (\Throwable $e) {
+            BaseModel::rollBack();
+            error_log('Error in completeRenewalPayment: ' . $e->getMessage());
             return false;
         }
-
-        /*
-         * Chỉ đánh dấu payment success sau khi subscription
-         * đã gia hạn thành công.
-         */
-        $paymentCompleted = (bool) $paymentModel->update(
-            (int) $payment['id'],
-            [
-                'status' => 'success'
-            ]
-        );
-
-        if ($paymentCompleted && !empty($payment['order_id'])) {
-            (new Order())->update((int) $payment['order_id'], [
-                'payment_status' => 'completed',
-                'updated_at' => date('Y-m-d H:i:s')
-            ]);
-        }
-
-        return $paymentCompleted;
     }
 
     /**
-     * Hoàn tất payment theo mã giao dịch từ Webhook.
-     *
-     * Kiểm tra số tiền webhook gửi về phải >= số tiền
-     * giao dịch trước khi hoàn tất.
+     * Hoàn tất payment theo mã giao dịch hoặc cú pháp chuyển khoản từ Webhook.
      */
     public function completePaymentByCode(
         string $transCode,
@@ -450,51 +498,15 @@ class PaymentService
             return false;
         }
 
-        /*
-         * Kiểm tra số tiền webhook gửi về phải khớp chính xác với số tiền giao dịch
-         */
-        $requiredAmount = $this->convertAmountForGateway(
-            (float) ($payment['amount'] ?? 0),
-            (string) ($payment['payment_method'] ?? 'vietqr')
-        );
-
-        if ($requiredAmount <= 0 || abs($amount - $requiredAmount) > 0.001) {
+        $requiredAmount = (float) ($payment['amount'] ?? 0);
+        if ($requiredAmount <= 0 || abs($amount - $requiredAmount) > 1.0) {
             return false;
         }
 
-        /*
-         * Nếu webhook gửi lại giao dịch đã success,
-         * coi là thành công để webhook idempotent.
-         */
         if (($payment['status'] ?? '') === 'success') {
             return true;
         }
 
-        return $this->completePayment(
-            (int) $payment['id']
-        );
-    }
-
-    private function convertAmountForGateway(
-        float $amount,
-        string $paymentMethod
-    ): float {
-        $settings = (new Setting())->getAllAsKeyValue();
-        $baseCurrency = strtoupper(trim((string) ($settings['currency'] ?? 'CNY')));
-        $exchangeRate = (float) ($settings['exchange_rate'] ?? 1);
-
-        if ($exchangeRate <= 0) {
-            return $amount;
-        }
-
-        if ($paymentMethod === 'vietqr' && $baseCurrency === 'CNY') {
-            return round($amount * $exchangeRate);
-        }
-
-        if (in_array($paymentMethod, ['wechat', 'alipay'], true) && $baseCurrency === 'VND') {
-            return round($amount / $exchangeRate, 2);
-        }
-
-        return $amount;
+        return $this->completePayment((int) $payment['id']);
     }
 }

@@ -1,17 +1,14 @@
 <?php
-$currency = strtoupper(trim((string) ($settings['currency'] ?? 'CNY')));
-$defaultMinimumDeposit = $currency === 'VND' ? 10000 : 10;
-$minimumDeposit = (float)($settings['min_deposit'] ?? $settings['min_deposit_amount'] ?? $defaultMinimumDeposit);
-$quickAmountDefaults = $currency === 'VND'
-	? [10000, 20000, 50000, 100000]
-	: [10, 50, 100, 200];
+$currency = 'VND';
+$minimumDeposit = (float)($settings['min_deposit_amount'] ?? $settings['min_deposit'] ?? 10000);
+$quickAmountDefaults = [20000, 50000, 100000, 200000, 500000];
 $quickAmounts = array_values(array_unique(array_merge(
 	[$minimumDeposit],
 	array_filter($quickAmountDefaults, static fn(float|int $amount): bool => $amount >= $minimumDeposit)
 )));
 $formatAmount = isset($formatMoney)
 	? $formatMoney
-	: static fn($amount): string => number_format((float)$amount, 2) . ' ' . ($settings['currency_symbol'] ?? '¥');
+	: static fn($amount): string => number_format((float)$amount, 0, '.', ',') . ' ' . ($settings['currency_symbol'] ?? 'đ');
 
 ob_start();
 ?>

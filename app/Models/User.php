@@ -128,6 +128,12 @@ class User extends BaseModel
         return $stmt->execute(['amount' => $amount, 'id' => $id]);
     }
 
+    public function creditCommissionBalance(int $id, float $amount): bool
+    {
+        $stmt = self::$db->prepare("UPDATE `{$this->table}` SET `commission_balance` = `commission_balance` + :amount WHERE `id` = :id");
+        return $stmt->execute(['amount' => $amount, 'id' => $id]);
+    }
+
     /**
      * Cập nhật thông tin User với Whitelist tên cột chống SQL Injection
      */

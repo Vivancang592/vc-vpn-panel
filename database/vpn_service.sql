@@ -297,9 +297,7 @@ VALUES
     ('currency_symbol', 'đ', 'Ký hiệu tiền tệ hệ thống'),
     ('min_deposit_amount', '10000', 'Số tiền nạp tối thiểu (VND)'),
     ('referral_commission_rate', '10', 'Tỷ lệ hoa hồng giới thiệu (%)'),
-    ('enable_vietqr', '0', 'Bật cổng thanh toán VietQR'),
-    ('enable_wechat', '0', 'Bật cổng thanh toán WeChat Pay'),
-    ('enable_alipay', '0', 'Bật cổng thanh toán Alipay')
+    ('enable_vietqr', '1', 'Bật cổng thanh toán VietQR')
 ON DUPLICATE KEY UPDATE 
     `setting_value` = VALUES(`setting_value`),
     `description` = VALUES(`description`);

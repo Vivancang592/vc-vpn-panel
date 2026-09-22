@@ -13,16 +13,16 @@ return [
     |--------------------------------------------------------------------------
     | Cấu hình tiền tệ mặc định (Currency Settings)
     |--------------------------------------------------------------------------
-    | Chuyển đổi đơn vị tiền tệ mặc định sang Nhân dân tệ (CNY)
+    | Đơn vị tiền tệ chuẩn hóa duy nhất của hệ thống là Việt Nam Đồng (VND)
     |
     */
-    'currency' => getenv('APP_CURRENCY') ?: 'CNY',
-    'currency_symbol' => getenv('APP_CURRENCY_SYMBOL') ?: '¥',
-    'currency_position' => getenv('APP_CURRENCY_POSITION') ?: 'left', // 'left' (¥100) hoặc 'right' (100¥)
+    'currency' => getenv('APP_CURRENCY') ?: 'VND',
+    'currency_symbol' => getenv('APP_CURRENCY_SYMBOL') ?: 'đ',
+    'currency_position' => getenv('APP_CURRENCY_POSITION') ?: 'right', // 'right' (100.000 đ) hoặc 'left' (đ 100.000)
 
     /*
     |--------------------------------------------------------------------------
-    | Cấu hình Webhook MacroDroid
+    | Cấu hình Webhook MacroDroid / SePay
     |--------------------------------------------------------------------------
     */
     'macrodroid_secret' => getenv('MACRODROID_SECRET') ?: 'vc_vpn_macrodroid_secret_2027',

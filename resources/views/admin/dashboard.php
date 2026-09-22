@@ -2,7 +2,7 @@
 $pageTitle = "Dashboard - Quản Trị Hệ Thống";
 $activeMenu = "dashboard";
 
-$currencyCode = $settings['currency'] ?? 'CNY';
+$currencyCode = $settings['currency'] ?? 'VND';
 
 ob_start();
 ?>
@@ -162,9 +162,9 @@ ob_start();
                 data-last="<?= htmlspecialchars(json_encode($monthlyChart['last_month'] ?? array_fill(0, 31, 0))) ?>" 
                 data-month="<?= (int)($selectedMonth ?? date('n')) ?>" 
                 data-year="<?= (int)($selectedYear ?? date('Y')) ?>"
-                data-symbol="<?= htmlspecialchars($settings['currency_symbol'] ?? '¥') ?>"
+                data-symbol="<?= htmlspecialchars($settings['currency_symbol'] ?? 'đ') ?>"
                 data-position="<?= htmlspecialchars($settings['currency_position'] ?? 'right') ?>"
-                data-decimals="<?= (int)($settings['currency_decimals'] ?? 2) ?>">
+                data-decimals="<?= (int)($settings['currency_decimals'] ?? 0) ?>">
         </canvas>
     </div>
 </div>

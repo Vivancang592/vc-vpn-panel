@@ -65,7 +65,7 @@ $amount = (float) (
 
 $amountDisplay = (string) (
     $paymentInfo['amount_display']
-    ?? number_format($amount, 2, '.', ',')
+    ?? (number_format($amount, 0, '.', ',') . ' đ')
 );
 
 $paymentName = (string) (

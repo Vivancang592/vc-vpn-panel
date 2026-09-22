@@ -29,7 +29,7 @@ class Order extends BaseModel
     }
 
     /**
-     * Tìm đơn hàng pending theo đúng số tiền (áp dụng cho WeChat Pay khớp tiền lẻ)
+     * Tìm đơn hàng pending theo đúng số tiền
      */
     public function findByPendingAmount(float $amount, int $minutes = 15): ?array
     {
