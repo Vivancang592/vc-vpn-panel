@@ -88,13 +88,14 @@ document.addEventListener('DOMContentLoaded', function () {
                 const menuHeight = currentMenu.offsetHeight;
                 const spaceBelow = window.innerHeight - rect.bottom;
                 const spaceAbove = rect.top;
-                const openBelow = spaceBelow >= menuHeight + 8 || spaceBelow >= spaceAbove;
+                const openBelow = spaceBelow >= menuHeight + 8;
                 const availableHeight = openBelow ? spaceBelow : spaceAbove;
+                const maxMenuHeight = Math.max(0, availableHeight - 8);
 
-                currentMenu.style.maxHeight = Math.max(80, availableHeight - 8) + 'px';
+                currentMenu.style.maxHeight = maxMenuHeight + 'px';
                 currentMenu.style.top = (openBelow
                     ? rect.bottom + 4
-                    : Math.max(8, rect.top - Math.min(menuHeight, availableHeight - 8) - 4)) + 'px';
+                    : Math.max(8, rect.top - Math.min(menuHeight, maxMenuHeight) - 4)) + 'px';
                 currentMenu.style.left = 'auto';
                 currentMenu.style.right = (window.innerWidth - rect.right) + 'px';
             }
