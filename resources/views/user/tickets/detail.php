@@ -32,7 +32,7 @@ ob_start();
                     Mã Ticket: #<?= (int) ($ticket['id'] ?? 0) ?>
                 </span>
             </div>
-            <h1 style="font-size: 1.4rem; font-weight: 700; margin: 0; color: var(--ios-text); line-height: 1.3;">
+            <h1 style="font-size: 1.5rem; font-weight: 700; margin: 0;">
                 <?= htmlspecialchars($ticket['subject'] ?? 'Yêu cầu hỗ trợ') ?>
             </h1>
             <p style="margin: 0.35rem 0 0; color: var(--ios-text-secondary); font-size: 0.85rem;">
