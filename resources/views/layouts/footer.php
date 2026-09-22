@@ -58,10 +58,16 @@
                             </a>
                         <?php endif; ?>
 
-                        <?php if (!empty($settings['wechat_id'])): ?>
-                            <span class="wechat-text vc-color-darkgreen">
-                                <span>💬</span> WeChat: <?= htmlspecialchars($settings['wechat_id']) ?>
-                            </span>
+                        <?php if (!empty($settings['telegram_url'])): ?>
+                            <a href="<?= htmlspecialchars($settings['telegram_url']) ?>" target="_blank" rel="noopener noreferrer" class="vc-color-blue">
+                                <span>✈️</span> Telegram Support
+                            </a>
+                        <?php endif; ?>
+
+                        <?php if (!empty($settings['zalo_url'])): ?>
+                            <a href="<?= htmlspecialchars($settings['zalo_url']) ?>" target="_blank" rel="noopener noreferrer" class="vc-color-darkgreen">
+                                <span>💬</span> Zalo Hỗ Trợ
+                            </a>
                         <?php endif; ?>
                     </div>
                 <?php endif; ?>

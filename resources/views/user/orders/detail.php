@@ -4,7 +4,7 @@ $status = $order['payment_status'] ?? 'pending';
 $statusLabels = ['pending' => 'Chờ thanh toán', 'completed' => 'Hoàn tất', 'failed' => 'Thất bại', 'cancelled' => 'Đã hủy'];
 $creatorName = $order['creator_username'] ?? $order['username'] ?? 'Bạn';
 $approverName = $order['approver_username'] ?? ($status === 'completed' ? 'Tự động qua webhook' : 'Chưa duyệt');
-$paymentMethodLabels = ['vietqr' => 'VietQR', 'wechat' => 'WeChat Pay', 'alipay' => 'Alipay', 'balance' => 'Số dư tài khoản'];
+$paymentMethodLabels = ['vietqr' => 'VietQR (Chuyển khoản)', 'balance' => 'Số dư tài khoản'];
 $paymentMethod = strtolower((string) ($order['payment_method'] ?? 'vietqr'));
 ob_start();
 ?>

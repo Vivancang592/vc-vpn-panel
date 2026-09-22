@@ -1,9 +1,10 @@
 <?php
+$order = $order ?? [];
 $pageTitle = "Chi Tiết Đơn Hàng - Quản Trị Hệ Thống";
 $activeMenu = "orders";
 $creatorName = $order['creator_username'] ?? $order['username'] ?? 'Không xác định';
 $approverName = $order['approver_username'] ?? (($order['payment_status'] ?? '') === 'completed' ? 'Tự động qua webhook' : 'Chưa duyệt');
-$paymentMethodLabels = ['vietqr' => 'VietQR', 'wechat' => 'WeChat Pay', 'alipay' => 'Alipay', 'balance' => 'Số dư tài khoản'];
+$paymentMethodLabels = ['vietqr' => 'VietQR (Chuyển khoản)', 'balance' => 'Số dư tài khoản'];
 $paymentMethod = strtolower((string) ($order['payment_method'] ?? 'vietqr'));
 
 ob_start();

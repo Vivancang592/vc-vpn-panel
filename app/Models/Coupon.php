@@ -53,4 +53,10 @@ class Coupon extends BaseModel
         $stmt = self::$db->prepare("DELETE FROM {$this->table} WHERE id = ?");
         return $stmt->execute([$id]);
     }
+
+    public function incrementUsedCount(int $id): bool
+    {
+        $stmt = self::$db->prepare("UPDATE {$this->table} SET `used_count` = `used_count` + 1 WHERE `id` = ?");
+        return $stmt->execute([$id]);
+    }
 }

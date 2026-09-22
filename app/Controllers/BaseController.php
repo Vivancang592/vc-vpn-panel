@@ -67,7 +67,7 @@ abstract class BaseController
     }
 
     /**
-     * Định dạng số tiền động theo cấu hình CSDL
+     * Định dạng số tiền động theo cấu hình CSDL (Mặc định chuẩn VND)
      */
     public function formatMoney($amount): string
     {
@@ -76,14 +76,14 @@ abstract class BaseController
             $this->settings = $settingModel->getAllAsKeyValue();
         }
 
-        $symbol   = $this->settings['currency_symbol'] ?? '¥';
+        $symbol   = $this->settings['currency_symbol'] ?? 'đ';
         $position = $this->settings['currency_position'] ?? 'right';
-        $decimals = isset($this->settings['currency_decimals']) ? (int)$this->settings['currency_decimals'] : 2;
+        $decimals = isset($this->settings['currency_decimals']) ? (int)$this->settings['currency_decimals'] : 0;
 
         $formattedNumber = number_format((float)$amount, $decimals, '.', ',');
 
         if ($position === 'left') {
-            return $symbol . $formattedNumber;
+            return $symbol . ' ' . $formattedNumber;
         }
 
         return $formattedNumber . ' ' . $symbol;

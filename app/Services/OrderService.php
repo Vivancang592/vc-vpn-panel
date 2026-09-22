@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Models\BaseModel;
 use App\Models\Order;
 use App\Models\VpnPlan;
 use App\Models\Coupon;
@@ -10,14 +11,20 @@ use App\Models\Payment;
 use App\Models\NodeTask;
 use App\Models\User;
 use App\Models\Setting;
+use App\Models\ReferralCommission;
 
 class OrderService
 {
     /**
-     * Xử lý tạo đơn hàng mới (Hỗ trợ sinh tiền lẻ cho WeChat Pay)
+     * Xử lý tạo đơn hàng mới (Chuẩn hóa duy nhất đơn vị VND)
      */
-    public function createOrder(int $userId, int $planId, ?string $couponCode = null, string $paymentMethod = 'vietqr', string $purchaseIp = ''): array
-    {
+    public function createOrder(
+        int $userId,
+        int $planId,
+        ?string $couponCode = null,
+        string $paymentMethod = 'vietqr',
+        string $purchaseIp = ''
+    ): array {
         $planModel = new VpnPlan();
         $plan = $planModel->find($planId);
 
@@ -27,6 +34,7 @@ class OrderService
 
         $originalPrice = (float)($plan['price'] ?? 0);
         $discountAmount = 0.0;
+        $couponId = null;
 
         if (!empty($couponCode)) {
             $couponModel = new Coupon();
@@ -39,6 +47,7 @@ class OrderService
                 $isMaxUsed = !empty($coupon['max_uses']) && ((int)($coupon['used_count'] ?? 0) >= (int)($coupon['max_uses']));
 
                 if (!$isExpired && !$isMaxUsed) {
+                    $couponId = (int)$coupon['id'];
                     $discountType = $coupon['discount_type'] ?? 'percent';
                     $discountVal  = (float)($coupon['discount_value'] ?? 0);
 
@@ -55,18 +64,8 @@ class OrderService
             }
         }
 
-        $finalPrice = max(0.0, $originalPrice - $discountAmount);
-
-        // Quy đổi tiền tệ theo cổng thanh toán: VietQR luôn nhận VND, WeChat/Alipay luôn nhận CNY
-        $finalPrice = $this->convertAmountForGateway($finalPrice, $paymentMethod);
-
-        // Đối với WeChat Pay: Tạo số tiền lẻ duy nhất (+0.01 đến +0.99 CNY) để khớp tự động
-        if ($paymentMethod === 'wechat') {
-            $randomCent = rand(1, 99) / 100;
-            $finalPrice = round($finalPrice + $randomCent, 2);
-        }
-
-        $orderCode = 'LS' . date('YmdHis') . rand(100, 999);
+        $finalPrice = max(0.0, round($originalPrice - $discountAmount, 0));
+        $orderCode = 'LS' . date('YmdHis') . random_int(100, 99999);
 
         $orderData = [
             'order_code'     => $orderCode,
@@ -75,8 +74,8 @@ class OrderService
             'total_amount'   => $finalPrice,
             'payment_method' => $paymentMethod,
             'payment_status' => 'pending',
-            'purchase_ip' => $purchaseIp !== '' ? $purchaseIp : null,
-            'created_by' => $userId,
+            'purchase_ip'    => $purchaseIp !== '' ? $purchaseIp : null,
+            'created_by'     => $userId,
             'created_at'     => date('Y-m-d H:i:s')
         ];
 
@@ -96,23 +95,24 @@ class OrderService
 
                 if (!$userModel->debitBalance($userId, $finalPrice)) {
                     $orderModel->delete($orderId);
-                    return ['status' => false, 'message' => 'Số dư không đủ để thanh toán gói dịch vụ này.'];
+                    return ['status' => false, 'message' => 'Số dư trong ví không đủ để thanh toán gói dịch vụ này.'];
                 }
 
-                if (!$this->activateOrder($orderId)) {
+                if (!$this->activateOrder($orderId, $couponId)) {
                     $userModel->creditBalance($userId, $finalPrice);
-                    return ['status' => false, 'message' => 'Không thể kích hoạt gói dịch vụ. Số dư đã được hoàn lại.'];
+                    return ['status' => false, 'message' => 'Không thể kích hoạt gói dịch vụ. Số dư đã được hoàn lại ví.'];
                 }
 
                 (new Payment())->create([
-                    'user_id' => $userId,
-                    'order_id' => $orderId,
-                    'type' => 'payment',
-                    'payment_method' => 'balance',
-                    'transaction_id' => 'BAL' . date('YmdHis') . rand(100, 999),
-                    'amount' => $finalPrice,
-                    'status' => 'success',
-                    'created_at' => date('Y-m-d H:i:s')
+                    'user_id'          => $userId,
+                    'order_id'         => $orderId,
+                    'type'             => 'payment',
+                    'payment_method'   => 'balance',
+                    'transaction_id'   => 'BAL' . date('YmdHis') . rand(100, 999),
+                    'transfer_content' => $transferContent,
+                    'amount'           => $finalPrice,
+                    'status'           => 'success',
+                    'created_at'       => date('Y-m-d H:i:s')
                 ]);
 
                 $this->notifyAdministratorsAboutNewOrder(
@@ -125,12 +125,12 @@ class OrderService
                 );
 
                 return [
-                    'status' => true,
-                    'message' => 'Thanh toán bằng số dư thành công. Gói dịch vụ đã được kích hoạt.',
-                    'order_code' => $orderCode,
-                    'order_id' => $orderId,
+                    'status'         => true,
+                    'message'        => 'Thanh toán bằng số dư thành công. Gói dịch vụ đã được kích hoạt.',
+                    'order_code'     => $orderCode,
+                    'order_id'       => $orderId,
                     'payment_method' => $paymentMethod,
-                    'amount' => $finalPrice
+                    'amount'         => $finalPrice
                 ];
             }
 
@@ -156,12 +156,12 @@ class OrderService
             );
 
             return [
-                'status'     => true,
-                'message'    => 'Tạo đơn hàng thành công.',
-                'order_code' => $orderCode,
-                'order_id'   => $orderId,
+                'status'         => true,
+                'message'        => 'Tạo đơn hàng thành công.',
+                'order_code'     => $orderCode,
+                'order_id'       => $orderId,
                 'payment_method' => $paymentMethod,
-                'amount'     => $finalPrice
+                'amount'         => $finalPrice
             ];
         }
 
@@ -186,14 +186,14 @@ class OrderService
 
         $mailService = new MailService();
         $data = [
-            'orderCode' => $orderCode,
-            'planName' => (string) ($plan['name'] ?? 'Gói VPN'),
-            'amount' => number_format($amount, 2, '.', ','),
-            'paymentMethod' => $paymentMethod,
-            'customerName' => (string) ($buyer['username'] ?? ''),
+            'orderCode'     => $orderCode,
+            'planName'      => (string) ($plan['name'] ?? 'Gói VPN'),
+            'amount'        => number_format($amount, 0, '.', ',') . ' đ',
+            'paymentMethod' => $paymentMethod === 'vietqr' ? 'VietQR (Chuyển khoản)' : ($paymentMethod === 'balance' ? 'Số dư ví' : $paymentMethod),
+            'customerName'  => (string) ($buyer['username'] ?? ''),
             'customerEmail' => (string) ($buyer['email'] ?? ''),
-            'orderId' => $orderId,
-            'siteUrl' => getenv('APP_URL') ?: ''
+            'orderId'       => $orderId,
+            'siteUrl'       => getenv('APP_URL') ?: ''
         ];
 
         foreach ($administrators as $administrator) {
@@ -201,7 +201,7 @@ class OrderService
             if ($email !== '') {
                 $mailService->send(
                     $email,
-                    'Đơn hàng mới ' . $orderCode,
+                    'Đơn hàng mới #' . $orderCode,
                     'orders.new-order-admin',
                     $data
                 );
@@ -211,95 +211,143 @@ class OrderService
 
     /**
      * Kích hoạt gói dịch vụ sau khi thanh toán thành công và đồng bộ Task xuống VPS
+     * Thực hiện an toàn trong Database Transaction
      */
-    public function activateOrder(int $orderId): bool
+    public function activateOrder(int $orderId, ?int $couponId = null): bool
     {
         $orderModel = new Order();
         $order = $orderModel->find($orderId);
 
+        if (!$order) {
+            return false;
+        }
+
         $currentStatus = $order['payment_status'] ?? $order['status'] ?? '';
-        if (!$order || $currentStatus === 'completed') {
-            return false;
+        if ($currentStatus === 'completed') {
+            return true; // Idempotent: đã kích hoạt rồi
         }
 
-        // 1. Cập nhật trạng thái đơn hàng sang completed
-        $orderModel->update($orderId, [
-            'payment_status' => 'completed',
-            'updated_at'     => date('Y-m-d H:i:s')
-        ]);
+        BaseModel::beginTransaction();
 
-        // 2. Lấy thông tin gói cước
-        $planModel = new VpnPlan();
-        $plan = $planModel->find((int)$order['plan_id']);
-        if (!$plan) {
-            return false;
-        }
+        try {
+            // 1. Cập nhật trạng thái đơn hàng sang completed
+            $orderModel->update($orderId, [
+                'payment_status' => 'completed',
+                'updated_at'     => date('Y-m-d H:i:s')
+            ]);
 
-        $durationDays = (int)($plan['duration_days'] ?? 30);
-        $bandwidthGb  = (int)($plan['bandwidth_limit_gb'] ?? 0);
-        $maxDevices   = (int)($plan['max_devices'] ?? 1);
-
-        // 3. Tạo gói đăng ký (Subscription) cho người dùng
-        $subModel = new Subscription();
-        $vpnService = new VpnService();
-
-        $uuid = method_exists($vpnService, 'generateUuid') 
-            ? $vpnService->generateUuid() 
-            : sprintf('%04x%04x-%04x-%04x-%04x-%04x%04x%04x', mt_rand(0, 0xffff), mt_rand(0, 0xffff), mt_rand(0, 0xffff), mt_rand(0, 0x0fff) | 0x4000, mt_rand(0, 0x3fff) | 0x8000, mt_rand(0, 0xffff), mt_rand(0, 0xffff), mt_rand(0, 0xffff));
-
-        $transferEnable = $bandwidthGb * 1024 * 1024 * 1024;
-        $startDate = date('Y-m-d H:i:s');
-        $endDate = date('Y-m-d H:i:s', strtotime("+{$durationDays} days"));
-
-        $subData = [
-            'user_id'         => $order['user_id'],
-            'plan_id'         => $order['plan_id'],
-            'order_id'        => $order['id'],
-            'uuid'            => $uuid,
-            'max_devices'     => $maxDevices,
-            'transfer_enable' => $transferEnable,
-            'upload'          => 0,
-            'download'        => 0,
-            'start_date'      => $startDate,
-            'end_date'        => $endDate,
-            'status'          => 'active',
-            'created_at'      => $startDate,
-            'updated_at'      => $startDate
-        ];
-
-        $created = (bool)$subModel->create($subData);
-
-        // 4. Đẩy Task tự động xuống tất cả các máy chủ VPS thuộc các group_id được chọn trong gói cước
-        if ($created && class_exists('App\Models\NodeTask') && !empty($plan['group_id'])) {
-            $groupIds = json_decode($plan['group_id'] ?? '[]', true);
-            if (!is_array($groupIds)) {
-                $groupIds = !empty($plan['group_id']) ? [(int)$plan['group_id']] : [];
+            // 2. Lấy thông tin gói cước
+            $planModel = new VpnPlan();
+            $plan = $planModel->find((int)$order['plan_id']);
+            if (!$plan) {
+                BaseModel::rollBack();
+                return false;
             }
 
-            $sub = $subModel->findByUuid($uuid);
-            $subId = $sub['id'] ?? 0;
+            $durationDays = (int)($plan['duration_days'] ?? 30);
+            $bandwidthGb  = (int)($plan['bandwidth_limit_gb'] ?? 0);
+            $maxDevices   = (int)($plan['max_devices'] ?? 1);
 
-            if ($subId > 0 && !empty($groupIds)) {
-                $nodeTaskModel = new NodeTask();
-                foreach ($groupIds as $gId) {
-                    $gId = (int)$gId;
-                    if ($gId > 0) {
-                        $nodeTaskModel->createTasksForGroup($gId, 'add_user', [
-                            'uuid'            => $uuid,
-                            'end_date'        => $endDate,
-                            'username'        => 'sub_' . $subId,
-                            'transfer_enable' => $transferEnable
-                        ]);
+            // 3. Tạo gói đăng ký (Subscription) cho người dùng
+            $subModel = new Subscription();
+            $vpnService = new VpnService();
+
+            $uuid = method_exists($vpnService, 'generateUuid') 
+                ? $vpnService->generateUuid() 
+                : sprintf('%04x%04x-%04x-%04x-%04x-%04x%04x%04x', mt_rand(0, 0xffff), mt_rand(0, 0xffff), mt_rand(0, 0xffff), mt_rand(0, 0x0fff) | 0x4000, mt_rand(0, 0x3fff) | 0x8000, mt_rand(0, 0xffff), mt_rand(0, 0xffff), mt_rand(0, 0xffff));
+
+            $transferEnable = $bandwidthGb * 1024 * 1024 * 1024;
+            $startDate = date('Y-m-d H:i:s');
+            $endDate = date('Y-m-d H:i:s', strtotime("+{$durationDays} days"));
+
+            $subData = [
+                'user_id'         => $order['user_id'],
+                'plan_id'         => $order['plan_id'],
+                'order_id'        => $order['id'],
+                'uuid'            => $uuid,
+                'max_devices'     => $maxDevices,
+                'transfer_enable' => $transferEnable,
+                'upload'          => 0,
+                'download'        => 0,
+                'start_date'      => $startDate,
+                'end_date'        => $endDate,
+                'status'          => 'active',
+                'created_at'      => $startDate,
+                'updated_at'      => $startDate
+            ];
+
+            $created = (bool)$subModel->create($subData);
+            if (!$created) {
+                BaseModel::rollBack();
+                return false;
+            }
+
+            $subId = (int)$subModel->lastInsertId();
+
+            // 4. Đẩy Task tự động xuống tất cả các máy chủ VPS thuộc các group_id được chọn trong gói cước
+            if (class_exists('App\Models\NodeTask') && !empty($plan['group_id'])) {
+                $groupIds = json_decode($plan['group_id'] ?? '[]', true);
+                if (!is_array($groupIds)) {
+                    $groupIds = !empty($plan['group_id']) ? [(int)$plan['group_id']] : [];
+                }
+
+                if ($subId > 0 && !empty($groupIds)) {
+                    $nodeTaskModel = new NodeTask();
+                    foreach ($groupIds as $gId) {
+                        $gId = (int)$gId;
+                        if ($gId > 0) {
+                            $nodeTaskModel->createTasksForGroup($gId, 'add_user', [
+                                'uuid'            => $uuid,
+                                'end_date'        => $endDate,
+                                'username'        => 'sub_' . $subId,
+                                'transfer_enable' => $transferEnable
+                            ]);
+                        }
                     }
                 }
             }
-        }
 
-        return $created;
+            // 5. Tăng lượt sử dụng mã giảm giá (Coupon) nếu có
+            if ($couponId !== null && $couponId > 0 && class_exists('App\Models\Coupon')) {
+                (new Coupon())->incrementUsedCount($couponId);
+            }
+
+            // 6. Xử lý tính hoa hồng giới thiệu (Referral Commission)
+            $userModel = new User();
+            $buyer = $userModel->findById((int)$order['user_id']);
+            $referrerId = (int)($buyer['referred_by'] ?? 0);
+
+            if ($referrerId > 0 && $referrerId !== (int)$order['user_id']) {
+                $settingModel = new Setting();
+                $rate = (float)($settingModel->get('referral_commission_rate', '10') ?? 10);
+                $orderTotal = (float)($order['total_amount'] ?? 0);
+                $commissionAmount = round($orderTotal * ($rate / 100), 0);
+
+                if ($commissionAmount > 0 && class_exists('App\Models\ReferralCommission')) {
+                    (new ReferralCommission())->create([
+                        'referrer_id'       => $referrerId,
+                        'referred_user_id'  => (int)$order['user_id'],
+                        'order_id'          => (int)$order['id'],
+                        'commission_rate'   => $rate,
+                        'commission_amount' => $commissionAmount,
+                        'created_at'        => date('Y-m-d H:i:s')
+                    ]);
+
+                    $userModel->creditCommissionBalance($referrerId, $commissionAmount);
+                }
+            }
+
+            BaseModel::commit();
+            return true;
+        } catch (\Throwable $e) {
+            BaseModel::rollBack();
+            error_log('Error in activateOrder: ' . $e->getMessage());
+            return false;
+        }
     }
 
     /**
-     * Xử lý thanh toán đơn hàng theo mã đơn hàng (VietQR)
+     * Xử lý thanh toán đơn hàng theo mã đơn hàng hoặc cú pháp chuyển khoản (VietQR / Webhook)
      */
     public function processPaymentByOrderCode(string $orderCode, float $amount, string $transactionId = ''): array
     {
@@ -322,13 +370,17 @@ class OrderService
         }
 
         $currentStatus = $order['payment_status'] ?? $order['status'] ?? '';
+        if ($currentStatus === 'completed') {
+            return ['status' => true, 'message' => 'Đơn hàng ' . $orderCode . ' đã được kích hoạt trước đó.'];
+        }
+
         if ($currentStatus !== 'pending') {
             return ['status' => false, 'message' => 'Đơn hàng ' . $orderCode . ' không ở trạng thái chờ thanh toán (trạng thái: ' . $currentStatus . ').'];
         }
 
         $expectedAmount = (float)($order['total_amount'] ?? $order['final_amount'] ?? $order['price'] ?? 0);
-        if (abs($amount - $expectedAmount) > 0.001) {
-            return ['status' => false, 'message' => 'Số tiền chuyển khoản (' . $amount . ') không khớp chính xác với số tiền đơn hàng (' . $expectedAmount . ').'];
+        if (abs($amount - $expectedAmount) > 1.0) {
+            return ['status' => false, 'message' => 'Số tiền chuyển khoản (' . number_format($amount, 0, ',', '.') . ' đ) không khớp với số tiền đơn hàng (' . number_format($expectedAmount, 0, ',', '.') . ' đ).'];
         }
 
         $activated = $this->activateOrder((int)$order['id']);
@@ -362,86 +414,9 @@ class OrderService
                 ]);
             }
 
-            return ['status' => true, 'message' => 'Kích hoạt đơn hàng ' . $orderCode . ' thành công.'];
+            return ['status' => true, 'message' => 'Kích hoạt đơn hàng #' . ($order['order_code'] ?? $orderCode) . ' thành công.'];
         }
 
-        return ['status' => false, 'message' => 'Cập nhật đơn hàng thất bại.'];
-    }
-
-    /**
-     * Xử lý thanh toán đơn hàng theo số tiền lẻ duy nhất (WeChat Pay)
-     */
-    public function processPaymentByAmount(float $amount, string $transactionId = ''): array
-    {
-        $orderModel = new Order();
-        $order = $orderModel->findByPendingAmount($amount, 15);
-
-        if (!$order) {
-            return ['status' => false, 'message' => "Không tìm thấy đơn hàng chờ thanh toán trùng khớp số tiền {$amount} CNY trong 15 phút gần đây."];
-        }
-
-        $activated = $this->activateOrder((int)$order['id']);
-        if ($activated) {
-            $paymentModel = new Payment();
-            $existingPayment = method_exists($paymentModel, 'findPendingByOrderId')
-                ? $paymentModel->findPendingByOrderId((int)$order['id'])
-                : null;
-
-            $transId = !empty($transactionId) ? $transactionId : null;
-
-            if ($existingPayment) {
-                $paymentModel->update((int)$existingPayment['id'], [
-                    'status'           => 'success',
-                    'transaction_id'   => $transId ?? ($existingPayment['transaction_id'] ?? null),
-                    'transfer_content' => $existingPayment['transfer_content'] ?? ($order['transfer_content'] ?? null),
-                    'amount'           => $amount,
-                    'payment_method'   => 'wechat'
-                ]);
-            } else {
-                $paymentModel->create([
-                    'user_id'          => $order['user_id'],
-                    'order_id'         => $order['id'],
-                    'type'             => 'payment',
-                    'payment_method'   => 'wechat',
-                    'transaction_id'   => $transId,
-                    'transfer_content' => $order['transfer_content'] ?? null,
-                    'amount'           => $amount,
-                    'status'           => 'success',
-                    'created_at'       => date('Y-m-d H:i:s')
-                ]);
-            }
-
-            return ['status' => true, 'message' => "Kích hoạt đơn hàng {$order['order_code']} theo số tiền {$amount} CNY thành công."];
-        }
-
-        return ['status' => false, 'message' => 'Cập nhật đơn hàng thất bại.'];
-    }
-
-    /**
-     * Quy đổi số tiền gốc (theo đơn vị tiền tệ mặc định của admin) sang đơn vị
-     * tiền tệ mà cổng thanh toán yêu cầu, dùng tỷ giá đã cài trong Cài đặt hệ thống.
-     * VietQR luôn nhận VND, WeChat/Alipay luôn nhận CNY.
-     */
-    private function convertAmountForGateway(float $amount, string $paymentMethod): float
-    {
-        $settingModel = new Setting();
-        $settings = $settingModel->getAllAsKeyValue();
-
-        $baseCurrency = strtoupper(trim((string) ($settings['currency'] ?? 'CNY')));
-        $exchangeRate = (float) ($settings['exchange_rate'] ?? 1);
-
-        if ($exchangeRate <= 0) {
-            return $amount;
-        }
-
-        if ($paymentMethod === 'vietqr' && $baseCurrency === 'CNY') {
-            return round($amount * $exchangeRate);
-        }
-
-        if (in_array($paymentMethod, ['wechat', 'alipay'], true) && $baseCurrency === 'VND') {
-            return round($amount / $exchangeRate, 2);
-        }
-
-        return $amount;
+        return ['status' => false, 'message' => 'Kích hoạt đơn hàng thất bại.'];
     }
 }

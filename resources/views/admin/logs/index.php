@@ -23,11 +23,11 @@ $logTabs = [
         'description' => 'Theo dõi trạng thái gửi email thông báo, khôi phục mật khẩu và hóa đơn.'
     ],
     'macrodroid' => [
-        'label'       => 'MacroDroid',
+        'label'       => 'Webhook',
         'icon'        => '📲',
         'url'         => '/admin/logs/macrodroid',
-        'title'       => 'Nhật Ký MacroDroid Webhook',
-        'description' => 'Kiểm tra dữ liệu phản hồi từ thiết bị nạp tự động WeChat Pay.'
+        'title'       => 'Nhật Ký Webhook Thanh Toán',
+        'description' => 'Kiểm tra dữ liệu phản hồi từ thiết bị hoặc webhook ngân hàng tự động.'
     ]
 ];
 

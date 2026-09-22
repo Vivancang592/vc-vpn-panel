@@ -114,4 +114,51 @@ abstract class BaseModel
     {
         return (int)self::$db->lastInsertId();
     }
+
+    /**
+     * Lấy instance PDO hiện tại
+     */
+    public static function getPdo(): PDO
+    {
+        if (self::$db === null) {
+            new static();
+        }
+        return self::$db;
+    }
+
+    /**
+     * Bắt đầu một Database Transaction an toàn
+     */
+    public static function beginTransaction(): bool
+    {
+        $pdo = self::getPdo();
+        if (!$pdo->inTransaction()) {
+            return $pdo->beginTransaction();
+        }
+        return true;
+    }
+
+    /**
+     * Commit Database Transaction
+     */
+    public static function commit(): bool
+    {
+        $pdo = self::getPdo();
+        if ($pdo->inTransaction()) {
+            return $pdo->commit();
+        }
+        return true;
+    }
+
+    /**
+     * Rollback Database Transaction khi có lỗi
+     */
+    public static function rollBack(): bool
+    {
+        $pdo = self::getPdo();
+        if ($pdo->inTransaction()) {
+            return $pdo->rollBack();
+        }
+        return true;
+    }
 }

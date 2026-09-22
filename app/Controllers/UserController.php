@@ -130,9 +130,9 @@ class UserController extends BaseController
 
         if ($checkoutType === 'deposit') {
             $minDeposit = (float) (
-                $this->settings['min_deposit'] ??
                 $this->settings['min_deposit_amount'] ??
-                (strtoupper(trim((string) ($this->settings['currency'] ?? 'CNY'))) === 'VND' ? 10000 : 10)
+                $this->settings['min_deposit'] ??
+                10000
             );
             $depositAmount = max(0, (float) ($_GET['amount'] ?? 0));
 
@@ -246,6 +246,12 @@ class UserController extends BaseController
             if (($result['status'] ?? false) !== true) {
                 $_SESSION['error'] = $result['message'] ?? 'Không thể tạo giao dịch gia hạn.';
                 $this->redirect('/checkout?type=renewal&subscription=' . $subscriptionId);
+                return;
+            }
+
+            if (($result['is_completed'] ?? false) === true) {
+                $_SESSION['success'] = $result['message'] ?? 'Gia hạn gói dịch vụ thành công.';
+                $this->redirect('/subscriptions/detail?id=' . $subscriptionId);
                 return;
             }
 
@@ -518,28 +524,6 @@ $_SESSION['success'] = 'Đã tạo đơn hàng ' . $orderCode . ' thành công. 
             ? (string)$order['transfer_content']
             : (trim((string) ($this->settings['order_transfer_syntax'] ?? 'THANHTOAN')) . str_pad((string) $orderId, 2, '0', STR_PAD_LEFT));
 
-        if ($method === 'wechat') {
-            return [
-                'name' => 'WeChat Pay',
-                'qr_url' => trim((string) ($this->settings['wechat_qr_image'] ?? '')),
-                'account_name' => trim((string) ($this->settings['wechat_account_name'] ?? '')),
-                'transfer_content' => $transferContent,
-                'amount' => $totalAmount,
-                'amount_display' => $this->formatGatewayCurrency($totalAmount, $method)
-            ];
-        }
-
-        if ($method === 'alipay') {
-            return [
-                'name' => 'Alipay',
-                'qr_url' => trim((string) ($this->settings['alipay_qr_image'] ?? '')),
-                'account_name' => trim((string) ($this->settings['alipay_account_name'] ?? '')),
-                'transfer_content' => $transferContent,
-                'amount' => $totalAmount,
-                'amount_display' => $this->formatGatewayCurrency($totalAmount, $method)
-            ];
-        }
-
         $bankName = trim((string) ($this->settings['bank_name'] ?? ''));
         $accountNumber = trim((string) ($this->settings['bank_account_number'] ?? ''));
         $qrAmount = number_format($totalAmount, 0, '.', '');
@@ -564,10 +548,7 @@ $_SESSION['success'] = 'Đã tạo đơn hàng ' . $orderCode . ' thành công. 
     private function buildDepositPaymentInstructions(array $payment): array
     {
         $method = (string) ($payment['payment_method'] ?? 'vietqr');
-        $amount = $this->convertAmountForGateway(
-            (float) ($payment['amount'] ?? 0),
-            $method
-        );
+        $amount = (float) ($payment['amount'] ?? 0);
         $transactionCode = (string) ($payment['transaction_id'] ?? '');
         $paymentId = (int) ($payment['id'] ?? 0);
         $isRenewal = ($payment['type'] ?? '') === 'payment' && !empty($payment['subscription_id']);
@@ -577,28 +558,6 @@ $_SESSION['success'] = 'Đã tạo đơn hàng ' . $orderCode . ' thành công. 
         $transferContent = !empty($payment['transfer_content'])
             ? (string)$payment['transfer_content']
             : ($syntax . str_pad((string) $paymentId, 2, '0', STR_PAD_LEFT));
-
-        if ($method === 'wechat') {
-            return [
-                'name' => 'WeChat Pay',
-                'qr_url' => trim((string) ($this->settings['wechat_qr_image'] ?? '')),
-                'account_name' => trim((string) ($this->settings['wechat_account_name'] ?? '')),
-                'transfer_content' => $transferContent,
-                'amount' => $amount,
-                'amount_display' => $this->formatGatewayCurrency($amount, $method)
-            ];
-        }
-
-        if ($method === 'alipay') {
-            return [
-                'name' => 'Alipay',
-                'qr_url' => trim((string) ($this->settings['alipay_qr_image'] ?? '')),
-                'account_name' => trim((string) ($this->settings['alipay_account_name'] ?? '')),
-                'transfer_content' => $transferContent,
-                'amount' => $amount,
-                'amount_display' => $this->formatGatewayCurrency($amount, $method)
-            ];
-        }
 
         $bankName = trim((string) ($this->settings['bank_name'] ?? ''));
         $accountNumber = trim((string) ($this->settings['bank_account_number'] ?? ''));
@@ -624,21 +583,17 @@ $_SESSION['success'] = 'Đã tạo đơn hàng ' . $orderCode . ' thành công. 
 
     private function convertAmountForGateway(float $amount, string $paymentMethod): float
     {
-        // Không quy đổi tỷ giá nữa, giữ nguyên giá trị gốc theo đơn vị tiền tệ hệ thống
         return $amount;
     }
 
     private function formatGatewayCurrency(float $amount, string $paymentMethod): string
     {
-        // Vì không quy đổi tỷ giá, định dạng tiền tệ hiển thị sẽ đi theo chuẩn của hệ thống
         return $this->formatCurrency($amount);
     }
 
     private function getEnabledPaymentGateways(bool $includeBalance = true): array
     {
         $gateways = [];
-        $baseCurrency = strtoupper(trim((string) ($this->settings['currency'] ?? 'VND')));
-
         $currentBalance = 0.0;
         if (isset($_SESSION['user_id'])) {
             $userModel = new User();
@@ -649,40 +604,18 @@ $_SESSION['success'] = 'Đã tạo đơn hàng ' . $orderCode . ' thành công. 
         if ($includeBalance) {
             $gateways[] = [
                 'id' => 'balance',
-                'name' => 'Thanh toán bằng số dư',
+                'name' => 'Thanh toán bằng số dư ví',
                 'hint' => 'Số dư khả dụng: ' . $this->formatCurrency($currentBalance)
             ];
         }
 
-        // Nếu tiền tệ hệ thống là VND thì chỉ hiển thị VietQR
-        if ($baseCurrency === 'VND') {
-            if (($this->settings['enable_vietqr'] ?? '0') === '1') {
-                $bankLabel = trim((string) ($this->settings['bank_name'] ?? ''));
-                $gateways[] = [
-                    'id' => 'vietqr',
-                    'name' => 'VietQR' . ($bankLabel !== '' ? ' - ' . $bankLabel : ''),
-                    'hint' => 'Chuyển khoản ngân hàng qua mã QR.'
-                ];
-            }
-        } 
-        // Nếu tiền tệ hệ thống là CNY thì chỉ hiển thị WeChat và Alipay
-        elseif ($baseCurrency === 'CNY') {
-            if (($this->settings['enable_wechat'] ?? '0') === '1') {
-                $gateways[] = [
-                    'id' => 'wechat',
-                    'name' => 'WeChat Pay',
-                    'hint' => 'Thanh toán nhanh bằng ví WeChat.'
-                ];
-            }
-
-            if (($this->settings['enable_alipay'] ?? '0') === '1') {
-                $gateways[] = [
-                    'id' => 'alipay',
-                    'name' => 'Alipay',
-                    'hint' => 'Thanh toán trực tuyến qua Alipay.'
-                ];
-            }
-        }
+        // Cổng VietQR (Chuyển khoản ngân hàng)
+        $bankLabel = trim((string) ($this->settings['bank_name'] ?? ''));
+        $gateways[] = [
+            'id' => 'vietqr',
+            'name' => 'VietQR' . ($bankLabel !== '' ? ' - ' . $bankLabel : ''),
+            'hint' => 'Chuyển khoản ngân hàng quét mã QR tự động.'
+        ];
 
         return $gateways;
     }
@@ -967,9 +900,9 @@ $_SESSION['success'] = 'Đã tạo đơn hàng ' . $orderCode . ' thành công. 
         $paymentGateway = trim((string) ($_POST['payment_gateway'] ?? 'vietqr'));
 
         $minDeposit = (float) (
-            $this->settings['min_deposit'] ??
             $this->settings['min_deposit_amount'] ??
-            (strtoupper(trim((string) ($this->settings['currency'] ?? 'CNY'))) === 'VND' ? 10000 : 10)
+            $this->settings['min_deposit'] ??
+            10000
         );
 
         if ($amount < $minDeposit) {
