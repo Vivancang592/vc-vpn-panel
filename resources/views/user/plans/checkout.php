@@ -80,7 +80,7 @@ if ($isDeposit) {
 } else {
     $pageHeading = 'THANH TOÁN GÓI DỊCH VỤ';
     $pageDescription = 'Kiểm tra thông tin và chọn cổng thanh toán để hoàn tất đăng ký.';
-    $actionUrl = '/payments/checkout';
+    $actionUrl = '/checkout';
     $submitText = 'Xác nhận thanh toán';
 }
 

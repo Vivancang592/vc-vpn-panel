@@ -64,26 +64,36 @@ class PaymentService
         }
 
         $orderId = (int) $orderModel->lastInsertId();
-        $depositSyntax = trim((string) ($settings['bank_transfer_syntax'] ?? 'NAPTIEN'));
-        $transferContent = $depositSyntax . str_pad((string) $orderId, 2, '0', STR_PAD_LEFT);
-        $orderModel->update($orderId, ['transfer_content' => $transferContent]);
 
-        $transCode = 'DEP' . date('YmdHis') . random_int(100, 99999);
-        $paymentData = [
-            'transaction_id'   => $transCode,
-            'user_id'          => $userId,
-            'order_id'         => $orderId,
-            'subscription_id'  => null,
-            'type'             => 'deposit',
-            'amount'           => $amount,
-            'payment_method'   => $paymentMethod,
-            'transfer_content' => $transferContent,
-            'status'           => 'pending',
-            'created_at'       => date('Y-m-d H:i:s')
-        ];
+        try {
+            $depositSyntax = trim((string) ($settings['bank_transfer_syntax'] ?? 'NAPTIEN'));
+            $transferContent = $depositSyntax . str_pad((string) $orderId, 2, '0', STR_PAD_LEFT);
+            $orderModel->update($orderId, ['transfer_content' => $transferContent]);
 
-        $paymentModel = new Payment();
-        $created = $paymentModel->create($paymentData);
+            $transCode = 'DEP' . date('YmdHis') . random_int(100, 99999);
+            $paymentData = [
+                'transaction_id'   => $transCode,
+                'user_id'          => $userId,
+                'order_id'         => $orderId,
+                'subscription_id'  => null,
+                'type'             => 'deposit',
+                'amount'           => $amount,
+                'payment_method'   => $paymentMethod,
+                'transfer_content' => $transferContent,
+                'status'           => 'pending',
+                'created_at'       => date('Y-m-d H:i:s')
+            ];
+
+            $paymentModel = new Payment();
+            $created = $paymentModel->create($paymentData);
+        } catch (\Throwable $exception) {
+            $orderModel->delete($orderId);
+
+            return [
+                'status' => false,
+                'message' => 'Không thể tạo giao dịch nạp tiền. Vui lòng liên hệ quản trị viên để kiểm tra cơ sở dữ liệu.'
+            ];
+        }
 
         if ($created) {
             $paymentId = (int) $paymentModel->lastInsertId();
