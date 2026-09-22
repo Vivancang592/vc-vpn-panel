@@ -724,6 +724,87 @@ require_once __DIR__ . '/../../layouts/app.php';
     }
 
 
+    function watchDepositOrder() {
+
+        if (orderId <= 0) {
+            return;
+        }
+
+
+        var orderTimer = setInterval(function () {
+
+            fetch(
+                '/orders/status?id=' + encodeURIComponent(orderId),
+                {
+                    headers: {
+                        'Accept': 'application/json'
+                    }
+                }
+            )
+
+            .then(function (res) {
+
+                if (!res.ok) {
+                    throw new Error('HTTP ' + res.status);
+                }
+
+                return res.json();
+
+            })
+
+            .then(function (data) {
+
+                var status =
+                    String(data.status || '').toLowerCase();
+
+
+                if (
+                    status === 'completed' ||
+                    status === 'success' ||
+                    status === 'paid'
+                ) {
+
+                    clearInterval(orderTimer);
+
+
+                    showBanner(
+                        'Nạp tiền thành công! Số dư ví đã được cập nhật.',
+                        true
+                    );
+
+
+                    setTimeout(function () {
+
+                        window.location.href = '/wallet';
+
+                    }, 1200);
+
+
+                } else if (
+                    status === 'cancelled' ||
+                    status === 'failed'
+                ) {
+
+                    clearInterval(orderTimer);
+
+
+                    showBanner(
+                        'Giao dịch nạp tiền đã thất bại hoặc bị hủy.',
+                        false
+                    );
+
+                }
+
+            })
+
+            .catch(function () {});
+
+
+        }, 5000);
+
+    }
+
+
     /*
      * Nạp tiền / Gia hạn:
      * kiểm tra trạng thái payment.
@@ -876,7 +957,15 @@ require_once __DIR__ . '/../../layouts/app.php';
      */
     if (checkoutType === 'deposit') {
 
-        watchPayment();
+        if (orderId > 0) {
+
+            watchDepositOrder();
+
+        } else {
+
+            watchPayment();
+
+        }
 
         return;
     }
