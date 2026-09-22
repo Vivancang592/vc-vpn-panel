@@ -46,8 +46,7 @@ ob_start();
                     <th>Gói Cước</th>
                     <th style="text-align: center;">Online</th>
                     <th>Lưu Lượng Dùng</th>
-                    <th>Ngày Bắt Đầu</th>
-                    <th>Ngày Hết Hạn</th>
+                    <th>Hạn Dùng</th>
                     <th style="text-align: center;">Trạng Thái</th>
                     <th style="text-align: right;">Thao Tác</th>
                 </tr>
@@ -93,9 +92,6 @@ ob_start();
                             <td style="font-size: 0.85rem;">
                                 <span style="font-weight: 700; color: var(--ios-blue);"><?= $formattedUsed ?></span>
                                 <span style="color: var(--ios-text-secondary);">/ <?= $formattedTotal ?></span>
-                            </td>
-                            <td style="font-size: 0.8rem; color: var(--ios-text-secondary);">
-                                <?= date('d/m/Y', strtotime($sub['start_date'])) ?>
                             </td>
                             <td style="font-size: 0.8rem; color: var(--ios-text-secondary);">
                                 <?= date('d/m/Y', strtotime($sub['end_date'])) ?>
@@ -176,7 +172,7 @@ ob_start();
                     <?php endforeach; ?>
                 <?php else: ?>
                     <tr>
-                        <td colspan="9" style="text-align: center; padding: 2rem; color: var(--ios-text-secondary);">Chưa có tài khoản đăng ký VPN nào.</td>
+                        <td colspan="8" style="text-align: center; padding: 2rem; color: var(--ios-text-secondary);">Chưa có tài khoản đăng ký VPN nào.</td>
                     </tr>
                 <?php endif; ?>
             </tbody>

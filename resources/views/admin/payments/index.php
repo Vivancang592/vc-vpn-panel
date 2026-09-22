@@ -38,8 +38,6 @@ ob_start();
                     <th>Khách Hàng</th>
                     <th>Loại Giao Dịch</th>
                     <th>Mã Đơn Hàng</th>
-                    <th>Phương Thức</th>
-                    <th>Mã Giao Dịch</th>
                     <th>Số Tiền</th>
                     <th style="text-align: center;">Trạng Thái</th>
                     <th>Thời Gian</th>
@@ -73,18 +71,6 @@ ob_start();
                                     </code>
                                 <?php else: ?>
                                     <span style="color: var(--ios-text-secondary); font-size: 0.8rem;">-</span>
-                                <?php endif; ?>
-                            </td>
-                            <td style="font-weight: 600; font-size: 0.85rem; text-transform: uppercase; color: var(--ios-text);">
-                                <?= htmlspecialchars($payment['payment_method']) ?>
-                            </td>
-                            <td>
-                                <?php if (!empty($payment['transaction_id'])): ?>
-                                    <code style="background: rgba(0, 0, 0, 0.1); padding: 0.15rem 0.4rem; border-radius: var(--radius-sm); font-size: 0.8rem;">
-                                        <?= htmlspecialchars($payment['transaction_id']) ?>
-                                    </code>
-                                <?php else: ?>
-                                    <span style="color: var(--ios-text-secondary); font-size: 0.8rem;">Tự động</span>
                                 <?php endif; ?>
                             </td>
                             <td style="font-weight: 700; color: var(--ios-success);">
@@ -137,7 +123,7 @@ ob_start();
                     <?php endforeach; ?>
                 <?php else: ?>
                     <tr>
-                        <td colspan="10" style="text-align: center; padding: 2rem; color: var(--ios-text-secondary);">Chưa có lịch sử thanh toán nào.</td>
+                        <td colspan="8" style="text-align: center; padding: 2rem; color: var(--ios-text-secondary);">Chưa có dữ liệu thanh toán nào.</td>
                     </tr>
                 <?php endif; ?>
             </tbody>

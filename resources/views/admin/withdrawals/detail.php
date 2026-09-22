@@ -9,7 +9,6 @@ ob_start();
     <div>
         <h1 style="font-size: 1.5rem; font-weight: 700; word-break: break-word;">Chi Tiết Yêu Cầu Rút Tiền: #<?= $withdrawal['id'] ?></h1>
     </div>
-    <a href="/admin/withdrawals" class="glass-btn" style="text-decoration: none; white-space: nowrap; flex-shrink: 0;">⬅️ Quay Lại</a>
 </div>
 
 <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1.25rem;">

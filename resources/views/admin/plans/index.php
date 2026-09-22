@@ -50,7 +50,6 @@ ob_start();
                 <tr>
                     <th>ID</th>
                     <th>Tên Gói Cước</th>
-                    <th>Mã Code</th>
                     <th>Nhóm Server</th>
                     <th>Giá Bán (<?= htmlspecialchars($currencyCode) ?>)</th>
                     <th style="text-align: center;">Thời Hạn</th>
@@ -65,9 +64,9 @@ ob_start();
                     <?php foreach ($plans as $plan): ?>
                         <tr>
                             <td style="font-weight: 700;">#<?= $plan['id'] ?></td>
-                            <td style="font-weight: 700; font-size: 0.9rem; color: var(--ios-text);"><?= htmlspecialchars($plan['name']) ?></td>
                             <td>
-                                <code style="background: rgba(0, 122, 255, 0.08); padding: 0.2rem 0.4rem; border-radius: var(--radius-sm); font-weight: 700; color: var(--ios-text);">
+                                <div style="font-weight: 700; font-size: 0.9rem; color: var(--ios-text);"><?= htmlspecialchars($plan['name']) ?></div>
+                                <code style="background: rgba(0, 122, 255, 0.08); padding: 0.1rem 0.35rem; border-radius: var(--radius-sm); font-weight: 600; color: var(--ios-blue); font-size: 0.78rem;">
                                     <?= htmlspecialchars($plan['code']) ?>
                                 </code>
                             </td>
@@ -111,7 +110,7 @@ ob_start();
                     <?php endforeach; ?>
                 <?php else: ?>
                     <tr>
-                        <td colspan="10" style="text-align: center; padding: 2rem; color: var(--ios-text-secondary);">Chưa có gói cước nào được tạo.</td>
+                        <td colspan="9" style="text-align: center; padding: 2rem; color: var(--ios-text-secondary);">Chưa có gói cước nào được tạo.</td>
                     </tr>
                 <?php endif; ?>
             </tbody>

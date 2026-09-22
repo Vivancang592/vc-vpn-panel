@@ -57,7 +57,6 @@ ob_start();
                 <tr>
                     <th>ID</th>
                     <th>Người Dùng</th>
-                    <th>IP Đăng Nhập</th>
                     <th>Vai Trò</th>
                     <th>Số Dư</th>
                     <th>Hoa Hồng</th>
@@ -74,11 +73,6 @@ ob_start();
                             <td>
                                 <div style="font-weight: 700; font-size: 0.9rem;"><?= htmlspecialchars($u['username']) ?></div>
                                 <div style="font-size: 0.78rem; color: var(--ios-text-secondary);"><?= htmlspecialchars($u['email']) ?></div>
-                            </td>
-                            <td style="font-size: 0.85rem;">
-                                <code style="background: rgba(0, 122, 255, 0.08); padding: 0.2rem 0.4rem; border-radius: var(--radius-sm); font-weight: 600; color: var(--ios-text);">
-                                    <?= htmlspecialchars($u['last_login_ip'] ?? 'Chưa ghi nhận') ?>
-                                </code>
                             </td>
                             <td>
                                 <?php
@@ -147,7 +141,7 @@ ob_start();
                     <?php endforeach; ?>
                 <?php else: ?>
                     <tr>
-                        <td colspan="9" style="text-align: center; padding: 2rem; color: var(--ios-text-secondary);">Không tìm thấy thành viên nào.</td>
+                        <td colspan="8" style="text-align: center; padding: 2rem; color: var(--ios-text-secondary);">Không tìm thấy người dùng nào.</td>
                     </tr>
                 <?php endif; ?>
             </tbody>
