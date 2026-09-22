@@ -45,12 +45,13 @@ ob_start();
 		<div class="glass-card user-orders-table-wrap">
 			<table class="user-orders-table">
 				<thead>
-					<tr><th>Mã đơn hàng</th><th>Gói dịch vụ</th><th>Tổng tiền</th><th>Trạng thái</th><th>Ngày tạo</th><th style="text-align: right;">Thao tác</th></tr>
+					<tr><th>ID</th><th>Mã đơn hàng</th><th>Gói dịch vụ</th><th>Tổng tiền</th><th>Trạng thái</th><th>Ngày tạo</th><th style="text-align: right;">Thao tác</th></tr>
 				</thead>
 				<tbody>
 					<?php foreach ($userOrders as $order): ?>
 						<?php $status = $order['payment_status'] ?? 'pending'; ?>
 						<tr>
+							<td data-label="ID"><code>#<?= (int) ($order['id'] ?? 0) ?></code></td>
 							<td data-label="Mã đơn hàng"><code><?= htmlspecialchars($order['order_code'] ?? ('#' . ($order['id'] ?? ''))) ?></code></td>
 							<td data-label="Gói dịch vụ">
 								<?php if (!empty($order['plan_id'])): ?>
