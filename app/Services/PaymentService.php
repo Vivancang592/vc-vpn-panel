@@ -14,7 +14,7 @@ use App\Models\NodeTask;
 class PaymentService
 {
     /**
-     * Tạo giao dịch nạp tiền vào ví (Đồng bộ tạo Order trước để Webhook và Quản lý thống nhất)
+     * Tạo đơn nạp tiền chờ thanh toán.
      */
     public function createDepositTransaction(
         int $userId,
@@ -70,22 +70,6 @@ class PaymentService
             $transferContent = $depositSyntax . str_pad((string) $orderId, 2, '0', STR_PAD_LEFT);
             $orderModel->update($orderId, ['transfer_content' => $transferContent]);
 
-            $transCode = 'DEP' . date('YmdHis') . random_int(100, 99999);
-            $paymentData = [
-                'transaction_id'   => $transCode,
-                'user_id'          => $userId,
-                'order_id'         => $orderId,
-                'subscription_id'  => null,
-                'type'             => 'deposit',
-                'amount'           => $amount,
-                'payment_method'   => $paymentMethod,
-                'transfer_content' => $transferContent,
-                'status'           => 'pending',
-                'created_at'       => date('Y-m-d H:i:s')
-            ];
-
-            $paymentModel = new Payment();
-            $created = $paymentModel->create($paymentData);
         } catch (\Throwable $exception) {
             $orderModel->delete($orderId);
 
@@ -95,25 +79,13 @@ class PaymentService
             ];
         }
 
-        if ($created) {
-            $paymentId = (int) $paymentModel->lastInsertId();
-
-            return [
-                'status'           => true,
-                'message'          => 'Tạo giao dịch nạp tiền thành công.',
-                'transaction_code' => $transCode,
-                'transfer_content' => $transferContent,
-                'amount'           => $amount,
-                'payment_id'       => $paymentId,
-                'order_id'         => $orderId,
-                'order_code'       => $orderCode
-            ];
-        }
-
-        $orderModel->delete($orderId);
         return [
-            'status' => false,
-            'message' => 'Không thể tạo giao dịch nạp tiền.'
+            'status'           => true,
+            'message'          => 'Tạo đơn nạp tiền thành công.',
+            'transfer_content' => $transferContent,
+            'amount'           => $amount,
+            'order_id'         => $orderId,
+            'order_code'       => $orderCode
         ];
     }
 
