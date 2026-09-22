@@ -165,14 +165,25 @@ class PaymentController extends BaseController
             return;
         }
 
-        // 4.2 Khớp gia hạn gói theo cú pháp (GAHAN{payment_id}, GH{payment_id})
+        // 4.2 Khớp gia hạn gói theo cú pháp (GAHAN{order_id}, GH{order_id})
         $renewalPrefixes = array_unique(array_filter([$renewalSyntax, 'GAHAN', 'GH']));
         $renewalPattern = '/\b(?:' . implode('|', array_map(fn($p) => preg_quote($p, '/'), $renewalPrefixes)) . ')\s*0*(\d+)\b/i';
 
         if ($amount > 0 && preg_match($renewalPattern, $searchContent, $matches)) {
-            $paymentId = (int) $matches[1];
-            $payment = $paymentModel->find($paymentId);
+            $referenceId = (int) $matches[1];
+            $payment = $paymentModel->findPendingRenewalByOrderId($referenceId);
+
+            if ($payment === null) {
+                $payment = $paymentModel->findSuccessfulByOrderId($referenceId);
+            }
+
+            // Các giao dịch được tạo trước khi chuyển sang mã đơn vẫn dùng payment ID.
+            if ($payment === null) {
+                $payment = $paymentModel->find($referenceId);
+            }
+
             if ($payment && ($payment['type'] ?? '') === 'payment' && !empty($payment['subscription_id'])) {
+                $paymentId = (int) ($payment['id'] ?? 0);
                 if (($payment['status'] ?? '') === 'success') {
                     $respond(true, 'Giao dịch gia hạn #' . $paymentId . ' đã được xử lý trước đó.', 200);
                     return;

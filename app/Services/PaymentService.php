@@ -251,7 +251,7 @@ class PaymentService
         $settingModel = new Setting();
         $settings = $settingModel->getAllAsKeyValue();
         $renewalSyntax = trim((string) ($settings['renewal_transfer_syntax'] ?? 'GAHAN'));
-        $transferContent = $renewalSyntax . str_pad((string) $paymentId, 2, '0', STR_PAD_LEFT);
+        $transferContent = $renewalSyntax . str_pad((string) $orderId, 2, '0', STR_PAD_LEFT);
         $paymentModel->update($paymentId, ['transfer_content' => $transferContent]);
         $orderModel->update($orderId, ['transfer_content' => $transferContent]);
 
