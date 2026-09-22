@@ -85,18 +85,12 @@ document.addEventListener('DOMContentLoaded', function () {
                 this.classList.add('active');
 
                 const rect = this.getBoundingClientRect();
-                const menuHeight = currentMenu.offsetHeight;
                 const viewportHeight = window.visualViewport?.height || document.documentElement.clientHeight;
-                const spaceBelow = viewportHeight - rect.bottom - 24;
                 const spaceAbove = rect.top - 8;
-                const openBelow = spaceBelow >= menuHeight + 8;
-                const availableHeight = openBelow ? spaceBelow : spaceAbove;
-                const maxMenuHeight = Math.max(0, availableHeight - 8);
 
-                currentMenu.style.maxHeight = maxMenuHeight + 'px';
-                currentMenu.style.top = (openBelow
-                    ? rect.bottom + 4
-                    : Math.max(8, rect.top - Math.min(menuHeight, maxMenuHeight) - 4)) + 'px';
+                currentMenu.style.maxHeight = Math.max(0, spaceAbove) + 'px';
+                currentMenu.style.top = 'auto';
+                currentMenu.style.bottom = Math.max(8, viewportHeight - rect.top + 4) + 'px';
                 currentMenu.style.left = 'auto';
                 currentMenu.style.right = (window.innerWidth - rect.right) + 'px';
             }
