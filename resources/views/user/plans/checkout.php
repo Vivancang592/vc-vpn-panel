@@ -80,7 +80,7 @@ if ($isDeposit) {
 } else {
     $pageHeading = 'THANH TOÁN GÓI DỊCH VỤ';
     $pageDescription = 'Kiểm tra thông tin và chọn cổng thanh toán để hoàn tất đăng ký.';
-    $actionUrl = '/checkout';
+    $actionUrl = '/payments/checkout';
     $submitText = 'Xác nhận thanh toán';
 }
 
@@ -89,7 +89,6 @@ ob_start();
 
 <section class="user-checkout-page">
 
-```
 <header class="user-checkout-header">
 
     <h2 style="color: #020af4; font-family: emoji;">
@@ -662,7 +661,7 @@ ob_start();
     </div>
 
 </form>
-```
+
 
 </section>
 
