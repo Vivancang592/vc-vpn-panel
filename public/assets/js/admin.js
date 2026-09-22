@@ -86,8 +86,9 @@ document.addEventListener('DOMContentLoaded', function () {
 
                 const rect = this.getBoundingClientRect();
                 const menuHeight = currentMenu.offsetHeight;
-                const spaceBelow = window.innerHeight - rect.bottom;
-                const spaceAbove = rect.top;
+                const viewportHeight = window.visualViewport?.height || document.documentElement.clientHeight;
+                const spaceBelow = viewportHeight - rect.bottom - 24;
+                const spaceAbove = rect.top - 8;
                 const openBelow = spaceBelow >= menuHeight + 8;
                 const availableHeight = openBelow ? spaceBelow : spaceAbove;
                 const maxMenuHeight = Math.max(0, availableHeight - 8);
