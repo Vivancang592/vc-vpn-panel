@@ -400,11 +400,14 @@ $_SESSION['success'] = 'Đã tạo đơn hàng ' . $orderCode . ' thành công. 
                 $this->redirect('/orders/detail?id=' . (int) $order['id']);
                 return;
             }
+            $isDepositOrder = empty($order['plan_id']);
             $this->render('user.payments.checkout', [
-                'checkoutType' => 'order', 'order' => $order, 'payment' => null,
+                'checkoutType' => $isDepositOrder ? 'deposit' : 'order',
+                'order' => $order,
+                'payment' => null,
                 'subscription' => null,
                 'paymentInstructions' => $this->buildPaymentInstructions($order),
-                'activeMenu' => 'orders'
+                'activeMenu' => $isDepositOrder ? 'wallet' : 'orders'
             ]);
             return;
         }
@@ -923,12 +926,19 @@ $_SESSION['success'] = 'Đã tạo đơn hàng ' . $orderCode . ' thành công. 
         $result = $paymentService->createDepositTransaction(
             (int) $_SESSION['user_id'],
             $amount,
-            $paymentGateway
+            $paymentGateway,
+            $this->getClientIp()
         );
 
         if (($result['status'] ?? false) !== true) {
             $_SESSION['error'] = $result['message'] ?? 'Không thể tạo giao dịch nạp tiền.';
-            $this->redirect('/payments/deposit');
+            $this->redirect('/checkout?type=deposit');
+            return;
+        }
+
+        $orderId = (int) ($result['order_id'] ?? 0);
+        if ($orderId > 0) {
+            $this->redirect('/payment/checkout?order=' . $orderId);
             return;
         }
 

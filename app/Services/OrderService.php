@@ -236,7 +236,28 @@ class OrderService
                 'updated_at'     => date('Y-m-d H:i:s')
             ]);
 
-            // 2. Lấy thông tin gói cước
+            // 1.1 Nếu là đơn nạp tiền ví (không có plan_id)
+            if (empty($order['plan_id'])) {
+                $userModel = new User();
+                $credited = $userModel->creditBalance((int)$order['user_id'], (float)$order['total_amount']);
+                if (!$credited) {
+                    BaseModel::rollBack();
+                    return false;
+                }
+
+                $paymentModel = new Payment();
+                $pendingPayment = $paymentModel->findPendingByOrderId($orderId);
+                if ($pendingPayment) {
+                    $paymentModel->update((int)$pendingPayment['id'], [
+                        'status' => 'success'
+                    ]);
+                }
+
+                BaseModel::commit();
+                return true;
+            }
+
+            // 2. Lấy thông tin gói cước (Đơn mua mới / gia hạn)
             $planModel = new VpnPlan();
             $plan = $planModel->find((int)$order['plan_id']);
             if (!$plan) {

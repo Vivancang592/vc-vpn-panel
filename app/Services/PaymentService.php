@@ -14,12 +14,13 @@ use App\Models\NodeTask;
 class PaymentService
 {
     /**
-     * Tạo giao dịch nạp tiền vào ví (Đơn vị duy nhất VND)
+     * Tạo giao dịch nạp tiền vào ví (Đồng bộ tạo Order trước để Webhook và Quản lý thống nhất)
      */
     public function createDepositTransaction(
         int $userId,
         float $amount,
-        string $paymentMethod = 'vietqr'
+        string $paymentMethod = 'vietqr',
+        string $purchaseIp = ''
     ): array {
         $settingModel = new Setting();
         $settings = $settingModel->getAllAsKeyValue();
@@ -44,20 +45,41 @@ class PaymentService
             ];
         }
 
-        $transCode = 'DEP'
-            . date('YmdHis')
-            . random_int(100, 99999);
+        $amount = round($amount, 0);
+        $orderCode = 'DEP' . date('YmdHis') . random_int(100, 99999);
+        $orderModel = new Order();
 
-        $paymentData = [
-            'transaction_id' => $transCode,
+        if (!$orderModel->create([
+            'order_code'     => $orderCode,
             'user_id'        => $userId,
-            'order_id'       => null,
-            'subscription_id'=> null,
-            'type'           => 'deposit',
-            'amount'         => round($amount, 0),
+            'plan_id'        => null,
+            'total_amount'   => $amount,
             'payment_method' => $paymentMethod,
-            'status'         => 'pending',
+            'payment_status' => 'pending',
+            'purchase_ip'    => $purchaseIp !== '' ? $purchaseIp : null,
+            'created_by'     => $userId,
             'created_at'     => date('Y-m-d H:i:s')
+        ])) {
+            return ['status' => false, 'message' => 'Không thể tạo đơn hàng nạp tiền.'];
+        }
+
+        $orderId = (int) $orderModel->lastInsertId();
+        $depositSyntax = trim((string) ($settings['bank_transfer_syntax'] ?? 'NAPTIEN'));
+        $transferContent = $depositSyntax . str_pad((string) $orderId, 2, '0', STR_PAD_LEFT);
+        $orderModel->update($orderId, ['transfer_content' => $transferContent]);
+
+        $transCode = 'DEP' . date('YmdHis') . random_int(100, 99999);
+        $paymentData = [
+            'transaction_id'   => $transCode,
+            'user_id'          => $userId,
+            'order_id'         => $orderId,
+            'subscription_id'  => null,
+            'type'             => 'deposit',
+            'amount'           => $amount,
+            'payment_method'   => $paymentMethod,
+            'transfer_content' => $transferContent,
+            'status'           => 'pending',
+            'created_at'       => date('Y-m-d H:i:s')
         ];
 
         $paymentModel = new Payment();
@@ -65,9 +87,6 @@ class PaymentService
 
         if ($created) {
             $paymentId = (int) $paymentModel->lastInsertId();
-            $depositSyntax = trim((string) ($settings['bank_transfer_syntax'] ?? 'NAPTIEN'));
-            $transferContent = $depositSyntax . str_pad((string) $paymentId, 2, '0', STR_PAD_LEFT);
-            $paymentModel->update($paymentId, ['transfer_content' => $transferContent]);
 
             return [
                 'status'           => true,
@@ -75,10 +94,13 @@ class PaymentService
                 'transaction_code' => $transCode,
                 'transfer_content' => $transferContent,
                 'amount'           => $amount,
-                'payment_id'       => $paymentId
+                'payment_id'       => $paymentId,
+                'order_id'         => $orderId,
+                'order_code'       => $orderCode
             ];
         }
 
+        $orderModel->delete($orderId);
         return [
             'status' => false,
             'message' => 'Không thể tạo giao dịch nạp tiền.'
@@ -325,6 +347,13 @@ class PaymentService
                 if (!$credited) {
                     BaseModel::rollBack();
                     return false;
+                }
+
+                if (!empty($payment['order_id'])) {
+                    (new Order())->update((int) $payment['order_id'], [
+                        'payment_status' => 'completed',
+                        'updated_at'     => date('Y-m-d H:i:s')
+                    ]);
                 }
 
                 BaseModel::commit();

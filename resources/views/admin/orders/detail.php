@@ -54,7 +54,14 @@ ob_start();
         <h2 style="font-size: 1.1rem; font-weight: 700; margin-bottom: 0.75rem; border-bottom: 1px solid var(--glass-border); padding-bottom: 0.5rem;">Thông Tin Dịch Vụ & Thanh Toán</h2>
         
         <div style="display: flex; flex-direction: column; gap: 0.6rem; font-size: 0.9rem;">
-            <div><strong>Gói Cước Đăng Ký:</strong> <span style="font-weight: 700;"><?= htmlspecialchars($order['plan_name'] ?? 'Chưa xác định') ?></span></div>
+            <div>
+                <strong>Loại Đơn Hàng:</strong> 
+                <?php if (!empty($order['plan_id'])): ?>
+                    <span style="font-weight: 700;"><?= htmlspecialchars($order['plan_name'] ?? 'Gói cước VPN') ?></span>
+                <?php else: ?>
+                    <span style="color: var(--ios-blue); font-weight: 700;">💰 Nạp tiền vào ví</span>
+                <?php endif; ?>
+            </div>
             <div><strong>Mã Gói Cước:</strong> <code style="background: rgba(0,122,255,0.1); padding: 0.2rem 0.4rem; border-radius: var(--radius-sm); font-weight: 700;"><?= htmlspecialchars($order['plan_code'] ?? 'N/A') ?></code></div>
             <div>
                 <strong>Mã Giảm Giá Áp Dụng:</strong> 

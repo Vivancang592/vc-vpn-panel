@@ -67,7 +67,11 @@ ob_start();
                                 <div style="font-size: 0.78rem; color: var(--ios-text-secondary);"><?= htmlspecialchars($order['email'] ?? '') ?></div>
                             </td>
                             <td style="font-weight: 600; font-size: 0.85rem; color: var(--ios-text);">
-                                <?= htmlspecialchars($order['plan_name'] ?? ('Gói #' . $order['plan_id'])) ?>
+                                <?php if (!empty($order['plan_id'])): ?>
+                                    <?= htmlspecialchars($order['plan_name'] ?? ('Gói #' . $order['plan_id'])) ?>
+                                <?php else: ?>
+                                    <span style="color: var(--ios-blue); font-weight: 700;">💰 Nạp tiền vào ví</span>
+                                <?php endif; ?>
                             </td>
                             <td>
                                 <?php if (!empty($order['coupon_code'])): ?>

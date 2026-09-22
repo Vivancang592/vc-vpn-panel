@@ -187,8 +187,9 @@ class OrderController extends BaseController
             return;
         }
 
-        // 2. Xử lý đơn hàng mua mới
+        // 2. Xử lý đơn hàng (Mua mới / Nạp tiền)
         $amount = (float)($order['total_amount'] ?? 0);
+        $isDeposit = empty($order['plan_id']);
         
         $orderUpdate = [
             'payment_status' => $status,
@@ -216,7 +217,7 @@ class OrderController extends BaseController
                         $paymentModel->create([
                             'user_id'          => (int) $order['user_id'],
                             'order_id'         => $id,
-                            'type'             => 'payment',
+                            'type'             => $isDeposit ? 'deposit' : 'payment',
                             'payment_method'   => (string) ($order['payment_method'] ?? 'vietqr'),
                             'transaction_id'   => 'MN-' . (string) ($order['order_code'] ?? $id),
                             'transfer_content' => $order['transfer_content'] ?? null,
