@@ -43,7 +43,7 @@ class Withdrawal extends BaseModel
     {
         $stmt = self::$db->prepare("
             SELECT w.*, 
-                   u.username, u.email, u.commission_balance, u.full_name
+                   u.username, u.email, u.commission_balance
             FROM `{$this->table}` w
             LEFT JOIN `vc_users` u ON w.user_id = u.id
             WHERE w.id = :id
