@@ -136,9 +136,10 @@ class Order extends BaseModel
         self::beginTransaction();
 
         try {
-            $stmt = self::$db->prepare("SELECT `id` FROM `{$this->table}` WHERE `payment_status` = 'pending' AND `created_at` <= DATE_SUB(NOW(), INTERVAL {$minutes} MINUTE)");
+            $stmt = self::$db->prepare("SELECT o.`id`, o.`order_code`, u.`email` FROM `{$this->table}` o INNER JOIN `vc_users` u ON u.`id` = o.`user_id` WHERE o.`payment_status` = 'pending' AND o.`created_at` <= DATE_SUB(NOW(), INTERVAL {$minutes} MINUTE) FOR UPDATE");
             $stmt->execute();
-            $orderIds = array_column($stmt->fetchAll(), 'id');
+            $expiredOrders = $stmt->fetchAll();
+            $orderIds = array_column($expiredOrders, 'id');
 
             if (empty($orderIds)) {
                 self::commit();
@@ -154,6 +155,20 @@ class Order extends BaseModel
             $cancelledOrders = $orderStmt->rowCount();
 
             self::commit();
+
+            if ($cancelledOrders > 0 && class_exists('App\Services\MailService')) {
+                $mailService = new \App\Services\MailService();
+                foreach ($expiredOrders as $order) {
+                    $email = trim((string) ($order['email'] ?? ''));
+                    if ($email !== '') {
+                        $mailService->send($email, 'Đơn hàng đã bị hủy', 'orders.cancelled', [
+                            'orderCode' => (string) ($order['order_code'] ?? ''),
+                            'reason' => 'Đơn hàng đã quá thời gian chờ thanh toán.'
+                        ]);
+                    }
+                }
+            }
+
             return $cancelledOrders;
         } catch (\Throwable $exception) {
             self::rollBack();

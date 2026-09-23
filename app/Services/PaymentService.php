@@ -410,6 +410,7 @@ class PaymentService
                 }
 
                 BaseModel::commit();
+                $this->notifyPaymentCompleted($payment);
                 return true;
             } catch (\Throwable $e) {
                 BaseModel::rollBack();
@@ -429,7 +430,11 @@ class PaymentService
             $orderService = new OrderService();
             $activated = $orderService->activateOrder((int) $payment['order_id']);
             if ($activated) {
-                return $paymentModel->update($paymentId, ['status' => 'success']);
+                $paymentCompleted = $paymentModel->update($paymentId, ['status' => 'success']);
+                if ($paymentCompleted) {
+                    $this->notifyPaymentCompleted($payment);
+                }
+                return $paymentCompleted;
             }
         }
 
@@ -548,6 +553,9 @@ class PaymentService
             }
 
             BaseModel::commit();
+            if ($paymentCompleted) {
+                $this->notifyPaymentCompleted($payment);
+            }
             return $paymentCompleted;
         } catch (\Throwable $e) {
             BaseModel::rollBack();
@@ -590,5 +598,31 @@ class PaymentService
         }
 
         return $this->completePayment((int) $payment['id']);
+    }
+
+    private function notifyPaymentCompleted(array $payment): void
+    {
+        $user = (new User())->findById((int) ($payment['user_id'] ?? 0));
+        $email = trim((string) ($user['email'] ?? ''));
+
+        if ($email === '') {
+            return;
+        }
+
+        $order = !empty($payment['order_id'])
+            ? (new Order())->find((int) $payment['order_id'])
+            : null;
+        $paymentType = (string) ($payment['type'] ?? 'payment');
+        $description = $paymentType === 'deposit'
+            ? 'Giao dịch nạp tiền đã được xác nhận và số dư ví của bạn đã được cập nhật.'
+            : (!empty($payment['subscription_id'])
+                ? 'Thanh toán gia hạn gói dịch vụ đã được xác nhận.'
+                : 'Đơn hàng của bạn đã được thanh toán và kích hoạt thành công.');
+
+        (new MailService())->send($email, 'Thanh toán thành công', 'orders.payment-completed', [
+            'orderCode' => (string) ($order['order_code'] ?? $payment['transaction_id'] ?? ''),
+            'amount' => number_format((float) ($payment['amount'] ?? 0), 0, '.', ',') . ' đ',
+            'description' => $description
+        ]);
     }
 }

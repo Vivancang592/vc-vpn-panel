@@ -95,6 +95,9 @@ $subscriptionCode = (string) (
     ?? ''
 );
 
+$pendingOrderTimeout = max(1, (int) ($pendingOrderTimeout ?? 30));
+$paymentCreatedAt = (string) ($order['created_at'] ?? $payment['created_at'] ?? '');
+
 ob_start();
 
 ?>
@@ -205,6 +208,10 @@ ob_start();
         >
             Thanh toán đúng số tiền và nội dung để hệ thống tự động
             xác nhận giao dịch.
+        </p>
+
+        <p id="payment-countdown" class="user-payment-qr-instruction" style="text-align: center;">
+            Thời gian thanh toán đang được tính...
         </p>
 
 
@@ -607,8 +614,24 @@ require_once __DIR__ . '/../../layouts/app.php';
         <?= $renewalId ?>;
 
 
+    var pendingOrderTimeout =
+        <?= $pendingOrderTimeout ?>;
+
+
+    var paymentCreatedAt =
+        <?= json_encode($paymentCreatedAt, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) ?>;
+
+
     var banner =
         document.getElementById('payment-status-banner');
+
+
+    var countdown =
+        document.getElementById('payment-countdown');
+
+
+    var qrImage =
+        document.querySelector('.user-payment-qr-image');
 
 
     if (!banner) {
@@ -634,6 +657,58 @@ require_once __DIR__ . '/../../layouts/app.php';
             banner.classList.remove('is-success');
 
         }
+
+    }
+
+
+    function showStatusPopup(message, success, redirectUrl) {
+
+        var popup = document.createElement('div');
+        popup.setAttribute('role', 'alertdialog');
+        popup.setAttribute('aria-modal', 'true');
+        popup.style.cssText = 'position:fixed;inset:0;z-index:9999;display:flex;align-items:center;justify-content:center;padding:24px;background:rgba(0,0,0,.55);';
+        popup.innerHTML = '<div style="max-width:360px;padding:28px;background:#fff;color:#172033;text-align:center;box-shadow:0 18px 48px rgba(0,0,0,.3)"><strong style="display:block;margin-bottom:12px;color:' + (success ? '#16803c' : '#b42318') + '">' + (success ? 'Thanh toán thành công' : 'Giao dịch không thành công') + '</strong><p style="margin:0">' + message + '</p></div>';
+        document.body.appendChild(popup);
+
+        setTimeout(function () {
+            window.location.href = redirectUrl;
+        }, 2500);
+
+    }
+
+
+    function startCountdown() {
+
+        if (!countdown || !paymentCreatedAt) {
+            return;
+        }
+
+        var createdAt = new Date(String(paymentCreatedAt).replace(' ', 'T'));
+        var expiresAt = createdAt.getTime() + (pendingOrderTimeout * 60 * 1000);
+
+        if (isNaN(expiresAt)) {
+            countdown.hidden = true;
+            return;
+        }
+
+        var countdownTimer = setInterval(function () {
+            var remainingSeconds = Math.max(0, Math.ceil((expiresAt - Date.now()) / 1000));
+            var minutes = Math.floor(remainingSeconds / 60);
+            var seconds = remainingSeconds % 60;
+
+            if (remainingSeconds === 0) {
+                clearInterval(countdownTimer);
+                countdown.textContent = 'Mã QR đã hết hạn. Vui lòng tạo đơn hàng mới.';
+                showBanner('Mã QR đã hết hạn. Giao dịch sẽ được tự động hủy.', false);
+                if (qrImage) {
+                    qrImage.style.opacity = '0.25';
+                    qrImage.style.filter = 'grayscale(1)';
+                }
+                return;
+            }
+
+            countdown.textContent = 'Mã QR còn hiệu lực: ' + minutes + ':' + String(seconds).padStart(2, '0');
+        }, 1000);
 
     }
 
@@ -691,12 +766,11 @@ require_once __DIR__ . '/../../layouts/app.php';
                     );
 
 
-                    setTimeout(function () {
-
-                        window.location.href =
-                            '/orders/detail?id=' + encodeURIComponent(orderId);
-
-                    }, 1200);
+                    showStatusPopup(
+                        'Đơn hàng đã được thanh toán. Đang chuyển đến chi tiết đơn hàng...',
+                        true,
+                        '/orders/detail?id=' + encodeURIComponent(orderId)
+                    );
 
 
                 } else if (
@@ -711,6 +785,8 @@ require_once __DIR__ . '/../../layouts/app.php';
                         'Giao dịch đã thất bại hoặc bị hủy.',
                         false
                     );
+
+                    showStatusPopup('Đơn hàng đã bị hủy hoặc thanh toán thất bại.', false, '/orders');
 
                 }
 
@@ -773,11 +849,7 @@ require_once __DIR__ . '/../../layouts/app.php';
                     );
 
 
-                    setTimeout(function () {
-
-                        window.location.href = '/wallet';
-
-                    }, 1200);
+                    showStatusPopup('Số dư ví đã được cập nhật.', true, '/wallet');
 
 
                 } else if (
@@ -792,6 +864,8 @@ require_once __DIR__ . '/../../layouts/app.php';
                         'Giao dịch nạp tiền đã thất bại hoặc bị hủy.',
                         false
                     );
+
+                    showStatusPopup('Giao dịch nạp tiền đã bị hủy hoặc thất bại.', false, '/payments');
 
                 }
 
@@ -860,12 +934,7 @@ require_once __DIR__ . '/../../layouts/app.php';
                         );
 
 
-                        setTimeout(function () {
-
-                            window.location.href =
-                                '/wallet';
-
-                        }, 1200);
+                        showStatusPopup('Số dư ví đã được cập nhật.', true, '/wallet');
 
 
                     } else if (checkoutType === 'renewal') {
@@ -876,28 +945,13 @@ require_once __DIR__ . '/../../layouts/app.php';
                         );
 
 
-                        setTimeout(function () {
-
-                            if (renewalId > 0) {
-
-                                window.location.href =
-                                    '/subscriptions/detail?id=' +
-                                    encodeURIComponent(renewalId);
-
-                            } else if (orderId > 0) {
-
-                                window.location.href =
-                                    '/orders/detail?id=' +
-                                    encodeURIComponent(orderId);
-
-                            } else {
-
-                                window.location.href =
-                                    '/subscriptions';
-
-                            }
-
-                        }, 1200);
+                        showStatusPopup(
+                            'Gói dịch vụ đã được gia hạn.',
+                            true,
+                            renewalId > 0
+                                ? '/subscriptions/detail?id=' + encodeURIComponent(renewalId)
+                                : (orderId > 0 ? '/orders/detail?id=' + encodeURIComponent(orderId) : '/subscriptions')
+                        );
 
                     } else {
 
@@ -924,6 +978,8 @@ require_once __DIR__ . '/../../layouts/app.php';
                             false
                         );
 
+                        showStatusPopup('Giao dịch nạp tiền đã bị hủy hoặc thất bại.', false, '/payments');
+
                     } else if (checkoutType === 'renewal') {
 
                         showBanner(
@@ -931,12 +987,16 @@ require_once __DIR__ . '/../../layouts/app.php';
                             false
                         );
 
+                        showStatusPopup('Giao dịch gia hạn đã bị hủy hoặc thất bại.', false, '/subscriptions');
+
                     } else {
 
                         showBanner(
                             'Giao dịch đã thất bại hoặc bị hủy.',
                             false
                         );
+
+                        showStatusPopup('Giao dịch đã bị hủy hoặc thanh toán thất bại.', false, '/orders');
 
                     }
 
@@ -955,6 +1015,8 @@ require_once __DIR__ . '/../../layouts/app.php';
     /*
      * Chọn cơ chế kiểm tra theo loại checkout.
      */
+    startCountdown();
+
     if (checkoutType === 'deposit') {
 
         if (orderId > 0) {
