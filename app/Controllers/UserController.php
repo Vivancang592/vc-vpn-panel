@@ -387,7 +387,8 @@ $_SESSION['success'] = 'Đã tạo đơn hàng ' . $orderCode . ' thành công. 
         $depositId = (int) ($_GET['deposit'] ?? 0);
         $renewalId = (int) ($_GET['renewal'] ?? 0);
         $paymentId = (int) ($_GET['payment'] ?? 0);
-        $pendingOrderTimeout = max(1, min(43200, (int) ($this->settings['pending_order_timeout_minutes'] ?? 30)));
+        $timeoutMinutes = (int) ($this->settings['pending_order_timeout_minutes'] ?? 30);
+        $pendingOrderTimeout = max(1, min(43200, $timeoutMinutes));
 
         if ($orderId > 0) {
             $order = (new Order())->findWithDetails($orderId);
@@ -411,7 +412,7 @@ $_SESSION['success'] = 'Đã tạo đơn hàng ' . $orderCode . ' thành công. 
                 'payment' => null,
                 'subscription' => $renewalSubscription,
                 'paymentInstructions' => $this->buildPaymentInstructions($order),
-                'pendingOrderTimeout' => $pendingOrderTimeout,
+                'remainingSeconds' => $this->getPaymentRemainingSeconds($order, $pendingOrderTimeout),
                 'activeMenu' => $isDepositOrder ? 'wallet' : ($renewalSubscription ? 'subscriptions' : 'orders')
             ]);
             return;
@@ -434,7 +435,7 @@ $_SESSION['success'] = 'Đã tạo đơn hàng ' . $orderCode . ' thành công. 
                 'checkoutType' => 'deposit', 'order' => null, 'payment' => $payment,
                 'subscription' => null,
                 'paymentInstructions' => $this->buildDepositPaymentInstructions($payment),
-                'pendingOrderTimeout' => $pendingOrderTimeout,
+                'remainingSeconds' => $this->getPaymentRemainingSeconds($payment, $pendingOrderTimeout),
                 'activeMenu' => 'payments'
             ]);
             return;
@@ -460,7 +461,7 @@ $_SESSION['success'] = 'Đã tạo đơn hàng ' . $orderCode . ' thành công. 
                 'checkoutType' => 'renewal', 'order' => null, 'payment' => $payment,
                 'subscription' => $subscription,
                 'paymentInstructions' => $this->buildDepositPaymentInstructions($payment),
-                'pendingOrderTimeout' => $pendingOrderTimeout,
+                'remainingSeconds' => $this->getPaymentRemainingSeconds($payment, $pendingOrderTimeout),
                 'activeMenu' => 'subscriptions'
             ]);
             return;
@@ -468,6 +469,21 @@ $_SESSION['success'] = 'Đã tạo đơn hàng ' . $orderCode . ' thành công. 
 
         $_SESSION['error'] = 'Thiếu thông tin giao dịch thanh toán.';
         $this->redirect('/payments');
+    }
+
+    private function getPaymentRemainingSeconds(array $payment, int $timeoutMinutes): int
+    {
+        $createdAt = (string) ($payment['created_at'] ?? '');
+        if ($createdAt === '') {
+            return 0;
+        }
+
+        try {
+            $expiresAt = (new \DateTimeImmutable($createdAt))->modify('+' . $timeoutMinutes . ' minutes');
+            return $expiresAt->getTimestamp() - time();
+        } catch (\Exception $exception) {
+            return 0;
+        }
     }
 
     public function cancelOrder(): void
