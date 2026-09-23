@@ -224,3 +224,32 @@
 .home-faq-item[open] summary::after { background: #7c211d; color: #f5d992; }
 .home-final-cta { border-color: #7c211d; background: #5c1b18; box-shadow: 10px 10px 0 #b28a44; }
 .home-final-cta .home-eyebrow { color: #f5d992; }
+
+/* Illustrated scroll, mountains and seal give the page a true period composition. */
+.home-hero { min-height: 590px; padding: clamp(3rem, 7vw, 6.5rem); }
+.home-hero-grid { position: relative; z-index: 2; }
+.home-hero > .home-hero-art { position: absolute; z-index: 1; top: 0; right: 0; bottom: 0; width: 49%; overflow: hidden; border-left: 1px solid rgba(216, 181, 103, .4); pointer-events: none; }
+.home-art-sun { position: absolute; top: 12%; right: 17%; width: 112px; height: 112px; border: 1px solid #e3bf70; border-radius: 50%; background: rgba(213, 169, 76, .16); box-shadow: 0 0 0 12px rgba(213, 169, 76, .05), 0 0 0 24px rgba(213, 169, 76, .04); }
+.home-art-mountain { position: absolute; right: -8%; bottom: -28%; width: 76%; aspect-ratio: 1; border: 1px solid rgba(216, 181, 103, .65); background: rgba(38, 7, 7, .22); transform: rotate(45deg); }
+.home-art-mountain-one { right: 18%; bottom: -45%; }
+.home-art-mountain-two { right: -18%; bottom: -36%; width: 65%; border-color: rgba(216, 181, 103, .4); }
+.home-art-cloud { position: absolute; width: 145px; height: 32px; border-top: 1px solid rgba(245, 217, 146, .65); border-radius: 50%; }
+.home-art-cloud::before, .home-art-cloud::after { content: ''; position: absolute; border: 1px solid rgba(245, 217, 146, .52); border-bottom: 0; border-radius: 50% 50% 0 0; }
+.home-art-cloud::before { bottom: 0; left: 27px; width: 52px; height: 25px; }
+.home-art-cloud::after { bottom: 0; left: 73px; width: 38px; height: 18px; }
+.home-art-cloud-one { top: 38%; right: 13%; transform: scale(.7); }
+.home-art-cloud-two { top: 54%; right: 42%; transform: scale(.48); }
+.home-art-seal { position: absolute; top: 8%; left: 9%; display: grid; width: 58px; height: 58px; place-items: center; border: 2px solid #d8b567; color: #f5d992; font-family: Georgia, serif; font-size: .75rem; font-weight: 700; letter-spacing: .08em; transform: rotate(-9deg); }
+.home-status { border-radius: 0; border: 1px solid #d8b567; background: rgba(64, 15, 12, .82); box-shadow: 8px 8px 0 rgba(42, 8, 6, .32); }
+.home-status::before { content: ''; position: absolute; top: 9px; right: 9px; bottom: 9px; left: 9px; border: 1px solid rgba(216, 181, 103, .35); pointer-events: none; }
+.home-section-heading, .home-pricing-header, .home-faq-heading { position: relative; padding: 0 1rem 1.5rem; }
+.home-section-heading::after, .home-pricing-header::after, .home-faq-heading::after { content: ''; display: block; width: 104px; height: 12px; margin: 1.25rem auto 0; border-top: 1px solid #9e3024; border-bottom: 1px solid #9e3024; background: linear-gradient(90deg, transparent 0 22%, #b28a44 22% 30%, transparent 30% 70%, #b28a44 70% 78%, transparent 78%); }
+.home-journey { position: relative; border-top-width: 2px; border-bottom-width: 2px; }
+.home-journey::before { content: ''; position: absolute; top: -9px; left: 50%; width: 18px; height: 18px; border: 1px solid #9e3024; background: #f4ead5; transform: translateX(-50%) rotate(45deg); }
+.home-pricing { position: relative; padding-top: clamp(4rem, 7vw, 6rem); }
+.plan-card-vip { position: relative; }
+.plan-card-vip::before { content: ''; position: absolute; top: 9px; right: 9px; bottom: 9px; left: 9px; border: 1px solid rgba(158, 48, 36, .2); pointer-events: none; }
+.plan-header, .feature-list, .btn-buy { position: relative; z-index: 1; }
+.home-final-cta { position: relative; overflow: hidden; }
+.home-final-cta::before { content: ''; position: absolute; top: -72px; right: 5%; width: 180px; height: 180px; border: 1px solid rgba(216, 181, 103, .58); transform: rotate(45deg); }
+@media (max-width: 800px) { .home-hero { min-height: 0; } .home-hero > .home-hero-art { width: 100%; opacity: .3; } .home-status { max-width: 420px; } }

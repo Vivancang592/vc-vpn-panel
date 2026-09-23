@@ -21,6 +21,14 @@ $loggedIn = !empty($_SESSION['user_id']);
 ?>
 
 <section class="home-hero home-reveal" aria-labelledby="home-title">
+    <div class="home-hero-art" aria-hidden="true">
+        <span class="home-art-sun"></span>
+        <span class="home-art-mountain home-art-mountain-one"></span>
+        <span class="home-art-mountain home-art-mountain-two"></span>
+        <span class="home-art-cloud home-art-cloud-one"></span>
+        <span class="home-art-cloud home-art-cloud-two"></span>
+        <span class="home-art-seal">VPN</span>
+    </div>
     <div class="home-hero-grid">
         <div>
             <span class="home-eyebrow"><span class="home-dot"></span>DỊCH VỤ VPN RIÊNG TƯ</span>
