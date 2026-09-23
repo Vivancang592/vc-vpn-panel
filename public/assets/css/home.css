@@ -464,10 +464,12 @@ body.vpn-theme.home-festival .vc-footer { width: 100%; margin: 0; padding: 2.25r
 body.vpn-theme.home-festival .vc-footer-title-wrap { padding-bottom: 1rem; text-align: center; }
 .vc-footer-contact-links,
 .vc-footer-policy-links { display: flex; align-items: center; justify-content: center; flex-wrap: wrap; gap: .6rem; }
-.vc-footer-contact-links a { display: inline-grid; width: 36px; height: 36px; place-items: center; border: 1px solid #393939; border-radius: 3px; color: #f5c518 !important; font-size: 1rem; text-decoration: none; }
+.vc-footer-contact-links a { display: inline-grid; width: 32px; height: 32px; place-items: center; border: 1px solid #393939; border-radius: 3px; color: #f5c518 !important; font-size: .9rem; text-decoration: none; }
 .vc-footer-contact-links a:hover { border-color: #f5c518; background: rgba(245, 197, 24, .1); }
+.footer-platform-mark { display: inline-grid; width: 18px; height: 18px; place-items: center; font-family: Arial, sans-serif; font-weight: 800; line-height: 1; }
+.footer-platform-facebook { color: #4b9cff; font-size: 1.2rem; font-family: Georgia, serif; }.footer-platform-zalo { color: #5da5ff; font-size: .82rem; }.footer-platform-youtube { color: #ff5c5c; font-size: .72rem; }.footer-platform-email { color: #f5c518; font-size: 1rem; }.footer-platform-telegram { color: #55b5f7; font-size: 1.1rem; transform: rotate(-25deg); }
 .vc-footer-policy-links { gap: .45rem; }
-.vc-footer-policy-links a { padding: .5rem .7rem; border: 1px solid #303030; border-radius: 3px; color: #bdbdbd; font-size: .75rem; font-weight: 700; text-decoration: none; }
+.vc-footer-policy-links a { padding: .38rem .62rem; border: 1px solid #303030; border-radius: 3px; color: #bdbdbd; font-size: .7rem; font-weight: 700; text-decoration: none; }
 .vc-footer-policy-links a:hover { border-color: #f5c518; color: #f5c518; }
 
 /* Mobile containment and compact footer controls. */
@@ -487,10 +489,12 @@ body.vpn-theme.home-festival .vc-footer-title-wrap { padding-bottom: 1rem; text-
 	body.vpn-theme.home-festival .vc-footer-container { gap: .9rem; }
 	body.vpn-theme.home-festival .vc-footer-title-wrap { padding-bottom: .75rem; text-align: center; }
 	body.vpn-theme.home-festival .vc-footer-title { font-size: 1rem; }
-	body.vpn-theme.home-festival .vc-footer-intro { display: none; }
+	body.vpn-theme.home-festival .vc-footer-intro { display: block; margin: .3rem auto 0; font-size: .75rem; text-align: center; }
 	.vc-footer-contact-links { gap: .55rem; }
-	.vc-footer-contact-links a { width: 34px; height: 34px; font-size: .95rem; }
+	.vc-footer-contact-links a { width: 30px; height: 30px; font-size: .85rem; }
 	.vc-footer-policy-links { gap: .35rem; }
-	.vc-footer-policy-links a { padding: .45rem .55rem; font-size: .7rem; }
+	.vc-footer-policy-links a { padding: .35rem .5rem; font-size: .66rem; }
 	body.vpn-theme.home-festival .vc-footer-copyright-wrap { padding-top: .65rem; }
+	body.vpn-theme.home-festival .guest-mobile-menu .glass-btn.guest-auth-link { border: 1px solid #f5c518; background: transparent; color: #f5c518; box-shadow: none; }
+	body.vpn-theme.home-festival .guest-mobile-menu .glass-btn.guest-auth-link:hover { background: rgba(245, 197, 24, .12); color: #ffd84d; }
 }
