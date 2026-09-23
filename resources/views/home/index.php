@@ -28,15 +28,20 @@ $loggedIn = !empty($_SESSION['user_id']);
         <span class="home-art-cloud home-art-cloud-one"></span>
         <span class="home-art-cloud home-art-cloud-two"></span>
         <span class="home-art-seal">VPN</span>
+        <span class="home-art-pavilion"><i></i><i></i><i></i></span>
     </div>
     <div class="home-hero-grid">
-        <div>
-            <span class="home-eyebrow"><span class="home-dot"></span>DỊCH VỤ VPN RIÊNG TƯ</span>
-            <h1 id="home-title" class="home-title">Kết nối riêng tư.<br><strong>Tự tin làm mọi điều.</strong></h1>
-            <p class="home-lead">Dịch vụ VPN giúp bạn bảo vệ kết nối khi làm việc, học tập và giải trí trực tuyến. Chọn gói phù hợp, đăng ký tài khoản và quản lý dịch vụ tại một nơi.</p>
-            <div class="home-actions">
-                <a class="home-button home-button-primary" href="#bang-gia">Xem gói VPN</a>
-                <a class="home-button home-button-secondary" href="<?= $loggedIn ? '/user/dashboard' : '/register' ?>"><?= $loggedIn ? 'Mở bảng điều khiển' : 'Bắt đầu ngay' ?></a>
+        <div class="home-scroll">
+            <span class="home-scroll-roller home-scroll-roller-top" aria-hidden="true"></span>
+            <span class="home-scroll-roller home-scroll-roller-bottom" aria-hidden="true"></span>
+            <div class="home-scroll-content">
+                <span class="home-eyebrow"><span class="home-dot"></span>DỊCH VỤ VPN RIÊNG TƯ</span>
+                <h1 id="home-title" class="home-title">Kết nối riêng tư.<br><strong>Tự tin làm mọi điều.</strong></h1>
+                <p class="home-lead">Dịch vụ VPN giúp bạn bảo vệ kết nối khi làm việc, học tập và giải trí trực tuyến. Chọn gói phù hợp, đăng ký tài khoản và quản lý dịch vụ tại một nơi.</p>
+                <div class="home-actions">
+                    <a class="home-button home-button-primary" href="#bang-gia">Xem gói VPN</a>
+                    <a class="home-button home-button-secondary" href="<?= $loggedIn ? '/user/dashboard' : '/register' ?>"><?= $loggedIn ? 'Mở bảng điều khiển' : 'Bắt đầu ngay' ?></a>
+                </div>
             </div>
         </div>
         <aside class="home-status home-glass">
