@@ -6,6 +6,7 @@
             <h3 class="vc-footer-title">
                 <?= htmlspecialchars($settings['site_title'] ?? 'VC VPN 2027') ?>
             </h3>
+            <p class="vc-footer-intro">Kết nối riêng tư, ổn định và không giới hạn.</p>
         </div>
         
         <!-- Bố cục tự động co giãn -->
