@@ -35,18 +35,18 @@ $loggedIn = !empty($_SESSION['user_id']);
             <span class="home-scroll-roller home-scroll-roller-top" aria-hidden="true"></span>
             <span class="home-scroll-roller home-scroll-roller-bottom" aria-hidden="true"></span>
             <div class="home-scroll-content">
-                <span class="home-eyebrow"><span class="home-dot"></span>DỊCH VỤ VPN RIÊNG TƯ</span>
-                <h1 id="home-title" class="home-title">Kết nối riêng tư.<br><strong>Tự tin làm mọi điều.</strong></h1>
-                <p class="home-lead">Dịch vụ VPN giúp bạn bảo vệ kết nối khi làm việc, học tập và giải trí trực tuyến. Chọn gói phù hợp, đăng ký tài khoản và quản lý dịch vụ tại một nơi.</p>
+                <span class="home-eyebrow"><span class="home-dot"></span>SECURE CONNECTION PROTOCOL</span>
+                <h1 id="home-title" class="home-title">VPN bảo mật.<br><strong>Kiểm soát mọi kết nối.</strong></h1>
+                <p class="home-lead">Dịch vụ VPN giúp bảo vệ kết nối Internet và tăng quyền riêng tư khi bạn làm việc, học tập hoặc giải trí trên nhiều thiết bị.</p>
                 <div class="home-actions">
-                    <a class="home-button home-button-primary" href="#bang-gia">Xem gói VPN</a>
+                    <a class="home-button home-button-primary" href="#bang-gia">Bảo vệ kết nối ngay</a>
                     <a class="home-button home-button-secondary" href="<?= $loggedIn ? '/user/dashboard' : '/register' ?>"><?= $loggedIn ? 'Mở bảng điều khiển' : 'Bắt đầu ngay' ?></a>
                 </div>
             </div>
         </div>
         <aside class="home-status home-glass">
-            <div class="home-status-title">Một trải nghiệm rõ ràng</div>
-            <div class="home-status-item"><span><span class="home-dot"></span>Chọn gói phù hợp</span><strong>Minh bạch</strong></div>
+            <div class="home-status-title">Security status</div>
+            <div class="home-status-item"><span><span class="home-dot"></span>Chọn gói phù hợp</span><strong>Sẵn sàng</strong></div>
             <div class="home-status-item"><span>Quản lý dịch vụ</span><strong>Trực tuyến</strong></div>
             <div class="home-status-item"><span>Thiết bị sử dụng</span><strong>Đa nền tảng</strong></div>
         </aside>

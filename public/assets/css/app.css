@@ -1248,6 +1248,23 @@ body.vpn-theme.home-festival .vc-footer-col a:hover { color: #f5d992 !important;
 body.vpn-theme.home-festival .vc-footer-copyright-wrap { border-top-color: rgba(216, 181, 103, .3); }
 body.vpn-theme.home-festival .vc-footer-copyright-text { color: #cdb28c; }
 
+/* Gotham security operations public shell. */
+body.vpn-theme.home-festival { background: #090909; color: #f2f2f2; }
+body.vpn-theme.home-festival .navbar-container { border-bottom-color: #303030 !important; background: rgba(10, 10, 10, .94) !important; box-shadow: 0 1px 0 rgba(245, 197, 24, .16); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); }
+body.vpn-theme.home-festival .nav-brand strong { color: #f5c518; font-family: inherit; }
+body.vpn-theme.home-festival .nav-public-link { color: #b0b0b0; font-family: inherit; }
+body.vpn-theme.home-festival .nav-public-link::after { background: #f5c518; }
+body.vpn-theme.home-festival .nav-public-link:hover { color: #f5c518; }
+body.vpn-theme.home-festival .guest-action { color: #f5c518; font-family: inherit; }
+body.vpn-theme.home-festival .guest-action-secondary { background: #f5c518; color: #0a0a0a; box-shadow: none; }
+body.vpn-theme.home-festival .guest-action-secondary:hover { background: #ffd84d; color: #0a0a0a; box-shadow: 0 0 0 4px rgba(245, 197, 24, .14); }
+body.vpn-theme.home-festival .vc-footer { border-top-color: #303030; background: #080808; color: #a8a8a8; }
+body.vpn-theme.home-festival .vc-footer-title, body.vpn-theme.home-festival .vc-footer-col h4 { color: #f5c518; font-family: inherit; }
+body.vpn-theme.home-festival .vc-footer-intro, body.vpn-theme.home-festival .vc-footer-copyright-text { color: #858585; }
+body.vpn-theme.home-festival .vc-footer-col a, body.vpn-theme.home-festival .vc-footer-col span { color: #c9c9c9 !important; }
+body.vpn-theme.home-festival .vc-footer-col a:hover { color: #f5c518 !important; }
+body.vpn-theme.home-festival .vc-footer-copyright-wrap { border-top-color: #303030; }
+
 /* User orders */
 .user-orders-page { width: 100%; max-width: 100%; margin: 0; }
 .user-orders-header { margin-bottom: 1.5rem; }
