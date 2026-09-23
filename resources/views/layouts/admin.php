@@ -61,6 +61,7 @@ require_once __DIR__ . '/header.php';
                     </div>
                     <nav class="admin-group-tabs" aria-label="<?= htmlspecialchars($activeAdminGroup['label']) ?>">
                         <?php foreach ($activeAdminGroup['tabs'] as $tabMenu => $tab): ?>
+                            <?php if (($_SESSION['role'] ?? '') === 'staff' && !in_array($tabMenu, ['coupons', 'orders', 'payments', 'subscriptions'], true)) { continue; } ?>
                             <a href="<?= $tab['url'] ?>" class="admin-group-tab <?= $activeMenu === $tabMenu ? 'active' : '' ?>" <?= $activeMenu === $tabMenu ? 'aria-current="page"' : '' ?>>
                                 <span><?= $tab['icon'] ?></span> <?= htmlspecialchars($tab['label']) ?>
                             </a>

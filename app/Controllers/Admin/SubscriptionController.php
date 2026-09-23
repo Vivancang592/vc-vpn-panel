@@ -384,6 +384,10 @@ class SubscriptionController extends BaseController
         $id     = (int)($_POST['id'] ?? $_GET['id'] ?? 0);
         $userId = (int)($_POST['user_id'] ?? $_GET['user_id'] ?? 0);
 
+        if ($this->denyStaff('/admin/subscriptions' . ($userId > 0 ? '?user_id=' . $userId : ''))) {
+            return;
+        }
+
         $sub = $this->subscriptionModel->find($id);
         if (!$sub) {
             $_SESSION['flash_message'] = 'Gói đăng ký không tồn tại!';

@@ -44,6 +44,22 @@ abstract class BaseController
         return hash_equals($_SESSION['csrf_token'], $token);
     }
 
+    protected function isStaff(): bool
+    {
+        return ($_SESSION['role'] ?? '') === 'staff';
+    }
+
+    protected function denyStaff(string $redirectUrl): bool
+    {
+        if (!$this->isStaff()) {
+            return false;
+        }
+
+        $_SESSION['error'] = 'Bạn không có quyền thực hiện thao tác này.';
+        $this->redirect($redirectUrl);
+        return true;
+    }
+
     /**
      * Lấy IP thực của Client an toàn chống giả mạo Header
      */

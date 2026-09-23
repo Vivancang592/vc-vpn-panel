@@ -11,7 +11,7 @@ class CouponController extends BaseController
 
     public function __construct()
     {
-        if (!isset($_SESSION['user_id']) || ($_SESSION['role'] ?? '') !== 'admin') {
+        if (!isset($_SESSION['user_id']) || !in_array($_SESSION['role'] ?? '', ['admin', 'staff'], true)) {
             $this->redirect('/login');
         }
         $this->couponModel = new Coupon();
@@ -30,6 +30,10 @@ class CouponController extends BaseController
     // GET /admin/coupons/create
     public function showCreate(): void
     {
+        if ($this->denyStaff('/admin/coupons')) {
+            return;
+        }
+
         $this->render('admin.coupons.create', [
             'activeMenu' => 'coupons'
         ]);
@@ -38,6 +42,10 @@ class CouponController extends BaseController
     // POST /admin/coupons/create
     public function create(): void
     {
+        if ($this->denyStaff('/admin/coupons')) {
+            return;
+        }
+
         $code          = strtoupper(trim($_POST['code'] ?? ''));
         $discountType  = $_POST['discount_type'] ?? 'percent';
         $discountValue = (float)($_POST['discount_value'] ?? 0);
@@ -75,6 +83,10 @@ class CouponController extends BaseController
     // GET /admin/coupons/edit
     public function showEdit(): void
     {
+        if ($this->denyStaff('/admin/coupons')) {
+            return;
+        }
+
         $id = (int)($_GET['id'] ?? 0);
         $coupon = $this->couponModel->find($id);
 
@@ -93,6 +105,10 @@ class CouponController extends BaseController
     // POST /admin/coupons/edit
     public function edit(): void
     {
+        if ($this->denyStaff('/admin/coupons')) {
+            return;
+        }
+
         $id = (int)($_GET['id'] ?? $_POST['id'] ?? 0);
         $coupon = $this->couponModel->find($id);
 
@@ -137,6 +153,10 @@ class CouponController extends BaseController
 
     public function delete(): void
     {
+        if ($this->denyStaff('/admin/coupons')) {
+            return;
+        }
+
         $id = (int)($_POST['id'] ?? $_GET['id'] ?? 0);
 
         if ($id > 0) {

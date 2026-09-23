@@ -9,7 +9,7 @@ $businessMenus = ['coupons', 'orders', 'payments', 'subscriptions', 'referrals',
 
 $logoHref = '/';
 if (isset($_SESSION['user_id'])) {
-    if ($userRole === 'admin') {
+    if (in_array($userRole, ['admin', 'staff'], true)) {
         $logoHref = $isAdminRoute ? '/dashboard' : '/admin';
     } else {
         $logoHref = '/dashboard';
@@ -41,9 +41,11 @@ if (isset($_SESSION['user_id'])) {
     <?php elseif ($userRole === 'staff'): ?>
     <a href="/admin" class="nav-item <?= $activeMenu === 'dashboard' ? 'active' : '' ?>"><span class="sidebar-nav-icon" aria-hidden="true">📊</span>Dashboard</a>
     <a href="/admin/users" class="nav-item <?= $activeMenu === 'users' ? 'active' : '' ?>"><span class="sidebar-nav-icon" aria-hidden="true">👤</span>Người Dùng</a>
+    <a href="/admin/coupons" class="nav-item <?= $activeMenu === 'coupons' ? 'active' : '' ?>"><span class="sidebar-nav-icon" aria-hidden="true">🏷️</span>Mã Giảm Giá</a>
     <a href="/admin/orders" class="nav-item <?= $activeMenu === 'orders' ? 'active' : '' ?>"><span class="sidebar-nav-icon" aria-hidden="true">🧾</span>Đơn Hàng</a>
     <a href="/admin/payments" class="nav-item <?= $activeMenu === 'payments' ? 'active' : '' ?>"><span class="sidebar-nav-icon" aria-hidden="true">💳</span>Thanh Toán</a>
     <a href="/admin/subscriptions" class="nav-item <?= $activeMenu === 'subscriptions' ? 'active' : '' ?>"><span class="sidebar-nav-icon" aria-hidden="true">🛡️</span>Gói Dịch Vụ</a>
     <a href="/admin/tickets" class="nav-item <?= $activeMenu === 'tickets' ? 'active' : '' ?>"><span class="sidebar-nav-icon" aria-hidden="true">🎟️</span>Ticket Hỗ Trợ</a>
+    <a href="/admin/posts" class="nav-item <?= $activeMenu === 'posts' ? 'active' : '' ?>"><span class="sidebar-nav-icon" aria-hidden="true">🗞️</span>Bài Viết</a>
     <?php endif; ?>
 </aside>

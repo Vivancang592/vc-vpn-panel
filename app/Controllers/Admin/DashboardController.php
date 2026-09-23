@@ -46,6 +46,10 @@ class DashboardController extends BaseController
 
     public function deleteNotification(): void
     {
+        if ($this->denyStaff('/admin/notifications')) {
+            return;
+        }
+
         $adminId = (int) $_SESSION['user_id'];
         $id = trim((string) ($_REQUEST['id'] ?? ''));
         if ($id !== '') {
@@ -60,6 +64,10 @@ class DashboardController extends BaseController
 
     public function clearAllNotifications(): void
     {
+        if ($this->denyStaff('/admin/notifications')) {
+            return;
+        }
+
         $adminId = (int) $_SESSION['user_id'];
         NotificationService::clearAdminAll($adminId);
         $_SESSION['flash_message'] = 'Đã xóa tất cả thông báo.';

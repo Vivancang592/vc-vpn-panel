@@ -70,6 +70,10 @@ class PaymentController extends BaseController
 
     public function deleteCancelledDeposit(): void
     {
+        if ($this->denyStaff('/admin/payments')) {
+            return;
+        }
+
         $paymentId = (int) ($_POST['payment_id'] ?? 0);
         $deleted = $this->validateCsrfToken($_POST['csrf_token'] ?? '')
             && $paymentId > 0

@@ -32,6 +32,10 @@ class TicketController extends BaseController
 
     public function delete(): void
     {
+        if ($this->denyStaff('/admin/tickets')) {
+            return;
+        }
+
         if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
             $this->redirect('/admin/tickets');
             return;
@@ -76,7 +80,7 @@ class TicketController extends BaseController
 
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $message = trim($_POST['message'] ?? '');
-            $status  = $_POST['status'] ?? $ticket['status'];
+            $status  = $this->isStaff() ? $ticket['status'] : ($_POST['status'] ?? $ticket['status']);
 
             if (!empty($message)) {
                 $this->messageModel->create([
