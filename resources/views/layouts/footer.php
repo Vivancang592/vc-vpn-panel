@@ -10,19 +10,19 @@
         <?php if (!empty($settings)): ?>
             <nav class="vc-footer-contact-links" aria-label="Kênh hỗ trợ">
                 <?php if (!empty($settings['fanpage_url'])): ?>
-                    <a href="<?= htmlspecialchars($settings['fanpage_url']) ?>" target="_blank" rel="noopener noreferrer" title="Fanpage hỗ trợ" aria-label="Fanpage hỗ trợ"><span aria-hidden="true">🌐</span></a>
+                    <a href="<?= htmlspecialchars($settings['fanpage_url']) ?>" target="_blank" rel="noopener noreferrer" title="Facebook Fanpage" aria-label="Facebook Fanpage"><span class="footer-platform-mark footer-platform-facebook" aria-hidden="true">f</span></a>
                 <?php endif; ?>
                 <?php if (!empty($settings['zalo_url'])): ?>
-                    <a href="<?= htmlspecialchars($settings['zalo_url']) ?>" target="_blank" rel="noopener noreferrer" title="Zalo hỗ trợ" aria-label="Zalo hỗ trợ"><span aria-hidden="true">💬</span></a>
+                    <a href="<?= htmlspecialchars($settings['zalo_url']) ?>" target="_blank" rel="noopener noreferrer" title="Zalo hỗ trợ" aria-label="Zalo hỗ trợ"><span class="footer-platform-mark footer-platform-zalo" aria-hidden="true">Z</span></a>
                 <?php endif; ?>
                 <?php if (!empty($settings['youtube_url'])): ?>
-                    <a href="<?= htmlspecialchars($settings['youtube_url']) ?>" target="_blank" rel="noopener noreferrer" title="YouTube" aria-label="YouTube"><span aria-hidden="true">▶</span></a>
+                    <a href="<?= htmlspecialchars($settings['youtube_url']) ?>" target="_blank" rel="noopener noreferrer" title="YouTube" aria-label="YouTube"><span class="footer-platform-mark footer-platform-youtube" aria-hidden="true">▶</span></a>
                 <?php endif; ?>
                 <?php if (!empty($settings['contact_email'])): ?>
-                    <a href="mailto:<?= htmlspecialchars($settings['contact_email']) ?>" title="<?= htmlspecialchars($settings['contact_email']) ?>" aria-label="Email hỗ trợ"><span aria-hidden="true">✉</span></a>
+                    <a href="mailto:<?= htmlspecialchars($settings['contact_email']) ?>" title="<?= htmlspecialchars($settings['contact_email']) ?>" aria-label="Email hỗ trợ"><span class="footer-platform-mark footer-platform-email" aria-hidden="true">@</span></a>
                 <?php endif; ?>
                 <?php if (!empty($settings['telegram_url'])): ?>
-                    <a href="<?= htmlspecialchars($settings['telegram_url']) ?>" target="_blank" rel="noopener noreferrer" title="Telegram hỗ trợ" aria-label="Telegram hỗ trợ"><span aria-hidden="true">✈</span></a>
+                    <a href="<?= htmlspecialchars($settings['telegram_url']) ?>" target="_blank" rel="noopener noreferrer" title="Telegram hỗ trợ" aria-label="Telegram hỗ trợ"><span class="footer-platform-mark footer-platform-telegram" aria-hidden="true">➤</span></a>
                 <?php endif; ?>
             </nav>
         <?php endif; ?>
