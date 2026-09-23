@@ -169,3 +169,58 @@
 .home-final-cta .home-eyebrow { color: #d9ff4c; }
 .home-reveal { transition-timing-function: ease-out; }
 @media (max-width: 800px) { .home-hero-grid { grid-template-columns: 1fr; } .home-hero::before { width: 100%; opacity: .45; } }
+
+/* Kim Binh Mai: silk paper, cinnabar ink, aged bronze. */
+.public-page.home-page { background-color: #f4ead5; background-image: repeating-linear-gradient(0deg, rgba(91, 35, 24, .045) 0 1px, transparent 1px 6px); }
+.home-hero { border: 2px solid #7c211d; background: #5c1b18; box-shadow: 10px 10px 0 #b28a44; }
+.home-hero::before { width: 48%; background: repeating-linear-gradient(45deg, rgba(216, 181, 103, .16) 0 1px, transparent 1px 13px); }
+.home-hero::after { border-color: rgba(216, 181, 103, .62); }
+.home-eyebrow { border-color: #d8b567; color: #f5d992; background: rgba(35, 10, 8, .22); font-family: Georgia, serif; }
+.home-dot { background: #d8b567; box-shadow: 3px 3px 0 rgba(216, 181, 103, .22); }
+.home-title { font-family: Georgia, 'Times New Roman', serif; font-weight: 700; letter-spacing: .02em; }
+.home-title strong { color: #f5d992; }
+.home-lead { color: #f4dfbd !important; }
+.home-button { border-radius: 2px; font-family: Georgia, serif; font-weight: 700; }
+.home-button-primary { border-color: #d8b567; background: #d8b567; color: #4c1715; box-shadow: 4px 4px 0 #9e3024; }
+.home-button-primary:hover { background: #f5dfaa; color: #4c1715; box-shadow: 7px 7px 0 #9e3024; }
+.home-button-secondary { border-color: #e8cf96; background: rgba(50, 13, 11, .2); }
+.home-glass { border-color: #b28a44; background: rgba(48, 12, 10, .48); box-shadow: 5px 5px 0 rgba(178, 138, 68, .28); }
+.home-status-title { color: #f5d992; font-family: Georgia, serif; }
+.home-status-item { border-top-color: rgba(216, 181, 103, .3); color: #f0d9b3; }
+.home-kicker { color: #8d2920; font-family: Georgia, serif; }
+.home-section-heading h2, .home-pricing-header h2, .home-faq-heading h2, .home-journey-intro h2, .home-security h2 { color: #4c1715; font-family: Georgia, 'Times New Roman', serif; }
+.home-features-grid { border-color: #9e3024; }
+.feature-box { border-color: #9e3024; background: #fff7e7; }
+.feature-box:hover { border-color: #9e3024; background: #f1d79c; }
+.feature-icon-wrapper { background: #9e3024; }
+.feature-icon-wrapper svg, .plan-title svg { stroke: #f5d992 !important; }
+.feature-box h3 { color: #5c1b18; font-family: Georgia, serif; }
+.feature-box p, .home-journey-intro p, .home-steps p { color: #68463a; }
+.home-journey { border-color: #9e3024; }
+.home-steps { border-color: #9e3024; }
+.home-steps li { border-color: #9e3024; }
+.home-steps li > span { border-radius: 50%; background: #7c211d; color: #f5d992; font-family: Georgia, serif; }
+.home-steps h3 { color: #5c1b18; font-family: Georgia, serif; }
+.home-tabs { border-color: #9e3024; background: #fff7e7; }
+.home-tab { color: #5c1b18; font-family: Georgia, serif; }
+.home-tab[aria-selected="true"] { background: #7c211d; color: #f5d992; }
+.plan-card-vip { border-color: #9e3024; background: #fff7e7; box-shadow: 6px 6px 0 #b28a44; }
+.plan-card-vip:hover { border-color: #7c211d; box-shadow: 10px 10px 0 #9e3024; }
+.plan-header { border-bottom-color: #b28a44; background: #f1dfb5; }
+.plan-title { color: #5c1b18; font-family: Georgia, serif; }
+.price-val { color: #9e3024 !important; }
+.plan-duration-label, .plan-feature-items li, .spec-label { color: #68463a; }
+.plan-spec-grid, .plan-os-platforms { border-color: #d8c39a; }
+.text-success, .text-blue, .plan-os-platforms { color: #8d2920 !important; }
+.btn-buy { border-radius: 2px !important; background: #7c211d !important; box-shadow: 4px 4px 0 #b28a44 !important; font-family: Georgia, serif; }
+.btn-buy:hover { background: #9e3024 !important; box-shadow: 7px 7px 0 #b28a44 !important; }
+.home-security { border-color: #7c211d; background: #e9d0a0; }
+.home-security h2, .home-security > div > p, .home-security-notes strong, .home-security-notes span { color: #4c1715; }
+.home-security-notes div { border-top-color: #9e3024; background: #fff7e7; }
+.home-faq-item { border-color: #9e3024; background: #fff7e7; }
+.home-faq-item summary { color: #5c1b18; font-family: Georgia, serif; }
+.home-faq-item[open] summary { background: #f1dfb5; color: #7c211d; }
+.home-faq-item summary::after { background: #e9d0a0; color: #7c211d; }
+.home-faq-item[open] summary::after { background: #7c211d; color: #f5d992; }
+.home-final-cta { border-color: #7c211d; background: #5c1b18; box-shadow: 10px 10px 0 #b28a44; }
+.home-final-cta .home-eyebrow { color: #f5d992; }

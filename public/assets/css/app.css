@@ -1230,6 +1230,24 @@ body.vpn-theme.home-festival .vc-footer-copyright-wrap { border-top-color: rgba(
 body.vpn-theme.home-festival .vc-footer-copyright-text { color: #aec6b9; }
 @media (max-width: 700px) { body.vpn-theme.home-festival .navbar-container { min-height: 60px; padding-inline: 1rem !important; } }
 
+/* Kim Binh Mai public shell. */
+body.vpn-theme.home-festival { background: #f4ead5; }
+body.vpn-theme.home-festival .navbar-container { border-bottom-color: #7c211d !important; background: #f4ead5 !important; }
+body.vpn-theme.home-festival .nav-brand strong { color: #5c1b18; font-family: Georgia, serif; }
+body.vpn-theme.home-festival .nav-public-link { color: #68463a; font-family: Georgia, serif; }
+body.vpn-theme.home-festival .nav-public-link::after { background: #9e3024; }
+body.vpn-theme.home-festival .nav-public-link:hover { color: #7c211d; }
+body.vpn-theme.home-festival .guest-action { color: #5c1b18; font-family: Georgia, serif; }
+body.vpn-theme.home-festival .guest-action-secondary { background: #7c211d; box-shadow: 4px 4px 0 #b28a44; }
+body.vpn-theme.home-festival .guest-action-secondary:hover { background: #9e3024; box-shadow: 4px 4px 0 #b28a44; }
+body.vpn-theme.home-festival .vc-footer { border-top-color: #b28a44; background: #5c1b18; color: #ead9b8; }
+body.vpn-theme.home-festival .vc-footer-title, body.vpn-theme.home-festival .vc-footer-col h4 { color: #f5d992; font-family: Georgia, serif; }
+body.vpn-theme.home-festival .vc-footer-intro { color: #dec7a1; }
+body.vpn-theme.home-festival .vc-footer-col a, body.vpn-theme.home-festival .vc-footer-col span { color: #f4e6cf !important; }
+body.vpn-theme.home-festival .vc-footer-col a:hover { color: #f5d992 !important; }
+body.vpn-theme.home-festival .vc-footer-copyright-wrap { border-top-color: rgba(216, 181, 103, .3); }
+body.vpn-theme.home-festival .vc-footer-copyright-text { color: #cdb28c; }
+
 /* User orders */
 .user-orders-page { width: 100%; max-width: 100%; margin: 0; }
 .user-orders-header { margin-bottom: 1.5rem; }
