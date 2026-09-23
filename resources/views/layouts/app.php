@@ -1,5 +1,5 @@
 <?php 
-$extraCss = $extraCss ?? 'admin';
+$extraCss = $extraCss ?? 'app';
 $extraJs = $extraJs ?? 'app';
 require_once __DIR__ . '/header.php'; 
 ?>
