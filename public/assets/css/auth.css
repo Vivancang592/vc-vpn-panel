@@ -4,6 +4,7 @@
 html, body { width: 100%; min-height: 100%; margin: 0; overflow-x: hidden; background: var(--color-bg); color: var(--color-text); }
 body.vpn-theme { background: var(--color-bg); }
 
+.auth-scene { position: relative; min-height: 100vh; overflow: hidden; }
 .bg-slideshow, .bg-overlay, .corner-glow { position: fixed; inset: 0; width: 100vw; height: 100vh; }
 .bg-slideshow { z-index: 1; }
 .slide-item { position: absolute; inset: 0; background-position: center; background-size: cover; opacity: 0; transition: opacity 2s ease-in-out; }

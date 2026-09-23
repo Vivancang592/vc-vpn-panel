@@ -82,7 +82,6 @@ function getNoticeFallbackThumb($id) {
 }
 ?>
 
-<!-- Phần 1: Tiêu đề chào mừng căn giữa -->
 <div class="dashboard-header-welcome moonlit-welcome">
     <span class="festival-kicker">KET NOI BAO MAT</span>
     <h1>Chào mừng trở lại, <?= htmlspecialchars($user['username'] ?? 'Thành viên') ?>!</h1>
@@ -301,7 +300,7 @@ function getNoticeFallbackThumb($id) {
 
 <?php
 // Kết thúc bộ đệm nội dung
-$content = ob_get_clean();
+$content = '<section class="dashboard-page">' . ob_get_clean() . '</section>';
 
 // Nạp layout chính
 $showSidebar = true;
