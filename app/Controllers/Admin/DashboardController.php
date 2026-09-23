@@ -16,7 +16,7 @@ class DashboardController extends BaseController
 
     public function __construct()
     {
-        if (!isset($_SESSION['user_id']) || !in_array($_SESSION['role'] ?? '', ['admin', 'staff'], true)) {
+        if (!isset($_SESSION['user_id']) || ($_SESSION['role'] ?? '') !== 'admin') {
             $this->redirect('/login');
         }
         $this->orderModel = new Order();
@@ -46,10 +46,6 @@ class DashboardController extends BaseController
 
     public function deleteNotification(): void
     {
-        if ($this->denyStaff('/admin/notifications')) {
-            return;
-        }
-
         $adminId = (int) $_SESSION['user_id'];
         $id = trim((string) ($_REQUEST['id'] ?? ''));
         if ($id !== '') {
@@ -64,10 +60,6 @@ class DashboardController extends BaseController
 
     public function clearAllNotifications(): void
     {
-        if ($this->denyStaff('/admin/notifications')) {
-            return;
-        }
-
         $adminId = (int) $_SESSION['user_id'];
         NotificationService::clearAdminAll($adminId);
         $_SESSION['flash_message'] = 'Đã xóa tất cả thông báo.';

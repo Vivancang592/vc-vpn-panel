@@ -161,12 +161,10 @@ ob_start();
 
                                         <div style="border-top: 1px solid rgba(0, 0, 0, 0.08); margin: 0.25rem 0;"></div>
 
-                                        <?php if (($_SESSION['role'] ?? '') !== 'staff'): ?>
-                                            <!-- Xóa gói đăng ký -->
-                                            <button type="submit" form="delete-sub-form-<?= $sub['id'] ?>" class="action-item delete" style="background: none; border: none; width: 100%; text-align: left; cursor: pointer; color: var(--ios-danger); padding: 0.5rem 1rem; font-size: 0.85rem; display: flex; align-items: center; gap: 0.5rem; white-space: nowrap;">
-                                                <span>🗑️</span> Xóa gói
-                                            </button>
-                                        <?php endif; ?>
+                                        <!-- Xóa gói đăng ký -->
+                                        <button type="submit" form="delete-sub-form-<?= $sub['id'] ?>" class="action-item delete" style="background: none; border: none; width: 100%; text-align: left; cursor: pointer; color: var(--ios-danger); padding: 0.5rem 1rem; font-size: 0.85rem; display: flex; align-items: center; gap: 0.5rem; white-space: nowrap;">
+                                            <span>🗑️</span> Xóa gói
+                                        </button>
                                     </div>
                                 </div>
                             </td>
@@ -242,15 +240,13 @@ ob_start();
             </form>
         <?php endif; ?>
 
-        <?php if (($_SESSION['role'] ?? '') !== 'staff'): ?>
-            <!-- Form Xóa gói -->
-            <form id="delete-sub-form-<?= $sub['id'] ?>" method="POST" action="/admin/subscriptions/delete" onsubmit="return confirm('Bạn có chắc chắn muốn xóa vĩnh viễn gói đăng ký này khỏi hệ thống?');" style="display: none;">
-                <input type="hidden" name="id" value="<?= $sub['id'] ?>">
-                <?php if (!empty($userId)): ?>
-                    <input type="hidden" name="user_id" value="<?= $userId ?>">
-                <?php endif; ?>
-            </form>
-        <?php endif; ?>
+        <!-- Form Xóa gói -->
+        <form id="delete-sub-form-<?= $sub['id'] ?>" method="POST" action="/admin/subscriptions/delete" onsubmit="return confirm('Bạn có chắc chắn muốn xóa vĩnh viễn gói đăng ký này khỏi hệ thống?');" style="display: none;">
+            <input type="hidden" name="id" value="<?= $sub['id'] ?>">
+            <?php if (!empty($userId)): ?>
+                <input type="hidden" name="user_id" value="<?= $userId ?>">
+            <?php endif; ?>
+        </form>
     <?php endforeach; ?>
 <?php endif; ?>
 

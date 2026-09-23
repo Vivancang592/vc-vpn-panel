@@ -7,7 +7,7 @@ $siteTitle = $settings['site_title'] ?? 'VC VPN 2027';
 
 $logoHref = '/';
 if (isset($_SESSION['user_id'])) {
-    if (in_array($userRole, ['admin', 'staff'], true)) {
+    if ($userRole === 'admin') {
         $logoHref = $isAdminRoute ? '/dashboard' : '/admin';
     } else {
         $logoHref = '/dashboard';
@@ -17,8 +17,8 @@ if (isset($_SESSION['user_id'])) {
 <aside class="admin-sidebar">
     <!-- Tên Web đặt trong Sidebar -->
     <div class="sidebar-brand" style="padding: 0.5rem 0.5rem 1rem 0.5rem; border-bottom: 1px solid var(--glass-border); margin-bottom: 0.75rem;">
-        <a href="<?= $logoHref ?>" title="<?= in_array($userRole, ['admin', 'staff'], true) ? ($isAdminRoute ? 'Chuyển sang Trang User' : 'Chuyển sang Trang Admin') : 'Trang Chủ' ?>" style="display: flex; align-items: center; gap: 0.75rem; text-decoration: none; color: var(--ios-text); font-weight: 700; font-size: 1.1rem;">
-            <?php if (!in_array($userRole, ['admin', 'staff'], true)): ?>
+        <a href="<?= $logoHref ?>" title="<?= $userRole === 'admin' ? ($isAdminRoute ? 'Chuyển sang Trang User' : 'Chuyển sang Trang Admin') : 'Trang Chủ' ?>" style="display: flex; align-items: center; gap: 0.75rem; text-decoration: none; color: var(--ios-text); font-weight: 700; font-size: 1.1rem;">
+            <?php if ($userRole !== 'admin'): ?>
                 <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#007aff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
                     <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
                 </svg>

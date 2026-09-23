@@ -16,7 +16,7 @@ class SubscriptionController extends BaseController
 
     public function __construct()
     {
-        if (!isset($_SESSION['user_id']) || !in_array($_SESSION['role'] ?? '', ['admin', 'staff'], true)) {
+        if (!isset($_SESSION['user_id']) || ($_SESSION['role'] ?? '') !== 'admin') {
             $this->redirect('/login');
         }
         $this->subscriptionModel = new Subscription();
@@ -383,10 +383,6 @@ class SubscriptionController extends BaseController
     {
         $id     = (int)($_POST['id'] ?? $_GET['id'] ?? 0);
         $userId = (int)($_POST['user_id'] ?? $_GET['user_id'] ?? 0);
-
-        if ($this->denyStaff('/admin/subscriptions' . ($userId > 0 ? '?user_id=' . $userId : ''))) {
-            return;
-        }
 
         $sub = $this->subscriptionModel->find($id);
         if (!$sub) {

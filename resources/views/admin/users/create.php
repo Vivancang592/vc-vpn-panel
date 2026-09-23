@@ -44,7 +44,6 @@ ob_start();
                 <label style="display: block; font-weight: 600; font-size: 0.85rem; margin-bottom: 0.4rem;">Vai Trò</label>
                 <select name="role" class="glass-input" style="width: 100%; cursor: pointer;">
                     <option value="user">User (Thành viên)</option>
-                    <option value="staff">Staff (Nhân viên)</option>
                     <option value="admin">Admin (Quản trị viên)</option>
                 </select>
             </div>

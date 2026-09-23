@@ -44,7 +44,6 @@ ob_start();
                 <label style="display: block; font-weight: 600; font-size: 0.85rem; margin-bottom: 0.4rem;">Vai Trò</label>
                 <select name="role" class="glass-input" style="width: 100%; cursor: pointer;">
                     <option value="user" <?= $user['role'] === 'user' ? 'selected' : '' ?>>User</option>
-                    <option value="staff" <?= $user['role'] === 'staff' ? 'selected' : '' ?>>Staff</option>
                     <option value="admin" <?= $user['role'] === 'admin' ? 'selected' : '' ?>>Admin</option>
                 </select>
             </div>

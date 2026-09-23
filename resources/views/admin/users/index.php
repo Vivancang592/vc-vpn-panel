@@ -31,7 +31,6 @@ ob_start();
         <select name="role" class="glass-input" style="flex: 1 1 120px; min-width: 0; cursor: pointer;">
             <option value="">-- Vai trò --</option>
             <option value="admin" <?= ($role ?? '') === 'admin' ? 'selected' : '' ?>>Admin</option>
-            <option value="staff" <?= ($role ?? '') === 'staff' ? 'selected' : '' ?>>Staff</option>
             <option value="user" <?= ($role ?? '') === 'user' ? 'selected' : '' ?>>User</option>
         </select>
 
@@ -78,7 +77,6 @@ ob_start();
                                 <?php
                                 $roleBadge = [
                                     'admin' => 'background: rgba(255, 45, 85, 0.15); color: #ff2d55;',
-                                    'staff' => 'background: rgba(255, 149, 0, 0.15); color: var(--ios-warning);',
                                     'user'  => 'background: rgba(0, 122, 255, 0.15); color: var(--ios-blue);'
                                 ];
                                 ?>
@@ -126,7 +124,7 @@ ob_start();
                                         <a href="/admin/subscriptions?user_id=<?= $u['id'] ?>" class="action-item" style="white-space: nowrap; display: flex; align-items: center; gap: 0.5rem;">
                                             <span>🔑</span> Xem gói đăng ký
                                         </a>
-                                        <?php if ($u['role'] !== 'admin' && ($_SESSION['role'] ?? '') !== 'staff'): ?>
+                                        <?php if ($u['role'] !== 'admin'): ?>
                                             <form method="POST" action="/admin/users/delete" onsubmit="return confirm('Bạn có chắc chắn muốn xóa thành viên này?');" style="margin: 0;">
                                                 <input type="hidden" name="id" value="<?= $u['id'] ?>">
                                                 <button type="submit" class="action-item delete" style="background: none; border: none; width: 100%; text-align: left; cursor: pointer; color: var(--ios-danger); padding: 0.5rem 1rem; font-size: 0.85rem; display: flex; align-items: center; gap: 0.5rem; white-space: nowrap;">

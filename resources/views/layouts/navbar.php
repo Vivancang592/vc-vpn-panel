@@ -35,7 +35,7 @@ $homeAnchorPrefix = ($activeMenu ?? '') === 'home' ? '' : '/';
                 $isAdminRoute = (strncmp($currentUri, '/admin', 6) === 0);
                 $notifUid = (int) $_SESSION['user_id'];
 
-                if ($isAdminRoute && in_array($_SESSION['role'] ?? '', ['admin', 'staff'], true)) {
+                if ($isAdminRoute && ($_SESSION['role'] ?? '') === 'admin') {
                     $notifHref = '/admin/notifications';
                     $notifTitle = 'Thông báo Quản trị';
                     $notifCount = class_exists(\App\Services\NotificationService::class)

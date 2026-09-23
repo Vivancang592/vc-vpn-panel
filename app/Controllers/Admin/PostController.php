@@ -11,7 +11,7 @@ class PostController extends BaseController
 
     public function __construct()
     {
-        if (!isset($_SESSION['user_id']) || !in_array($_SESSION['role'] ?? '', ['admin', 'staff'], true)) {
+        if (!isset($_SESSION['user_id']) || ($_SESSION['role'] ?? '') !== 'admin') {
             $this->redirect('/login');
         }
         $this->postModel = new Post();
@@ -172,10 +172,6 @@ class PostController extends BaseController
 
     public function delete(): void
     {
-        if ($this->denyStaff('/admin/posts')) {
-            return;
-        }
-
         $id = (int)($_POST['id'] ?? $_GET['id'] ?? 0);
 
         if ($id > 0) {

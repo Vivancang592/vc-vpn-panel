@@ -57,7 +57,7 @@ ob_start();
         <?php if (!empty($messages)): ?>
             <?php foreach ($messages as $msg): ?>
                 <?php 
-                $isAdmin = in_array($msg['role'] ?? '', ['admin', 'staff'], true);
+                $isAdmin = ($msg['role'] ?? '') === 'admin';
                 ?>
                 <div style="padding: 1rem; border-radius: var(--radius-md); background: <?= $isAdmin ? 'rgba(0, 122, 255, 0.08)' : 'rgba(255, 255, 255, 0.05)' ?>; border-left: 4px solid <?= $isAdmin ? 'var(--ios-blue)' : 'var(--glass-border)' ?>;">
                     <div style="display: flex; justify-content: space-between; margin-bottom: 0.4rem; font-size: 0.85rem;">
@@ -85,17 +85,15 @@ ob_start();
         </div>
 
         <div style="display: flex; justify-content: space-between; align-items: center; gap: 1rem; flex-wrap: wrap;">
-            <?php if (($_SESSION['role'] ?? '') !== 'staff'): ?>
-                <div style="display: flex; align-items: center; gap: 0.5rem;">
-                    <label style="font-weight: 600; font-size: 0.85rem;">Cập nhật trạng thái:</label>
-                    <select name="status" class="glass-input" style="cursor: pointer; padding: 0.4rem 0.8rem;">
-                        <option value="open" <?= ($ticket['status'] ?? '') === 'open' ? 'selected' : '' ?>>Mới tạo (Open)</option>
-                        <option value="in_progress" <?= ($ticket['status'] ?? '') === 'in_progress' ? 'selected' : '' ?>>Đang xử lý (In Progress)</option>
-                        <option value="resolved" <?= ($ticket['status'] ?? '') === 'resolved' ? 'selected' : '' ?>>Đã giải quyết (Resolved)</option>
-                        <option value="closed" <?= ($ticket['status'] ?? '') === 'closed' ? 'selected' : '' ?>>Đóng ticket (Closed)</option>
-                    </select>
-                </div>
-            <?php endif; ?>
+            <div style="display: flex; align-items: center; gap: 0.5rem;">
+                <label style="font-weight: 600; font-size: 0.85rem;">Cập nhật trạng thái:</label>
+                <select name="status" class="glass-input" style="cursor: pointer; padding: 0.4rem 0.8rem;">
+                    <option value="open" <?= ($ticket['status'] ?? '') === 'open' ? 'selected' : '' ?>>Mới tạo (Open)</option>
+                    <option value="in_progress" <?= ($ticket['status'] ?? '') === 'in_progress' ? 'selected' : '' ?>>Đang xử lý (In Progress)</option>
+                    <option value="resolved" <?= ($ticket['status'] ?? '') === 'resolved' ? 'selected' : '' ?>>Đã giải quyết (Resolved)</option>
+                    <option value="closed" <?= ($ticket['status'] ?? '') === 'closed' ? 'selected' : '' ?>>Đóng ticket (Closed)</option>
+                </select>
+            </div>
 
             <button type="submit" class="glass-btn" style="padding: 0.65rem 1.75rem; font-size: 0.9rem; background: var(--ios-blue); color: #fff; border: none; font-weight: 600;">
                 💬 Gửi Phản Hồi

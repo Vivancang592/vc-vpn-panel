@@ -11,7 +11,7 @@ class UserController extends BaseController
 
     public function __construct()
     {
-        if (!isset($_SESSION['user_id']) || !in_array($_SESSION['role'] ?? '', ['admin', 'staff'], true)) {
+        if (!isset($_SESSION['user_id']) || ($_SESSION['role'] ?? '') !== 'admin') {
             $this->redirect('/login');
         }
         $this->userModel = new User();
@@ -40,7 +40,7 @@ class UserController extends BaseController
             $username = trim($_POST['username'] ?? '');
             $email = trim($_POST['email'] ?? '');
             $password = $_POST['password'] ?? '';
-            $role = $_POST['role'] ?? 'user';
+            $role = in_array($_POST['role'] ?? 'user', ['admin', 'user'], true) ? $_POST['role'] : 'user';
             $status = $_POST['status'] ?? 'active';
             $balance = (float)($_POST['balance'] ?? 0);
 
@@ -102,11 +102,11 @@ class UserController extends BaseController
         }
 
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-            $role = $_POST['role'] ?? $user['role'];
+            $role = in_array($_POST['role'] ?? $user['role'], ['admin', 'user'], true) ? $_POST['role'] : 'user';
             $status = $_POST['status'] ?? $user['status'];
             $balance = (float)($_POST['balance'] ?? $user['balance']);
             $commissionBalance = (float)($_POST['commission_balance'] ?? $user['commission_balance']);
-            $newPassword = $this->isStaff() ? '' : ($_POST['new_password'] ?? '');
+            $newPassword = $_POST['new_password'] ?? '';
 
             if ($id === (int)$_SESSION['user_id'] && $role !== 'admin') {
                 $_SESSION['flash_message'] = 'Bảo mật: Bạn không thể tự hạ vai trò Admin của chính mình!';
@@ -166,10 +166,6 @@ class UserController extends BaseController
 
     public function delete(): void
     {
-        if ($this->denyStaff('/admin/users')) {
-            return;
-        }
-
         $id = (int)($_POST['id'] ?? $_GET['id'] ?? 0);
         $targetUser = $this->userModel->findById($id);
 

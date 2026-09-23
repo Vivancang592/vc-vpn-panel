@@ -124,7 +124,7 @@ class AuthController extends BaseController
 
                 $_SESSION['user_id'] = $user['id'];
                 $_SESSION['username'] = $user['username'];
-                $_SESSION['role'] = $user['role'] ?? 'user';
+                $_SESSION['role'] = ($user['role'] ?? '') === 'admin' ? 'admin' : 'user';
                 $this->recordAccessEvent((int)$user['id'], 'LOGIN_PASSWORD');
 
                 if ($_SESSION['role'] === 'admin') {

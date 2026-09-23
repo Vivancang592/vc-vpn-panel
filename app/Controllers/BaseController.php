@@ -44,22 +44,6 @@ abstract class BaseController
         return hash_equals($_SESSION['csrf_token'], $token);
     }
 
-    protected function isStaff(): bool
-    {
-        return ($_SESSION['role'] ?? '') === 'staff';
-    }
-
-    protected function denyStaff(string $redirectUrl): bool
-    {
-        if (!$this->isStaff()) {
-            return false;
-        }
-
-        $_SESSION['error'] = 'Bạn không có quyền thực hiện thao tác này.';
-        $this->redirect($redirectUrl);
-        return true;
-    }
-
     /**
      * Lấy IP thực của Client an toàn chống giả mạo Header
      */
@@ -163,7 +147,7 @@ abstract class BaseController
                     $_SESSION['balance']            = $currentUser['balance'] ?? 0;
                     $_SESSION['commission_balance'] = $currentUser['commission_balance'] ?? 0;
                     $_SESSION['created_at']         = $currentUser['created_at'] ?? '';
-                    $_SESSION['role']               = $currentUser['role'] ?? 'user';
+                    $_SESSION['role']               = ($currentUser['role'] ?? '') === 'admin' ? 'admin' : 'user';
 
                     $data['currentUser'] = $currentUser;
                 } else {

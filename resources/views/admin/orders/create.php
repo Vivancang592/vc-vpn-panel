@@ -86,14 +86,12 @@ ob_start();
             </div>
         </div>
 
-        <?php if (($_SESSION['role'] ?? '') !== 'staff'): ?>
-            <div class="admin-order-form-group">
-                <label class="admin-order-form-label">Số Tiền (<?= htmlspecialchars($currencyCode) ?> - <?= htmlspecialchars($currencySymbol) ?>)</label>
-                <div>
-                    <input type="number" name="amount" id="amount_input" class="glass-input" placeholder="Để trống để dùng giá mặc định của gói" step="any" min="0" style="width: 100%; box-sizing: border-box;">
-                </div>
+        <div class="admin-order-form-group">
+            <label class="admin-order-form-label">Số Tiền (<?= htmlspecialchars($currencyCode) ?> - <?= htmlspecialchars($currencySymbol) ?>)</label>
+            <div>
+                <input type="number" name="amount" id="amount_input" class="glass-input" placeholder="Để trống để dùng giá mặc định của gói" step="any" min="0" style="width: 100%; box-sizing: border-box;">
             </div>
-        <?php endif; ?>
+        </div>
 
         <div class="admin-order-form-group">
             <label class="admin-order-form-label">Trạng Thái Đơn Hàng (*)</label>
@@ -107,7 +105,6 @@ ob_start();
             </div>
         </div>
 
-        <?php if (($_SESSION['role'] ?? '') !== 'staff'): ?>
         <div style="background: rgba(0, 122, 255, 0.05); border: 1px solid rgba(0, 122, 255, 0.2); border-radius: var(--radius-md, 10px); padding: 1.25rem; display: flex; flex-direction: column; gap: 1.15rem;">
             <div style="font-weight: 700; font-size: 0.95rem; color: var(--ios-blue, #007aff); display: flex; align-items: center; gap: 0.4rem; padding-bottom: 0.5rem; border-bottom: 1px solid rgba(0, 122, 255, 0.15);">
                 <span>⚙️</span> Tùy Chỉnh Thời Hạn, Thiết Bị & Data Cấp Phát
@@ -137,7 +134,6 @@ ob_start();
                 </div>
             </div>
         </div>
-        <?php endif; ?>
 
         <div style="display: flex; justify-content: flex-end; margin-top: 0.5rem;">
             <button type="submit" class="glass-btn" style="padding: 0.65rem 1.75rem; font-size: 0.9rem; font-weight: 700;">🛒 Khởi Tạo Đơn Hàng</button>
