@@ -1,15 +1,19 @@
 <footer class="vc-footer">
     <div class="vc-footer-container">
-        <section class="vc-footer-intro-block">
-            <p class="vc-footer-kicker">PRIVATE NETWORK</p>
+        
+        <!-- Tên Website ở giữa -->
+        <div class="vc-footer-title-wrap">
             <h3 class="vc-footer-title">
                 <?= htmlspecialchars($settings['site_title'] ?? 'VC VPN 2027') ?>
             </h3>
             <p class="vc-footer-intro">Kết nối riêng tư, ổn định và không giới hạn.</p>
-        </section>
+        </div>
 
+        <!-- Bố cục tự động co giãn -->
         <div class="vc-footer-links-grid">
-            <section class="vc-footer-col">
+
+            <!-- Cột 1: Mạng Xã Hội -->
+            <div class="vc-footer-col">
                 <h4>Mạng Xã Hội</h4>
                 <?php if (!empty($settings)): ?>
                     <div class="vc-footer-col-content">
@@ -32,18 +36,20 @@
                         <?php endif; ?>
                     </div>
                 <?php endif; ?>
-            </section>
+            </div>
 
-            <section class="vc-footer-col">
+            <!-- Cột 2: Chính Sách -->
+            <div class="vc-footer-col">
                 <h4>Chính Sách</h4>
                 <div class="vc-footer-col-content">
                     <a href="/terms" class="vc-color-blue">Điều Khoản Dịch Vụ</a>
                     <a href="/privacy" class="vc-color-green">Quyền Riêng Tư</a>
                     <a href="/refund" class="vc-color-orange">Chính Sách Hoàn Tiền</a>
                 </div>
-            </section>
+            </div>
 
-            <section class="vc-footer-col">
+            <!-- Cột 3: Liên Hệ Hỗ Trợ -->
+            <div class="vc-footer-col">
                 <h4>Liên Hệ Hỗ Trợ</h4>
                 <?php if (!empty($settings)): ?>
                     <div class="vc-footer-col-content">
@@ -66,10 +72,11 @@
                         <?php endif; ?>
                     </div>
                 <?php endif; ?>
-            </section>
+            </div>
 
         </div>
 
+        <!-- Bản quyền & Đường phân cách -->
         <div class="vc-footer-copyright-wrap">
             <p class="vc-footer-copyright-text">&copy; <?= date('Y') ?> <?= htmlspecialchars($settings['site_title'] ?? 'VC VPN 2027') ?>. All rights reserved.</p>
         </div>
