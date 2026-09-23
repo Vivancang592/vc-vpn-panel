@@ -48,7 +48,7 @@ ob_start();
 }
 </style>
 
-<div class="post-detail-wrapper">
+<div class="public-page home-page home-subpage home-post-page post-detail-wrapper">
 
     <?php if (!empty($post)): ?>
         <div class="post-detail-layout">

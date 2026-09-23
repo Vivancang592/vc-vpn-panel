@@ -41,7 +41,7 @@ if (isset($_SESSION['user_id'])) {
         <span>Dashboard</span>
     </a>   
 
-    <a href="/faq" class="nav-item <?= $currentPath === '/faq' ? 'active' : '' ?>">
+    <a href="/user/guides" class="nav-item <?= ($activeMenu ?? '') === 'guides' ? 'active' : '' ?>">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#34c759" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"></path>
             <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"></path>
@@ -49,7 +49,7 @@ if (isset($_SESSION['user_id'])) {
         <span>Xem Hướng Dẫn</span>
     </a>
 
-    <a href="/download" class="nav-item <?= $currentPath === '/download' ? 'active' : '' ?>">
+    <a href="/user/downloads" class="nav-item <?= ($activeMenu ?? '') === 'downloads' ? 'active' : '' ?>">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#5ac8fa" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
             <polyline points="7 10 12 15 17 10"></polyline>

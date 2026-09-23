@@ -26,6 +26,10 @@ return [
     
     // Khách hàng (User Dashboard)
     'GET /dashboard'             => ['UserController', 'dashboard'],
+    'GET /user/guides'           => ['UserController', 'guides'],
+    'GET /user/guides/detail'    => ['UserController', 'guideDetail'],
+    'GET /user/articles/detail'  => ['UserController', 'articleDetail'],
+    'GET /user/downloads'        => ['UserController', 'downloads'],
     
     // Hồ sơ cá nhân (Profile)
     'GET /profile'               => ['UserController', 'profile'],

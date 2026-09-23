@@ -97,6 +97,76 @@ class UserController extends BaseController
         ]);
     }
 
+    public function guides(): void
+    {
+        $posts = [];
+        if (class_exists('App\\Models\\Post')) {
+            $postModel = new Post();
+            $posts = array_values(array_filter(
+                $postModel->getAllPublished(),
+                static fn(array $post): bool => ($post['type'] ?? '') === 'tutorial'
+            ));
+        }
+
+        $this->render('user.guides', [
+            'posts' => $posts,
+            'activeMenu' => 'guides',
+            'showSidebar' => true
+        ]);
+    }
+
+    public function guideDetail(): void
+    {
+        $slug = trim((string) ($_GET['slug'] ?? ''));
+        $post = null;
+
+        if ($slug !== '' && class_exists('App\Models\Post')) {
+            $post = (new Post())->getBySlug($slug);
+        }
+
+        if (!$post || ($post['status'] ?? '') !== 'published' || ($post['type'] ?? '') !== 'tutorial') {
+            $_SESSION['error'] = 'Không tìm thấy hướng dẫn yêu cầu.';
+            $this->redirect('/user/guides');
+            return;
+        }
+
+        $this->render('user.guides-detail', [
+            'post' => $post,
+            'activeMenu' => 'guides',
+            'showSidebar' => true
+        ]);
+    }
+
+    public function articleDetail(): void
+    {
+        $slug = trim((string) ($_GET['slug'] ?? ''));
+        $post = null;
+
+        if ($slug !== '' && class_exists('App\Models\Post')) {
+            $post = (new Post())->getBySlug($slug);
+        }
+
+        if (!$post || ($post['status'] ?? '') !== 'published') {
+            $_SESSION['error'] = 'Không tìm thấy bài viết yêu cầu.';
+            $this->redirect('/dashboard');
+            return;
+        }
+
+        $this->render('user.article-detail', [
+            'post' => $post,
+            'activeMenu' => 'dashboard',
+            'showSidebar' => true
+        ]);
+    }
+
+    public function downloads(): void
+    {
+        $this->render('user.downloads', [
+            'activeMenu' => 'downloads',
+            'showSidebar' => true
+        ]);
+    }
+
     public function plans(): void
     {
         $plans = [];
