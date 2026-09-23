@@ -127,11 +127,30 @@ class PostController extends BaseController
             $slug = $this->createSlug($title);
         }
 
+        // Luôn làm sạch marker cũ trước khi gắn lại
+        $content = preg_replace('/<!--thumbnail:.*?-->/i', '', $content);
+
         // Nếu người dùng tải ảnh mới từ máy tính -> cập nhật mã thumbnail ẩn
         $thumbPath = $this->uploadThumbnail();
         if ($thumbPath) {
-            $content = preg_replace('/<!--thumbnail:.*?-->/i', '', $content);
+            // Có ảnh mới: xóa ảnh cũ trên server để tránh rác file
+            if (!empty($post['content']) && preg_match('/<!--thumbnail:(.*?)-->/i', (string)$post['content'], $matches)) {
+                $oldThumb = trim((string)$matches[1]);
+                if ($oldThumb !== '') {
+                    $oldThumbFile = BASE_PATH . '/public' . $oldThumb;
+                    if (is_file($oldThumbFile)) {
+                        @unlink($oldThumbFile);
+                    }
+                }
+            }
+
             $content = '<!--thumbnail:' . htmlspecialchars($thumbPath) . '-->' . $content;
+        } elseif (!empty($post['content']) && preg_match('/<!--thumbnail:(.*?)-->/i', (string)$post['content'], $matches)) {
+            // Giữ lại thumbnail cũ nếu không upload ảnh mới
+            $existingThumb = trim((string)$matches[1]);
+            if ($existingThumb !== '') {
+                $content = '<!--thumbnail:' . htmlspecialchars($existingThumb) . '-->' . $content;
+            }
         }
 
         $data = [
