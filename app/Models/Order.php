@@ -132,9 +132,33 @@ class Order extends BaseModel
     public function cancelExpiredPending(int $minutes): int
     {
         $minutes = max(1, min(43200, $minutes));
-        $stmt = self::$db->prepare("UPDATE `{$this->table}` SET `payment_status` = 'cancelled', `updated_at` = NOW() WHERE `payment_status` = 'pending' AND `created_at` <= DATE_SUB(NOW(), INTERVAL {$minutes} MINUTE)");
-        $stmt->execute();
-        return $stmt->rowCount();
+
+        self::beginTransaction();
+
+        try {
+            $stmt = self::$db->prepare("SELECT `id` FROM `{$this->table}` WHERE `payment_status` = 'pending' AND `created_at` <= DATE_SUB(NOW(), INTERVAL {$minutes} MINUTE)");
+            $stmt->execute();
+            $orderIds = array_column($stmt->fetchAll(), 'id');
+
+            if (empty($orderIds)) {
+                self::commit();
+                return 0;
+            }
+
+            $placeholders = implode(',', array_fill(0, count($orderIds), '?'));
+            $paymentStmt = self::$db->prepare("UPDATE `vc_payments` SET `status` = 'cancelled' WHERE `order_id` IN ({$placeholders}) AND `status` = 'pending'");
+            $paymentStmt->execute($orderIds);
+
+            $orderStmt = self::$db->prepare("UPDATE `{$this->table}` SET `payment_status` = 'cancelled', `updated_at` = NOW() WHERE `id` IN ({$placeholders}) AND `payment_status` = 'pending'");
+            $orderStmt->execute($orderIds);
+            $cancelledOrders = $orderStmt->rowCount();
+
+            self::commit();
+            return $cancelledOrders;
+        } catch (\Throwable $exception) {
+            self::rollBack();
+            throw $exception;
+        }
     }
 
     /**
