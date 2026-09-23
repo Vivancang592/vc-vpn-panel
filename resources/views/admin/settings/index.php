@@ -77,8 +77,8 @@ ob_start();
                 </div>
 
                 <div>
-                    <label data-hint="Đường dẫn Telegram để người dùng liên hệ hỗ trợ." style="display: block; font-weight: 600; font-size: 0.85rem; margin-bottom: 0.4rem;">Telegram Support</label>
-                    <input type="text" name="settings[telegram_url]" class="glass-input" value="<?= htmlspecialchars($settings['telegram_url'] ?? '') ?>" placeholder="https://t.me/..." style="width: 100%;">
+                    <label data-hint="ID WeChat hiển thị trong phần liên hệ hỗ trợ." style="display: block; font-weight: 600; font-size: 0.85rem; margin-bottom: 0.4rem;">WeChat ID</label>
+                    <input type="text" name="settings[wechat_id]" class="glass-input" value="<?= htmlspecialchars($settings['wechat_id'] ?? '') ?>" placeholder="Nhập WeChat ID..." style="width: 100%;">
                 </div>
             </div>
 
