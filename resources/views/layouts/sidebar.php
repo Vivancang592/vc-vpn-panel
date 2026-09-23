@@ -16,10 +16,10 @@ if (isset($_SESSION['user_id'])) {
 ?>
 <aside class="admin-sidebar">
     <!-- Tên Web đặt trong Sidebar -->
-    <div class="sidebar-brand" style="padding: 0.5rem 0.5rem 1rem 0.5rem; border-bottom: 1px solid var(--glass-border); margin-bottom: 0.75rem;">
-        <a href="<?= $logoHref ?>" title="<?= $userRole === 'admin' ? ($isAdminRoute ? 'Chuyển sang Trang User' : 'Chuyển sang Trang Admin') : 'Trang Chủ' ?>" style="display: flex; align-items: center; gap: 0.75rem; text-decoration: none; color: var(--ios-text); font-weight: 700; font-size: 1.1rem;">
+    <div class="sidebar-brand">
+        <a href="<?= $logoHref ?>" title="<?= $userRole === 'admin' ? ($isAdminRoute ? 'Chuyển sang Trang User' : 'Chuyển sang Trang Admin') : 'Trang Chủ' ?>">
             <?php if ($userRole !== 'admin'): ?>
-                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#007aff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                <svg class="sidebar-brand-mark" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
                     <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
                 </svg>
             <?php endif; ?>
@@ -27,12 +27,12 @@ if (isset($_SESSION['user_id'])) {
         </a>
     </div>
 
-    <div style="padding: 0.25rem 0.5rem; font-weight: 700; color: var(--ios-text-secondary); font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.5px;">
+    <div class="sidebar-section-title">
         Menu Khách Hàng
     </div>
-    <hr style="border-color: var(--glass-border); margin-bottom: 0.5rem">
+    <hr class="sidebar-divider">
 
-    <a href="/dashboard" class="nav-item <?= ($activeMenu ?? '') === 'dashboard' ? 'active' : '' ?>" style="display: flex; align-items: center; gap: 0.6rem;">
+    <a href="/dashboard" class="nav-item <?= ($activeMenu ?? '') === 'dashboard' ? 'active' : '' ?>">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#007aff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <rect x="3" y="3" width="7" height="7"></rect>
             <rect x="14" y="3" width="7" height="7"></rect>
@@ -42,7 +42,7 @@ if (isset($_SESSION['user_id'])) {
         <span>Dashboard</span>
     </a>   
 
-    <a href="/faq" class="nav-item <?= $currentPath === '/faq' ? 'active' : '' ?>" style="display: flex; align-items: center; gap: 0.6rem;">
+    <a href="/faq" class="nav-item <?= $currentPath === '/faq' ? 'active' : '' ?>">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#34c759" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"></path>
             <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"></path>
@@ -50,7 +50,7 @@ if (isset($_SESSION['user_id'])) {
         <span>Xem Hướng Dẫn</span>
     </a>
 
-    <a href="/download" class="nav-item <?= $currentPath === '/download' ? 'active' : '' ?>" style="display: flex; align-items: center; gap: 0.6rem;">
+    <a href="/download" class="nav-item <?= $currentPath === '/download' ? 'active' : '' ?>">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#5ac8fa" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
             <polyline points="7 10 12 15 17 10"></polyline>
@@ -59,7 +59,7 @@ if (isset($_SESSION['user_id'])) {
         <span>Tải Ứng Dụng</span>
     </a>
 
-    <a href="/user/plans" class="nav-item <?= ($activeMenu ?? '') === 'plans' ? 'active' : '' ?>" style="display: flex; align-items: center; gap: 0.6rem;">
+    <a href="/user/plans" class="nav-item <?= ($activeMenu ?? '') === 'plans' ? 'active' : '' ?>">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#ff9500" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"></path>
             <line x1="3" y1="6" x2="21" y2="6"></line>
@@ -68,7 +68,7 @@ if (isset($_SESSION['user_id'])) {
         <span>Cửa Hàng</span>
     </a>
 
-    <a href="/subscriptions" class="nav-item <?= ($activeMenu ?? '') === 'subscriptions' ? 'active' : '' ?>" style="display: flex; align-items: center; gap: 0.6rem;">
+    <a href="/subscriptions" class="nav-item <?= ($activeMenu ?? '') === 'subscriptions' ? 'active' : '' ?>">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#af52de" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <path d="M12 2L2 7l10 5 10-5-10-5z"></path>
             <path d="M2 17l10 5 10-5"></path>
@@ -77,7 +77,7 @@ if (isset($_SESSION['user_id'])) {
         <span>Gói Đăng Ký Của Tôi</span>
     </a>
 
-    <a href="/orders" class="nav-item <?= ($activeMenu ?? '') === 'orders' ? 'active' : '' ?>" style="display: flex; align-items: center; gap: 0.6rem;">
+    <a href="/orders" class="nav-item <?= ($activeMenu ?? '') === 'orders' ? 'active' : '' ?>">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#5856d6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
             <polyline points="14 2 14 8 20 8"></polyline>
@@ -88,7 +88,7 @@ if (isset($_SESSION['user_id'])) {
         <span>Đơn Hàng Của Tôi</span>
     </a>
 
-    <a href="/payments" class="nav-item <?= ($activeMenu ?? '') === 'payments' ? 'active' : '' ?>" style="display: flex; align-items: center; gap: 0.6rem;">
+    <a href="/payments" class="nav-item <?= ($activeMenu ?? '') === 'payments' ? 'active' : '' ?>">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#e5c100" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <circle cx="12" cy="12" r="10"></circle>
             <polyline points="12 6 12 12 16 14"></polyline>
@@ -96,7 +96,7 @@ if (isset($_SESSION['user_id'])) {
         <span>Lịch Sử Giao Dịch</span>
     </a>
     
-    <a href="/referrals" class="nav-item <?= ($activeMenu ?? '') === 'referrals' ? 'active' : '' ?>" style="display: flex; align-items: center; gap: 0.6rem;">
+    <a href="/referrals" class="nav-item <?= ($activeMenu ?? '') === 'referrals' ? 'active' : '' ?>">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#ff2d55" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <path d="M20 12v10H4V12"></path>
             <path d="M22 7H2v5h20V7z"></path>
@@ -107,14 +107,14 @@ if (isset($_SESSION['user_id'])) {
         <span>Tiếp Thị Liên Kết</span>
     </a>
 
-    <a href="/tickets" class="nav-item <?= ($activeMenu ?? '') === 'tickets' ? 'active' : '' ?>" style="display: flex; align-items: center; gap: 0.6rem;">
+    <a href="/tickets" class="nav-item <?= ($activeMenu ?? '') === 'tickets' ? 'active' : '' ?>">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#007aff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
         </svg>
         <span>Ticket Hỗ Trợ</span>
     </a>
 
-    <a href="/wallet" class="nav-item <?= ($activeMenu ?? '') === 'wallet' ? 'active' : '' ?>" style="display: flex; align-items: center; gap: 0.6rem;">
+    <a href="/wallet" class="nav-item <?= ($activeMenu ?? '') === 'wallet' ? 'active' : '' ?>">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#34c759" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <path d="M20 12V8H6a2 2 0 0 1-2-2c0-1.1.9-2 2-2h12v4"></path>
             <path d="M4 6v12a2 2 0 0 0 2 2h14v-4"></path>
@@ -123,7 +123,7 @@ if (isset($_SESSION['user_id'])) {
         <span>Ví Tiền Của Tôi</span>
     </a>
 
-    <a href="/profile" class="nav-item <?= ($activeMenu ?? '') === 'profile' ? 'active' : '' ?>" style="display: flex; align-items: center; gap: 0.6rem;">
+    <a href="/profile" class="nav-item <?= ($activeMenu ?? '') === 'profile' ? 'active' : '' ?>">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#ff3b30" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
             <circle cx="12" cy="7" r="4"></circle>

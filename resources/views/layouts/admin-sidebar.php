@@ -16,18 +16,18 @@ if (isset($_SESSION['user_id'])) {
     }
 }
 ?>
-<aside class="admin-sidebar" style="background: rgba(180, 187, 213, 0.49);">
+<aside class="admin-sidebar">
     <!-- Tên Web đặt trong Sidebar -->
-    <div class="sidebar-brand" style="padding: 0.5rem 0.5rem 1rem 0.5rem; border-bottom: 1px solid var(--glass-border); margin-bottom: 0.75rem;">
-        <a href="<?= $logoHref ?>" style="display: flex; align-items: center; text-decoration: none; font-weight: 800; font-size: 1.25rem; letter-spacing: 0.6px; background: linear-gradient(135deg, #FFCC00 0%, #FF9500 50%, #FF2D55 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; filter: drop-shadow(0px 2px 10px rgba(255, 149, 0, 0.5));">
+    <div class="sidebar-brand">
+        <a href="<?= $logoHref ?>">
             <span><?= htmlspecialchars($siteTitle) ?></span>
         </a>
     </div>
 
-    <div style="padding: 0.25rem 0.5rem; font-weight: 700; color: var(--ios-text-secondary); font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.5px;">
+    <div class="sidebar-section-title">
         Quản Trị Hệ Thống
     </div>
-    <hr style="border-color: var(--glass-border); margin-bottom: 0.5rem">
+    <hr class="sidebar-divider">
     <?php if ($userRole === 'admin'): ?>
     <a href="/admin" class="nav-item <?= $activeMenu === 'dashboard' ? 'active' : '' ?>"><span class="sidebar-nav-icon" aria-hidden="true">📊</span>Dashboard</a>
     <a href="/admin/settings" class="nav-item <?= $activeMenu === 'settings' ? 'active' : '' ?>"><span class="sidebar-nav-icon" aria-hidden="true">⚙️</span>Cài Đặt Hệ Thống</a>
