@@ -70,6 +70,27 @@ class PaymentService
             $transferContent = $depositSyntax . str_pad((string) $orderId, 2, '0', STR_PAD_LEFT);
             $orderModel->update($orderId, ['transfer_content' => $transferContent]);
 
+            // Lưu lịch sử giao dịch nạp tiền ở trạng thái chờ thanh toán.
+            $paymentModel = new Payment();
+            if (!$paymentModel->create([
+                'user_id'          => $userId,
+                'order_id'         => $orderId,
+                'type'             => 'deposit',
+                'payment_method'   => $paymentMethod,
+                'transaction_id'   => null,
+                'transfer_content' => $transferContent,
+                'amount'           => $amount,
+                'status'           => 'pending',
+                'created_at'       => date('Y-m-d H:i:s')
+            ])) {
+                $orderModel->delete($orderId);
+
+                return [
+                    'status' => false,
+                    'message' => 'Không thể lưu lịch sử giao dịch nạp tiền.'
+                ];
+            }
+
         } catch (\Throwable $exception) {
             $orderModel->delete($orderId);
 
@@ -227,6 +248,33 @@ class PaymentService
         $renewalSyntax = trim((string) ($settings['renewal_transfer_syntax'] ?? 'GAHAN'));
         $transferContent = $renewalSyntax . str_pad((string) $orderId, 2, '0', STR_PAD_LEFT);
         $orderModel->update($orderId, ['transfer_content' => $transferContent]);
+
+        // Lưu lịch sử giao dịch gia hạn ở trạng thái chờ thanh toán.
+        try {
+            $paymentCreated = $paymentModel->create([
+                'user_id'          => $userId,
+                'order_id'         => $orderId,
+                'subscription_id'  => $subscriptionId,
+                'type'             => 'payment',
+                'payment_method'   => $paymentMethod,
+                'transaction_id'   => null,
+                'transfer_content' => $transferContent,
+                'amount'           => $amount,
+                'status'           => 'pending',
+                'created_at'       => date('Y-m-d H:i:s')
+            ]);
+        } catch (\Throwable $exception) {
+            $paymentCreated = false;
+        }
+
+        if (!$paymentCreated) {
+            $orderModel->delete($orderId);
+
+            return [
+                'status' => false,
+                'message' => 'Không thể lưu lịch sử giao dịch gia hạn.'
+            ];
+        }
 
         return [
             'status'           => true,
