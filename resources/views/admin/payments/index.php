@@ -107,7 +107,7 @@ ob_start();
                                                 </button>
                                             </form>
                                         <?php endif; ?>
-                                        <?php if (in_array(($payment['status'] ?? ''), ['pending', 'failed'], true)): ?>
+                                        <?php if (in_array(($payment['status'] ?? ''), ['pending', 'failed'], true) && ($_SESSION['role'] ?? '') !== 'staff'): ?>
                                             <form method="POST" action="/admin/payments/delete-cancelled-deposit">
                                                 <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrf_token ?? '') ?>">
                                                 <input type="hidden" name="payment_id" value="<?= (int) $payment['id'] ?>">

@@ -268,6 +268,10 @@ class OrderController extends BaseController
         $id     = (int)($_POST['id'] ?? $_GET['id'] ?? 0);
         $userId = (int)($_POST['user_id'] ?? $_GET['user_id'] ?? 0);
 
+        if ($this->denyStaff('/admin/orders' . ($userId > 0 ? '?user_id=' . $userId : ''))) {
+            return;
+        }
+
         if (!$this->validateCsrfToken($_POST['csrf_token'] ?? '')) {
             $_SESSION['flash_message'] = 'Phiên làm việc không hợp lệ. Vui lòng thử lại.';
             $_SESSION['flash_type'] = 'danger';
@@ -303,7 +307,6 @@ class OrderController extends BaseController
             $userId        = (int)($_POST['user_id'] ?? 0);
             $planId        = (int)($_POST['plan_id'] ?? 0);
             $paymentStatus = $_POST['payment_status'] ?? 'pending';
-            $customAmount  = $_POST['amount'] !== '' ? (float)$_POST['amount'] : null;
 
             if ($userId <= 0 || $planId <= 0) {
                 $_SESSION['flash_message'] = 'Vui lòng chọn Người dùng và Gói cước hợp lệ!';
@@ -318,10 +321,11 @@ class OrderController extends BaseController
                 $this->redirect('/admin/orders/create?user_id=' . $userId);
             }
 
-            $customAmount    = isset($_POST['amount']) && $_POST['amount'] !== '' ? (float)$_POST['amount'] : null;
-            $customEndDate   = !empty($_POST['end_date']) ? trim($_POST['end_date']) : null;
-            $customDataGb    = isset($_POST['bandwidth_gb']) && $_POST['bandwidth_gb'] !== '' ? (float)$_POST['bandwidth_gb'] : null;
-            $customDevices   = isset($_POST['max_devices']) && $_POST['max_devices'] !== '' ? (int)$_POST['max_devices'] : null;
+            $isStaff         = $this->isStaff();
+            $customAmount    = !$isStaff && isset($_POST['amount']) && $_POST['amount'] !== '' ? (float)$_POST['amount'] : null;
+            $customEndDate   = !$isStaff && !empty($_POST['end_date']) ? trim($_POST['end_date']) : null;
+            $customDataGb    = !$isStaff && isset($_POST['bandwidth_gb']) && $_POST['bandwidth_gb'] !== '' ? (float)$_POST['bandwidth_gb'] : null;
+            $customDevices   = !$isStaff && isset($_POST['max_devices']) && $_POST['max_devices'] !== '' ? (int)$_POST['max_devices'] : null;
             $paymentMethod   = trim((string)($_POST['payment_method'] ?? 'vietqr'));
             if ($paymentMethod === '') {
                 $paymentMethod = 'vietqr';

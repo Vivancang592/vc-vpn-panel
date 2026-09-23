@@ -166,6 +166,10 @@ class UserController extends BaseController
 
     public function delete(): void
     {
+        if ($this->denyStaff('/admin/users')) {
+            return;
+        }
+
         $id = (int)($_POST['id'] ?? $_GET['id'] ?? 0);
         $targetUser = $this->userModel->findById($id);
 

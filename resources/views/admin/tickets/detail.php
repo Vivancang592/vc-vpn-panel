@@ -85,15 +85,17 @@ ob_start();
         </div>
 
         <div style="display: flex; justify-content: space-between; align-items: center; gap: 1rem; flex-wrap: wrap;">
-            <div style="display: flex; align-items: center; gap: 0.5rem;">
-                <label style="font-weight: 600; font-size: 0.85rem;">Cập nhật trạng thái:</label>
-                <select name="status" class="glass-input" style="cursor: pointer; padding: 0.4rem 0.8rem;">
-                    <option value="open" <?= ($ticket['status'] ?? '') === 'open' ? 'selected' : '' ?>>Mới tạo (Open)</option>
-                    <option value="in_progress" <?= ($ticket['status'] ?? '') === 'in_progress' ? 'selected' : '' ?>>Đang xử lý (In Progress)</option>
-                    <option value="resolved" <?= ($ticket['status'] ?? '') === 'resolved' ? 'selected' : '' ?>>Đã giải quyết (Resolved)</option>
-                    <option value="closed" <?= ($ticket['status'] ?? '') === 'closed' ? 'selected' : '' ?>>Đóng ticket (Closed)</option>
-                </select>
-            </div>
+            <?php if (($_SESSION['role'] ?? '') !== 'staff'): ?>
+                <div style="display: flex; align-items: center; gap: 0.5rem;">
+                    <label style="font-weight: 600; font-size: 0.85rem;">Cập nhật trạng thái:</label>
+                    <select name="status" class="glass-input" style="cursor: pointer; padding: 0.4rem 0.8rem;">
+                        <option value="open" <?= ($ticket['status'] ?? '') === 'open' ? 'selected' : '' ?>>Mới tạo (Open)</option>
+                        <option value="in_progress" <?= ($ticket['status'] ?? '') === 'in_progress' ? 'selected' : '' ?>>Đang xử lý (In Progress)</option>
+                        <option value="resolved" <?= ($ticket['status'] ?? '') === 'resolved' ? 'selected' : '' ?>>Đã giải quyết (Resolved)</option>
+                        <option value="closed" <?= ($ticket['status'] ?? '') === 'closed' ? 'selected' : '' ?>>Đóng ticket (Closed)</option>
+                    </select>
+                </div>
+            <?php endif; ?>
 
             <button type="submit" class="glass-btn" style="padding: 0.65rem 1.75rem; font-size: 0.9rem; background: var(--ios-blue); color: #fff; border: none; font-weight: 600;">
                 💬 Gửi Phản Hồi

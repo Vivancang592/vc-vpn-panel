@@ -37,9 +37,11 @@ ob_start();
         <h1 style="font-size: 1.5rem; font-weight: 700; word-break: break-word;">Quản Lý Mã Giảm Giá</h1>
         <p style="color: var(--ios-text-secondary); font-size: 0.85rem;">Danh sách tất cả mã khuyến mãi và ưu đãi trong hệ thống</p>
     </div>
-    <div style="display: flex; justify-content: flex-end; margin-top: 0.75rem;">
-        <a href="/admin/coupons/create" class="glass-btn" style="text-decoration: none; white-space: nowrap;">+ Thêm Mã Giảm Giá</a>
-    </div>
+    <?php if (($_SESSION['role'] ?? '') !== 'staff'): ?>
+        <div style="display: flex; justify-content: flex-end; margin-top: 0.75rem;">
+            <a href="/admin/coupons/create" class="glass-btn" style="text-decoration: none; white-space: nowrap;">+ Thêm Mã Giảm Giá</a>
+        </div>
+    <?php endif; ?>
 </div>
 
 <!-- Bảng Mã Giảm Giá -->
@@ -99,20 +101,22 @@ ob_start();
                                 </span>
                             </td>
                             <td style="text-align: right;">
-                                <div class="action-dropdown">
-                                    <button type="button" class="action-btn" title="Thao tác">⋮</button>
-                                    <div class="action-menu">
-                                        <a href="/admin/coupons/edit?id=<?= $coupon['id'] ?>" class="action-item">
-                                            <span>✏️</span> Chỉnh sửa
-                                        </a>
-                                        <form method="POST" action="/admin/coupons/delete" onsubmit="return confirm('Bạn có chắc chắn muốn xóa mã giảm giá này?');" style="margin: 0;">
-                                            <input type="hidden" name="id" value="<?= $coupon['id'] ?>">
-                                            <button type="submit" class="action-item delete" style="background: none; border: none; width: 100%; text-align: left; cursor: pointer; color: var(--ios-danger); padding: 0.5rem 1rem; font-size: 0.85rem; display: flex; align-items: center; gap: 0.5rem;">
-                                                <span>🗑️</span> Xóa mã
-                                            </button>
-                                        </form>
+                                <?php if (($_SESSION['role'] ?? '') !== 'staff'): ?>
+                                    <div class="action-dropdown">
+                                        <button type="button" class="action-btn" title="Thao tác">⋮</button>
+                                        <div class="action-menu">
+                                            <a href="/admin/coupons/edit?id=<?= $coupon['id'] ?>" class="action-item">
+                                                <span>✏️</span> Chỉnh sửa
+                                            </a>
+                                            <form method="POST" action="/admin/coupons/delete" onsubmit="return confirm('Bạn có chắc chắn muốn xóa mã giảm giá này?');" style="margin: 0;">
+                                                <input type="hidden" name="id" value="<?= $coupon['id'] ?>">
+                                                <button type="submit" class="action-item delete" style="background: none; border: none; width: 100%; text-align: left; cursor: pointer; color: var(--ios-danger); padding: 0.5rem 1rem; font-size: 0.85rem; display: flex; align-items: center; gap: 0.5rem;">
+                                                    <span>🗑️</span> Xóa mã
+                                                </button>
+                                            </form>
+                                        </div>
                                     </div>
-                                </div>
+                                <?php endif; ?>
                             </td>
                         </tr>
                     <?php endforeach; ?>

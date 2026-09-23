@@ -111,9 +111,11 @@ ob_start();
                                             </button>
                                         <?php endif; ?>
 
-                                        <button type="submit" form="delete-order-form-<?= $order['id'] ?>" class="action-item delete" style="background: none; border: none; width: 100%; text-align: left; cursor: pointer; color: var(--ios-danger); padding: 0.5rem 1rem; font-size: 0.85rem; display: flex; align-items: center; gap: 0.5rem; white-space: nowrap;">
-                                            <span>🗑️</span> Xóa đơn hàng
-                                        </button>
+                                        <?php if (($_SESSION['role'] ?? '') !== 'staff'): ?>
+                                            <button type="submit" form="delete-order-form-<?= $order['id'] ?>" class="action-item delete" style="background: none; border: none; width: 100%; text-align: left; cursor: pointer; color: var(--ios-danger); padding: 0.5rem 1rem; font-size: 0.85rem; display: flex; align-items: center; gap: 0.5rem; white-space: nowrap;">
+                                                <span>🗑️</span> Xóa đơn hàng
+                                            </button>
+                                        <?php endif; ?>
                                     </div>
                                 </div>
                             </td>
@@ -154,13 +156,15 @@ ob_start();
             </form>
         <?php endif; ?>
 
-        <form id="delete-order-form-<?= $order['id'] ?>" method="POST" action="/admin/orders/delete" onsubmit="return confirm('Bạn có chắc chắn muốn xóa vĩnh viễn đơn hàng này?');" style="display: none;">
-            <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrf_token ?? '') ?>">
-            <input type="hidden" name="id" value="<?= $order['id'] ?>">
-            <?php if (!empty($userId)): ?>
-                <input type="hidden" name="user_id" value="<?= $userId ?>">
-            <?php endif; ?>
-        </form>
+        <?php if (($_SESSION['role'] ?? '') !== 'staff'): ?>
+            <form id="delete-order-form-<?= $order['id'] ?>" method="POST" action="/admin/orders/delete" onsubmit="return confirm('Bạn có chắc chắn muốn xóa vĩnh viễn đơn hàng này?');" style="display: none;">
+                <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrf_token ?? '') ?>">
+                <input type="hidden" name="id" value="<?= $order['id'] ?>">
+                <?php if (!empty($userId)): ?>
+                    <input type="hidden" name="user_id" value="<?= $userId ?>">
+                <?php endif; ?>
+            </form>
+        <?php endif; ?>
     <?php endforeach; ?>
 <?php endif; ?>
 

@@ -47,11 +47,13 @@ ob_start();
                     </button>
                 </form>
             <?php endif; ?>
-            <form method="POST" action="/admin/notifications/clear" onsubmit="return confirm('Bạn có chắc muốn xóa tất cả thông báo?');" style="margin: 0;">
-                <button type="submit" class="glass-btn" style="font-size: 0.8rem; padding: 0.4rem 0.8rem; background: rgba(255, 59, 48, 0.1); border: 1px solid rgba(255, 59, 48, 0.3); color: var(--ios-danger, #ff3b30); border-radius: var(--radius-sm, 8px); cursor: pointer; font-weight: 600;">
-                    🗑️ Xóa tất cả
-                </button>
-            </form>
+            <?php if (($_SESSION['role'] ?? '') !== 'staff'): ?>
+                <form method="POST" action="/admin/notifications/clear" onsubmit="return confirm('Bạn có chắc muốn xóa tất cả thông báo?');" style="margin: 0;">
+                    <button type="submit" class="glass-btn" style="font-size: 0.8rem; padding: 0.4rem 0.8rem; background: rgba(255, 59, 48, 0.1); border: 1px solid rgba(255, 59, 48, 0.3); color: var(--ios-danger, #ff3b30); border-radius: var(--radius-sm, 8px); cursor: pointer; font-weight: 600;">
+                        🗑️ Xóa tất cả
+                    </button>
+                </form>
+            <?php endif; ?>
         </div>
     <?php endif; ?>
 </div>
@@ -83,9 +85,11 @@ ob_start();
             ?>
             <article class="glass-card user-notification-item" style="position: relative; padding: 1rem 2.25rem 1rem 1.25rem; border-left: 4px solid <?= $borderLeftColor ?>; <?= !$isRead ? 'background: rgba(255, 255, 255, 0.35); box-shadow: 0 4px 15px rgba(0, 122, 255, 0.1);' : 'opacity: 0.85;' ?> border-radius: var(--radius-md, 12px);">
                 <!-- Nút X xóa thông báo ở góc phải trên -->
-                <a href="/admin/notifications/delete?id=<?= urlencode($item['id']) ?>" onclick="return confirm('Xóa thông báo này?');" title="Xóa thông báo" style="position: absolute; top: 0.6rem; right: 0.75rem; width: 22px; height: 22px; display: flex; align-items: center; justify-content: center; color: var(--ios-text-secondary); text-decoration: none; font-size: 1.2rem; line-height: 1; border-radius: 50%; background: transparent; transition: all 0.2s;" onmouseover="this.style.color='var(--ios-danger, #ff3b30)'; this.style.background='rgba(255,59,48,0.1)';" onmouseout="this.style.color='var(--ios-text-secondary)'; this.style.background='transparent';">
-                    &times;
-                </a>
+                <?php if (($_SESSION['role'] ?? '') !== 'staff'): ?>
+                    <a href="/admin/notifications/delete?id=<?= urlencode($item['id']) ?>" onclick="return confirm('Xóa thông báo này?');" title="Xóa thông báo" style="position: absolute; top: 0.6rem; right: 0.75rem; width: 22px; height: 22px; display: flex; align-items: center; justify-content: center; color: var(--ios-text-secondary); text-decoration: none; font-size: 1.2rem; line-height: 1; border-radius: 50%; background: transparent; transition: all 0.2s;" onmouseover="this.style.color='var(--ios-danger, #ff3b30)'; this.style.background='rgba(255,59,48,0.1)';" onmouseout="this.style.color='var(--ios-text-secondary)'; this.style.background='transparent';">
+                        &times;
+                    </a>
+                <?php endif; ?>
 
                 <div>
                     <div style="display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; margin-bottom: 0.35rem; padding-right: 1.5rem;">

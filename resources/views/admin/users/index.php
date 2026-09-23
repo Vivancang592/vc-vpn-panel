@@ -126,7 +126,7 @@ ob_start();
                                         <a href="/admin/subscriptions?user_id=<?= $u['id'] ?>" class="action-item" style="white-space: nowrap; display: flex; align-items: center; gap: 0.5rem;">
                                             <span>🔑</span> Xem gói đăng ký
                                         </a>
-                                        <?php if ($u['role'] !== 'admin'): ?>
+                                        <?php if ($u['role'] !== 'admin' && ($_SESSION['role'] ?? '') !== 'staff'): ?>
                                             <form method="POST" action="/admin/users/delete" onsubmit="return confirm('Bạn có chắc chắn muốn xóa thành viên này?');" style="margin: 0;">
                                                 <input type="hidden" name="id" value="<?= $u['id'] ?>">
                                                 <button type="submit" class="action-item delete" style="background: none; border: none; width: 100%; text-align: left; cursor: pointer; color: var(--ios-danger); padding: 0.5rem 1rem; font-size: 0.85rem; display: flex; align-items: center; gap: 0.5rem; white-space: nowrap;">
