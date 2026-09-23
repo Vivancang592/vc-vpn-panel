@@ -458,3 +458,38 @@ body.vpn-theme.home-festival .vc-footer { width: 100%; margin: 0; padding: 3.5re
 @keyframes home-radar-sweep { to { transform: rotate(360deg); } }
 @media (prefers-reduced-motion: reduce) { .home-signal-beam { animation: none; } }
 @media (max-width: 800px) { body.vpn-theme.home-festival .navbar-container { min-height: 60px; } .public-page.home-page { padding: 1rem 0 3.5rem; background-size: 32px 32px; } .home-hero { min-height: 0; border-right: 0; border-left: 0; border-radius: 0; } .home-hero > .home-hero-art { display: block; width: 100%; opacity: .22; }.home-hero-grid { grid-template-columns: minmax(0, 1fr); gap: 1.75rem; }.home-status { width: 100%; max-width: none; margin: 0; }.home-radar-one { top: 8%; right: -10%; width: 320px; }.home-radar-two, .home-network-line, .home-network-node, .home-art-label { display: none; }.home-shield-mark { top: 18%; right: 10%; width: 112px; }.home-features-section, .home-pricing, .home-faq { margin-right: 1rem; margin-left: 1rem; }.home-journey, .home-security, .home-final-cta { padding: 2rem 1rem; }.home-final-cta { border-radius: 0; }.home-final-cta::after { right: -45%; }.feature-box { min-height: 0; } }
+
+/* Compact footer controls. */
+body.vpn-theme.home-festival .vc-footer-title-wrap { padding-bottom: 1rem; text-align: center; }
+.vc-footer-contact-links,
+.vc-footer-policy-links { display: flex; align-items: center; justify-content: center; flex-wrap: wrap; gap: .6rem; }
+.vc-footer-contact-links a { display: inline-grid; width: 36px; height: 36px; place-items: center; border: 1px solid #393939; border-radius: 3px; color: #f5c518 !important; font-size: 1rem; text-decoration: none; }
+.vc-footer-contact-links a:hover { border-color: #f5c518; background: rgba(245, 197, 24, .1); }
+.vc-footer-policy-links { gap: .45rem; }
+.vc-footer-policy-links a { padding: .5rem .7rem; border: 1px solid #303030; border-radius: 3px; color: #bdbdbd; font-size: .75rem; font-weight: 700; text-decoration: none; }
+.vc-footer-policy-links a:hover { border-color: #f5c518; color: #f5c518; }
+
+/* Mobile containment and compact footer controls. */
+@media (max-width: 800px) {
+	body.vpn-theme.home-festival { overflow-x: hidden; }
+	.public-page.home-page,
+	.public-page.home-page * { min-width: 0; }
+	.home-tabs { max-width: 100%; }
+	.plan-header-row { flex-direction: row; align-items: flex-start; }
+	.plan-title { min-width: 0; }
+	.price-val { flex-shrink: 0; margin-left: auto; text-align: right; }
+	.plan-spec-grid { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
+	.plan-spec-grid .spec-item:last-child { justify-content: flex-end; text-align: right; }
+	.plan-spec-grid .spec-item:last-child > div { min-width: 0; }
+
+	body.vpn-theme.home-festival .vc-footer { padding: 1.5rem 1rem .85rem; }
+	body.vpn-theme.home-festival .vc-footer-container { gap: .9rem; }
+	body.vpn-theme.home-festival .vc-footer-title-wrap { padding-bottom: .75rem; text-align: center; }
+	body.vpn-theme.home-festival .vc-footer-title { font-size: 1rem; }
+	body.vpn-theme.home-festival .vc-footer-intro { display: none; }
+	.vc-footer-contact-links { gap: .55rem; }
+	.vc-footer-contact-links a { width: 34px; height: 34px; font-size: .95rem; }
+	.vc-footer-policy-links { gap: .35rem; }
+	.vc-footer-policy-links a { padding: .45rem .55rem; font-size: .7rem; }
+	body.vpn-theme.home-festival .vc-footer-copyright-wrap { padding-top: .65rem; }
+}
