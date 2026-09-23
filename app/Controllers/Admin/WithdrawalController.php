@@ -48,11 +48,15 @@ class WithdrawalController extends BaseController
                         : 'Đã từ chối yêu cầu rút tiền!';
                     $_SESSION['flash_type'] = ($action === 'approved') ? 'success' : 'danger';
                 } else {
-                    $_SESSION['error'] = 'Không thể cập nhật trạng thái yêu cầu!';
+                    $_SESSION['error'] = 'Không thể cập nhật trạng thái yêu cầu (có thể yêu cầu đã được xử lý trước đó hoặc số dư hoa hồng không đủ).';
                 }
                 $this->redirect('/admin/withdrawals/detail?id=' . $id);
                 return;
             }
+
+            $_SESSION['error'] = 'Hành động không hợp lệ.';
+            $this->redirect('/admin/withdrawals/detail?id=' . $id);
+            return;
         }
 
         $this->render('admin.withdrawals.detail', [
