@@ -9,8 +9,8 @@ require_once __DIR__ . '/header.php';
 <div class="bg-overlay"></div>
 
 <!-- Brand Logo / Tên Web ở góc trên bên trái màn hình -->
-<a href="/" class="auth-brand-corner" style="position: fixed; top: 20px; left: 25px; z-index: 9999; display: inline-flex; align-items: center; text-decoration: none; cursor: pointer; pointer-events: auto; transition: all 0.3s ease;">
-    <span style="font-size: 1.35rem; font-weight: 800; background: linear-gradient(135deg, #ffffff 0%, #60a5fa 50%, #3b82f6 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; filter: drop-shadow(0 0 12px rgba(59, 130, 246, 0.6)); letter-spacing: 0.8px; transition: transform 0.3s ease, filter 0.3s ease;" onmouseover="this.style.transform='scale(1.05)'; this.style.filter='drop-shadow(0 0 18px rgba(96, 165, 250, 0.95))';" onmouseout="this.style.transform='scale(1)'; this.style.filter='drop-shadow(0 0 12px rgba(59, 130, 246, 0.6))';">
+<a href="/" class="auth-brand-corner">
+    <span>
         <?= htmlspecialchars($siteTitle ?? 'VC VPN 2027', ENT_QUOTES, 'UTF-8') ?>
     </span>
 </a>
@@ -29,7 +29,7 @@ require_once __DIR__ . '/header.php';
     <div class="auth-card">
         <div class="text-center mb-4 assemble-top">
             <h2 class="fw-bold royal-title mb-1 text-sparkle"><?= htmlspecialchars($authTitle ?? 'Đăng nhập tài khoản', ENT_QUOTES, 'UTF-8') ?></h2>
-            <p class="small" style="color: #fffb04; margin: 0;"><?= htmlspecialchars($authSubtitle ?? 'An Toàn - Bảo Mật - Uy Tín', ENT_QUOTES, 'UTF-8') ?></p>
+            <p class="small auth-subtitle"><?= htmlspecialchars($authSubtitle ?? 'An Toàn - Bảo Mật - Uy Tín', ENT_QUOTES, 'UTF-8') ?></p>
         </div>
         
         <?= $content ?? '' ?>

@@ -1,533 +1,75 @@
 @import url("app.css");
 
-/* --- RESET & CHỐNG TRÀN KHUNG --- */
-* {
-  font-family: 'Inter', -apple-system, sans-serif;
-  -webkit-font-smoothing: antialiased;
-  box-sizing: border-box;
-}
+* { box-sizing: border-box; font-family: var(--font-sans); }
+html, body { width: 100%; min-height: 100%; margin: 0; overflow-x: hidden; background: var(--color-bg); color: var(--color-text); }
+body.vpn-theme { background: var(--color-bg); }
 
-html, body {
-  height: 100%;
-  width: 100%;
-  margin: 0;
-  padding: 0;
-  overflow-x: hidden;
-  background-color: #0f172a;
-  color: #1e293b;
-}
+.bg-slideshow, .bg-overlay, .corner-glow { position: fixed; inset: 0; width: 100vw; height: 100vh; }
+.bg-slideshow { z-index: 1; }
+.slide-item { position: absolute; inset: 0; background-position: center; background-size: cover; opacity: 0; transition: opacity 2s ease-in-out; }
+.slide-item.active { opacity: 1; }
+.bg-overlay { z-index: 2; background: var(--color-overlay); }
+.corner-glow { z-index: 3; overflow: hidden; pointer-events: none; }
+.glow { position: absolute; width: 55vw; height: 55vw; border-radius: 50%; opacity: .45; filter: blur(20px); }
+.glow-left { top: -15%; left: -20%; background: radial-gradient(circle, var(--color-primary-soft), transparent 70%); }
+.glow-right { top: -15%; right: -20%; background: radial-gradient(circle, rgba(25, 194, 209, .2), transparent 70%); }
+.glow::after { content: ''; position: absolute; inset: 0; background-image: radial-gradient(var(--color-secondary) 1px, transparent 1px); background-size: 20px 20px; opacity: .25; animation: star-sparkle 10s linear infinite; }
 
-/* --- LỚP ẢNH SLIDESHOW NỀN --- */
-.bg-slideshow {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100vw;
-  height: 100vh;
-  z-index: 1;
-}
+.auth-wrapper { position: fixed !important; inset: 0 !important; z-index: 999 !important; display: flex !important; align-items: center !important; justify-content: center !important; padding: var(--space-4) !important; overflow-y: auto !important; }
+.auth-card { position: relative; width: 100%; max-width: 380px; margin: auto !important; padding: 1.75rem 1.5rem; border: 1px solid var(--color-border); border-top-color: var(--color-secondary); border-radius: var(--radius-lg); background: rgba(255, 255, 255, .94); box-shadow: var(--shadow-lg); animation: fadeInCard .6s ease-out forwards; }
+.auth-card::before, .auth-card::after { content: ''; position: absolute; inset: -1px; border-radius: inherit; pointer-events: none; background-repeat: no-repeat; background-size: 50% 100%; opacity: .7; }
+.auth-card::before { background-image: linear-gradient(270deg, transparent, var(--color-secondary), transparent); animation: sweepLeft 3.5s ease-in-out infinite; }
+.auth-card::after { background-image: linear-gradient(90deg, transparent, var(--color-primary), transparent); animation: sweepRight 3.5s ease-in-out infinite; }
 
-.slide-item {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background-size: cover;
-  background-position: center;
-  opacity: 0;
-  transition: opacity 2s ease-in-out;
-}
+.assemble-top, .assemble-left, .assemble-right, .assemble-bottom-1, .assemble-bottom-2 { opacity: 0; }
+.assemble-top { text-align: center !important; margin-bottom: 1.25rem; animation: slideInTop .6s ease forwards .2s; }
+.assemble-left { animation: slideInLeft .6s ease forwards .4s; }
+.assemble-right { animation: slideInRight .6s ease forwards .6s; }
+.assemble-bottom-1 { animation: slideInBottom .6s ease forwards .8s; }
+.assemble-bottom-2 { animation: slideInBottom .6s ease forwards 1s; }
 
-.slide-item.active {
-  opacity: 1;
-}
+.royal-title { margin: 0 0 var(--space-1); color: var(--color-text); font-size: 1.4rem; font-weight: 800; letter-spacing: 0; text-align: center !important; }
+.royal-subtitle { margin: 0; color: var(--color-text-muted); font-size: .8rem; text-align: center !important; }
+.text-sparkle { display: inline-block; color: var(--color-primary); animation: neonColorChange 4s infinite ease-in-out; }
+.auth-form, .form-group { display: flex; flex-direction: column; }
+.form-group { gap: .35rem; margin-bottom: var(--space-4); }
+.form-group label { margin-left: 2px; color: var(--color-text); font-size: .75rem; font-weight: 700; }
+.input-group-custom { position: relative; z-index: 5; display: flex; align-items: center; width: 100%; overflow: hidden; border: 1px solid var(--color-border-strong); border-radius: var(--radius-md); background: var(--color-surface); transition: border-color var(--transition), box-shadow var(--transition); }
+.input-group-custom:focus-within { border-color: var(--color-primary); box-shadow: var(--focus-ring); }
+.input-group-text-custom, .btn-toggle-pw { display: flex; align-items: center; flex-shrink: 0; color: var(--color-text-muted); }
+.input-group-text-custom { padding: 0 10px; font-size: 1rem; }
+.form-control-custom { flex: 1; min-width: 0; padding: 10px; border: 0; outline: 0; background: transparent; color: var(--color-text); font-size: .85rem; font-weight: 600; }
+.form-control-custom::placeholder { color: var(--color-text-muted); }
+.btn-toggle-pw { position: relative; z-index: 20 !important; padding: 0 12px; border: 0; background: transparent; cursor: pointer !important; font-size: 1rem; pointer-events: auto !important; transition: color var(--transition-fast), transform var(--transition-fast); }
+.btn-toggle-pw:hover { color: var(--color-primary); transform: scale(1.08); }
+.btn-send-otp { position: relative; z-index: 20 !important; flex-shrink: 0; width: auto; padding: 0 10px; border: 0; border-radius: var(--radius-sm); background: transparent; color: var(--color-primary); cursor: pointer !important; font-size: .8rem; font-weight: 600; pointer-events: auto !important; white-space: nowrap; }
 
-/* --- LỚP PHỦ NỀN MỜ --- */
-.bg-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100vw;
-  height: 100vh;
-  z-index: 2;
-  background-color: rgba(15, 23, 42, 0.65);
-  background-image: url('https://www.transparenttextures.com/patterns/stardust.png');
-}
+.alert { position: relative; z-index: 10 !important; margin-bottom: var(--space-5); padding: .75rem 2.25rem .75rem var(--space-4); border-radius: var(--radius-md); font-size: .77rem; text-align: center; word-break: break-word; }
+.alert-error { border: 1px solid rgba(220, 38, 38, .3); background: rgba(220, 38, 38, .1); color: var(--color-danger); }
+.alert-success { border: 1px solid rgba(34, 160, 107, .3); background: rgba(34, 160, 107, .1); color: var(--color-success); }
+.alert-close { position: absolute; top: 30%; right: 6px; z-index: 30 !important; padding: 0 4px; border: 0; background: transparent; color: currentColor; cursor: pointer !important; font-size: 1.25rem; font-weight: 700; line-height: 1; opacity: .7; pointer-events: auto !important; transition: opacity var(--transition-fast); }
+.alert-close:hover { opacity: 1; }
+.form-control-custom:-webkit-autofill, .form-control-custom:-webkit-autofill:hover, .form-control-custom:-webkit-autofill:focus, .form-control-custom:-webkit-autofill:active { -webkit-text-fill-color: var(--color-text) !important; caret-color: var(--color-text) !important; transition: background-color 9999s ease-in-out 0s; }
 
-/* --- HIỆU ỨNG HÀO QUANG VÀNG ĐỒNG --- */
-.corner-glow {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100vw;
-  height: 100vh;
-  overflow: hidden;
-  z-index: 3;
-  pointer-events: none;
-}
+.btn-login { width: 100%; margin-top: var(--space-1); padding: 10px; border: 1px solid var(--color-primary-hover); border-radius: var(--radius-md); background: var(--color-primary); color: var(--color-text-inverse); box-shadow: 0 4px 15px rgba(22, 119, 255, .28); cursor: pointer; font-size: .85rem; font-weight: 800; letter-spacing: .04em; text-transform: uppercase; transition: transform var(--transition), background var(--transition), box-shadow var(--transition); }
+.btn-login:hover { background: var(--color-primary-hover); color: var(--color-text-inverse); box-shadow: 0 8px 22px rgba(22, 119, 255, .35); transform: translateY(-2px); }
+.auth-footer { display: flex; align-items: center; justify-content: center; gap: 10px; margin-top: 1.25rem; color: var(--color-text-muted); font-size: .75rem; }
+.auth-footer a { color: var(--color-primary); font-weight: 700; text-decoration: none; }
+.auth-footer a:hover { color: var(--color-primary-hover); text-decoration: underline; }
+.auth-footer .divider, .auth-divider { color: var(--color-text-muted); }
+.auth-divider { display: flex; align-items: center; margin: 10px 0; text-align: center; }
+.auth-divider::before, .auth-divider::after { content: ''; flex: 1; border-bottom: 1px solid var(--color-border); }
+.auth-divider span { padding: 0 10px; font-size: 12px; }
+.btn-google { display: flex; align-items: center; justify-content: center; gap: 10px; width: 100%; padding: 10px; border: 1px solid var(--color-border-strong); border-radius: var(--radius-md); background: var(--color-surface); color: var(--color-text); font-weight: 500; text-decoration: none; transition: background var(--transition-fast), border-color var(--transition-fast); }
+.btn-google:hover { border-color: var(--color-primary); background: var(--color-surface-muted); }
 
-.glow {
-  position: absolute;
-  border-radius: 50%;
-  opacity: 0.45;
-  filter: blur(20px);
-}
-
-.glow-left {
-  top: -15%;
-  left: -20%;
-  width: 55vw;
-  height: 55vw;
-  background: radial-gradient(circle, rgba(212, 175, 55, 0.5) 0%, transparent 70%);
-}
-
-.glow-right {
-  top: -15%;
-  right: -20%;
-  width: 55vw;
-  height: 55vw;
-  background: radial-gradient(circle, rgba(255, 215, 0, 0.35) 0%, transparent 70%);
-}
-
-.glow::after {
-  content: '';
-  position: absolute;
-  width: 100%;
-  height: 100%;
-  background-image: radial-gradient(#d4af37 1px, transparent 1px);
-  background-size: 20px 20px;
-  opacity: 0.25;
-  animation: star-sparkle 10s linear infinite;
-}
-
-@keyframes star-sparkle {
-  0% { transform: scale(1); }
-  50% { transform: scale(1.05); }
-  100% { transform: scale(1); }
-}
-
-/* --- KHUNG THẺ KÍNH SÁNG CĂN GIỮA TUYỆT ĐỐI --- */
-.auth-wrapper {
-  position: fixed !important;
-  top: 0 !important;
-  left: 0 !important;
-  width: 100vw !important;
-  height: 100vh !important;
-  display: flex !important;
-  align-items: center !important;
-  justify-content: center !important;
-  z-index: 999 !important;
-  padding: 1rem !important;
-  box-sizing: border-box !important;
-  overflow-y: auto !important;
-}
-
-.auth-card {
-  border-radius: 20px;
-  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3), 0 0 25px rgba(255, 255, 255, 0.4);
-  background-color: rgba(255, 255, 255, 0.053);
-  backdrop-filter: blur(25px) saturate(180%);
-  -webkit-backdrop-filter: blur(25px) saturate(180%);
-  border: 1.5px solid rgba(212, 175, 55, 0.5);
-  border-top: 2px solid rgba(252, 246, 186, 0.9);
-  width: 100%;
-  max-width: 380px;
-  padding: 1.75rem 1.5rem;
-  position: relative;
-  box-sizing: border-box;
-  margin: auto !important;
-  animation: fadeInCard 0.6s ease-out forwards;
-}
-
-/* VIỀN QUÉT SÁNG VÀNG ĐỒNG 2 BÊN */
-.auth-card::before, .auth-card::after {
-  content: '';
-  position: absolute;
-  inset: -1px;
-  border-radius: 21px;
-  border: 0 solid transparent;
-  border-top: 4px solid transparent;
-  background-origin: border-box;
-  -webkit-mask: linear-gradient(#fff 0 0) padding-box, linear-gradient(#fff 0 0);
-  -webkit-mask-composite: destination-out;
-  mask-composite: exclude;
-  pointer-events: none;
-  background-repeat: no-repeat;
-}
-
-.auth-card::before {
-  background-image: linear-gradient(270deg, transparent 0%, rgba(212, 175, 55, 0.7) 60%, #b8860b 95%, transparent 100%);
-  background-size: 50% 100%;
-  animation: sweepLeft 3.5s cubic-bezier(0.25, 1, 0.5, 1) infinite;
-}
-
-.auth-card::after {
-  background-image: linear-gradient(90deg, transparent 0%, rgba(212, 175, 55, 0.7) 60%, #b8860b 95%, transparent 100%);
-  background-size: 50% 100%;
-  animation: sweepRight 3.5s cubic-bezier(0.25, 1, 0.5, 1) infinite;
-}
-
-@keyframes sweepLeft {
-  0% { background-position: 100% 0; opacity: 0; }
-  15% { opacity: 1; }
-  80% { opacity: 1; }
-  100% { background-position: -20% 0; opacity: 0; }
-}
-
-@keyframes sweepRight {
-  0% { background-position: 0% 0; opacity: 0; }
-  15% { opacity: 1; }
-  80% { opacity: 1; }
-  100% { background-position: 120% 0; opacity: 0; }
-}
-
-@keyframes fadeInCard {
-  from { opacity: 0; transform: translateY(20px); }
-  to { opacity: 1; transform: translateY(0); }
-}
-
-/* HIỆU ỨNG LẮP RÁP CÁC THÀNH PHẦN */
-.assemble-top { 
-  opacity: 0; 
-  animation: slideInTop 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards 0.2s; 
-  text-align: center !important;
-  margin-bottom: 1.25rem;
-}
-
-.assemble-left { 
-  opacity: 0; 
-  animation: slideInLeft 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards 0.4s; 
-}
-
-.assemble-right { 
-  opacity: 0; 
-  animation: slideInRight 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards 0.6s; 
-}
-
-.assemble-bottom-1 { 
-  opacity: 0; 
-  animation: slideInBottom 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards 0.8s; 
-}
-
-.assemble-bottom-2 { 
-  opacity: 0; 
-  animation: slideInBottom 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards 1s; 
-}
-
+@keyframes star-sparkle { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.05); } }
+@keyframes sweepLeft { 0% { background-position: 100% 0; opacity: 0; } 15%, 80% { opacity: 1; } 100% { background-position: -20% 0; opacity: 0; } }
+@keyframes sweepRight { 0% { background-position: 0 0; opacity: 0; } 15%, 80% { opacity: 1; } 100% { background-position: 120% 0; opacity: 0; } }
+@keyframes fadeInCard { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
 @keyframes slideInTop { from { opacity: 0; transform: translateY(-40px); } to { opacity: 1; transform: translateY(0); } }
 @keyframes slideInLeft { from { opacity: 0; transform: translateX(-40px); } to { opacity: 1; transform: translateX(0); } }
 @keyframes slideInRight { from { opacity: 0; transform: translateX(40px); } to { opacity: 1; transform: translateX(0); } }
 @keyframes slideInBottom { from { opacity: 0; transform: translateY(40px); } to { opacity: 1; transform: translateY(0); } }
-
-/* TIÊU ĐỀ LẤP LÁNH CĂN GIỮA TRÊN KÍNH SÁNG */
-.royal-title {
-  color: #9a7b1c;
-  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.15);
-  letter-spacing: 1px;
-  font-weight: 800;
-  font-size: 1.4rem;
-  margin: 0 0 0.25rem 0;
-  text-align: center !important;
-}
-
-.royal-subtitle {
-  color: #78521a;
-  font-size: 0.8rem;
-  margin: 0;
-  text-align: center !important;
-}
-
-@keyframes neonColorChange {
-  0% {
-    color: #9a7b1c;
-    text-shadow: 0 0 6px rgba(212, 175, 55, 0.6);
-  }
-  33% {
-    color: #b8860b;
-    text-shadow: 0 0 10px rgba(184, 134, 11, 0.5);
-  }
-  66% {
-    color: #d4af37;
-    text-shadow: 0 0 8px rgba(212, 175, 55, 0.7);
-  }
-  100% {
-    color: #9a7b1c;
-    text-shadow: 0 0 6px rgba(212, 175, 55, 0.6);
-  }
-}
-
-.text-sparkle {
-  animation: neonColorChange 4s infinite ease-in-out;
-  display: inline-block;
-}
-
-/* INPUT FORM SÁNG RÕ CÓ VIỀN VÀNG */
-.auth-form {
-  display: flex;
-  flex-direction: column;
-}
-
-.form-group {
-  display: flex;
-  flex-direction: column;
-  gap: 0.35rem;
-  margin-bottom: 1rem;
-}
-
-.form-group label {
-  font-weight: 700;
-  font-size: 0.75rem;
-  color: #d48715;
-  margin-left: 2px;
-}
-
-.input-group-custom {
-  background: rgba(255, 255, 255, 0.022);
-  border: 1.5px solid rgba(212, 175, 55, 0.5);
-  border-radius: 10px;
-  display: flex;
-  align-items: center;
-  transition: all 0.3s ease;
-  overflow: hidden;
-  position: relative;
-  width: 100%;
-  z-index: 5;
-}
-
-.input-group-custom:focus-within {
-  border-color: #b8860b;
-  background: rgba(255, 255, 255, 0.1);
-  box-shadow: 0 0 0 3px rgba(212, 175, 55, 0.25), 0 4px 12px rgba(212, 175, 55, 0.15);
-}
-
-.input-group-text-custom {
-  border: none;
-  padding: 0 10px;
-  color: #9a7b1c;
-  display: flex;
-  align-items: center;
-  font-size: 1rem;
-  flex-shrink: 0;
-}
-
-.form-control-custom {
-  background: transparent;
-  border: none;
-  padding: 10px 10px;
-  box-shadow: none !important;
-  flex: 1;
-  min-width: 0;
-  outline: none;
-  color: #fafbfe;
-  font-size: 0.85rem;
-  font-weight: 600;
-}
-
-.form-control-custom::placeholder {
-  color: #94a3b8;
-}
-
-.btn-toggle-pw {
-  background: transparent;
-  border: none;
-  padding: 0 12px;
-  color: #9a7b1c;
-  transition: 0.2s;
-  cursor: pointer !important;
-  font-size: 1rem;
-  user-select: none;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-  position: relative;
-  z-index: 20 !important;
-  pointer-events: auto !important;
-}
-
-.btn-toggle-pw:hover {
-  color: #b8860b;
-  transform: scale(1.15);
-}
-
-/* NÚT GỬI MÃ OTP */
-.btn-send-otp {
-  background: transparent;
-  padding: 0 10px;
-  font-size: 0.8rem;
-  font-weight: 600;
-  color: #fff;
-  border-radius: 2px;
-  border: none;
-  cursor: pointer !important;
-  white-space: nowrap;
-  width: auto;
-  position: relative;
-  z-index: 20 !important;
-  pointer-events: auto !important;
-  flex-shrink: 0;
-}
-
-/* --- KHỐI THÔNG BÁO & CÓ NÚT X TẮT --- */
-.alert {
-  position: relative;
-  z-index: 10 !important;
-  padding: 0.75rem 2.25rem 0.75rem 1rem;
-  border-radius: 4px;
-  font-size: 0.77rem;
-  margin-bottom: 1.5rem;
-  text-align: center;
-  word-break: break-word;
-}
-
-.alert-error {
-  background: rgba(255, 59, 48, 0.12);
-  color: #f70101;
-  border: 1px solid rgba(220, 38, 38, 0.3);
-}
-
-.alert-success {
-  background: rgba(52, 199, 89, 0.12);
-  color: #04ff61;
-  border: 1px solid rgba(22, 163, 74, 0.3);
-}
-
-.alert-close {
-  position: absolute;
-  top: 30%;
-  right: 6px;
-  transform: translateY(-50%);
-  background: #392b440d;
-  border: none;
-  color: #ffffff;
-  font-size: 1.25rem;
-  font-weight: bold;
-  line-height: 1;
-  cursor: pointer !important;
-  padding: 0 4px;
-  opacity: 0.7;
-  transition: opacity 0.2s;
-  z-index: 30 !important;
-  pointer-events: auto !important;
-}
-
-.alert-close:hover {
-  opacity: 1;
-}
-
-/* AUTOFILL FIX */
-.form-control-custom:-webkit-autofill,
-.form-control-custom:-webkit-autofill:hover,
-.form-control-custom:-webkit-autofill:focus,
-.form-control-custom:-webkit-autofill:active {
-  transition: background-color 9999s ease-in-out 0s, color 9999s ease-in-out 0s !important;
-  -webkit-text-fill-color: #0f172a !important;
-  caret-color: #0f172a !important;
-  background-color: transparent !important;
-}
-
-/* NÚT ĐĂNG NHẬP VÀNG ĐỒNG SÁNG NỔI BẬT */
-.btn-login {
-  background: linear-gradient(135deg, #d4af37, #b8860b);
-  color: #ffffff;
-  border: 1px solid #9a7b1c;
-  border-radius: 10px;
-  padding: 10px;
-  font-weight: 800;
-  font-size: 0.85rem;
-  text-transform: uppercase;
-  letter-spacing: 1px;
-  transition: all 0.3s;
-  cursor: pointer;
-  width: 100%;
-  margin-top: 0.25rem;
-  box-shadow: 0 4px 15px rgba(184, 134, 11, 0.35);
-}
-
-.btn-login:hover {
-  background: linear-gradient(135deg, #b8860b, #9a7b1c);
-  color: #ffffff;
-  transform: translateY(-2px);
-  box-shadow: 0 8px 22px rgba(184, 134, 11, 0.5);
-}
-
-/* FOOTER LINKS */
-.auth-footer {
-  font-size: 0.75rem;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  gap: 10px;
-  margin-top: 1.25rem;
-  color: #64748b;
-}
-
-.auth-footer a {
-  text-decoration: none;
-  color: #d48715;
-  font-weight: 700;
-  transition: 0.2s;
-}
-
-.auth-footer a:hover {
-  color: #03fae6;
-  text-decoration: underline;
-}
-
-.auth-footer .divider {
-  color: rgba(212, 175, 55, 0.5);
-}
-
-@media (max-width: 480px) {
-  .auth-card {
-    padding: 1.5rem 1rem;
-    border-radius: 16px;
-    max-width: 420px;
-  }
-}
-
-.auth-divider {
-    display: flex;
-    align-items: center;
-    text-align: center;
-    margin: 10px 0;
-    color: #bc8c12;
-}
-.auth-divider::before, .auth-divider::after {
-    content: '';
-    flex: 1;
-    border-bottom: 1px solid #ddd;
-}
-
-/* Professional VPN palette overrides. */
-body.vpn-theme { background: #091a33; }
-body.vpn-theme .bg-overlay { background-color: rgba(6, 22, 45, 0.76); background-image: radial-gradient(rgba(116, 211, 255, .38) 1px, transparent 1px); background-size: 20px 20px; }
-body.vpn-theme .glow-left { background: radial-gradient(circle, rgba(22, 119, 255, .42) 0%, transparent 70%); } body.vpn-theme .glow-right { background: radial-gradient(circle, rgba(25, 194, 209, .3) 0%, transparent 70%); }
-body.vpn-theme .auth-card { border-color: rgba(116, 211, 255, .44); border-top-color: rgba(191, 239, 255, .85); background-color: rgba(10, 36, 71, .72); box-shadow: 0 20px 40px rgba(0, 9, 25, .34), 0 0 25px rgba(22, 119, 255, .2); }
-body.vpn-theme .royal-title, body.vpn-theme .form-group label, body.vpn-theme .input-group-text-custom, body.vpn-theme .btn-toggle-pw, body.vpn-theme .auth-footer a { color: #75d8ff; }
-body.vpn-theme .input-group-custom { border-color: rgba(116, 211, 255, .4); } body.vpn-theme .input-group-custom:focus-within { border-color: #19c2d1; box-shadow: 0 0 0 3px rgba(25, 194, 209, .18), 0 4px 12px rgba(22, 119, 255, .15); }
-body.vpn-theme .btn-login { border-color: #0d5fd1; background: linear-gradient(135deg, #1677ff, #0d5fd1); box-shadow: 0 4px 15px rgba(22, 119, 255, .35); } body.vpn-theme .btn-login:hover { background: linear-gradient(135deg, #0d5fd1, #0b4ca8); box-shadow: 0 8px 22px rgba(22, 119, 255, .48); }
-body.vpn-theme .auth-divider, body.vpn-theme .auth-footer .divider { color: #75d8ff; }
-.auth-divider span {
-    padding: 0 10px;
-    font-size: 12px;
-}
-.btn-google {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 10px;
-    width: 100%;
-    padding: 10px;
-    background-color: #ffffff;
-    border: 1px solid #bd8d13;
-    border-radius: 10px;
-    color: #3c4043;
-    font-weight: 500;
-    text-decoration: none;
-    transition: background-color 0.2s;
-}
-.btn-google:hover {
-    background-color: #b0f3ec;
-}
+@keyframes neonColorChange { 0%, 100% { color: var(--color-primary); } 50% { color: var(--color-secondary); } }
+@media (max-width: 480px) { .auth-card { max-width: 420px; padding: 1.5rem var(--space-4); } }
