@@ -387,6 +387,7 @@ $_SESSION['success'] = 'Đã tạo đơn hàng ' . $orderCode . ' thành công. 
         $depositId = (int) ($_GET['deposit'] ?? 0);
         $renewalId = (int) ($_GET['renewal'] ?? 0);
         $paymentId = (int) ($_GET['payment'] ?? 0);
+        $pendingOrderTimeout = max(1, min(43200, (int) ($this->settings['pending_order_timeout_minutes'] ?? 30)));
 
         if ($orderId > 0) {
             $order = (new Order())->findWithDetails($orderId);
@@ -410,6 +411,7 @@ $_SESSION['success'] = 'Đã tạo đơn hàng ' . $orderCode . ' thành công. 
                 'payment' => null,
                 'subscription' => $renewalSubscription,
                 'paymentInstructions' => $this->buildPaymentInstructions($order),
+                'pendingOrderTimeout' => $pendingOrderTimeout,
                 'activeMenu' => $isDepositOrder ? 'wallet' : ($renewalSubscription ? 'subscriptions' : 'orders')
             ]);
             return;
@@ -432,6 +434,7 @@ $_SESSION['success'] = 'Đã tạo đơn hàng ' . $orderCode . ' thành công. 
                 'checkoutType' => 'deposit', 'order' => null, 'payment' => $payment,
                 'subscription' => null,
                 'paymentInstructions' => $this->buildDepositPaymentInstructions($payment),
+                'pendingOrderTimeout' => $pendingOrderTimeout,
                 'activeMenu' => 'payments'
             ]);
             return;
@@ -457,6 +460,7 @@ $_SESSION['success'] = 'Đã tạo đơn hàng ' . $orderCode . ' thành công. 
                 'checkoutType' => 'renewal', 'order' => null, 'payment' => $payment,
                 'subscription' => $subscription,
                 'paymentInstructions' => $this->buildDepositPaymentInstructions($payment),
+                'pendingOrderTimeout' => $pendingOrderTimeout,
                 'activeMenu' => 'subscriptions'
             ]);
             return;
@@ -476,6 +480,7 @@ $_SESSION['success'] = 'Đã tạo đơn hàng ' . $orderCode . ' thành công. 
 
         $orderId = (int) ($_POST['order_id'] ?? 0);
         $orderModel = new Order();
+        $order = $orderId > 0 ? $orderModel->findWithDetails($orderId) : null;
         if ($orderId <= 0 || !$orderModel->cancelPendingForUser($orderId, (int) $_SESSION['user_id'])) {
             $_SESSION['error'] = 'Không thể hủy đơn hàng này. Chỉ đơn đang chờ thanh toán mới có thể hủy.';
             $this->redirect('/orders/detail?id=' . $orderId);
@@ -483,6 +488,14 @@ $_SESSION['success'] = 'Đã tạo đơn hàng ' . $orderCode . ' thành công. 
         }
 
         (new Payment())->failPendingByOrderId($orderId);
+
+        $email = trim((string) ($order['email'] ?? ''));
+        if ($email !== '' && class_exists('App\Services\MailService')) {
+            (new \App\Services\MailService())->send($email, 'Đơn hàng đã bị hủy', 'orders.cancelled', [
+                'orderCode' => (string) ($order['order_code'] ?? ''),
+                'reason' => 'Đơn hàng đã được hủy theo yêu cầu của bạn.'
+            ]);
+        }
 
         $_SESSION['success'] = 'Đã hủy đơn hàng chờ thanh toán. Bạn có thể tạo đơn mới.';
         $this->redirect('/orders');

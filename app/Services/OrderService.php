@@ -118,6 +118,15 @@ class OrderService
                     'created_at'       => date('Y-m-d H:i:s')
                 ]);
 
+                $email = trim((string) ($userModel->findById($userId)['email'] ?? ''));
+                if ($email !== '') {
+                    (new MailService())->send($email, 'Thanh toán thành công', 'orders.payment-completed', [
+                        'orderCode' => $orderCode,
+                        'amount' => number_format($finalPrice, 0, '.', ',') . ' đ',
+                        'description' => 'Đơn hàng của bạn đã được thanh toán bằng số dư và kích hoạt thành công.'
+                    ]);
+                }
+
                 $this->notifyAdministratorsAboutNewOrder(
                     $userId,
                     $orderCode,
