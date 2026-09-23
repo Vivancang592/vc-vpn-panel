@@ -38,19 +38,30 @@ $zaloHref = $normalizeUrl($zaloUrl, 'https://zalo.me/');
         <?php if ($hasContactLinks): ?>
             <nav class="vc-footer-contact-links" aria-label="Nền tảng hỗ trợ" style="display: flex; align-items: center; justify-content: center; flex-wrap: wrap; gap: .55rem; margin-top: .65rem;">
                 <?php if ($fanpageHref !== ''): ?>
-                    <a href="<?= htmlspecialchars($fanpageHref) ?>" target="_blank" rel="noopener noreferrer" title="Fanpage" style="display: inline-grid; place-items: center; width: 34px; height: 34px; border: 1px solid rgba(0,123,255,.35); border-radius: 6px; color: #0056b3; text-decoration: none; font-size: .95rem;">🌐</a>
+                    <a href="<?= htmlspecialchars($fanpageHref) ?>" target="_blank" rel="noopener noreferrer" title="Facebook Fanpage" aria-label="Facebook Fanpage" style="display: inline-grid; place-items: center; width: 34px; height: 34px; border: 1px solid rgba(0,123,255,.35); border-radius: 6px; color: #0056b3; text-decoration: none;">
+                        <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" fill="currentColor"><path d="M14 8h3V4h-3c-3.3 0-5 2-5 5v3H6v4h3v6h4v-6h3.1l.9-4H13V9c0-.6.4-1 1-1Z"/></svg>
+                    </a>
                 <?php endif; ?>
                 <?php if ($zaloHref !== ''): ?>
-                    <a href="<?= htmlspecialchars($zaloHref) ?>" target="_blank" rel="noopener noreferrer" title="Zalo" style="display: inline-grid; place-items: center; width: 34px; height: 34px; border: 1px solid rgba(40,167,69,.35); border-radius: 6px; color: #1e7e34; text-decoration: none; font-size: .95rem;">💬</a>
+                    <a href="<?= htmlspecialchars($zaloHref) ?>" target="_blank" rel="noopener noreferrer" title="Zalo" aria-label="Zalo" style="display: inline-grid; place-items: center; width: 34px; height: 34px; border: 1px solid rgba(40,167,69,.35); border-radius: 6px; color: #1e7e34; text-decoration: none;">
+                        <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" fill="currentColor"><path d="M3 5h18v14H3z"/><path d="M7 8h5l-5 8h5M14 8v8M17 8v8" fill="#fff"/></svg>
+                    </a>
                 <?php endif; ?>
                 <?php if ($youtubeHref !== ''): ?>
-                    <a href="<?= htmlspecialchars($youtubeHref) ?>" target="_blank" rel="noopener noreferrer" title="Youtube" style="display: inline-grid; place-items: center; width: 34px; height: 34px; border: 1px solid rgba(220,53,69,.35); border-radius: 6px; color: #dc3545; text-decoration: none; font-size: .95rem;">▶</a>
+                    <a href="<?= htmlspecialchars($youtubeHref) ?>" target="_blank" rel="noopener noreferrer" title="YouTube" aria-label="YouTube" style="display: inline-grid; place-items: center; width: 34px; height: 34px; border: 1px solid rgba(220,53,69,.35); border-radius: 6px; color: #dc3545; text-decoration: none;">
+                        <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" fill="currentColor"><path d="M21 7.1a2.7 2.7 0 0 0-1.9-1.9C17.4 4.7 12 4.7 12 4.7s-5.4 0-7.1.5A2.7 2.7 0 0 0 3 7.1 28 28 0 0 0 2.5 12c0 1.7.2 3.3.5 4.9a2.7 2.7 0 0 0 1.9 1.9c1.7.5 7.1.5 7.1.5s5.4 0 7.1-.5a2.7 2.7 0 0 0 1.9-1.9c.3-1.6.5-3.2.5-4.9s-.2-3.3-.5-4.9Z"/><path d="m10 15.5 5-3.5-5-3.5z" fill="#fff"/></svg>
+                    </a>
                 <?php endif; ?>
                 <?php if ($contactEmail !== ''): ?>
-                    <a href="mailto:<?= htmlspecialchars($contactEmail) ?>" title="Email" style="display: inline-grid; place-items: center; width: 34px; height: 34px; border: 1px solid rgba(111,66,193,.35); border-radius: 6px; color: #6f42c1; text-decoration: none; font-size: .95rem;">📧</a>
+                    <a href="mailto:<?= htmlspecialchars($contactEmail) ?>" title="Email" aria-label="Email" style="display: inline-grid; place-items: center; width: 34px; height: 34px; border: 1px solid rgba(111,66,193,.35); border-radius: 6px; color: #6f42c1; text-decoration: none;">
+                        <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m4 7 8 6 8-6"/></svg>
+                    </a>
                 <?php endif; ?>
                 <?php if ($wechatId !== ''): ?>
-                    <span title="WeChat ID" style="display: inline-flex; align-items: center; gap: .3rem; padding: 0 .55rem; height: 34px; border: 1px solid rgba(23,162,184,.35); border-radius: 6px; color: #117a8b; font-size: .8rem; font-weight: 600;">💬 <?= htmlspecialchars($wechatId) ?></span>
+                    <span title="WeChat ID" style="display: inline-flex; align-items: center; gap: .3rem; padding: 0 .55rem; height: 34px; border: 1px solid rgba(23,162,184,.35); border-radius: 6px; color: #117a8b; font-size: .8rem; font-weight: 600;">
+                        <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" fill="currentColor"><path d="M9.5 3C5.36 3 2 5.8 2 9.25c0 1.92 1.04 3.63 2.68 4.77L4 17l3.22-1.61c.72.2 1.48.31 2.28.31 4.14 0 7.5-2.8 7.5-6.25S13.64 3 9.5 3Zm-2 5.5a1 1 0 1 1 0 2 1 1 0 0 1 0-2Zm4 0a1 1 0 1 1 0 2 1 1 0 0 1 0-2Z"/><path d="M16.5 10C13.46 10 11 12.01 11 14.5S13.46 19 16.5 19c.56 0 1.1-.08 1.6-.23L21 20l-.86-2.2c1.13-.85 1.86-2.03 1.86-3.3 0-2.49-2.46-4.5-5.5-4.5Zm-1.5 3a.75.75 0 1 1 0 1.5A.75.75 0 0 1 15 13Zm3 0a.75.75 0 1 1 0 1.5A.75.75 0 0 1 18 13Z"/></svg>
+                        <?= htmlspecialchars($wechatId) ?>
+                    </span>
                 <?php endif; ?>
             </nav>
         <?php endif; ?>
