@@ -172,6 +172,7 @@ class PaymentService
                 'plan_id'        => (int) $subscription['plan_id'],
                 'total_amount'   => $amount,
                 'payment_method' => 'balance',
+                'transfer_content'=> null,
                 'payment_status' => 'completed',
                 'purchase_ip'    => $purchaseIp !== '' ? $purchaseIp : null,
                 'created_by'     => $userId,
@@ -189,6 +190,7 @@ class PaymentService
                 'type'            => 'payment',
                 'amount'          => $amount,
                 'payment_method'  => 'balance',
+                'transfer_content'=> null,
                 'status'          => 'pending',
                 'created_at'      => date('Y-m-d H:i:s')
             ]);
