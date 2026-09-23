@@ -6,12 +6,14 @@ use App\Controllers\BaseController;
 use App\Models\SystemLog;
 use App\Models\AccessLog;
 use App\Models\EmailLog;
+use App\Models\ChatEvent;
 
 class LogController extends BaseController
 {
     private SystemLog $systemLogModel;
     private AccessLog $accessLogModel;
     private EmailLog $emailLogModel;
+    private ChatEvent $chatEventModel;
 
     public function __construct()
     {
@@ -21,6 +23,7 @@ class LogController extends BaseController
         $this->systemLogModel = new SystemLog();
         $this->accessLogModel = new AccessLog();
         $this->emailLogModel = new EmailLog();
+        $this->chatEventModel = new ChatEvent();
     }
 
     public function index(): void
@@ -46,6 +49,13 @@ class LogController extends BaseController
     {
         $this->renderLogTab('email', [
             'logs' => $this->emailLogModel->all()
+        ]);
+    }
+
+    public function chatbot(): void
+    {
+        $this->renderLogTab('chatbot', [
+            'logs' => $this->chatEventModel->allWithSessionContext()
         ]);
     }
 
@@ -95,7 +105,8 @@ class LogController extends BaseController
         $logSources = [
             'system' => ['model' => $this->systemLogModel, 'url' => '/admin/logs/system'],
             'access' => ['model' => $this->accessLogModel, 'url' => '/admin/logs/access'],
-            'email'  => ['model' => $this->emailLogModel, 'url' => '/admin/logs/email']
+            'email'  => ['model' => $this->emailLogModel, 'url' => '/admin/logs/email'],
+            'chatbot' => ['model' => $this->chatEventModel, 'url' => '/admin/logs/chatbot']
         ];
         $redirectUrl = isset($logSources[$logType])
             ? $logSources[$logType]['url']

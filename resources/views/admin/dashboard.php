@@ -56,6 +56,42 @@ ob_start();
         <div class="value" style="color: #5856D6;"><?= ($stats['active_inbounds'] ?? 0) ?> / <?= ($stats['total_inbounds'] ?? 0) ?></div>
         <div style="font-size: 0.8rem; color: var(--ios-text-secondary);">Giao thức khả dụng</div>
     </div>
+
+    <div class="glass-card stat-card">
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+            <span class="title">Chat Mở Hôm Nay</span>
+            <span style="font-size: 1.25rem;">🤖</span>
+        </div>
+        <div class="value" style="color: #0a84ff;"><?= number_format($stats['chat_started_today'] ?? 0) ?></div>
+        <div style="font-size: 0.8rem; color: var(--ios-text-secondary);">Số phiên chat người dùng khởi tạo</div>
+    </div>
+
+    <div class="glass-card stat-card">
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+            <span class="title">Yêu Cầu Người Thật</span>
+            <span style="font-size: 1.25rem;">🧑‍💼</span>
+        </div>
+        <div class="value" style="color: #ff9500;"><?= number_format($stats['chat_handoff_today'] ?? 0) ?></div>
+        <div style="font-size: 0.8rem; color: var(--ios-text-secondary);">Số cuộc chat cần chuyển hỗ trợ</div>
+    </div>
+
+    <div class="glass-card stat-card">
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+            <span class="title">CTA Chatbot Được Click</span>
+            <span style="font-size: 1.25rem;">🎯</span>
+        </div>
+        <div class="value" style="color: #34c759;"><?= number_format($stats['chat_cta_clicked_today'] ?? 0) ?></div>
+        <div style="font-size: 0.8rem; color: var(--ios-text-secondary);">Tương tác chuyển đổi trong ngày</div>
+    </div>
+
+    <div class="glass-card stat-card">
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+            <span class="title">Click Vào Checkout</span>
+            <span style="font-size: 1.25rem;">🛒</span>
+        </div>
+        <div class="value" style="color: #0a84ff;"><?= number_format($stats['chat_checkout_clicked_today'] ?? 0) ?></div>
+        <div style="font-size: 0.8rem; color: var(--ios-text-secondary);">Số click CTA đi tới bước mua</div>
+    </div>
 </div>
 
 <!-- Layout 2 Cột Responsive -->

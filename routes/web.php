@@ -209,6 +209,7 @@ return [
     'GET /admin/logs/system'            => ['Admin\LogController', 'system'],
     'GET /admin/logs/access'            => ['Admin\LogController', 'access'],
     'GET /admin/logs/email'             => ['Admin\LogController', 'email'],
+    'GET /admin/logs/chatbot'           => ['Admin\LogController', 'chatbot'],
     'GET /admin/logs/macrodroid'        => ['Admin\LogController', 'macrodroid'],
     'POST /admin/logs/delete'           => ['Admin\LogController', 'delete'],
     'POST /admin/logs/macrodroid/clear' => ['Admin\LogController', 'clearMacrodroid'],

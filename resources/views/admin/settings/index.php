@@ -35,6 +35,7 @@ ob_start();
     <button class="settings-tab-btn" data-target="tab-trial">🎁 Dùng Thử</button>
     <button class="settings-tab-btn" data-target="tab-bank">🏦 Đa Cổng Thanh Toán</button>
     <button class="settings-tab-btn" data-target="tab-email">📧 Cấu Hình Email</button>
+    <button class="settings-tab-btn" data-target="tab-ai">🤖 AI Chatbot & Fanpage</button>
 </div>
 
 <div class="settings-content">
@@ -336,6 +337,110 @@ ob_start();
             <div style="display: flex; justify-content: flex-end; margin-top: 0.5rem;">
                 <button type="submit" class="glass-btn" style="padding: 0.75rem 2rem; background: var(--ios-danger); color: #fff; border: none; font-weight: 600; cursor: pointer;">
                     💾 Lưu Cấu Hình Email
+                </button>
+            </div>
+        </form>
+    </div>
+
+    <!-- TAB 6: AI CHATBOT & FANPAGE -->
+    <div id="tab-ai" class="settings-tab-pane">
+        <form method="POST" action="/admin/settings/save" class="glass-card settings-form" style="padding: 1.5rem; width: 100%; display: flex; flex-direction: column; gap: 1.25rem;">
+            <h2 style="font-size: 1.1rem; font-weight: 700; margin-bottom: 0.5rem; border-bottom: 1px solid var(--glass-border); padding-bottom: 0.5rem; color: #0a84ff;">
+                Cấu Hình Trợ Lý AI Và Fanpage
+            </h2>
+
+            <div class="settings-field-list" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 1.25rem;">
+                <div>
+                    <label style="display: block; font-weight: 600; font-size: 0.85rem; margin-bottom: 0.4rem;">Bật chatbot website</label>
+                    <select name="settings[ai_chatbot_enabled]" class="glass-input" style="width: 100%;">
+                        <option value="1" <?= ($settings['ai_chatbot_enabled'] ?? '1') === '1' ? 'selected' : '' ?>>Bật</option>
+                        <option value="0" <?= ($settings['ai_chatbot_enabled'] ?? '1') === '0' ? 'selected' : '' ?>>Tắt</option>
+                    </select>
+                </div>
+
+                <div>
+                    <label style="display: block; font-weight: 600; font-size: 0.85rem; margin-bottom: 0.4rem;">Nhà cung cấp AI mặc định</label>
+                    <select name="settings[ai_provider]" class="glass-input" style="width: 100%;">
+                        <option value="openai" <?= ($settings['ai_provider'] ?? 'openai') === 'openai' ? 'selected' : '' ?>>OpenAI</option>
+                        <option value="gemini" <?= ($settings['ai_provider'] ?? '') === 'gemini' ? 'selected' : '' ?>>Google Gemini</option>
+                    </select>
+                </div>
+
+                <div>
+                    <label style="display: block; font-weight: 600; font-size: 0.85rem; margin-bottom: 0.4rem;">OpenAI model</label>
+                    <input type="text" name="settings[ai_openai_model]" class="glass-input" value="<?= htmlspecialchars($settings['ai_openai_model'] ?? 'gpt-4o-mini') ?>" placeholder="gpt-4o-mini" style="width: 100%;">
+                </div>
+
+                <div>
+                    <label style="display: block; font-weight: 600; font-size: 0.85rem; margin-bottom: 0.4rem;">Gemini model</label>
+                    <input type="text" name="settings[ai_gemini_model]" class="glass-input" value="<?= htmlspecialchars($settings['ai_gemini_model'] ?? 'gemini-1.5-flash') ?>" placeholder="gemini-1.5-flash" style="width: 100%;">
+                </div>
+
+                <div>
+                    <label style="display: block; font-weight: 600; font-size: 0.85rem; margin-bottom: 0.4rem;">Giới hạn output tokens</label>
+                    <input type="number" name="settings[ai_max_output_tokens]" class="glass-input" value="<?= htmlspecialchars($settings['ai_max_output_tokens'] ?? '500') ?>" min="120" max="900" step="10" style="width: 100%;">
+                </div>
+
+                <div>
+                    <label style="display: block; font-weight: 600; font-size: 0.85rem; margin-bottom: 0.4rem;">Cooldown mỗi tin (giây)</label>
+                    <input type="number" name="settings[ai_cooldown_seconds]" class="glass-input" value="<?= htmlspecialchars($settings['ai_cooldown_seconds'] ?? '1.5') ?>" min="0.5" max="6" step="0.1" style="width: 100%;">
+                </div>
+
+                <div>
+                    <label style="display: block; font-weight: 600; font-size: 0.85rem; margin-bottom: 0.4rem;">Giới hạn request mỗi phút</label>
+                    <input type="number" name="settings[ai_rate_limit_per_minute]" class="glass-input" value="<?= htmlspecialchars($settings['ai_rate_limit_per_minute'] ?? '8') ?>" min="3" max="30" step="1" style="width: 100%;">
+                </div>
+
+                <div>
+                    <label style="display: block; font-weight: 600; font-size: 0.85rem; margin-bottom: 0.4rem;">Cửa sổ chặn tin trùng (giây)</label>
+                    <input type="number" name="settings[ai_duplicate_window_seconds]" class="glass-input" value="<?= htmlspecialchars($settings['ai_duplicate_window_seconds'] ?? '4') ?>" min="2" max="20" step="1" style="width: 100%;">
+                </div>
+
+                <div>
+                    <label style="display: block; font-weight: 600; font-size: 0.85rem; margin-bottom: 0.4rem;">Thời gian cache AI (phút)</label>
+                    <input type="number" name="settings[ai_cache_ttl_minutes]" class="glass-input" value="<?= htmlspecialchars($settings['ai_cache_ttl_minutes'] ?? '60') ?>" min="1" max="1440" step="1" style="width: 100%;">
+                </div>
+            </div>
+
+            <div class="settings-field-list" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1.25rem;">
+                <div>
+                    <label style="display: block; font-weight: 600; font-size: 0.85rem; margin-bottom: 0.4rem;">OpenAI API key</label>
+                    <input type="password" name="settings[ai_openai_api_key]" class="glass-input" value="<?= !empty($settings['ai_openai_api_key']) ? '************' : '' ?>" placeholder="sk-..." style="width: 100%;">
+                </div>
+
+                <div>
+                    <label style="display: block; font-weight: 600; font-size: 0.85rem; margin-bottom: 0.4rem;">Gemini API key</label>
+                    <input type="password" name="settings[ai_gemini_api_key]" class="glass-input" value="<?= !empty($settings['ai_gemini_api_key']) ? '************' : '' ?>" placeholder="AIza..." style="width: 100%;">
+                </div>
+            </div>
+
+            <div class="settings-field-row">
+                <label style="display: block; font-weight: 600; font-size: 0.85rem; margin-bottom: 0.4rem;">Prompt hệ thống cho bot</label>
+                <textarea name="settings[ai_system_prompt]" rows="4" class="glass-input" style="width: 100%; resize: vertical;"><?= htmlspecialchars($settings['ai_system_prompt'] ?? '') ?></textarea>
+            </div>
+
+            <h3 style="font-size: 1rem; font-weight: 700; margin-top: 0.25rem; color: #34c759;">Facebook Fanpage Webhook</h3>
+
+            <div class="settings-field-list" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1.25rem;">
+                <div>
+                    <label style="display: block; font-weight: 600; font-size: 0.85rem; margin-bottom: 0.4rem;">Verify token</label>
+                    <input type="password" name="settings[fanpage_verify_token]" class="glass-input" value="<?= !empty($settings['fanpage_verify_token']) ? '************' : '' ?>" placeholder="token xác thực webhook" style="width: 100%;">
+                </div>
+
+                <div>
+                    <label style="display: block; font-weight: 600; font-size: 0.85rem; margin-bottom: 0.4rem;">App secret (verify signature)</label>
+                    <input type="password" name="settings[fanpage_app_secret]" class="glass-input" value="<?= !empty($settings['fanpage_app_secret']) ? '************' : '' ?>" placeholder="Meta app secret" style="width: 100%;">
+                </div>
+
+                <div>
+                    <label style="display: block; font-weight: 600; font-size: 0.85rem; margin-bottom: 0.4rem;">Page access token</label>
+                    <input type="password" name="settings[fanpage_page_access_token]" class="glass-input" value="<?= !empty($settings['fanpage_page_access_token']) ? '************' : '' ?>" placeholder="EAAG..." style="width: 100%;">
+                </div>
+            </div>
+
+            <div style="display: flex; justify-content: flex-end; margin-top: 0.5rem;">
+                <button type="submit" class="glass-btn" style="padding: 0.75rem 2rem; background: #0a84ff; color: #fff; border: none; font-weight: 600; cursor: pointer;">
+                    💾 Lưu Cấu Hình AI & Fanpage
                 </button>
             </div>
         </form>
