@@ -95,8 +95,7 @@ $subscriptionCode = (string) (
     ?? ''
 );
 
-$pendingOrderTimeout = max(1, (int) ($pendingOrderTimeout ?? 30));
-$paymentCreatedAt = (string) ($order['created_at'] ?? $payment['created_at'] ?? '');
+$remainingSeconds = (int) ($remainingSeconds ?? 0);
 
 ob_start();
 
@@ -614,12 +613,8 @@ require_once __DIR__ . '/../../layouts/app.php';
         <?= $renewalId ?>;
 
 
-    var pendingOrderTimeout =
-        <?= $pendingOrderTimeout ?>;
-
-
-    var paymentCreatedAt =
-        <?= json_encode($paymentCreatedAt, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) ?>;
+    var remainingSeconds =
+        <?= $remainingSeconds ?>;
 
 
     var banner =
@@ -679,35 +674,42 @@ require_once __DIR__ . '/../../layouts/app.php';
 
     function startCountdown() {
 
-        if (!countdown || !paymentCreatedAt) {
+        if (!countdown) {
             return;
         }
 
-        var createdAt = new Date(String(paymentCreatedAt).replace(' ', 'T'));
-        var expiresAt = createdAt.getTime() + (pendingOrderTimeout * 60 * 1000);
-
-        if (isNaN(expiresAt)) {
-            countdown.hidden = true;
-            return;
+        function showExpiredQr() {
+            countdown.textContent = 'Mã QR đã hết hạn. Vui lòng tạo đơn hàng mới.';
+            showBanner('Mã QR đã hết hạn. Giao dịch sẽ được tự động hủy.', false);
+            if (qrImage) {
+                qrImage.style.opacity = '0.25';
+                qrImage.style.filter = 'grayscale(1)';
+            }
         }
 
-        var countdownTimer = setInterval(function () {
-            var remainingSeconds = Math.max(0, Math.ceil((expiresAt - Date.now()) / 1000));
+        function renderCountdown() {
             var minutes = Math.floor(remainingSeconds / 60);
             var seconds = remainingSeconds % 60;
 
+            countdown.textContent = 'Mã QR còn hiệu lực: ' + minutes + ':' + String(seconds).padStart(2, '0');
+        }
+
+        if (remainingSeconds <= 0) {
+            showExpiredQr();
+            return;
+        }
+
+        renderCountdown();
+
+        var countdownTimer = setInterval(function () {
+            remainingSeconds -= 1;
             if (remainingSeconds === 0) {
                 clearInterval(countdownTimer);
-                countdown.textContent = 'Mã QR đã hết hạn. Vui lòng tạo đơn hàng mới.';
-                showBanner('Mã QR đã hết hạn. Giao dịch sẽ được tự động hủy.', false);
-                if (qrImage) {
-                    qrImage.style.opacity = '0.25';
-                    qrImage.style.filter = 'grayscale(1)';
-                }
+                showExpiredQr();
                 return;
             }
 
-            countdown.textContent = 'Mã QR còn hiệu lực: ' + minutes + ':' + String(seconds).padStart(2, '0');
+            renderCountdown();
         }, 1000);
 
     }
