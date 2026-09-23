@@ -119,9 +119,23 @@ class UserController extends BaseController
     {
         $slug = trim((string) ($_GET['slug'] ?? ''));
         $post = null;
+        $relatedPosts = [];
 
         if ($slug !== '' && class_exists('App\Models\Post')) {
-            $post = (new Post())->getBySlug($slug);
+            $postModel = new Post();
+            $post = $postModel->getBySlug($slug);
+
+            if ($post && ($post['status'] ?? '') === 'published' && ($post['type'] ?? '') === 'tutorial') {
+                $allPublished = $postModel->getAllPublished();
+                $relatedPosts = array_values(array_filter(
+                    $allPublished,
+                    static fn(array $item): bool =>
+                        ($item['status'] ?? '') === 'published'
+                        && ($item['type'] ?? '') === 'tutorial'
+                        && ($item['slug'] ?? '') !== ($post['slug'] ?? '')
+                ));
+                $relatedPosts = array_slice($relatedPosts, 0, 6);
+            }
         }
 
         if (!$post || ($post['status'] ?? '') !== 'published' || ($post['type'] ?? '') !== 'tutorial') {
@@ -132,6 +146,7 @@ class UserController extends BaseController
 
         $this->render('user.guides-detail', [
             'post' => $post,
+            'relatedPosts' => $relatedPosts,
             'activeMenu' => 'guides',
             'showSidebar' => true
         ]);
@@ -141,9 +156,22 @@ class UserController extends BaseController
     {
         $slug = trim((string) ($_GET['slug'] ?? ''));
         $post = null;
+        $relatedPosts = [];
 
         if ($slug !== '' && class_exists('App\Models\Post')) {
-            $post = (new Post())->getBySlug($slug);
+            $postModel = new Post();
+            $post = $postModel->getBySlug($slug);
+
+            if ($post && ($post['status'] ?? '') === 'published') {
+                $allPublished = $postModel->getAllPublished();
+                $relatedPosts = array_values(array_filter(
+                    $allPublished,
+                    static fn(array $item): bool =>
+                        ($item['status'] ?? '') === 'published'
+                        && ($item['slug'] ?? '') !== ($post['slug'] ?? '')
+                ));
+                $relatedPosts = array_slice($relatedPosts, 0, 6);
+            }
         }
 
         if (!$post || ($post['status'] ?? '') !== 'published') {
@@ -154,6 +182,7 @@ class UserController extends BaseController
 
         $this->render('user.article-detail', [
             'post' => $post,
+            'relatedPosts' => $relatedPosts,
             'activeMenu' => 'dashboard',
             'showSidebar' => true
         ]);
