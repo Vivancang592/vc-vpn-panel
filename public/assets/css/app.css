@@ -1206,6 +1206,30 @@ body.vpn-theme.home-festival .vc-footer-copyright-wrap { border-top-color: rgba(
 body.vpn-theme.home-festival .vc-footer-copyright-text { color: #93a9c4; }
 @media (max-width: 700px) { body.vpn-theme.home-festival .navbar-container { min-height: 60px; } body.vpn-theme.home-festival .vc-footer { margin-top: 2.5rem; padding-top: 2.5rem; } }
 
+/* Public home page: keep the shared shell aligned with the Secure Signal landing page. */
+body.vpn-theme.home-festival { background: #f4f3ea; }
+body.vpn-theme.home-festival .admin-main { padding: 0; }
+body.vpn-theme.home-festival .admin-content { width: 100%; }
+body.vpn-theme.home-festival .navbar-container { position: sticky; z-index: 20; width: 100%; min-height: 72px; margin: 0 !important; padding-inline: clamp(1.25rem, 5vw, 5rem) !important; border: 0 !important; border-bottom: 1px solid #143d32 !important; background: #f4f3ea !important; box-shadow: none; backdrop-filter: none; -webkit-backdrop-filter: none; }
+body.vpn-theme.home-festival .nav-brand strong { color: #123c31; }
+body.vpn-theme.home-festival .nav-public-links { gap: clamp(.85rem, 2vw, 1.65rem); }
+body.vpn-theme.home-festival .nav-public-link { color: #3f5d53; font-size: .88rem; font-weight: 700; }
+body.vpn-theme.home-festival .nav-public-link::after { border-radius: 0; background: #e66f49; }
+body.vpn-theme.home-festival .nav-public-link:hover { color: #123c31; }
+body.vpn-theme.home-festival .guest-action { border-radius: 0; color: #123c31; font-weight: 750; }
+body.vpn-theme.home-festival .guest-action-secondary { background: #123c31; box-shadow: 4px 4px 0 #d9ff4c; }
+body.vpn-theme.home-festival .guest-action-secondary:hover { background: #e66f49; box-shadow: 4px 4px 0 #123c31; transform: none; }
+body.vpn-theme.home-festival .vc-footer { width: 100%; margin: 0; padding: 3.5rem clamp(1.25rem, 5vw, 5rem) 1.25rem; border: 0; border-top: 1px solid #143d32; background: #123c31; color: #d7e7dc; }
+body.vpn-theme.home-festival .vc-footer-container { max-width: 1200px; }
+body.vpn-theme.home-festival .vc-footer-title { color: #d9ff4c; }
+body.vpn-theme.home-festival .vc-footer-intro { color: #c5d7cd; }
+body.vpn-theme.home-festival .vc-footer-col h4 { color: #d9ff4c; }
+body.vpn-theme.home-festival .vc-footer-col a, body.vpn-theme.home-festival .vc-footer-col span { color: #e9f3ec !important; }
+body.vpn-theme.home-festival .vc-footer-col a:hover { color: #d9ff4c !important; }
+body.vpn-theme.home-festival .vc-footer-copyright-wrap { border-top-color: rgba(217, 255, 76, .25); }
+body.vpn-theme.home-festival .vc-footer-copyright-text { color: #aec6b9; }
+@media (max-width: 700px) { body.vpn-theme.home-festival .navbar-container { min-height: 60px; padding-inline: 1rem !important; } }
+
 /* User orders */
 .user-orders-page { width: 100%; max-width: 100%; margin: 0; }
 .user-orders-header { margin-bottom: 1.5rem; }
