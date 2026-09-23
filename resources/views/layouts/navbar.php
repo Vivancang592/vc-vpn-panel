@@ -2,8 +2,8 @@
 $siteTitle = $settings['site_title'] ?? 'VC VPN 2027';
 $homeAnchorPrefix = ($activeMenu ?? '') === 'home' ? '' : '/';
 ?>
-<header class="site-header">
-<nav class="navbar-container" aria-label="Điều hướng chính">
+<nav class="glass-card navbar-container">
+    <!-- Bên trái: Toggle Sidebar Mobile (khi đã đăng nhập) OR Tên Web (khi chưa đăng nhập) -->
     <div class="nav-cluster">
         <?php if (isset($_SESSION['user_id'])): ?>
             <button id="sidebar-toggle" type="button" aria-label="Toggle Sidebar" class="mobile-only-btn nav-icon-button">
@@ -16,6 +16,7 @@ $homeAnchorPrefix = ($activeMenu ?? '') === 'home' ? '' : '/';
         <?php endif; ?>
     </div>
 
+    <!-- Giữa: Nút điều hướng các trang công khai (Desktop) -->
     <?php if (!isset($_SESSION['user_id'])): ?>
         <div class="nav-public-links">
             <a href="/" class="nav-public-link">Trang chủ</a>
@@ -26,6 +27,7 @@ $homeAnchorPrefix = ($activeMenu ?? '') === 'home' ? '' : '/';
         </div>
     <?php endif; ?>
 
+    <!-- Bên phải: Profile khi đã đăng nhập OR Đăng nhập/Đăng ký khi chưa đăng nhập -->
     <div class="nav-cluster">
         <?php if (isset($_SESSION['user_id'])): ?>
             <?php
@@ -97,11 +99,13 @@ $homeAnchorPrefix = ($activeMenu ?? '') === 'home' ? '' : '/';
                 </div>
             </div>
         <?php else: ?>
+            <!-- Desktop view -->
             <div class="guest-desktop-actions">
                 <a href="/login" class="guest-action">Đăng nhập</a>
                 <a href="/register" class="guest-action guest-action-secondary">Đăng ký</a>
             </div>
 
+            <!-- Mobile view: Nút Toggle Menu Khách -->
             <div class="guest-mobile-wrapper">
                 <button type="button" id="guest-menu-btn" class="guest-mobile-trigger nav-icon-button">
                     ☰
@@ -110,6 +114,7 @@ $homeAnchorPrefix = ($activeMenu ?? '') === 'home' ? '' : '/';
         <?php endif; ?>
     </div>
 
+    <!-- Mobile Dropdown Menu nằm sát bên dưới Navbar hiển thị dạng 2 cột -->
     <?php if (!isset($_SESSION['user_id'])): ?>
         <div id="guest-dropdown-menu" class="guest-mobile-menu glass-card">
             <a href="/" class="guest-nav-link">Trang chủ</a>
@@ -124,4 +129,3 @@ $homeAnchorPrefix = ($activeMenu ?? '') === 'home' ? '' : '/';
         </div>
     <?php endif; ?>
 </nav>
-</header>
