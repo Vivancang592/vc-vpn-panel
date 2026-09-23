@@ -33,12 +33,9 @@
             <a href="/refund">Hoàn tiền</a>
         </nav>
 
-        </div>
-
         <div class="vc-footer-copyright-wrap">
             <p class="vc-footer-copyright-text">&copy; <?= date('Y') ?> <?= htmlspecialchars($settings['site_title'] ?? 'VC VPN 2027') ?>. All rights reserved.</p>
         </div>
-
     </div>
 </footer>
 
