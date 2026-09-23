@@ -1,5 +1,6 @@
 <?php
-$pageTitle = ($settings['site_name'] ?? 'VC VPN PANEL') . " - Dịch Vụ VPN Tốc Độ Cao & Bảo Mật Kết Nối";
+$pageTitle = ($settings['site_name'] ?? 'VC VPN PANEL') . " - VPN bảo mật cho kết nối riêng tư";
+$metaDescription = 'Dịch vụ VPN giúp bảo vệ kết nối và quyền riêng tư khi làm việc, học tập hoặc giải trí trực tuyến. Xem các gói VPN phù hợp với nhu cầu của bạn.';
 $extraCss = 'home';
 $extraJs = 'home';
 ob_start();
@@ -19,22 +20,22 @@ foreach (($plans ?? []) as $plan) {
 $loggedIn = !empty($_SESSION['user_id']);
 ?>
 
-<section class="home-hero home-reveal">
+<section class="home-hero home-reveal" aria-labelledby="home-title">
     <div class="home-hero-grid">
         <div>
-            <span class="home-eyebrow"><span class="home-dot"></span>KẾT NỐI AN TOÀN, KHÔNG GIỚI HẠN</span>
-            <h1 class="home-title">Internet riêng tư.<br><strong>Trải nghiệm liền mạch.</strong></h1>
-            <p class="home-lead">Giải pháp VPN tốc độ cao giúp mã hóa dữ liệu, bảo vệ sự riêng tư và tối ưu hóa kết nối Internet trên mọi thiết bị iOS, Android, Windows, macOS.</p>
+            <span class="home-eyebrow"><span class="home-dot"></span>DỊCH VỤ VPN RIÊNG TƯ</span>
+            <h1 id="home-title" class="home-title">Kết nối riêng tư.<br><strong>Tự tin làm mọi điều.</strong></h1>
+            <p class="home-lead">Dịch vụ VPN giúp bạn bảo vệ kết nối khi làm việc, học tập và giải trí trực tuyến. Chọn gói phù hợp, đăng ký tài khoản và quản lý dịch vụ tại một nơi.</p>
             <div class="home-actions">
-                <a class="home-button home-button-primary" href="#bang-gia">Khám phá gói dịch vụ</a>
-                <a class="home-button home-button-secondary" href="<?= $loggedIn ? '/user/dashboard' : '/register' ?>"><?= $loggedIn ? 'Bảng điều khiển' : 'Tạo tài khoản' ?></a>
+                <a class="home-button home-button-primary" href="#bang-gia">Xem gói VPN</a>
+                <a class="home-button home-button-secondary" href="<?= $loggedIn ? '/user/dashboard' : '/register' ?>"><?= $loggedIn ? 'Mở bảng điều khiển' : 'Bắt đầu ngay' ?></a>
             </div>
         </div>
         <aside class="home-status home-glass">
-            <div class="home-status-title">Trạng thái hạ tầng VPN</div>
-            <div class="home-status-item"><span><span class="home-dot"></span>Hệ thống máy chủ</span><strong>Ổn định 99.9%</strong></div>
-            <div class="home-status-item"><span>Hỗ trợ kỹ thuật</span><strong>24/7</strong></div>
-            <div class="home-status-item"><span>Hệ điều hành</span><strong>Đa nền tảng</strong></div>
+            <div class="home-status-title">Một trải nghiệm rõ ràng</div>
+            <div class="home-status-item"><span><span class="home-dot"></span>Chọn gói phù hợp</span><strong>Minh bạch</strong></div>
+            <div class="home-status-item"><span>Quản lý dịch vụ</span><strong>Trực tuyến</strong></div>
+            <div class="home-status-item"><span>Thiết bị sử dụng</span><strong>Đa nền tảng</strong></div>
         </aside>
     </div>
 </section>
@@ -42,47 +43,62 @@ $loggedIn = !empty($_SESSION['user_id']);
 <!-- Tính Năng Nổi Bật (Cam Kết Chất Lượng) -->
 <section class="home-features-section home-reveal">
     <div class="home-section-heading">
-        <h2>Cam Kết Chất Lượng Dịch Vụ VPN</h2>
-        <p>Hạ tầng mạng cao cấp giúp bạn làm việc từ xa, học trực tuyến và giải trí an toàn.</p>
+        <span class="home-kicker">Lợi ích thiết thực</span>
+        <h2>Một dịch vụ VPN tập trung vào trải nghiệm kết nối</h2>
+        <p>Thiết kế cho những lúc bạn cần truy cập Internet riêng tư, linh hoạt và dễ quản lý.</p>
     </div>
     <div class="home-features-grid">
         <article class="feature-box">
             <div class="feature-icon-wrapper">
                 <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#007aff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon></svg>
             </div>
-            <h3>Giảm Độ Trễ & Tăng Tốc</h3>
-            <p>Tối ưu hóa đường truyền quốc tế, giảm giật lag khi chơi game, xem video 4K và họp trực tuyến.</p>
+            <h3>Kết nối liền mạch</h3>
+            <p>Dễ dàng sử dụng khi làm việc từ xa, học trực tuyến hoặc giải trí trên Internet.</p>
         </article>
         <article class="feature-box">
             <div class="feature-icon-wrapper">
                 <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#007aff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>
             </div>
-            <h3>Bảo Mật & Mã Hóa Dữ Liệu</h3>
-            <p>Mã hóa toàn bộ dữ liệu truy cập trên Wi-Fi công cộng, ngăn chặn theo dõi và rò rỉ thông tin cá nhân.</p>
+            <h3>Riêng tư hơn khi trực tuyến</h3>
+            <p>VPN tạo thêm một lớp bảo vệ cho kết nối, đặc biệt khi sử dụng các mạng công cộng.</p>
         </article>
         <article class="feature-box">
             <div class="feature-icon-wrapper">
                 <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#007aff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="8" rx="2" ry="2"></rect><rect x="2" y="14" width="20" height="8" rx="2" ry="2"></rect><line x1="6" y1="6" x2="6.01" y2="6"></line><line x1="6" y1="18" x2="6.01" y2="18"></line></svg>
             </div>
-            <h3>Máy Chủ Quốc Tế Ổn Định</h3>
-            <p>Hạ tầng máy chủ VPN thông suốt, băng thông không giới hạn với tốc độ tải lên/xuất cực nhanh.</p>
+            <h3>Quản lý gói rõ ràng</h3>
+            <p>Thông tin thời hạn, lưu lượng và số thiết bị của từng gói được hiển thị ngay trước khi đăng ký.</p>
         </article>
         <article class="feature-box">
             <div class="feature-icon-wrapper">
                 <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#007aff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="16" height="16" rx="2" ry="2"></rect><rect x="9" y="9" width="6" height="6"></rect><line x1="9" y1="1" x2="9" y2="4"></line><line x1="15" y1="1" x2="15" y2="4"></line><line x1="9" y1="20" x2="9" y2="23"></line><line x1="15" y1="20" x2="15" y2="23"></line><line x1="20" y1="9" x2="23" y2="9"></line><line x1="20" y1="15" x2="23" y2="15"></line><line x1="1" y1="9" x2="4" y2="9"></line><line x1="1" y1="15" x2="4" y2="15"></line></svg>
             </div>
-            <h3>Hỗ Trợ Đa Nền Tảng</h3>
-            <p>Dễ dàng cài đặt và kết nối ứng dụng trên iOS, Android, Windows, macOS cũng như Linux.</p>
+            <h3>Dùng trên nhiều thiết bị</h3>
+            <p>Các gói hiển thị khả năng sử dụng trên iOS, Android, Windows, macOS và Linux.</p>
         </article>
     </div>
+</section>
+
+<section class="home-journey home-reveal" aria-labelledby="home-journey-title">
+    <div class="home-journey-intro">
+        <span class="home-kicker">Bắt đầu dễ dàng</span>
+        <h2 id="home-journey-title">Từ lựa chọn đến kết nối trong vài bước</h2>
+        <p>Quy trình đăng ký được giữ đơn giản để bạn nhanh chóng quản lý dịch vụ từ tài khoản của mình.</p>
+    </div>
+    <ol class="home-steps">
+        <li><span>01</span><div><h3>Chọn gói</h3><p>So sánh thời hạn và quyền lợi hiển thị trong bảng giá.</p></div></li>
+        <li><span>02</span><div><h3>Tạo tài khoản</h3><p>Đăng ký hoặc đăng nhập để tiếp tục với gói đã chọn.</p></div></li>
+        <li><span>03</span><div><h3>Hoàn tất đăng ký</h3><p>Theo dõi đơn hàng và dịch vụ của bạn trong bảng điều khiển.</p></div></li>
+    </ol>
 </section>
 
 <!-- Bảng Giá Dịch Vụ VPN -->
 <section id="bang-gia" class="home-pricing home-reveal">
     <div class="home-pricing-header">
         <div>
-            <h2>Bảng Giá Gói Dịch Vụ VPN</h2>
-            <p>Lựa chọn gói cước VPN phù hợp nhất với nhu cầu sử dụng của bạn.</p>
+            <span class="home-kicker">Chọn gói phù hợp</span>
+            <h2>Gói VPN minh bạch, dễ so sánh</h2>
+            <p>Xem thời hạn, số thiết bị và thông tin đi kèm của mỗi gói trước khi đăng ký.</p>
         </div>
         <?php if ($groups): ?>
             <div class="home-tabs" role="tablist">
@@ -233,18 +249,31 @@ $loggedIn = !empty($_SESSION['user_id']);
     <?php endif; ?>
 </section>
 
+<section class="home-security home-reveal" aria-labelledby="home-security-title">
+    <div>
+        <span class="home-kicker">Quyền riêng tư trực tuyến</span>
+        <h2 id="home-security-title">Chủ động hơn với mỗi kết nối Internet</h2>
+        <p>VPN phù hợp khi bạn muốn thêm sự riêng tư cho hoạt động trực tuyến. Hãy luôn sử dụng mật khẩu mạnh và kiểm tra thiết bị của bạn để bảo vệ tài khoản tốt hơn.</p>
+    </div>
+    <div class="home-security-notes">
+        <div><strong>Kết nối công cộng</strong><span>Thận trọng hơn khi truy cập Wi-Fi bên ngoài.</span></div>
+        <div><strong>Tài khoản của bạn</strong><span>Quản lý dịch vụ và thông tin đăng ký tại một nơi.</span></div>
+    </div>
+</section>
+
 <!-- Câu Hỏi Thường Gặp (Accordion Mượt) -->
 <section id="cau-hoi-thuong-gap" class="home-faq home-reveal" aria-labelledby="home-faq-title">
     <div class="home-faq-heading">
-        <h2 id="home-faq-title">Câu Hỏi Thường Gặp</h2>
-        <p>Giải đáp thắc mắc phổ biến về dịch vụ VPN và cách thức cài đặt.</p>
+        <span class="home-kicker">Giải đáp nhanh</span>
+        <h2 id="home-faq-title">Câu hỏi thường gặp về VPN</h2>
+        <p>Những thông tin cơ bản trước khi bạn lựa chọn gói dịch vụ.</p>
     </div>
     <div class="home-faq-list">
         <details class="home-faq-item" open>
-            <summary>VPN hoạt động như thế nào và có an toàn không?</summary>
+            <summary>VPN là gì và hoạt động như thế nào?</summary>
             <div class="faq-content">
                 <div class="faq-content-inner">
-                    <p>VPN (Virtual Private Network) khởi tạo đường truyền mã hóa giữa thiết bị của bạn và hệ thống máy chủ VPN. Mọi dữ liệu cá nhân truyền qua Internet sẽ được bảo vệ tuyệt đối khỏi hacker, nhà mạng và các nguy cơ theo dõi trên mạng Wi-Fi công cộng.</p>
+                    <p>VPN (Virtual Private Network) tạo một kết nối riêng giữa thiết bị của bạn và dịch vụ VPN. Đây là một lớp hỗ trợ quyền riêng tư khi truy cập Internet, đặc biệt trên mạng công cộng.</p>
                 </div>
             </div>
         </details>
@@ -252,7 +281,7 @@ $loggedIn = !empty($_SESSION['user_id']);
             <summary>Tôi có thể sử dụng 1 tài khoản trên bao nhiêu thiết bị?</summary>
             <div class="faq-content">
                 <div class="faq-content-inner">
-                    <p>Mỗi gói VPN được thiết lập số lượng thiết bị kết nối đồng thời cụ thể (từ 1 đến nhiều thiết bị). Bạn có thể dễ dàng kiểm tra chi tiết thông số này ngay trong bảng giá hoặc bảng điều khiển sau khi đăng ký.</p>
+                    <p>Số thiết bị được hiển thị riêng trên từng gói trong bảng giá. Bạn có thể xem thông tin này trước khi đăng ký và quản lý dịch vụ từ tài khoản của mình.</p>
                 </div>
             </div>
         </details>
@@ -260,7 +289,7 @@ $loggedIn = !empty($_SESSION['user_id']);
             <summary>Sau khi thanh toán thành công, tôi nhận cấu hình ở đâu?</summary>
             <div class="faq-content">
                 <div class="faq-content-inner">
-                    <p>Đơn hàng sau khi thanh toán thành công sẽ được kích hoạt tự động. Mã cấu hình và liên kết tải ứng dụng sẽ xuất hiện ngay lập tức tại mục "Gói Đăng Ký Của Tôi" trong bảng điều khiển tài khoản.</p>
+                    <p>Sau khi thanh toán thành công, bạn có thể kiểm tra trạng thái đơn hàng và thông tin dịch vụ trong khu vực tài khoản của mình.</p>
                 </div>
             </div>
         </details>
@@ -268,10 +297,22 @@ $loggedIn = !empty($_SESSION['user_id']);
             <summary>Tôi cần hỗ trợ kỹ thuật khi không thể kết nối?</summary>
             <div class="faq-content">
                 <div class="faq-content-inner">
-                    <p>Đội ngũ kỹ thuật trực 24/7 luôn sẵn sàng hỗ trợ bạn. Bạn chỉ cần vào mục "Ticket Hỗ Trợ" trong trang cá nhân để gửi yêu cầu, kỹ thuật viên sẽ kiểm tra và hướng dẫn xử lý ngay lập tức.</p>
+                    <p>Bạn có thể gửi yêu cầu trong mục hỗ trợ của trang cá nhân để đội ngũ kiểm tra và hướng dẫn.</p>
                 </div>
             </div>
         </details>
+    </div>
+</section>
+
+<section class="home-final-cta home-reveal" aria-labelledby="home-final-title">
+    <div>
+        <span class="home-eyebrow"><span class="home-dot"></span>SẴN SÀNG KẾT NỐI</span>
+        <h2 id="home-final-title">Bảo vệ kết nối của bạn ngay hôm nay</h2>
+        <p>Chọn một gói VPN phù hợp hoặc tạo tài khoản để bắt đầu quản lý dịch vụ.</p>
+    </div>
+    <div class="home-actions">
+        <a class="home-button home-button-primary" href="#bang-gia">Xem gói VPN</a>
+        <a class="home-button home-button-secondary" href="<?= $loggedIn ? '/user/dashboard' : '/register' ?>"><?= $loggedIn ? 'Bảng điều khiển' : 'Tạo tài khoản' ?></a>
     </div>
 </section>
 
