@@ -72,18 +72,12 @@ document.addEventListener('DOMContentLoaded', function () {
             if (sidebar) sidebar.classList.remove('active');
             if (profileMenu) profileMenu.classList.remove('show');
 
-            const isGuestShow = guestMenu.classList.toggle('show');
             if (overlay) {
-                if (isGuestShow) {
-                    overlay.classList.add('profile-mode');
-                    overlay.classList.add('active');
-                    document.body.classList.add('overlay-open');
-                } else {
-                    overlay.classList.remove('active');
-                    overlay.classList.remove('profile-mode');
-                    document.body.classList.remove('overlay-open');
-                }
+                overlay.classList.remove('active');
+                overlay.classList.remove('profile-mode');
             }
+            document.body.classList.remove('overlay-open');
+            guestMenu.classList.toggle('show');
         });
     }
 
