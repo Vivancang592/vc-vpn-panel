@@ -10,18 +10,18 @@ require_once __DIR__ . '/header.php';
     <div class="preloader-text">Đang tải...</div>
 </div>
 
-<div class="admin-app">
+<div class="customer-app-shell">
     <div class="sidebar-overlay"></div>
 
     <?php if (isset($showSidebar) && $showSidebar): ?>
         <?php require_once __DIR__ . '/sidebar.php'; ?>
     <?php endif; ?>
     
-    <div class="admin-main-wrapper">
+    <div class="customer-workspace">
         <?php require_once __DIR__ . '/navbar.php'; ?>
         
-        <main class="admin-main">
-            <div class="admin-content">
+        <main class="customer-main">
+            <div class="customer-content">
                 <?= $content ?? '' ?>
             </div>
             <?php require_once __DIR__ . '/footer.php'; ?>

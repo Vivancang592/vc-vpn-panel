@@ -14,8 +14,7 @@ if (isset($_SESSION['user_id'])) {
     }
 }
 ?>
-<aside class="admin-sidebar">
-    <!-- Tên Web đặt trong Sidebar -->
+<aside class="customer-sidebar admin-sidebar">
     <div class="sidebar-brand">
         <a href="<?= $logoHref ?>" title="<?= $userRole === 'admin' ? ($isAdminRoute ? 'Chuyển sang Trang User' : 'Chuyển sang Trang Admin') : 'Trang Chủ' ?>">
             <?php if ($userRole !== 'admin'): ?>
@@ -27,10 +26,8 @@ if (isset($_SESSION['user_id'])) {
         </a>
     </div>
 
-    <div class="sidebar-section-title">
-        Menu Khách Hàng
-    </div>
-    <hr class="sidebar-divider">
+    <div class="sidebar-navigation">
+        <div class="sidebar-section-title">Không gian của bạn</div>
 
     <a href="/dashboard" class="nav-item <?= ($activeMenu ?? '') === 'dashboard' ? 'active' : '' ?>">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#007aff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -130,4 +127,5 @@ if (isset($_SESSION['user_id'])) {
         </svg>
         <span>Tài Khoản & Bảo Mật</span>
     </a>
+</div>
 </aside>
