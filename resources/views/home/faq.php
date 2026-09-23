@@ -39,28 +39,29 @@ function getTutorialFallbackThumbnail($postId): string
 ob_start();
 ?>
 
-<div style="text-align: center; margin-bottom: 2.5rem;">
+<section class="public-page home-page home-subpage home-faq-page">
+<div class="home-subpage-header" style="text-align: center; margin-bottom: 2.5rem;">
     <h1 style="font-size: 2rem; font-weight: 700;">Hướng Dẫn & Câu Hỏi Thường Gặp</h1>
     <p style="color: var(--ios-text-secondary); margin-top: 0.5rem;">Giải đáp các thắc mắc và hướng dẫn chi tiết cách sử dụng dịch vụ VPN</p>
-    <form action="/faq" method="get" style="max-width: 560px; margin: 1.25rem auto 0; display: flex; gap: .5rem;">
+    <form class="home-subpage-search" action="/faq" method="get" style="max-width: 560px; margin: 1.25rem auto 0; display: flex; gap: .5rem;">
         <input type="search" name="q" value="<?= htmlspecialchars($search) ?>" placeholder="Tìm hướng dẫn..." style="flex: 1; padding: .7rem .9rem; border: 1px solid var(--glass-border); border-radius: 10px; background: var(--glass-bg); color: var(--ios-text);">
         <button type="submit" class="glass-btn" style="padding: .7rem 1rem;">Tìm kiếm</button>
     </form>
 </div>
 
 <!-- Đã bỏ max-width: 900px, chuyển sang rộng linh hoạt toàn màn hình (width: 100%) -->
-<div style="width: 100%; margin: 0 auto;">
+<div class="home-subpage-list" style="width: 100%; margin: 0 auto;">
     <?php if (!empty($groupedPosts)): ?>
         <?php 
         $cardIndex = 0;
         foreach ($groupedPosts as $typeGroup => $groupPosts): 
         ?>
-            <section style="margin-bottom: 2.5rem;">
+            <section class="home-guide-group" style="margin-bottom: 2.5rem;">
                 <h2 class="faq-group-header">
                     <span>📌</span> <?= htmlspecialchars($typeGroup) ?>
                 </h2>
 
-                <div style="display: flex; flex-direction: column; gap: 1.25rem;">
+                <div class="home-guide-list" style="display: flex; flex-direction: column; gap: 1.25rem;">
                     <?php foreach ($groupPosts as $itemIndex => $post): ?>
                         <?php
                         $cardIndex++;
@@ -106,12 +107,13 @@ ob_start();
             </section>
         <?php endforeach; ?>
     <?php else: ?>
-        <div class="glass-card" style="text-align: center; padding: 3rem; color: var(--ios-text-secondary);">
+        <div class="glass-card home-subpage-empty" style="text-align: center; padding: 3rem; color: var(--ios-text-secondary);">
             <div style="font-size: 2.5rem; margin-bottom: 0.5rem;">📑</div>
             <p style="font-size: 1rem; margin-bottom: 0;">Hiện chưa có bài viết hướng dẫn nào được xuất bản.</p>
         </div>
     <?php endif; ?>
 </div>
+</section>
 
 <?php
 $content = ob_get_clean();

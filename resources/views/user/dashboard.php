@@ -130,7 +130,7 @@ function getNoticeFallbackThumb($id) {
                                 <span style="font-size: 0.75rem; color: var(--ios-text-secondary);">
                                     <?= isset($post['created_at']) ? date('d/m/Y', strtotime($post['created_at'])) : '' ?>
                                 </span>
-                                <a href="/post-detail?slug=<?= urlencode($post['slug'] ?? '') ?>" class="glass-btn" style="padding: 0.4rem 0.9rem; font-size: 0.8rem; text-decoration: none;">Xem chi tiết &rarr;</a>
+                                <a href="/user/articles/detail?slug=<?= urlencode($post['slug'] ?? '') ?>" class="glass-btn" style="padding: 0.4rem 0.9rem; font-size: 0.8rem; text-decoration: none;">Xem chi tiết &rarr;</a>
                             </div>
                         </div>
                     </div>

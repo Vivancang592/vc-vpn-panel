@@ -6,18 +6,19 @@ $extraCss = 'home';
 ob_start();
 ?>
 
-<div class="glass-card" style="
+<section class="public-page home-page home-subpage home-download-page">
+<div class="glass-card home-download-shell" style="
     width: 100%;
     margin: 0 auto;
     padding: 2rem;
 ">
 
     <!-- Header -->
-    <div style="
+    <div class="home-subpage-header" style="
         text-align: center;
         margin-bottom: 2rem;
     ">
-        <h1 style="
+        <h1 class="home-download-title" style="
             margin: 0 0 .75rem;
             color: #020af4;
             font-family: emoji;
@@ -40,7 +41,7 @@ ob_start();
     </div>
 
     <!-- Download platforms -->
-    <div style="
+    <div class="home-download-grid" style="
         display: grid;
         grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
         gap: 1.25rem;
@@ -48,7 +49,7 @@ ob_start();
 
         <!-- iPhone & iPad -->
         <a
-            class="glass-btn"
+            class="glass-btn home-download-card"
             href="/client?tag=ios-stable"
             data-no-loader
             data-youtube=""
@@ -80,7 +81,7 @@ ob_start();
 
         <!-- Android -->
         <a
-            class="glass-btn"
+            class="glass-btn home-download-card"
             href="/client?tag=android-stable"
             data-no-loader
             data-youtube=""
@@ -112,7 +113,7 @@ ob_start();
 
         <!-- Windows -->
         <a
-            class="glass-btn"
+            class="glass-btn home-download-card"
             href="/client?tag=windows-stable"
             data-no-loader
             data-youtube=""
@@ -144,7 +145,7 @@ ob_start();
 
         <!-- macOS -->
         <a
-            class="glass-btn"
+            class="glass-btn home-download-card"
             href="/client?tag=macos-stable"
             data-no-loader
             data-youtube=""
@@ -176,7 +177,7 @@ ob_start();
 
         <!-- Linux -->
         <a
-            class="glass-btn"
+            class="glass-btn home-download-card"
             href="/client?tag=linux-stable"
             data-no-loader
             data-youtube=""
@@ -209,7 +210,7 @@ ob_start();
     </div>
 
     <!-- Information -->
-    <div style="
+    <div class="home-download-note" style="
         margin-top: 1.75rem;
         padding: 1rem 1.1rem;
         border-radius: 14px;
@@ -226,6 +227,7 @@ ob_start();
     </div>
 
 </div>
+</section>
 
 <script>
 (function () {
