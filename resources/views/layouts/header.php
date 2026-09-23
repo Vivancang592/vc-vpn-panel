@@ -9,6 +9,9 @@
     <meta property="og:description" content="<?= htmlspecialchars($metaDescription ?? 'Dịch vụ VPN cho kết nối riêng tư và dễ quản lý.', ENT_QUOTES, 'UTF-8') ?>">
     <meta property="og:type" content="website">
     <meta property="og:locale" content="vi_VN">
+    <meta name="twitter:card" content="summary">
+    <meta name="twitter:title" content="<?= htmlspecialchars($pageTitle ?? 'VC VPN 2027', ENT_QUOTES, 'UTF-8') ?>">
+    <meta name="twitter:description" content="<?= htmlspecialchars($metaDescription ?? 'Dịch vụ VPN cho kết nối riêng tư và dễ quản lý.', ENT_QUOTES, 'UTF-8') ?>">
     <link rel="shortcut icon" href="/assets/images/favicon.png" type="image/png">
     <link rel="stylesheet" href="/assets/css/app.css?v=<?= time() ?>">
     <?php if (isset($extraCss) && $extraCss !== 'app'): ?>
