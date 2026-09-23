@@ -482,6 +482,8 @@ $_SESSION['success'] = 'Đã tạo đơn hàng ' . $orderCode . ' thành công. 
             return;
         }
 
+        (new Payment())->failPendingByOrderId($orderId);
+
         $_SESSION['success'] = 'Đã hủy đơn hàng chờ thanh toán. Bạn có thể tạo đơn mới.';
         $this->redirect('/orders');
     }
