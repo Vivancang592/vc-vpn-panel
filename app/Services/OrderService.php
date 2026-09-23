@@ -85,9 +85,12 @@ class OrderService
         if ($created) {
             $orderId = (int)$orderModel->lastInsertId();
 
-            $settingModel = new Setting();
-            $orderSyntax = trim((string)($settingModel->get('order_transfer_syntax', 'THANHTOAN') ?? 'THANHTOAN'));
-            $transferContent = $orderSyntax . str_pad((string)$orderId, 2, '0', STR_PAD_LEFT);
+            $transferContent = null;
+            if ($paymentMethod !== 'balance') {
+                $settingModel = new Setting();
+                $orderSyntax = trim((string)($settingModel->get('order_transfer_syntax', 'THANHTOAN') ?? 'THANHTOAN'));
+                $transferContent = $orderSyntax . str_pad((string)$orderId, 2, '0', STR_PAD_LEFT);
+            }
             $orderModel->update($orderId, ['transfer_content' => $transferContent]);
 
             if ($paymentMethod === 'balance') {

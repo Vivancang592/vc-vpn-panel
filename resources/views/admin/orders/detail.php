@@ -3,9 +3,10 @@ $order = $order ?? [];
 $pageTitle = "Chi Tiết Đơn Hàng - Quản Trị Hệ Thống";
 $activeMenu = "orders";
 $creatorName = $order['creator_username'] ?? $order['username'] ?? 'Không xác định';
-$approverName = $order['approver_username'] ?? (($order['payment_status'] ?? '') === 'completed' ? 'Tự động qua webhook' : 'Chưa duyệt');
 $paymentMethodLabels = ['vietqr' => 'VietQR (Chuyển khoản)', 'balance' => 'Số dư tài khoản'];
 $paymentMethod = strtolower((string) ($order['payment_method'] ?? 'vietqr'));
+$isBalancePayment = $paymentMethod === 'balance';
+$approverName = $isBalancePayment ? 'Hệ thống' : ($order['approver_username'] ?? (($order['payment_status'] ?? '') === 'completed' ? 'Tự động qua webhook' : 'Chưa duyệt'));
 
 ob_start();
 ?>
@@ -28,12 +29,14 @@ ob_start();
                     <?= htmlspecialchars($order['order_code']) ?>
                 </code>
             </div>
+            <?php if (!$isBalancePayment): ?>
             <div>
                 <strong>Nội Dung Chuyển Khoản:</strong> 
                 <code style="background: rgba(0, 122, 255, 0.08); color: var(--ios-blue); padding: 0.2rem 0.4rem; border-radius: var(--radius-sm); font-weight: 700;">
                     <?= htmlspecialchars($order['transfer_content'] ?? 'N/A') ?>
                 </code>
             </div>
+            <?php endif; ?>
             <div><strong>Tài Khoản Mua:</strong> <?= htmlspecialchars($order['username'] ?? 'N/A') ?> (ID #<?= $order['user_id'] ?>)</div>
             <div><strong>Email:</strong> <?= htmlspecialchars($order['email'] ?? 'N/A') ?></div>
             <div><strong>Người tạo đơn:</strong> <?= htmlspecialchars($creatorName) ?></div>

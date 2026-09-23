@@ -4,9 +4,10 @@ $status = $order['payment_status'] ?? 'pending';
 $statusLabels = ['pending' => 'Chờ thanh toán', 'completed' => 'Hoàn tất', 'failed' => 'Thất bại', 'cancelled' => 'Đã hủy'];
 $statusClasses = ['pending' => 'is-pending', 'completed' => 'is-completed', 'failed' => 'is-failed', 'cancelled' => 'is-cancelled'];
 $creatorName = $order['creator_username'] ?? $order['username'] ?? 'Bạn';
-$approverName = $order['approver_username'] ?? ($status === 'completed' ? 'Tự động qua webhook' : 'Chưa duyệt');
 $paymentMethodLabels = ['vietqr' => 'VietQR (Chuyển khoản)', 'balance' => 'Số dư tài khoản'];
 $paymentMethod = strtolower((string) ($order['payment_method'] ?? 'vietqr'));
+$isBalancePayment = $paymentMethod === 'balance';
+$approverName = $isBalancePayment ? 'Hệ thống' : ($order['approver_username'] ?? ($status === 'completed' ? 'Tự động qua webhook' : 'Chưa duyệt'));
 $orderId = (int) ($order['id'] ?? 0);
 $subscriptionId = (int) ($order['subscription_id'] ?? 0);
 $isDeposit = empty($order['plan_id']);
@@ -60,7 +61,9 @@ ob_start();
 				<div class="user-invoice-rows">
 			<div class="user-invoice-row"><span>Tổng tiền</span><strong class="user-invoice-money"><?= htmlspecialchars($formatTotal((float) ($order['total_amount'] ?? 0))) ?></strong></div>
 			<div class="user-invoice-row"><span>Phương thức thanh toán</span><strong><?= htmlspecialchars($paymentMethodLabels[$paymentMethod] ?? strtoupper($paymentMethod)) ?></strong></div>
+			<?php if (!$isBalancePayment): ?>
 			<div class="user-invoice-row"><span>Nội dung chuyển khoản</span><strong><?= htmlspecialchars($transferContent !== '' ? $transferContent : 'Không áp dụng') ?></strong></div>
+			<?php endif; ?>
 			<div class="user-invoice-row"><span>IP đặt hàng</span><strong><?= htmlspecialchars($order['purchase_ip'] ?? 'Chưa lưu') ?></strong></div>
 
 				<h3 class="user-invoice-section-heading">Đối soát</h3>
