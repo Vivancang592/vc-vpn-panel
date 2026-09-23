@@ -253,3 +253,38 @@
 .home-final-cta { position: relative; overflow: hidden; }
 .home-final-cta::before { content: ''; position: absolute; top: -72px; right: 5%; width: 180px; height: 180px; border: 1px solid rgba(216, 181, 103, .58); transform: rotate(45deg); }
 @media (max-width: 800px) { .home-hero { min-height: 0; } .home-hero > .home-hero-art { width: 100%; opacity: .3; } .home-status { max-width: 420px; } }
+
+/* Recompose the hero as a scroll laid over an ink landscape. */
+.home-hero { display: flex; align-items: center; min-height: 650px; padding: 3.5rem; border: 0; background: #261412; box-shadow: none; }
+.home-hero::before { top: 0; right: 0; width: 100%; height: 100%; background: linear-gradient(90deg, #421918 0 51%, #21100f 51% 100%); }
+.home-hero::after { display: none; }
+.home-hero-grid { grid-template-columns: minmax(0, 1.05fr) minmax(300px, .95fr); gap: clamp(2rem, 7vw, 7rem); width: 100%; align-items: center; }
+.home-hero > .home-hero-art { z-index: 1; width: 49%; border-left: 1px solid rgba(216, 181, 103, .24); }
+.home-scroll { position: relative; z-index: 2; padding: 19px 26px; background: #ead7ae; box-shadow: 14px 12px 0 rgba(13, 5, 4, .35); }
+.home-scroll::before { content: ''; position: absolute; inset: 25px 18px; border: 1px solid rgba(124, 33, 29, .38); pointer-events: none; }
+.home-scroll-content { position: relative; z-index: 1; padding: clamp(1.8rem, 4vw, 3.2rem) clamp(1.2rem, 3vw, 2.8rem); background: repeating-linear-gradient(0deg, transparent 0 27px, rgba(124, 33, 29, .065) 28px 29px), #f6e9cb; }
+.home-scroll-roller { position: absolute; z-index: 3; left: 0; width: 100%; height: 18px; background: linear-gradient(#74401f, #c79243 25%, #f4ce79 50%, #8d521f 80%, #512815); box-shadow: 0 2px 3px rgba(30, 8, 5, .45); }
+.home-scroll-roller::before, .home-scroll-roller::after { content: ''; position: absolute; top: -5px; width: 17px; height: 28px; border-radius: 50%; background: #75401e; box-shadow: inset 3px 0 #c69245, 0 2px 2px rgba(30, 8, 5, .4); }
+.home-scroll-roller::before { left: -8px; }
+.home-scroll-roller::after { right: -8px; }
+.home-scroll-roller-top { top: 0; }
+.home-scroll-roller-bottom { bottom: 0; transform: rotate(180deg); }
+.home-scroll .home-eyebrow { border: 0; background: transparent; color: #8d2920; padding: 0; }
+.home-scroll .home-dot { background: #9e3024; box-shadow: none; }
+.home-scroll .home-title { color: #4b1715; font-size: clamp(2.25rem, 5vw, 4.6rem); }
+.home-scroll .home-title strong { color: #8d2920; }
+.home-scroll .home-lead { color: #68463a !important; }
+.home-scroll .home-button-secondary { border-color: #7c211d; background: transparent; color: #5c1b18; }
+.home-scroll .home-button-secondary:hover { background: #7c211d; color: #f5d992; }
+.home-art-pavilion { position: absolute; z-index: 2; right: 17%; bottom: 17%; width: 180px; height: 145px; border: 3px solid rgba(216, 181, 103, .75); border-top: 0; }
+.home-art-pavilion::before { content: ''; position: absolute; top: -58px; left: -18px; width: 207px; height: 59px; border: 3px solid rgba(216, 181, 103, .76); border-bottom: 0; transform: perspective(100px) rotateX(28deg); }
+.home-art-pavilion::after { content: ''; position: absolute; right: 22px; bottom: 0; width: 3px; height: 145px; background: rgba(216, 181, 103, .7); box-shadow: -44px 0 rgba(216, 181, 103, .7), -88px 0 rgba(216, 181, 103, .7); }
+.home-art-pavilion i { position: absolute; top: -35px; width: 23px; height: 23px; border: 2px solid rgba(216, 181, 103, .8); border-radius: 50%; background: #7c211d; }
+.home-art-pavilion i:nth-child(1) { left: 12px; }
+.home-art-pavilion i:nth-child(2) { left: 75px; }
+.home-art-pavilion i:nth-child(3) { right: 12px; }
+.home-status { align-self: start; max-width: 330px; margin-top: 4rem; padding: 1.6rem 1.25rem; border: 0; border-top: 4px solid #d8b567; border-bottom: 4px solid #d8b567; background: rgba(33, 12, 11, .7); box-shadow: none; }
+.home-status::before { display: none; }
+.home-status-title { padding-bottom: .8rem; border-bottom: 1px solid rgba(216, 181, 103, .45); text-align: center; }
+.home-status-item { padding: 1rem 0; }
+@media (max-width: 800px) { .home-hero { min-height: 0; padding: 2.5rem 1.25rem; } .home-hero-grid { grid-template-columns: 1fr; } .home-hero > .home-hero-art { width: 100%; opacity: .24; } .home-status { margin-top: 0; } .home-art-pavilion { right: 10%; } }
