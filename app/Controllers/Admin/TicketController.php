@@ -13,7 +13,7 @@ class TicketController extends BaseController
 
     public function __construct()
     {
-        if (!isset($_SESSION['user_id']) || !in_array($_SESSION['role'] ?? '', ['admin', 'staff'], true)) {
+        if (!isset($_SESSION['user_id']) || ($_SESSION['role'] ?? '') !== 'admin') {
             $this->redirect('/login');
         }
         $this->ticketModel = new SupportTicket();
@@ -32,10 +32,6 @@ class TicketController extends BaseController
 
     public function delete(): void
     {
-        if ($this->denyStaff('/admin/tickets')) {
-            return;
-        }
-
         if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
             $this->redirect('/admin/tickets');
             return;
@@ -80,7 +76,7 @@ class TicketController extends BaseController
 
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $message = trim($_POST['message'] ?? '');
-            $status  = $this->isStaff() ? $ticket['status'] : ($_POST['status'] ?? $ticket['status']);
+            $status  = $_POST['status'] ?? $ticket['status'];
 
             if (!empty($message)) {
                 $this->messageModel->create([

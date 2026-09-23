@@ -37,11 +37,9 @@ ob_start();
         <h1 style="font-size: 1.5rem; font-weight: 700; word-break: break-word;">Quản Lý Mã Giảm Giá</h1>
         <p style="color: var(--ios-text-secondary); font-size: 0.85rem;">Danh sách tất cả mã khuyến mãi và ưu đãi trong hệ thống</p>
     </div>
-    <?php if (($_SESSION['role'] ?? '') !== 'staff'): ?>
-        <div style="display: flex; justify-content: flex-end; margin-top: 0.75rem;">
-            <a href="/admin/coupons/create" class="glass-btn" style="text-decoration: none; white-space: nowrap;">+ Thêm Mã Giảm Giá</a>
-        </div>
-    <?php endif; ?>
+    <div style="display: flex; justify-content: flex-end; margin-top: 0.75rem;">
+        <a href="/admin/coupons/create" class="glass-btn" style="text-decoration: none; white-space: nowrap;">+ Thêm Mã Giảm Giá</a>
+    </div>
 </div>
 
 <!-- Bảng Mã Giảm Giá -->
@@ -101,8 +99,7 @@ ob_start();
                                 </span>
                             </td>
                             <td style="text-align: right;">
-                                <?php if (($_SESSION['role'] ?? '') !== 'staff'): ?>
-                                    <div class="action-dropdown">
+                                <div class="action-dropdown">
                                         <button type="button" class="action-btn" title="Thao tác">⋮</button>
                                         <div class="action-menu">
                                             <a href="/admin/coupons/edit?id=<?= $coupon['id'] ?>" class="action-item">
@@ -116,7 +113,6 @@ ob_start();
                                             </form>
                                         </div>
                                     </div>
-                                <?php endif; ?>
                             </td>
                         </tr>
                     <?php endforeach; ?>

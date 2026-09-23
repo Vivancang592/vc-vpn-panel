@@ -58,13 +58,13 @@ ob_start();
         <?php if (!empty($items)): ?>
             <?php foreach ($items as $item): ?>
                 <?php 
-                    $isStaff = in_array($item['role'] ?? '', ['admin', 'staff'], true);
+                    $isAdmin = ($item['role'] ?? '') === 'admin';
                     $isMe = (int)($item['sender_id'] ?? 0) === (int)($_SESSION['user_id'] ?? 0);
                 ?>
-                <div style="display: flex; flex-direction: column; align-items: <?= ($isStaff) ? 'flex-start' : 'flex-end' ?>; width: 100%;">
+                <div style="display: flex; flex-direction: column; align-items: <?= ($isAdmin) ? 'flex-start' : 'flex-end' ?>; width: 100%;">
                     <!-- Tên & thời gian -->
                     <div style="display: flex; align-items: center; gap: 0.4rem; margin-bottom: 0.25rem; font-size: 0.78rem; color: var(--ios-text-secondary);">
-                        <?php if ($isStaff): ?>
+                        <?php if ($isAdmin): ?>
                             <span style="font-weight: 700; color: var(--ios-blue, #007aff); display: inline-flex; align-items: center; gap: 0.2rem;">
                                 🛡️ <?= htmlspecialchars($item['username'] ?? 'Kỹ thuật viên') ?>
                                 <span style="font-size: 0.65rem; background: rgba(0, 122, 255, 0.15); border: 1px solid rgba(0, 122, 255, 0.3); padding: 0.1rem 0.4rem; border-radius: 4px;">Hỗ trợ</span>
@@ -79,7 +79,7 @@ ob_start();
                     </div>
 
                     <!-- Nội dung tin nhắn bong bóng -->
-                    <div style="max-width: 82%; padding: 0.85rem 1.1rem; border-radius: 14px; font-size: 0.9rem; line-height: 1.55; word-break: break-word; <?= $isStaff ? 'background: rgba(0, 122, 255, 0.1); border: 1px solid rgba(0, 122, 255, 0.25); color: var(--ios-text); border-top-left-radius: 3px;' : 'background: rgba(255, 255, 255, 0.35); border: 1px solid var(--glass-border); color: var(--ios-text); border-top-right-radius: 3px;' ?>">
+                    <div style="max-width: 82%; padding: 0.85rem 1.1rem; border-radius: 14px; font-size: 0.9rem; line-height: 1.55; word-break: break-word; <?= $isAdmin ? 'background: rgba(0, 122, 255, 0.1); border: 1px solid rgba(0, 122, 255, 0.25); color: var(--ios-text); border-top-left-radius: 3px;' : 'background: rgba(255, 255, 255, 0.35); border: 1px solid var(--glass-border); color: var(--ios-text); border-top-right-radius: 3px;' ?>">
                         <?= nl2br(htmlspecialchars($item['message'] ?? '')) ?>
                     </div>
                 </div>

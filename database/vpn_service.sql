@@ -12,7 +12,7 @@ CREATE TABLE `vc_users` (
     `email` VARCHAR(100) NOT NULL UNIQUE,
     `google_id` VARCHAR(255) NULL UNIQUE,
     `password_hash` VARCHAR(255) NULL,
-    `role` ENUM('admin', 'staff', 'user') NOT NULL DEFAULT 'user',
+    `role` ENUM('admin', 'user') NOT NULL DEFAULT 'user',
     `status` ENUM('active', 'inactive', 'banned') NOT NULL DEFAULT 'active',
     `balance` DECIMAL(15, 0) NOT NULL DEFAULT 0.00,
     `commission_balance` DECIMAL(15, 0) NOT NULL DEFAULT 0.00,

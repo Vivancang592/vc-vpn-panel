@@ -18,7 +18,7 @@ class OrderController extends BaseController
 
     public function __construct()
     {
-        if (!isset($_SESSION['user_id']) || !in_array($_SESSION['role'] ?? '', ['admin', 'staff'], true)) {
+        if (!isset($_SESSION['user_id']) || ($_SESSION['role'] ?? '') !== 'admin') {
             $this->redirect('/login');
         }
         $this->orderModel = new Order();
@@ -136,10 +136,6 @@ class OrderController extends BaseController
         $status = $_POST['status'] ?? $_GET['status'] ?? '';
         $userId = (int)($_POST['user_id'] ?? $_GET['user_id'] ?? 0);
 
-        if ($this->denyStaff('/admin/orders' . ($userId > 0 ? '?user_id=' . $userId : ''))) {
-            return;
-        }
-
         if (!$this->validateCsrfToken($_POST['csrf_token'] ?? '')) {
             $_SESSION['flash_message'] = 'Phiên làm việc không hợp lệ. Vui lòng thử lại.';
             $_SESSION['flash_type'] = 'danger';
@@ -160,14 +156,6 @@ class OrderController extends BaseController
             $_SESSION['flash_message'] = 'Đơn hàng không tồn tại!';
             $_SESSION['flash_type']    = 'danger';
             $this->redirect('/admin/orders' . ($userId > 0 ? '?user_id=' . $userId : ''));
-        }
-
-        if (($_SESSION['role'] ?? '') === 'staff'
-            && ($status !== 'completed' || ($order['payment_status'] ?? '') !== 'pending')) {
-            $_SESSION['flash_message'] = 'Nhân viên chỉ được duyệt đơn hàng đang chờ thanh toán.';
-            $_SESSION['flash_type'] = 'danger';
-            $this->redirect('/admin/orders' . ($userId > 0 ? '?user_id=' . $userId : ''));
-            return;
         }
 
         if ($status === 'cancelled' && ($order['payment_status'] ?? '') !== 'pending') {
@@ -272,10 +260,6 @@ class OrderController extends BaseController
         $id     = (int)($_POST['id'] ?? $_GET['id'] ?? 0);
         $userId = (int)($_POST['user_id'] ?? $_GET['user_id'] ?? 0);
 
-        if ($this->denyStaff('/admin/orders' . ($userId > 0 ? '?user_id=' . $userId : ''))) {
-            return;
-        }
-
         if (!$this->validateCsrfToken($_POST['csrf_token'] ?? '')) {
             $_SESSION['flash_message'] = 'Phiên làm việc không hợp lệ. Vui lòng thử lại.';
             $_SESSION['flash_type'] = 'danger';
@@ -325,11 +309,10 @@ class OrderController extends BaseController
                 $this->redirect('/admin/orders/create?user_id=' . $userId);
             }
 
-            $isStaff         = $this->isStaff();
-            $customAmount    = !$isStaff && isset($_POST['amount']) && $_POST['amount'] !== '' ? (float)$_POST['amount'] : null;
-            $customEndDate   = !$isStaff && !empty($_POST['end_date']) ? trim($_POST['end_date']) : null;
-            $customDataGb    = !$isStaff && isset($_POST['bandwidth_gb']) && $_POST['bandwidth_gb'] !== '' ? (float)$_POST['bandwidth_gb'] : null;
-            $customDevices   = !$isStaff && isset($_POST['max_devices']) && $_POST['max_devices'] !== '' ? (int)$_POST['max_devices'] : null;
+            $customAmount    = isset($_POST['amount']) && $_POST['amount'] !== '' ? (float)$_POST['amount'] : null;
+            $customEndDate   = !empty($_POST['end_date']) ? trim($_POST['end_date']) : null;
+            $customDataGb    = isset($_POST['bandwidth_gb']) && $_POST['bandwidth_gb'] !== '' ? (float)$_POST['bandwidth_gb'] : null;
+            $customDevices   = isset($_POST['max_devices']) && $_POST['max_devices'] !== '' ? (int)$_POST['max_devices'] : null;
             $paymentMethod   = trim((string)($_POST['payment_method'] ?? 'vietqr'));
             if ($paymentMethod === '') {
                 $paymentMethod = 'vietqr';

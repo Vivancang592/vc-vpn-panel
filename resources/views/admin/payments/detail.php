@@ -98,7 +98,7 @@ ob_start();
         <input type="hidden" name="payment_id" value="<?= (int) $payment['id'] ?>">
         <button type="submit" class="glass-btn" style="border: 0; cursor: pointer; background: var(--ios-success);">Duyệt và cộng ví</button>
     </form>
-<?php elseif (($payment['type'] ?? '') === 'deposit' && ($payment['status'] ?? '') === 'failed' && ($_SESSION['role'] ?? '') !== 'staff'): ?>
+<?php elseif (($payment['type'] ?? '') === 'deposit' && ($payment['status'] ?? '') === 'failed'): ?>
     <form method="POST" action="/admin/payments/delete-cancelled-deposit" class="glass-card" style="padding: 1.25rem; margin-top: 1.25rem; display: flex; justify-content: space-between; align-items: center; gap: 1rem; flex-wrap: wrap;">
         <div>
             <strong>Xóa giao dịch nạp tiền đã hủy</strong>

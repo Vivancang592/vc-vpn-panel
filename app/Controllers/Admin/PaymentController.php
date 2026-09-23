@@ -12,7 +12,7 @@ class PaymentController extends BaseController
 
     public function __construct()
     {
-        if (!isset($_SESSION['user_id']) || !in_array($_SESSION['role'] ?? '', ['admin', 'staff'], true)) {
+        if (!isset($_SESSION['user_id']) || ($_SESSION['role'] ?? '') !== 'admin') {
             $this->redirect('/login');
         }
         $this->paymentModel = new Payment();
@@ -70,10 +70,6 @@ class PaymentController extends BaseController
 
     public function deleteCancelledDeposit(): void
     {
-        if ($this->denyStaff('/admin/payments')) {
-            return;
-        }
-
         $paymentId = (int) ($_POST['payment_id'] ?? 0);
         $deleted = $this->validateCsrfToken($_POST['csrf_token'] ?? '')
             && $paymentId > 0
