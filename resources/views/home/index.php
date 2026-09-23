@@ -19,7 +19,6 @@ foreach (($plans ?? []) as $plan) {
 $loggedIn = !empty($_SESSION['user_id']);
 ?>
 
-<!-- Hero Banner SEO -->
 <section class="home-hero home-reveal">
     <div class="home-hero-grid">
         <div>
@@ -277,6 +276,6 @@ $loggedIn = !empty($_SESSION['user_id']);
 </section>
 
 <?php
-$content = ob_get_clean();
+$content = '<div class="public-page home-page">' . ob_get_clean() . '</div>';
 require_once __DIR__ . '/../layouts/app.php';
 ?>

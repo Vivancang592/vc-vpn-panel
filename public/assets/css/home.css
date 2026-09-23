@@ -1,4 +1,5 @@
 /* Home page uses the shared design tokens from app.css. */
+.public-page.home-page { width: min(100%, 1200px); margin: 0 auto; }
 .home-hero { --home-ink: var(--color-text-inverse); --home-muted: rgba(226, 240, 255, .78); --home-line: rgba(192, 229, 255, .2); position: relative; isolation: isolate; overflow: hidden; margin-top: clamp(1.5rem, 3vw, 3rem); padding: clamp(3rem, 7vw, 6.5rem); border-radius: 16px; background: linear-gradient(130deg, #071d3d 0%, #0d3d73 54%, #137a8a 100%); box-shadow: 0 28px 60px rgba(9, 45, 91, .26); color: var(--home-ink); }
 .home-hero::before { content: ''; position: absolute; z-index: -1; top: -28%; right: -7%; width: 44%; aspect-ratio: 1; border: 1px solid rgba(185, 241, 255, .38); border-radius: 50%; box-shadow: 0 0 0 44px rgba(115, 218, 239, .06), 0 0 0 88px rgba(115, 218, 239, .04); }
 .home-hero::after { content: ''; position: absolute; z-index: -1; right: 20%; bottom: -16rem; width: 35rem; height: 35rem; border-radius: 50%; background: rgba(40, 197, 207, .17); filter: blur(20px); }
