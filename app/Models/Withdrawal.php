@@ -59,10 +59,57 @@ class Withdrawal extends BaseModel
      */
     public function updateStatus(int $id, string $status): bool
     {
-        $stmt = self::$db->prepare("UPDATE `{$this->table}` SET `status` = :status WHERE `id` = :id");
-        return $stmt->execute([
-            'status' => $status,
-            'id'     => $id
-        ]);
+        if (!in_array($status, ['approved', 'rejected'], true)) {
+            return false;
+        }
+
+        self::$db->beginTransaction();
+
+        try {
+            $stmt = self::$db->prepare("SELECT `id`, `user_id`, `amount`, `status` FROM `{$this->table}` WHERE `id` = :id LIMIT 1 FOR UPDATE");
+            $stmt->execute(['id' => $id]);
+            $withdrawal = $stmt->fetch();
+
+            if (!$withdrawal || ($withdrawal['status'] ?? '') !== 'pending') {
+                self::$db->rollBack();
+                return false;
+            }
+
+            if ($status === 'approved') {
+                $deductStmt = self::$db->prepare(
+                    "UPDATE `vc_users`
+                     SET `commission_balance` = `commission_balance` - :amount
+                     WHERE `id` = :user_id AND `commission_balance` >= :amount"
+                );
+                $deductStmt->execute([
+                    'amount' => (float) ($withdrawal['amount'] ?? 0),
+                    'user_id' => (int) ($withdrawal['user_id'] ?? 0)
+                ]);
+
+                if ($deductStmt->rowCount() !== 1) {
+                    self::$db->rollBack();
+                    return false;
+                }
+            }
+
+            $updateStmt = self::$db->prepare("UPDATE `{$this->table}` SET `status` = :status WHERE `id` = :id");
+            $updated = $updateStmt->execute([
+                'status' => $status,
+                'id'     => $id
+            ]);
+
+            if (!$updated) {
+                self::$db->rollBack();
+                return false;
+            }
+
+            self::$db->commit();
+            return true;
+        } catch (\Throwable $exception) {
+            if (self::$db->inTransaction()) {
+                self::$db->rollBack();
+            }
+            return false;
+        }
     }
 }

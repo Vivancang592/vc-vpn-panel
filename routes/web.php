@@ -175,6 +175,7 @@ return [
     // Quản lý yêu cầu rút tiền (Withdrawals)
     'GET /admin/withdrawals'        => ['Admin\WithdrawalController', 'index'],
     'GET /admin/withdrawals/detail' => ['Admin\WithdrawalController', 'detail'],
+    'POST /admin/withdrawals/detail' => ['Admin\WithdrawalController', 'detail'],
 
     // Quản lý bài viết & tin tức (Posts)
     'GET /admin/posts'            => ['Admin\PostController', 'index'],
