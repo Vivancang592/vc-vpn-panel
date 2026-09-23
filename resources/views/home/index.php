@@ -1,6 +1,6 @@
 <?php
 $pageTitle = ($settings['site_name'] ?? 'VC VPN PANEL') . " - VPN bảo mật cho kết nối riêng tư";
-$metaDescription = 'Dịch vụ VPN giúp bảo vệ kết nối và quyền riêng tư khi làm việc, học tập hoặc giải trí trực tuyến. Xem các gói VPN phù hợp với nhu cầu của bạn.';
+$metaDescription = 'Dịch vụ VPN premium giúp bảo vệ kết nối Internet, tăng quyền riêng tư và quản lý dịch vụ trên nhiều thiết bị. Xem gói VPN phù hợp với nhu cầu của bạn.';
 $extraCss = 'home';
 $extraJs = 'home';
 ob_start();
@@ -22,22 +22,26 @@ $loggedIn = !empty($_SESSION['user_id']);
 
 <section class="home-hero home-reveal" aria-labelledby="home-title">
     <div class="home-hero-art" aria-hidden="true">
-        <span class="home-art-sun"></span>
-        <span class="home-art-mountain home-art-mountain-one"></span>
-        <span class="home-art-mountain home-art-mountain-two"></span>
-        <span class="home-art-cloud home-art-cloud-one"></span>
-        <span class="home-art-cloud home-art-cloud-two"></span>
-        <span class="home-art-seal">VPN</span>
-        <span class="home-art-pavilion"><i></i><i></i><i></i></span>
+        <span class="home-radar home-radar-one"></span>
+        <span class="home-radar home-radar-two"></span>
+        <span class="home-signal-beam"></span>
+        <span class="home-network-line home-network-line-one"></span>
+        <span class="home-network-line home-network-line-two"></span>
+        <span class="home-network-node home-network-node-one"></span>
+        <span class="home-network-node home-network-node-two"></span>
+        <span class="home-network-node home-network-node-three"></span>
+        <span class="home-shield-mark">
+            <svg viewBox="0 0 64 72" fill="none" aria-hidden="true"><path d="M32 4 56 13v18c0 16-9.8 29.4-24 37C17.8 60.4 8 47 8 31V13L32 4Z"/><path d="m21 35 7 7 15-17"/></svg>
+        </span>
+        <span class="home-art-label home-art-label-top">ENCRYPTED TUNNEL</span>
+        <span class="home-art-label home-art-label-bottom">PRIVATE NETWORK</span>
     </div>
     <div class="home-hero-grid">
         <div class="home-scroll">
-            <span class="home-scroll-roller home-scroll-roller-top" aria-hidden="true"></span>
-            <span class="home-scroll-roller home-scroll-roller-bottom" aria-hidden="true"></span>
             <div class="home-scroll-content">
                 <span class="home-eyebrow"><span class="home-dot"></span>SECURE CONNECTION PROTOCOL</span>
-                <h1 id="home-title" class="home-title">VPN bảo mật.<br><strong>Kiểm soát mọi kết nối.</strong></h1>
-                <p class="home-lead">Dịch vụ VPN giúp bảo vệ kết nối Internet và tăng quyền riêng tư khi bạn làm việc, học tập hoặc giải trí trên nhiều thiết bị.</p>
+                <h1 id="home-title" class="home-title">VPN bảo mật.<br><strong>Riêng tư trong mọi kết nối.</strong></h1>
+                <p class="home-lead">Dịch vụ VPN premium giúp bảo vệ kết nối Internet, tăng quyền riêng tư và quản lý dịch vụ dễ dàng trên các thiết bị của bạn.</p>
                 <div class="home-actions">
                     <a class="home-button home-button-primary" href="#bang-gia">Bảo vệ kết nối ngay</a>
                     <a class="home-button home-button-secondary" href="<?= $loggedIn ? '/user/dashboard' : '/register' ?>"><?= $loggedIn ? 'Mở bảng điều khiển' : 'Bắt đầu ngay' ?></a>
@@ -45,10 +49,11 @@ $loggedIn = !empty($_SESSION['user_id']);
             </div>
         </div>
         <aside class="home-status home-glass">
-            <div class="home-status-title">Security status</div>
-            <div class="home-status-item"><span><span class="home-dot"></span>Chọn gói phù hợp</span><strong>Sẵn sàng</strong></div>
+            <div class="home-status-title"><span class="home-dot"></span>System status</div>
+            <div class="home-status-item"><span>Chọn gói VPN</span><strong>Sẵn sàng</strong></div>
             <div class="home-status-item"><span>Quản lý dịch vụ</span><strong>Trực tuyến</strong></div>
-            <div class="home-status-item"><span>Thiết bị sử dụng</span><strong>Đa nền tảng</strong></div>
+            <div class="home-status-item"><span>Thiết bị hỗ trợ</span><strong>Đa nền tảng</strong></div>
+            <div class="home-status-foot">PROTECTION LAYER / ACTIVE</div>
         </aside>
     </div>
 </section>
@@ -56,37 +61,37 @@ $loggedIn = !empty($_SESSION['user_id']);
 <!-- Tính Năng Nổi Bật (Cam Kết Chất Lượng) -->
 <section class="home-features-section home-reveal">
     <div class="home-section-heading">
-        <span class="home-kicker">Lợi ích thiết thực</span>
-        <h2>Một dịch vụ VPN tập trung vào trải nghiệm kết nối</h2>
-        <p>Thiết kế cho những lúc bạn cần truy cập Internet riêng tư, linh hoạt và dễ quản lý.</p>
+        <span class="home-kicker">Built for privacy</span>
+        <h2>Một lớp bảo vệ gọn gàng cho kết nối hằng ngày</h2>
+        <p>Thiết kế cho nhu cầu truy cập Internet riêng tư, linh hoạt và dễ quản lý.</p>
     </div>
     <div class="home-features-grid">
         <article class="feature-box">
             <div class="feature-icon-wrapper">
                 <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#007aff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon></svg>
             </div>
-            <h3>Kết nối liền mạch</h3>
-            <p>Dễ dàng sử dụng khi làm việc từ xa, học trực tuyến hoặc giải trí trên Internet.</p>
+            <h3>Kết nối linh hoạt</h3>
+            <p>Dễ sử dụng khi làm việc từ xa, học trực tuyến hoặc giải trí trên Internet.</p>
         </article>
         <article class="feature-box">
             <div class="feature-icon-wrapper">
                 <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#007aff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>
             </div>
-            <h3>Riêng tư hơn khi trực tuyến</h3>
-            <p>VPN tạo thêm một lớp bảo vệ cho kết nối, đặc biệt khi sử dụng các mạng công cộng.</p>
+            <h3>Riêng tư hơn</h3>
+            <p>VPN tạo thêm một lớp bảo vệ cho kết nối, nhất là khi sử dụng mạng công cộng.</p>
         </article>
         <article class="feature-box">
             <div class="feature-icon-wrapper">
                 <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#007aff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="8" rx="2" ry="2"></rect><rect x="2" y="14" width="20" height="8" rx="2" ry="2"></rect><line x1="6" y1="6" x2="6.01" y2="6"></line><line x1="6" y1="18" x2="6.01" y2="18"></line></svg>
             </div>
-            <h3>Quản lý gói rõ ràng</h3>
-            <p>Thông tin thời hạn, lưu lượng và số thiết bị của từng gói được hiển thị ngay trước khi đăng ký.</p>
+            <h3>Thông tin minh bạch</h3>
+            <p>Thời hạn, lưu lượng và số thiết bị của từng gói được hiển thị trước khi đăng ký.</p>
         </article>
         <article class="feature-box">
             <div class="feature-icon-wrapper">
                 <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#007aff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="16" height="16" rx="2" ry="2"></rect><rect x="9" y="9" width="6" height="6"></rect><line x1="9" y1="1" x2="9" y2="4"></line><line x1="15" y1="1" x2="15" y2="4"></line><line x1="9" y1="20" x2="9" y2="23"></line><line x1="15" y1="20" x2="15" y2="23"></line><line x1="20" y1="9" x2="23" y2="9"></line><line x1="20" y1="15" x2="23" y2="15"></line><line x1="1" y1="9" x2="4" y2="9"></line><line x1="1" y1="15" x2="4" y2="15"></line></svg>
             </div>
-            <h3>Dùng trên nhiều thiết bị</h3>
+            <h3>Nhiều thiết bị</h3>
             <p>Các gói hiển thị khả năng sử dụng trên iOS, Android, Windows, macOS và Linux.</p>
         </article>
     </div>
@@ -94,14 +99,14 @@ $loggedIn = !empty($_SESSION['user_id']);
 
 <section class="home-journey home-reveal" aria-labelledby="home-journey-title">
     <div class="home-journey-intro">
-        <span class="home-kicker">Bắt đầu dễ dàng</span>
-        <h2 id="home-journey-title">Từ lựa chọn đến kết nối trong vài bước</h2>
+        <span class="home-kicker">Connection protocol</span>
+        <h2 id="home-journey-title">Kích hoạt lớp bảo vệ trong ba bước</h2>
         <p>Quy trình đăng ký được giữ đơn giản để bạn nhanh chóng quản lý dịch vụ từ tài khoản của mình.</p>
     </div>
     <ol class="home-steps">
         <li><span>01</span><div><h3>Chọn gói</h3><p>So sánh thời hạn và quyền lợi hiển thị trong bảng giá.</p></div></li>
-        <li><span>02</span><div><h3>Tạo tài khoản</h3><p>Đăng ký hoặc đăng nhập để tiếp tục với gói đã chọn.</p></div></li>
-        <li><span>03</span><div><h3>Hoàn tất đăng ký</h3><p>Theo dõi đơn hàng và dịch vụ của bạn trong bảng điều khiển.</p></div></li>
+        <li><span>02</span><div><h3>Kết nối</h3><p>Đăng ký hoặc đăng nhập để tiếp tục với gói đã chọn.</p></div></li>
+        <li><span>03</span><div><h3>Bảo vệ</h3><p>Theo dõi đơn hàng và dịch vụ của bạn trong bảng điều khiển.</p></div></li>
     </ol>
 </section>
 
@@ -109,8 +114,8 @@ $loggedIn = !empty($_SESSION['user_id']);
 <section id="bang-gia" class="home-pricing home-reveal">
     <div class="home-pricing-header">
         <div>
-            <span class="home-kicker">Chọn gói phù hợp</span>
-            <h2>Gói VPN minh bạch, dễ so sánh</h2>
+            <span class="home-kicker">Service plans</span>
+            <h2>Chọn gói VPN phù hợp với kết nối của bạn</h2>
             <p>Xem thời hạn, số thiết bị và thông tin đi kèm của mỗi gói trước khi đăng ký.</p>
         </div>
         <?php if ($groups): ?>
@@ -264,9 +269,9 @@ $loggedIn = !empty($_SESSION['user_id']);
 
 <section class="home-security home-reveal" aria-labelledby="home-security-title">
     <div>
-        <span class="home-kicker">Quyền riêng tư trực tuyến</span>
-        <h2 id="home-security-title">Chủ động hơn với mỗi kết nối Internet</h2>
-        <p>VPN phù hợp khi bạn muốn thêm sự riêng tư cho hoạt động trực tuyến. Hãy luôn sử dụng mật khẩu mạnh và kiểm tra thiết bị của bạn để bảo vệ tài khoản tốt hơn.</p>
+        <span class="home-kicker">Security briefing</span>
+        <h2 id="home-security-title">Kết nối của bạn. Quyền riêng tư của bạn. Quyền kiểm soát của bạn.</h2>
+        <p>VPN phù hợp khi bạn muốn tăng quyền riêng tư cho hoạt động trực tuyến. Hãy luôn dùng mật khẩu mạnh và kiểm tra thiết bị để bảo vệ tài khoản tốt hơn.</p>
     </div>
     <div class="home-security-notes">
         <div><strong>Kết nối công cộng</strong><span>Thận trọng hơn khi truy cập Wi-Fi bên ngoài.</span></div>
@@ -277,8 +282,8 @@ $loggedIn = !empty($_SESSION['user_id']);
 <!-- Câu Hỏi Thường Gặp (Accordion Mượt) -->
 <section id="cau-hoi-thuong-gap" class="home-faq home-reveal" aria-labelledby="home-faq-title">
     <div class="home-faq-heading">
-        <span class="home-kicker">Giải đáp nhanh</span>
-        <h2 id="home-faq-title">Câu hỏi thường gặp về VPN</h2>
+        <span class="home-kicker">Security database</span>
+        <h2 id="home-faq-title">Câu hỏi thường gặp về dịch vụ VPN</h2>
         <p>Những thông tin cơ bản trước khi bạn lựa chọn gói dịch vụ.</p>
     </div>
     <div class="home-faq-list">
@@ -307,7 +312,7 @@ $loggedIn = !empty($_SESSION['user_id']);
             </div>
         </details>
         <details class="home-faq-item">
-            <summary>Tôi cần hỗ trợ kỹ thuật khi không thể kết nối?</summary>
+            <summary>Tôi cần hỗ trợ kỹ thuật khi không thể kết nối VPN?</summary>
             <div class="faq-content">
                 <div class="faq-content-inner">
                     <p>Bạn có thể gửi yêu cầu trong mục hỗ trợ của trang cá nhân để đội ngũ kiểm tra và hướng dẫn.</p>
