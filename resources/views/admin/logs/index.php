@@ -22,6 +22,13 @@ $logTabs = [
         'title'       => 'Nhật Ký Gửi Email Hệ Thống',
         'description' => 'Theo dõi trạng thái gửi email thông báo, khôi phục mật khẩu và hóa đơn.'
     ],
+    'chatbot' => [
+        'label'       => 'Chatbot AI',
+        'icon'        => '🤖',
+        'url'         => '/admin/logs/chatbot',
+        'title'       => 'Nhật Ký Chatbot Và Chuyển Đổi',
+        'description' => 'Theo dõi sự kiện chat web/fanpage, hành vi chuyển đổi và tình trạng chuyển người thật.'
+    ],
     'macrodroid' => [
         'label'       => 'Webhook',
         'icon'        => '📲',
@@ -227,6 +234,64 @@ ob_start();
                         <?php endforeach; ?>
                     <?php else: ?>
                         <tr><td colspan="7" class="logs-empty">Chưa có nhật ký gửi email nào.</td></tr>
+                    <?php endif; ?>
+                </tbody>
+                </table>
+            </div>
+        </form>
+    <?php elseif ($activeLogTab === 'chatbot'): ?>
+        <form method="POST" action="/admin/logs/delete" class="logs-bulk-form">
+            <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrf_token) ?>">
+            <input type="hidden" name="log_type" value="chatbot">
+            <div class="logs-bulk-actions">
+                <label class="logs-select-all-label"><input type="checkbox" class="logs-select-all"> Chọn tất cả</label>
+                <div class="logs-delete-actions">
+                    <button type="submit" class="logs-delete-selected" onclick="return confirm('Bạn có chắc chắn muốn xóa các bản ghi đã chọn?');">Xóa mục đã chọn</button>
+                </div>
+            </div>
+            <div class="table-responsive">
+                <table class="glass-table">
+                <thead>
+                    <tr>
+                        <th class="logs-select-column"><span class="sr-only">Chọn</span></th>
+                        <th>ID</th>
+                        <th>Sự Kiện</th>
+                        <th>Nguồn</th>
+                        <th>Phiên</th>
+                        <th>Thành Viên</th>
+                        <th>Dữ Liệu</th>
+                        <th>Thời Gian</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <?php if (!empty($logs)): ?>
+                        <?php foreach ($logs as $log): ?>
+                            <?php
+                                $rawData = trim((string)($log['event_data'] ?? ''));
+                                $decoded = $rawData !== '' ? json_decode($rawData, true) : null;
+                                $displayData = is_array($decoded)
+                                    ? json_encode($decoded, JSON_UNESCAPED_UNICODE)
+                                    : ($rawData !== '' ? $rawData : '-');
+                            ?>
+                            <tr>
+                                <td class="logs-select-column"><input type="checkbox" name="log_ids[]" value="<?= (int)$log['id'] ?>" class="logs-row-select" aria-label="Chọn log #<?= (int)$log['id'] ?>"></td>
+                                <td class="logs-id">#<?= (int)$log['id'] ?></td>
+                                <td><span class="logs-badge logs-badge-blue"><?= htmlspecialchars((string)($log['event_name'] ?? '-')) ?></span></td>
+                                <td><span class="logs-badge logs-badge-green"><?= htmlspecialchars((string)($log['source'] ?? $log['session_source'] ?? 'web')) ?></span></td>
+                                <td>
+                                    <div class="logs-user-name">SID: <?= (int)($log['session_id'] ?? 0) ?></div>
+                                    <div class="logs-user-email"><?= htmlspecialchars((string)($log['external_id'] ?? $log['visitor_token'] ?? '-')) ?></div>
+                                </td>
+                                <td>
+                                    <div class="logs-user-name"><?= htmlspecialchars((string)($log['username'] ?? 'Khách')) ?></div>
+                                    <div class="logs-user-email"><?= htmlspecialchars((string)($log['email'] ?? '')) ?></div>
+                                </td>
+                                <td class="logs-truncate"><?= htmlspecialchars($displayData) ?></td>
+                                <td class="logs-time"><?= !empty($log['created_at']) ? date('d/m/Y H:i:s', strtotime($log['created_at'])) : '-' ?></td>
+                            </tr>
+                        <?php endforeach; ?>
+                    <?php else: ?>
+                        <tr><td colspan="8" class="logs-empty">Chưa có nhật ký chatbot nào.</td></tr>
                     <?php endif; ?>
                 </tbody>
                 </table>

@@ -506,4 +506,219 @@ if (!response.ok || !result.valid) {
         window.addEventListener('scroll', closeAllActionMenus, true);
         window.addEventListener('resize', closeAllActionMenus);
     }
+
+    // 11. Chatbot widget (web)
+    const chatbotRoot = document.getElementById('vc-chatbot');
+    if (chatbotRoot) {
+        const toggleBtn = document.getElementById('vc-chatbot-toggle');
+        const closeBtn = document.getElementById('vc-chatbot-close');
+        const panel = document.getElementById('vc-chatbot-panel');
+        const form = document.getElementById('vc-chatbot-form');
+        const input = document.getElementById('vc-chatbot-input');
+        const box = document.getElementById('vc-chatbot-messages');
+        const page = (chatbotRoot.dataset.page || '/').replace(/^\//, '') || 'home';
+
+        const trackEvent = async function (eventName, meta) {
+            try {
+                await fetch('/api/chat/event', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        Accept: 'application/json'
+                    },
+                    body: JSON.stringify({
+                        event_name: eventName,
+                        source: 'web',
+                        meta: meta || {}
+                    })
+                });
+            } catch (_e) {
+                // no-op
+            }
+        };
+
+        const renderMessage = function (role, text) {
+            if (!box) return;
+            const row = document.createElement('div');
+            row.style.display = 'flex';
+            row.style.justifyContent = role === 'user' ? 'flex-end' : 'flex-start';
+            row.style.marginBottom = '8px';
+
+            const bubble = document.createElement('div');
+            bubble.style.maxWidth = '82%';
+            bubble.style.padding = '8px 10px';
+            bubble.style.borderRadius = '10px';
+            bubble.style.fontSize = '13px';
+            bubble.style.lineHeight = '1.45';
+            bubble.style.whiteSpace = 'pre-wrap';
+
+            if (role === 'user') {
+                bubble.style.background = '#0a84ff';
+                bubble.style.color = '#fff';
+            } else {
+                bubble.style.background = '#fff';
+                bubble.style.color = '#1c1c1e';
+                bubble.style.border = '1px solid rgba(0,0,0,.08)';
+            }
+
+            bubble.textContent = text;
+            row.appendChild(bubble);
+            box.appendChild(row);
+            box.scrollTop = box.scrollHeight;
+        };
+
+        const setLoading = function (loading) {
+            if (!form) return;
+            const submitBtn = form.querySelector('button[type="submit"]');
+            if (submitBtn) {
+                submitBtn.disabled = loading;
+                submitBtn.textContent = loading ? '...' : 'Gửi';
+            }
+            if (input) {
+                input.disabled = loading;
+            }
+        };
+
+        const renderCta = function (label, url) {
+            if (!box || !label || !url) return;
+
+            const row = document.createElement('div');
+            row.style.display = 'flex';
+            row.style.justifyContent = 'flex-start';
+            row.style.marginBottom = '8px';
+
+            const link = document.createElement('a');
+            link.href = url;
+            link.textContent = label;
+            link.target = '_self';
+            link.style.display = 'inline-block';
+            link.style.padding = '7px 10px';
+            link.style.borderRadius = '8px';
+            link.style.background = '#eef5ff';
+            link.style.border = '1px solid rgba(10,132,255,.24)';
+            link.style.color = '#0a84ff';
+            link.style.fontSize = '13px';
+            link.style.fontWeight = '600';
+            link.style.textDecoration = 'none';
+            link.addEventListener('click', function () {
+                trackEvent('cta_clicked', { page: page, url: url });
+                if ((url || '').indexOf('/checkout') !== -1 || (url || '').indexOf('/user/plans') !== -1) {
+                    trackEvent('checkout_clicked', { page: page, url: url });
+                }
+            });
+
+            row.appendChild(link);
+            box.appendChild(row);
+            box.scrollTop = box.scrollHeight;
+
+            trackEvent('cta_shown', { page: page, url: url });
+        };
+
+        const openPanel = function () {
+            if (!panel) return;
+            panel.hidden = false;
+            if (input) input.focus();
+        };
+
+        const closePanel = function () {
+            if (!panel) return;
+            panel.hidden = true;
+        };
+
+        const loadHistory = async function () {
+            try {
+                const res = await fetch('/api/chat/history', { headers: { Accept: 'application/json' } });
+                const data = await res.json();
+                if (!data || !data.success || !data.data || !Array.isArray(data.data.history)) {
+                    return;
+                }
+
+                if (box && box.childElementCount === 0) {
+                    renderMessage('assistant', 'Xin chào. Mình có thể tư vấn gói phù hợp và hướng dẫn bạn đăng ký nhanh.');
+                }
+
+                data.data.history.forEach(function (item) {
+                    const role = item.role === 'user' ? 'user' : 'assistant';
+                    const content = item.content || '';
+                    if (content) {
+                        renderMessage(role, content);
+                    }
+                });
+            } catch (_e) {
+                if (box && box.childElementCount === 0) {
+                    renderMessage('assistant', 'Xin chào. Bạn hãy đặt câu hỏi để mình hỗ trợ ngay.');
+                }
+            }
+        };
+
+        if (toggleBtn) {
+            toggleBtn.addEventListener('click', function () {
+                const isHidden = panel ? panel.hidden : true;
+                if (isHidden) {
+                    openPanel();
+                    trackEvent('chat_opened', { page: page });
+                    if (box && box.childElementCount === 0) {
+                        loadHistory();
+                    }
+                } else {
+                    closePanel();
+                }
+            });
+        }
+
+        if (closeBtn) {
+            closeBtn.addEventListener('click', closePanel);
+        }
+
+        if (form && input) {
+            form.addEventListener('submit', async function (event) {
+                event.preventDefault();
+                const message = input.value.trim();
+                if (!message) return;
+
+                renderMessage('user', message);
+                input.value = '';
+                setLoading(true);
+
+                try {
+                    const res = await fetch('/api/chat/message', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            Accept: 'application/json'
+                        },
+                        body: JSON.stringify({
+                            message: message,
+                            page: page
+                        })
+                    });
+
+                    const data = await res.json();
+                    const answer = data && data.data ? data.data.answer : '';
+                    const handoff = data && data.data ? !!data.data.handoff : false;
+                    const cta = data && data.data ? data.data.cta : null;
+
+                    if (answer) {
+                        renderMessage('assistant', answer);
+                    } else {
+                        renderMessage('assistant', 'Mình chưa nhận được phản hồi từ AI. Bạn thử lại sau vài giây nhé.');
+                    }
+
+                    if (cta && cta.label && cta.url) {
+                        renderCta(cta.label, cta.url);
+                    }
+
+                    if (handoff) {
+                        renderMessage('assistant', 'Nếu cần người hỗ trợ trực tiếp, bạn để lại email/SĐT hoặc nhắn fanpage giúp mình.');
+                        trackEvent('handoff_requested', { page: page });
+                    }
+                } catch (_error) {
+                    renderMessage('assistant', 'Kết nối đang gián đoạn. Bạn thử lại sau ít phút nhé.');
+                } finally {
+                    setLoading(false);
+                    if (input) input.focus();
+                }
+            });
+        }
+    }
 });

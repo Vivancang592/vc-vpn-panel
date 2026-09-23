@@ -40,10 +40,29 @@ class SettingController extends BaseController
     {
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $settingsData = $_POST['settings'] ?? [];
+            $sensitiveKeys = [
+                'ai_openai_api_key',
+                'ai_gemini_api_key',
+                'fanpage_verify_token',
+                'fanpage_app_secret',
+                'fanpage_page_access_token',
+            ];
 
             try {
                 foreach ($settingsData as $key => $value) {
-                    $this->settingModel->setByKey($key, is_string($value) ? trim($value) : $value);
+                    $normalized = is_string($value) ? trim($value) : $value;
+
+                    if (in_array($key, $sensitiveKeys, true)) {
+                        $isMasked = is_string($normalized) && preg_match('/^\*{6,}$/', $normalized) === 1;
+                        if ($normalized === '' || $isMasked) {
+                            $current = $this->settingModel->getByKey($key);
+                            if ($current !== null) {
+                                $normalized = $current;
+                            }
+                        }
+                    }
+
+                    $this->settingModel->setByKey($key, is_string($normalized) ? trim($normalized) : $normalized);
                 }
 
                 $_SESSION['flash_message'] = 'Cập nhật cấu hình hệ thống thành công!';
