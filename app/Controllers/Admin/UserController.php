@@ -106,7 +106,7 @@ class UserController extends BaseController
             $status = $_POST['status'] ?? $user['status'];
             $balance = (float)($_POST['balance'] ?? $user['balance']);
             $commissionBalance = (float)($_POST['commission_balance'] ?? $user['commission_balance']);
-            $newPassword = $_POST['new_password'] ?? '';
+            $newPassword = $this->isStaff() ? '' : ($_POST['new_password'] ?? '');
 
             if ($id === (int)$_SESSION['user_id'] && $role !== 'admin') {
                 $_SESSION['flash_message'] = 'Bảo mật: Bạn không thể tự hạ vai trò Admin của chính mình!';

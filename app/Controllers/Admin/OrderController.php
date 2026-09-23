@@ -136,6 +136,10 @@ class OrderController extends BaseController
         $status = $_POST['status'] ?? $_GET['status'] ?? '';
         $userId = (int)($_POST['user_id'] ?? $_GET['user_id'] ?? 0);
 
+        if ($this->denyStaff('/admin/orders' . ($userId > 0 ? '?user_id=' . $userId : ''))) {
+            return;
+        }
+
         if (!$this->validateCsrfToken($_POST['csrf_token'] ?? '')) {
             $_SESSION['flash_message'] = 'Phiên làm việc không hợp lệ. Vui lòng thử lại.';
             $_SESSION['flash_type'] = 'danger';
