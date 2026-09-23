@@ -45,7 +45,7 @@ ob_start();
     <p style="color: var(--ios-text-secondary); margin-top: 0.5rem;">Giải đáp các thắc mắc và hướng dẫn chi tiết cách sử dụng dịch vụ VPN</p>
     <form class="home-subpage-search" action="/faq" method="get" style="max-width: 560px; margin: 1.25rem auto 0; display: flex; gap: .5rem;">
         <input type="search" name="q" value="<?= htmlspecialchars($search) ?>" placeholder="Tìm hướng dẫn..." style="flex: 1; padding: .7rem .9rem; border: 1px solid var(--glass-border); border-radius: 10px; background: var(--glass-bg); color: var(--ios-text);">
-        <button type="submit" class="glass-btn" style="padding: .7rem 1rem;">Tìm kiếm</button>
+        <button type="submit" class="glass-btn" style="padding: .7rem 1rem; white-space: nowrap; flex-shrink: 0;">Tìm kiếm</button>
     </form>
 </div>
 

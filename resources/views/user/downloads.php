@@ -12,23 +12,34 @@ $platforms = [
 ob_start();
 ?>
 
-<section class="glass-card" style="padding: 1.5rem;">
-    <header style="margin-bottom: 1.5rem;">
-        <p style="margin: 0 0 .35rem; color: var(--color-primary); font-size: .75rem; font-weight: 700; letter-spacing: .08em; text-transform: uppercase;">Ứng dụng kết nối</p>
-        <h1 style="margin: 0; font-size: 1.6rem;">Tải ứng dụng VPN</h1>
-        <p style="margin: .5rem 0 0; color: var(--ios-text-secondary);">Chọn phiên bản Karing phù hợp với thiết bị của bạn.</p>
+<section class="user-record-page">
+    <header class="user-orders-header">
+        <div class="user-orders-intro">
+            <h2 style="color: #020af4; font-family: emoji;">ỨNG DỤNG KẾT NỐI</h2>
+            <p style="margin: 0;">Chọn đúng phiên bản Karing theo hệ điều hành thiết bị của bạn.</p>
+        </div>
+        <div class="user-orders-title-row">
+            <h1 style="font-size: 1.5rem; font-weight: 700; margin: 0;">📲 Tải ứng dụng VPN</h1>
+        </div>
     </header>
 
-    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: .8rem;">
+    <div class="glass-card" style="padding: 1.25rem;">
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: .8rem;">
         <?php foreach ($platforms as $platform): ?>
-            <a href="/client?tag=<?= urlencode($platform['tag']) ?>" data-no-loader style="display: block; padding: 1rem; border: 1px solid var(--glass-border); border-radius: 10px; color: inherit; text-decoration: none;">
-                <strong style="display: block; margin-bottom: .35rem; color: var(--ios-blue); font-size: 1rem;"><?= htmlspecialchars($platform['name']) ?></strong>
-                <span style="color: var(--ios-text-secondary); font-size: .85rem;"><?= htmlspecialchars($platform['detail']) ?></span>
-            </a>
+                <a href="/client?tag=<?= urlencode($platform['tag']) ?>" data-no-loader style="display: block; padding: 1rem; border: 1px solid var(--glass-border); border-radius: 10px; color: inherit; text-decoration: none; transition: transform .2s ease, box-shadow .2s ease;">
+                    <strong style="display: block; margin-bottom: .35rem; color: var(--ios-blue); font-size: 1rem;"><?= htmlspecialchars($platform['name']) ?></strong>
+                    <span style="color: var(--ios-text-secondary); font-size: .85rem;"><?= htmlspecialchars($platform['detail']) ?></span>
+                </a>
         <?php endforeach; ?>
+        </div>
+
+        <p style="margin: 1rem 0 0; color: var(--ios-text-secondary); font-size: .85rem; line-height: 1.55;">
+            Lưu ý: Ứng dụng được cung cấp từ nguồn chính thức theo từng nền tảng. Nếu tải không thành công, hãy thử lại sau vài phút hoặc đổi mạng.
+        </p>
     </div>
 </section>
 
 <?php
 $content = ob_get_clean();
+$showSidebar = true;
 require_once __DIR__ . '/../layouts/app.php';
