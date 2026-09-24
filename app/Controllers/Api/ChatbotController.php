@@ -83,6 +83,8 @@ class ChatbotController extends BaseController
 
         $source = 'web';
         $userId = isset($_SESSION['user_id']) ? (int) $_SESSION['user_id'] : null;
+        $isLoggedIn = !empty($userId);
+        $userName = !empty($_SESSION['username']) ? (string) $_SESSION['username'] : (!empty($_SESSION['name']) ? (string) $_SESSION['name'] : '');
         $sessionRow = $this->resolveSession($source, null, $userId);
 
         $history = [];
@@ -110,6 +112,8 @@ class ChatbotController extends BaseController
             'page' => $page,
             'history' => $history,
             'user_id' => (int) ($userId ?? 0),
+            'is_logged_in' => $isLoggedIn,
+            'user_name' => $userName,
             'session_id' => (int) ($sessionRow['id'] ?? 0)
         ]);
 
