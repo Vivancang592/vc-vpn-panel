@@ -29,14 +29,31 @@ ob_start();
     </div>
 <?php endif; ?>
 
-<div style="margin-bottom: 1rem; width: 100%; box-sizing: border-box;">
+<?php
+$protocol = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https://' : 'http://';
+$host = $_SERVER['HTTP_HOST'] ?? 'yourdomain.com';
+$serverApiUrl = $protocol . $host . '/api/server/checkin';
+?>
+
+<div style="margin-bottom: 1rem; width: 100%; box-sizing: border-box; display: flex; flex-wrap: wrap; justify-content: space-between; align-items: flex-end; gap: 1rem;">
     <div>
         <h1 style="font-size: 1.5rem; font-weight: 700; word-break: break-word;">Quản Lý Máy Chủ</h1>
-        <p style="color: var(--ios-text-secondary); font-size: 0.85rem;">Quản lý hạ tầng máy chủ và thông số API kết nối</p>
+        <p style="color: var(--ios-text-secondary); font-size: 0.85rem;">Quản lý hạ tầng máy chủ và thông số API kết nối node VPS</p>
     </div>
-    <div style="display: flex; justify-content: flex-end; margin-top: 0.75rem;">
+    <div style="display: flex; gap: 0.5rem; align-items: center;">
         <a href="/admin/servers/create" class="glass-btn" style="text-decoration: none; white-space: nowrap;">+ Thêm Máy Chủ Mới</a>
     </div>
+</div>
+
+<!-- Khung Link API Node Check-in để Copy Nhanh -->
+<div class="glass-card" style="padding: 0.9rem 1.25rem; margin-bottom: 1rem; width: 100%; box-sizing: border-box; display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 0.75rem; background: rgba(0, 122, 255, 0.05); border: 1px solid rgba(0, 122, 255, 0.2);">
+    <div style="display: flex; align-items: center; gap: 0.5rem; flex: 1; min-width: 260px;">
+        <span style="font-weight: 700; font-size: 0.85rem; color: var(--ios-blue); white-space: nowrap;">⚡ Node API URL:</span>
+        <input type="text" id="node_api_url_input" class="glass-input" value="<?= htmlspecialchars($serverApiUrl) ?>" readonly style="flex: 1; min-width: 0; background: rgba(0,0,0,0.15); color: var(--ios-text); font-family: monospace; font-size: 0.82rem; font-weight: 600;">
+    </div>
+    <button type="button" class="glass-btn" onclick="navigator.clipboard.writeText(document.getElementById('node_api_url_input').value); alert('Đã sao chép Link API Máy Chủ: <?= htmlspecialchars($serverApiUrl) ?>');" style="padding: 0.5rem 1rem; white-space: nowrap; cursor: pointer; font-size: 0.82rem;">
+        📋 Sao Chép Link API
+    </button>
 </div>
 
 <!-- Bảng Máy Chủ -->
