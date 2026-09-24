@@ -156,8 +156,9 @@ document.addEventListener('DOMContentLoaded', function () {
     });
 
     document.addEventListener('submit', function (e) {
+        if (e.defaultPrevented) return;
         const form = e.target;
-        if (form && !form.hasAttribute('data-no-loader')) {
+        if (form && !form.hasAttribute('data-no-loader') && !form.closest('#vc-chatbot')) {
             showPreloader();
         }
     });
@@ -657,6 +658,8 @@ if (!response.ok || !result.valid) {
         if (form && input) {
             form.addEventListener('submit', async function (event) {
                 event.preventDefault();
+                event.stopPropagation();
+                hidePreloader();
                 const message = input.value.trim();
                 if (!message) return;
 
