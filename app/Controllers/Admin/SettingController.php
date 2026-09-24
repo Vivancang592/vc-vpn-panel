@@ -103,7 +103,7 @@ class SettingController extends BaseController
             return;
         }
 
-        $apiKey = trim((string) ($this->settingModel->getByKey('ai_openai_api_key') ?? getenv('OPENAI_API_KEY') ?: ''));
+        $apiKey = $this->resolveOpenAiApiKey();
         if ($apiKey === '') {
             $this->json(['success' => false, 'message' => 'Chưa có OpenAI API key trong cài đặt hoặc .env.'], 422);
             return;
@@ -131,7 +131,14 @@ class SettingController extends BaseController
 
         $data = json_decode((string) $raw, true);
         if ($status < 200 || $status >= 300 || !is_array($data)) {
-            $this->json(['success' => false, 'message' => 'Không lấy được danh sách model từ OpenAI.'], 502);
+            $providerMessage = is_array($data)
+                ? trim((string)($data['error']['message'] ?? ''))
+                : '';
+            $message = 'Không lấy được danh sách model từ OpenAI. HTTP ' . $status;
+            if ($providerMessage !== '') {
+                $message .= ' - ' . $providerMessage;
+            }
+            $this->json(['success' => false, 'message' => $message], 502);
             return;
         }
 
@@ -161,5 +168,30 @@ class SettingController extends BaseController
             'models' => $models,
             'current' => (string) ($this->settingModel->getByKey('ai_openai_model') ?? 'gpt-4o-mini')
         ]);
+    }
+
+    private function resolveOpenAiApiKey(): string
+    {
+        $candidateKeys = [
+            'ai_openai_api_key',
+            'openai_api_key',
+            'OPENAI_API_KEY',
+        ];
+
+        foreach ($candidateKeys as $key) {
+            $value = trim((string) ($this->settingModel->getByKey($key) ?? ''));
+            if ($value !== '') {
+                return $value;
+            }
+        }
+
+        foreach (['OPENAI_API_KEY', 'openai_api_key'] as $envKey) {
+            $envValue = trim((string) (getenv($envKey) ?: ''));
+            if ($envValue !== '') {
+                return $envValue;
+            }
+        }
+
+        return '';
     }
 }

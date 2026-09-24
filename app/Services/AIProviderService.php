@@ -30,7 +30,7 @@ class AIProviderService
 
     private function askOpenAI(array $messages, string $model): array
     {
-        $apiKey = $this->resolveConfigValue('ai_openai_api_key', 'OPENAI_API_KEY');
+        $apiKey = $this->resolveConfigValue('ai_openai_api_key', 'OPENAI_API_KEY', ['openai_api_key']);
         if ($apiKey === '') {
             return ['ok' => false, 'content' => '', 'error' => 'Thiếu API key OpenAI.'];
         }
@@ -68,7 +68,7 @@ class AIProviderService
 
     private function askGemini(array $messages, string $model): array
     {
-        $apiKey = $this->resolveConfigValue('ai_gemini_api_key', 'GEMINI_API_KEY');
+        $apiKey = $this->resolveConfigValue('ai_gemini_api_key', 'GEMINI_API_KEY', ['gemini_api_key']);
         if ($apiKey === '') {
             return ['ok' => false, 'content' => '', 'error' => 'Thiếu API key Gemini.'];
         }
@@ -157,11 +157,18 @@ class AIProviderService
         return ['ok' => true, 'error' => null, 'status' => $status, 'data' => is_array($data) ? $data : []];
     }
 
-    private function resolveConfigValue(string $settingKey, string $envKey): string
+    private function resolveConfigValue(string $settingKey, string $envKey, array $settingAliases = []): string
     {
         $settingValue = trim((string) ($this->settings[$settingKey] ?? ''));
         if ($settingValue !== '') {
             return $settingValue;
+        }
+
+        foreach ($settingAliases as $alias) {
+            $aliasValue = trim((string) ($this->settings[$alias] ?? ''));
+            if ($aliasValue !== '') {
+                return $aliasValue;
+            }
         }
 
         $envValue = trim((string) (getenv($envKey) ?: ''));
