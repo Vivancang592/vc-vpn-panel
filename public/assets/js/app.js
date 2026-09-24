@@ -537,6 +537,32 @@ if (!response.ok || !result.valid) {
             }
         };
 
+        const formatMarkdown = function (rawText) {
+            if (!rawText) return '';
+            // Escape HTML
+            let safe = rawText
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#039;');
+
+            // Bold **text**
+            safe = safe.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+            // Italic *text*
+            safe = safe.replace(/\*(.+?)\*/g, '<em>$1</em>');
+            // Inline code `code`
+            safe = safe.replace(/`([^`]+)`/g, '<code style="background:rgba(0,122,255,0.08);color:#0a84ff;padding:1px 5px;border-radius:4px;font-family:monospace;font-size:90%;font-weight:600;">$1</code>');
+            // Markdown link [label](url)
+            safe = safe.replace(/\[([^\]]+)\]\((https?:\/\/[^\s)]+|\/[^\s)]+)\)/g, function (_match, label, href) {
+                return '<a href="' + href + '" style="color: #0a84ff; text-decoration: underline; font-weight: 600;" target="_self">' + label + '</a>';
+            });
+            // Newlines
+            safe = safe.replace(/\n/g, '<br>');
+
+            return safe;
+        };
+
         const renderMessage = function (role, text) {
             if (!box) return;
             const row = document.createElement('div');
@@ -545,23 +571,25 @@ if (!response.ok || !result.valid) {
             row.style.marginBottom = '8px';
 
             const bubble = document.createElement('div');
-            bubble.style.maxWidth = '82%';
-            bubble.style.padding = '8px 10px';
+            bubble.style.maxWidth = '85%';
+            bubble.style.padding = '8px 11px';
             bubble.style.borderRadius = '10px';
             bubble.style.fontSize = '13px';
-            bubble.style.lineHeight = '1.45';
-            bubble.style.whiteSpace = 'pre-wrap';
+            bubble.style.lineHeight = '1.5';
 
             if (role === 'user') {
                 bubble.style.background = '#0a84ff';
                 bubble.style.color = '#fff';
+                bubble.style.whiteSpace = 'pre-wrap';
+                bubble.textContent = text;
             } else {
                 bubble.style.background = '#fff';
                 bubble.style.color = '#1c1c1e';
                 bubble.style.border = '1px solid rgba(0,0,0,.08)';
+                bubble.style.wordBreak = 'break-word';
+                bubble.innerHTML = formatMarkdown(text);
             }
 
-            bubble.textContent = text;
             row.appendChild(bubble);
             box.appendChild(row);
             box.scrollTop = box.scrollHeight;

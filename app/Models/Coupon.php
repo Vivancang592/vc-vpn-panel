@@ -59,4 +59,18 @@ class Coupon extends BaseModel
         $stmt = self::$db->prepare("UPDATE {$this->table} SET `used_count` = `used_count` + 1 WHERE `id` = ?");
         return $stmt->execute([$id]);
     }
+
+    /**
+     * Lấy danh sách mã giảm giá đang hoạt động và còn hạn sử dụng
+     */
+    public function getActiveCoupons(): array
+    {
+        $sql = "SELECT * FROM {$this->table} 
+                WHERE status = 'active' 
+                AND (expires_at IS NULL OR expires_at >= NOW())
+                AND (max_uses = 0 OR used_count < max_uses)
+                ORDER BY discount_value DESC";
+        $stmt = self::$db->query($sql);
+        return $stmt->fetchAll() ?: [];
+    }
 }

@@ -73,23 +73,52 @@ class AIProviderService
             return ['ok' => false, 'content' => '', 'error' => 'Thiếu API key Gemini.'];
         }
 
-        $maxTokens = (int) ($this->settings['ai_max_output_tokens'] ?? 500);
-        $maxTokens = max(120, min(900, $maxTokens));
+        $systemParts = [];
+        $contents = [];
 
-        $prompt = $this->buildGeminiPrompt($messages);
-        $payload = [
-            'contents' => [
-                [
+        foreach ($messages as $msg) {
+            $role = (string) ($msg['role'] ?? 'user');
+            $text = trim((string) ($msg['content'] ?? ''));
+            if ($text === '') {
+                continue;
+            }
+
+            if ($role === 'system') {
+                $systemParts[] = ['text' => $text];
+            } else {
+                $geminiRole = ($role === 'assistant' || $role === 'model') ? 'model' : 'user';
+                $contents[] = [
+                    'role' => $geminiRole,
                     'parts' => [
-                        ['text' => $prompt]
+                        ['text' => $text]
                     ]
-                ]
-            ],
+                ];
+            }
+        }
+
+        if (empty($contents)) {
+            $contents[] = [
+                'role' => 'user',
+                'parts' => [['text' => 'Xin chào']]
+            ];
+        }
+
+        $maxTokens = (int) ($this->settings['ai_max_output_tokens'] ?? 500);
+        $maxOutputTokens = max(1024, min(4096, $maxTokens * 4));
+
+        $payload = [
+            'contents' => $contents,
             'generationConfig' => [
-                'temperature' => 0.45,
-                'maxOutputTokens' => $maxTokens,
+                'temperature' => 0.5,
+                'maxOutputTokens' => $maxOutputTokens,
             ]
         ];
+
+        if (!empty($systemParts)) {
+            $payload['system_instruction'] = [
+                'parts' => $systemParts
+            ];
+        }
 
         $url = 'https://generativelanguage.googleapis.com/v1beta/models/'
             . rawurlencode($model)
