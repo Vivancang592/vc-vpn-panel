@@ -491,7 +491,12 @@ ob_start();
 
                 <div>
                     <label data-hint="Verify Token tự đặt để nhập vào cấu hình Webhook trên Meta Developers." style="display: block; font-weight: 600; font-size: 0.85rem;">Verify Token</label>
-                    <input type="password" name="settings[fanpage_verify_token]" class="glass-input" value="<?= !empty($settings['fanpage_verify_token']) ? '************' : '' ?>" placeholder="token xác thực webhook" style="width: 100%;">
+                    <div style="display: flex; gap: 0.4rem; width: 100%;">
+                        <input type="text" id="fanpage_verify_token_input" name="settings[fanpage_verify_token]" class="glass-input" value="<?= htmlspecialchars($settings['fanpage_verify_token'] ?? '') ?>" placeholder="token xác thực webhook" style="flex: 1; min-width: 0;">
+                        <button type="button" class="glass-btn" onclick="generateRandomApiKey('fanpage_verify_token_input')" title="Tạo token ngẫu nhiên" style="padding: 0 0.75rem; white-space: nowrap; cursor: pointer; background: rgba(255,255,255,0.08); font-size: 0.85rem;">
+                            🎲 Tạo mã
+                        </button>
+                    </div>
                 </div>
 
                 <div>
