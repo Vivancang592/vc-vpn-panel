@@ -40,6 +40,13 @@ class SettingController extends BaseController
     {
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $settingsData = $_POST['settings'] ?? [];
+            if (!is_array($settingsData) || empty($settingsData)) {
+                $_SESSION['flash_message'] = 'Không có dữ liệu cài đặt được gửi. Vui lòng kiểm tra đúng tab và thử lại.';
+                $_SESSION['flash_type'] = 'danger';
+                $this->redirect('/admin/settings');
+                return;
+            }
+
             $sensitiveKeys = [
                 'ai_openai_api_key',
                 'ai_gemini_api_key',
@@ -49,6 +56,7 @@ class SettingController extends BaseController
             ];
 
             try {
+                $savedCount = 0;
                 foreach ($settingsData as $key => $value) {
                     $normalized = is_string($value) ? trim($value) : $value;
 
@@ -63,9 +71,10 @@ class SettingController extends BaseController
                     }
 
                     $this->settingModel->setByKey($key, is_string($normalized) ? trim($normalized) : $normalized);
+                    $savedCount++;
                 }
 
-                $_SESSION['flash_message'] = 'Cập nhật cấu hình hệ thống thành công!';
+                $_SESSION['flash_message'] = 'Cập nhật cấu hình hệ thống thành công (' . $savedCount . ' khóa).';
                 $_SESSION['flash_type']    = 'success';
             } catch (\RuntimeException $exception) {
                 $_SESSION['flash_message'] = $exception->getMessage();
