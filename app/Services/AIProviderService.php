@@ -35,8 +35,8 @@ class AIProviderService
             return ['ok' => false, 'content' => '', 'error' => 'Thiếu API key OpenAI.'];
         }
 
-        $maxTokens = (int) ($this->settings['ai_max_output_tokens'] ?? 500);
-        $maxTokens = max(120, min(900, $maxTokens));
+        $maxTokens = (int) ($this->settings['ai_max_output_tokens'] ?? 800);
+        $maxTokens = max(500, min(2500, $maxTokens));
 
         $payload = [
             'model' => $model,
@@ -104,7 +104,9 @@ class AIProviderService
         }
 
         $maxTokens = (int) ($this->settings['ai_max_output_tokens'] ?? 500);
-        $maxOutputTokens = max(120, min(2500, $maxTokens));
+        // Với Gemini thế hệ mới (2.5, 3.x Flash), maxOutputTokens bao gồm cả Thinking Tokens + Answer Tokens.
+        // Cần cấp đủ headroom (tối thiểu 2500 - 4000 tokens) để không bị ngắt giữa chừng.
+        $maxOutputTokens = max(2500, min(4096, $maxTokens + 2000));
 
         $payload = [
             'contents' => $contents,
@@ -135,8 +137,16 @@ class AIProviderService
             return ['ok' => false, 'content' => '', 'error' => $response['error']];
         }
 
-        $content = (string) ($response['data']['candidates'][0]['content']['parts'][0]['text'] ?? '');
-        if (trim($content) === '') {
+        $parts = $response['data']['candidates'][0]['content']['parts'] ?? [];
+        $texts = [];
+        foreach ($parts as $part) {
+            if (!empty($part['text'])) {
+                $texts[] = $part['text'];
+            }
+        }
+        $content = trim(implode('', $texts));
+
+        if ($content === '') {
             return ['ok' => false, 'content' => '', 'error' => 'Gemini trả về nội dung rỗng.'];
         }
 
