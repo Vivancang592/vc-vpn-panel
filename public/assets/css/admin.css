@@ -336,6 +336,11 @@
     min-width: 0;
 }
 
+select.glass-input option {
+    background: #1c1c1e;
+    color: #f2f2f7;
+}
+
 .settings-field-row textarea {
     align-self: stretch;
 }
