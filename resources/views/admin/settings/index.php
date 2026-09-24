@@ -374,7 +374,7 @@ ob_start();
                                 <?= htmlspecialchars($settings['ai_openai_model'] ?? 'gpt-4o-mini') ?>
                             </option>
                         </select>
-                        <div style="display:flex; gap:0.4rem;">
+                        <div style="display:flex; gap:0.4rem; justify-content:flex-end;">
                             <button type="button" id="check-openai-connection" class="glass-btn" style="padding: 0.55rem 0.9rem; white-space: nowrap; cursor: pointer;">Kiểm tra kết nối</button>
                             <button type="button" id="load-openai-models" class="glass-btn" style="padding: 0.55rem 0.9rem; white-space: nowrap; cursor: pointer;">Tải model</button>
                         </div>
