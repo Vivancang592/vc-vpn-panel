@@ -475,6 +475,21 @@ ob_start();
 
             <div class="settings-field-list">
                 <div>
+                    <label data-hint="Đường dẫn Callback URL để điền vào mục Webhook trên cổng Meta for Developers." style="display: block; font-weight: 600; font-size: 0.85rem;">Webhook Callback URL</label>
+                    <?php
+                        $protocol = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https://' : 'http://';
+                        $host = $_SERVER['HTTP_HOST'] ?? 'yourdomain.com';
+                        $webhookUrl = $protocol . $host . '/api/fanpage/webhook';
+                    ?>
+                    <div style="display: flex; gap: 0.4rem; width: 100%;">
+                        <input type="text" id="fanpage_webhook_url" class="glass-input" value="<?= htmlspecialchars($webhookUrl) ?>" readonly style="flex: 1; min-width: 0; background: rgba(0,0,0,0.1); color: var(--ios-blue); font-weight: 600;">
+                        <button type="button" class="glass-btn" onclick="navigator.clipboard.writeText(document.getElementById('fanpage_webhook_url').value); alert('Đã sao chép Webhook URL!');" style="padding: 0 0.85rem; white-space: nowrap; cursor: pointer; font-size: 0.8rem;">
+                            📋 Sao chép
+                        </button>
+                    </div>
+                </div>
+
+                <div>
                     <label data-hint="Verify Token tự đặt để nhập vào cấu hình Webhook trên Meta Developers." style="display: block; font-weight: 600; font-size: 0.85rem;">Verify Token</label>
                     <input type="password" name="settings[fanpage_verify_token]" class="glass-input" value="<?= !empty($settings['fanpage_verify_token']) ? '************' : '' ?>" placeholder="token xác thực webhook" style="width: 100%;">
                 </div>

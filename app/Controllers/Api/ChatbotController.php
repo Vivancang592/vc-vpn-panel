@@ -35,10 +35,11 @@ class ChatbotController extends BaseController
         $message = trim((string) ($payload['message'] ?? ''));
         $page = trim((string) ($payload['page'] ?? ''));
 
-        if (!$this->canProcessRequest($cooldownSeconds, $maxPerMinute)) {
+        $rateCheck = $this->canProcessRequest($cooldownSeconds, $maxPerMinute);
+        if (!$rateCheck['allowed']) {
             $this->json([
                 'success' => false,
-                'message' => 'Bạn đang gửi quá nhanh. Vui lòng chờ vài giây rồi thử lại.'
+                'message' => $rateCheck['message']
             ], 429);
             return;
         }
@@ -195,7 +196,10 @@ class ChatbotController extends BaseController
             $_SESSION['chatbot_last_reply'],
             $_SESSION['chatbot_last_handoff'],
             $_SESSION['chatbot_last_provider'],
-            $_SESSION['chatbot_last_cta']
+            $_SESSION['chatbot_last_cta'],
+            $_SESSION['chatbot_rate_window_start'],
+            $_SESSION['chatbot_rate_window_count'],
+            $_SESSION['chatbot_rate_last_at']
         );
         $_SESSION['chatbot_visitor_token'] = bin2hex(random_bytes(12));
 
@@ -291,22 +295,35 @@ class ChatbotController extends BaseController
         return $clean;
     }
 
-    private function canProcessRequest(float $cooldownSeconds, int $maxPerMinute): bool
+    private function canProcessRequest(float $cooldownSeconds, int $maxPerMinute): array
     {
         $now = microtime(true);
         $windowStart = (float) ($_SESSION['chatbot_rate_window_start'] ?? $now);
         $windowCount = (int) ($_SESSION['chatbot_rate_window_count'] ?? 0);
         $lastAt = (float) ($_SESSION['chatbot_rate_last_at'] ?? 0.0);
 
-        // Cooldown giữa 2 lần gọi để tránh spam liên tiếp.
+        // Cooldown giữa 2 lần gửi tin liên tiếp
         if ($lastAt > 0 && ($now - $lastAt) < $cooldownSeconds) {
-            return false;
+            $wait = ceil($cooldownSeconds - ($now - $lastAt));
+            return [
+                'allowed' => false,
+                'message' => 'Bạn đang gửi quá nhanh. Vui lòng chờ khoảng ' . max(1, (int)$wait) . ' giây rồi thử lại nhé.'
+            ];
         }
 
-        // Tối đa N request trong 60 giây cho mỗi session.
-        if (($now - $windowStart) > 60) {
+        // Tự động làm mới chu kỳ đếm sau mỗi 60 giây
+        if (($now - $windowStart) >= 60) {
             $windowStart = $now;
             $windowCount = 0;
+        }
+
+        // Giới hạn số câu hỏi trong cửa sổ 60s
+        if ($windowCount >= $maxPerMinute) {
+            $wait = ceil(60 - ($now - $windowStart));
+            return [
+                'allowed' => false,
+                'message' => 'Bạn đã gửi ' . $maxPerMinute . ' tin trong 1 phút. Hệ thống sẽ tự động mở lại sau ' . max(1, (int)$wait) . ' giây nữa, bạn chờ chút nhé!'
+            ];
         }
 
         $windowCount++;
@@ -315,6 +332,6 @@ class ChatbotController extends BaseController
         $_SESSION['chatbot_rate_window_count'] = $windowCount;
         $_SESSION['chatbot_rate_last_at'] = $now;
 
-        return $windowCount <= $maxPerMinute;
+        return ['allowed' => true, 'message' => ''];
     }
 }

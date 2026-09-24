@@ -111,12 +111,9 @@ class FanpageService
                 }
 
                 $message = trim((string) ($reply['answer'] ?? ''));
-                if (!empty($reply['cta']['url']) && !empty($reply['cta']['label'])) {
-                    $message .= "\n\n" . $reply['cta']['label'] . ': ' . $reply['cta']['url'];
-                }
 
                 if (!empty($reply['handoff'])) {
-                    $message .= "\n\nNeu ban can nhan vien ho tro truc tiep, vui long de lai SDT hoac email.";
+                    $message .= "\n\nNếu bạn cần nhân viên hỗ trợ trực tiếp, vui lòng để lại SĐT hoặc email nhé.";
                 }
 
                 $this->sendMessage($senderId, $message);

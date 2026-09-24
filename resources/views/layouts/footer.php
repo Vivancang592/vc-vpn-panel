@@ -82,11 +82,11 @@ $chatbotTitle = $chatbotTitle !== '' ? $chatbotTitle : 'VC VPN';
 </footer>
 
 <?php if ($chatbotEnabled): ?>
-    <div id="vc-chatbot" data-enabled="1" data-page="<?= htmlspecialchars((string) parse_url((string) ($_SERVER['REQUEST_URI'] ?? '/'), PHP_URL_PATH)) ?>">
+    <div id="vc-chatbot" data-enabled="1" data-site-title="<?= htmlspecialchars($chatbotTitle) ?>" data-page="<?= htmlspecialchars((string) parse_url((string) ($_SERVER['REQUEST_URI'] ?? '/'), PHP_URL_PATH)) ?>">
         <button id="vc-chatbot-toggle" type="button" aria-label="Mở trợ lý AI" style="position: fixed; right: 16px; bottom: 16px; z-index: 2500; width: 56px; height: 56px; border: none; border-radius: 50%; cursor: pointer; background: linear-gradient(135deg, #0a84ff, #34c759); color: #fff; box-shadow: 0 10px 24px rgba(10,132,255,.32); font-size: 24px;">💬</button>
         <div id="vc-chatbot-panel" hidden style="position: fixed; right: 16px; bottom: 82px; z-index: 2500; width: min(360px, calc(100vw - 20px)); background: #fff; border: 1px solid rgba(0,0,0,.12); border-radius: 14px; box-shadow: 0 18px 32px rgba(0,0,0,.2); overflow: hidden;">
             <div style="padding: 10px 12px; background: linear-gradient(135deg, #0a84ff, #34c759); color: #fff; font-weight: 700; display: flex; align-items: center; justify-content: space-between;">
-                <span>Tro ly AI - <?= htmlspecialchars($chatbotTitle) ?></span>
+                <span>Trợ lý AI - <?= htmlspecialchars($chatbotTitle) ?></span>
                 <button id="vc-chatbot-close" type="button" aria-label="Đóng" style="border: none; background: transparent; color: #fff; font-size: 18px; cursor: pointer;">×</button>
             </div>
             <div id="vc-chatbot-messages" style="height: 300px; overflow-y: auto; padding: 10px; background: #f6f9ff;"></div>
