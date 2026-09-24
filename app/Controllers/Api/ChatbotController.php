@@ -14,7 +14,9 @@ class ChatbotController extends BaseController
     public function message(): void
     {
         $settings = (new Setting())->getAllAsKeyValue();
-        if ((string) ($settings['ai_chatbot_enabled'] ?? '1') !== '1') {
+        $chatbotEnabledRaw = trim((string) ($settings['ai_chatbot_enabled'] ?? '1'));
+        $chatbotEnabled = ($chatbotEnabledRaw === '' || $chatbotEnabledRaw === '1');
+        if (!$chatbotEnabled) {
             $this->json([
                 'success' => false,
                 'message' => 'Trợ lý AI hiện đang tạm tắt.'

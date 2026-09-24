@@ -21,8 +21,9 @@ class ChatbotService
 
     public function reply(string $message, array $context = []): array
     {
-        $isEnabled = (string) ($this->settings['ai_chatbot_enabled'] ?? '1');
-        if ($isEnabled !== '1') {
+        $enabledRaw = trim((string) ($this->settings['ai_chatbot_enabled'] ?? '1'));
+        $isEnabled = ($enabledRaw === '' || $enabledRaw === '1');
+        if (!$isEnabled) {
             return [
                 'success' => true,
                 'answer' => 'Trợ lý AI hiện đang tạm tắt. Vui lòng liên hệ fanpage để được hỗ trợ trực tiếp.',
@@ -31,7 +32,7 @@ class ChatbotService
                 'model' => '',
                 'cta' => [
                     'label' => 'Mở fanpage hỗ trợ',
-                    'url' => (string) ($this->settings['fanpage_url'] ?? '/faq')
+                    'url' => $this->resolveSupportUrl()
                 ],
             ];
         }
@@ -236,9 +237,19 @@ class ChatbotService
             'model' => '',
             'cta' => [
                 'label' => 'Lien he fanpage ho tro',
-                'url' => (string) ($this->settings['fanpage_url'] ?? '/faq')
+                'url' => $this->resolveSupportUrl()
             ],
         ];
+    }
+
+    private function resolveSupportUrl(): string
+    {
+        $url = trim((string) ($this->settings['fanpage_url'] ?? ''));
+        if ($url !== '' && preg_match('/^https?:\/\//i', $url) === 1) {
+            return $url;
+        }
+
+        return '/faq';
     }
 
     private function logEvent(string $event, array $data): void
