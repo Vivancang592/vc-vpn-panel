@@ -186,6 +186,25 @@ class ChatbotController extends BaseController
         ]);
     }
 
+    public function reset(): void
+    {
+        unset(
+            $_SESSION['chatbot_visitor_token'],
+            $_SESSION['chatbot_last_message_hash'],
+            $_SESSION['chatbot_last_message_at'],
+            $_SESSION['chatbot_last_reply'],
+            $_SESSION['chatbot_last_handoff'],
+            $_SESSION['chatbot_last_provider'],
+            $_SESSION['chatbot_last_cta']
+        );
+        $_SESSION['chatbot_visitor_token'] = bin2hex(random_bytes(12));
+
+        $this->json([
+            'success' => true,
+            'message' => 'Đã làm mới cuộc hội thoại thành công.'
+        ]);
+    }
+
     public function event(): void
     {
         $payload = $this->parseInput();

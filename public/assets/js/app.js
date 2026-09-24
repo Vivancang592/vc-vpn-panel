@@ -645,38 +645,29 @@ if (!response.ok || !result.valid) {
         const openPanel = function () {
             if (!panel) return;
             panel.hidden = false;
+            if (box && box.childElementCount === 0) {
+                renderMessage('assistant', 'Xin chào bạn! Mình là trợ lý tư vấn VC VPN. Bạn cần hỗ trợ về gói dịch vụ, giá cước hay hướng dẫn cài đặt nào ạ?');
+            }
             if (input) input.focus();
+        };
+
+        const resetConversation = async function () {
+            if (box) box.innerHTML = '';
+            if (input) input.value = '';
+            try {
+                await fetch('/api/chat/reset', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', Accept: 'application/json' }
+                });
+            } catch (_e) {
+                // no-op
+            }
         };
 
         const closePanel = function () {
             if (!panel) return;
             panel.hidden = true;
-        };
-
-        const loadHistory = async function () {
-            try {
-                const res = await fetch('/api/chat/history', { headers: { Accept: 'application/json' } });
-                const data = await res.json();
-                if (!data || !data.success || !data.data || !Array.isArray(data.data.history)) {
-                    return;
-                }
-
-                if (box && box.childElementCount === 0) {
-                    renderMessage('assistant', 'Xin chào. Mình có thể tư vấn gói phù hợp và hướng dẫn bạn đăng ký nhanh.');
-                }
-
-                data.data.history.forEach(function (item) {
-                    const role = item.role === 'user' ? 'user' : 'assistant';
-                    const content = item.content || '';
-                    if (content) {
-                        renderMessage(role, content);
-                    }
-                });
-            } catch (_e) {
-                if (box && box.childElementCount === 0) {
-                    renderMessage('assistant', 'Xin chào. Bạn hãy đặt câu hỏi để mình hỗ trợ ngay.');
-                }
-            }
+            resetConversation();
         };
 
         if (toggleBtn) {
@@ -685,9 +676,6 @@ if (!response.ok || !result.valid) {
                 if (isHidden) {
                     openPanel();
                     trackEvent('chat_opened', { page: page });
-                    if (box && box.childElementCount === 0) {
-                        loadHistory();
-                    }
                 } else {
                     closePanel();
                 }
@@ -695,7 +683,9 @@ if (!response.ok || !result.valid) {
         }
 
         if (closeBtn) {
-            closeBtn.addEventListener('click', closePanel);
+            closeBtn.addEventListener('click', function () {
+                closePanel();
+            });
         }
 
         if (form && input) {

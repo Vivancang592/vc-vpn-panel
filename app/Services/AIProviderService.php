@@ -104,12 +104,12 @@ class AIProviderService
         }
 
         $maxTokens = (int) ($this->settings['ai_max_output_tokens'] ?? 500);
-        $maxOutputTokens = max(1024, min(4096, $maxTokens * 4));
+        $maxOutputTokens = max(120, min(2500, $maxTokens));
 
         $payload = [
             'contents' => $contents,
             'generationConfig' => [
-                'temperature' => 0.5,
+                'temperature' => 0.4,
                 'maxOutputTokens' => $maxOutputTokens,
             ]
         ];

@@ -16,6 +16,7 @@ return [
     'POST /api/chat/message'        => ['Api\ChatbotController', 'message'],
     'GET /api/chat/history'         => ['Api\ChatbotController', 'history'],
     'POST /api/chat/event'          => ['Api\ChatbotController', 'event'],
+    'POST /api/chat/reset'          => ['Api\ChatbotController', 'reset'],
 
     // API Webhook Facebook Fanpage
     'GET /api/fanpage/webhook'      => ['Api\FanpageWebhookController', 'verify'],
