@@ -90,7 +90,7 @@ $chatbotTitle = $chatbotTitle !== '' ? $chatbotTitle : 'VC VPN';
                 <button id="vc-chatbot-close" type="button" aria-label="Đóng" style="border: none; background: transparent; color: #fff; font-size: 18px; cursor: pointer;">×</button>
             </div>
             <div id="vc-chatbot-messages" style="height: 300px; overflow-y: auto; padding: 10px; background: #f6f9ff;"></div>
-            <form id="vc-chatbot-form" style="display: flex; gap: 8px; padding: 10px; border-top: 1px solid rgba(0,0,0,.08); background: #fff;">
+            <form id="vc-chatbot-form" data-no-loader="true" style="display: flex; gap: 8px; padding: 10px; border-top: 1px solid rgba(0,0,0,.08); background: #fff;">
                 <input id="vc-chatbot-input" type="text" placeholder="Nhập câu hỏi của bạn..." style="flex: 1; border: 1px solid rgba(0,0,0,.15); border-radius: 8px; padding: 10px; font-size: 14px;" maxlength="500">
                 <button type="submit" style="border: none; border-radius: 8px; background: #0a84ff; color: #fff; padding: 0 12px; cursor: pointer; font-weight: 600;">Gửi</button>
             </form>
