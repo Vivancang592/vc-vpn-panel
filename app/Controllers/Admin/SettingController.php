@@ -170,8 +170,18 @@ class SettingController extends BaseController
                 || str_starts_with($id, 'o1')
                 || str_starts_with($id, 'o3')
                 || str_starts_with($id, 'o4')
+                || str_starts_with($id, 'chatgpt-')
             ) {
                 $models[] = $id;
+            }
+        }
+
+        if (empty($models) && !empty($data['data'])) {
+            foreach ($data['data'] as $item) {
+                $id = trim((string) ($item['id'] ?? ''));
+                if ($id !== '' && !str_contains($id, 'whisper') && !str_contains($id, 'tts') && !str_contains($id, 'dall-e') && !str_contains($id, 'embedding')) {
+                    $models[] = $id;
+                }
             }
         }
 
@@ -180,6 +190,7 @@ class SettingController extends BaseController
 
         $this->json([
             'success' => true,
+            'message' => 'Đã tải thành công ' . count($models) . ' model từ OpenAI.',
             'models' => $models,
             'current' => (string) ($this->settingModel->getByKey('ai_openai_model') ?? 'gpt-4o-mini')
         ]);
@@ -274,10 +285,41 @@ class SettingController extends BaseController
             return;
         }
 
-        $modelCount = is_array($data['data'] ?? null) ? count($data['data']) : 0;
+        $models = [];
+        foreach (($data['data'] ?? []) as $item) {
+            $id = trim((string) ($item['id'] ?? ''));
+            if ($id === '') {
+                continue;
+            }
+
+            if (
+                str_starts_with($id, 'gpt-')
+                || str_starts_with($id, 'o1')
+                || str_starts_with($id, 'o3')
+                || str_starts_with($id, 'o4')
+                || str_starts_with($id, 'chatgpt-')
+            ) {
+                $models[] = $id;
+            }
+        }
+
+        if (empty($models) && !empty($data['data'])) {
+            foreach ($data['data'] as $item) {
+                $id = trim((string) ($item['id'] ?? ''));
+                if ($id !== '' && !str_contains($id, 'whisper') && !str_contains($id, 'tts') && !str_contains($id, 'dall-e') && !str_contains($id, 'embedding')) {
+                    $models[] = $id;
+                }
+            }
+        }
+
+        $models = array_values(array_unique($models));
+        sort($models);
+
         $this->json([
             'success' => true,
-            'message' => 'Kết nối OpenAI thành công. Tải được ' . $modelCount . ' model.',
+            'message' => 'Kết nối OpenAI thành công (' . count($models) . ' model). Đã cập nhật danh sách chọn.',
+            'models' => $models,
+            'current' => (string) ($this->settingModel->getByKey('ai_openai_model') ?? 'gpt-4o-mini'),
             'diagnostics' => $diagnostics,
         ]);
     }
@@ -338,7 +380,7 @@ class SettingController extends BaseController
             }
 
             $methods = $item['supportedGenerationMethods'] ?? [];
-            if (!is_array($methods) || !in_array('generateContent', $methods, true)) {
+            if (!empty($methods) && is_array($methods) && !in_array('generateContent', $methods, true)) {
                 continue;
             }
 
@@ -353,6 +395,7 @@ class SettingController extends BaseController
 
         $this->json([
             'success' => true,
+            'message' => 'Đã tải thành công ' . count($models) . ' model từ Gemini.',
             'models' => $models,
             'current' => (string) ($this->settingModel->getByKey('ai_gemini_model') ?? 'gemini-1.5-flash')
         ]);
@@ -422,16 +465,43 @@ class SettingController extends BaseController
             return;
         }
 
-        $modelCount = is_array($data['models'] ?? null) ? count($data['models']) : 0;
+        $models = [];
+        foreach (($data['models'] ?? []) as $item) {
+            $name = trim((string) ($item['name'] ?? ''));
+            if ($name === '') {
+                continue;
+            }
+
+            $methods = $item['supportedGenerationMethods'] ?? [];
+            if (!empty($methods) && is_array($methods) && !in_array('generateContent', $methods, true)) {
+                continue;
+            }
+
+            $normalized = str_starts_with($name, 'models/') ? substr($name, 7) : $name;
+            if ($normalized !== '') {
+                $models[] = $normalized;
+            }
+        }
+
+        $models = array_values(array_unique($models));
+        sort($models);
+
         $this->json([
             'success' => true,
-            'message' => 'Kết nối Gemini thành công. Tải được ' . $modelCount . ' model.',
+            'message' => 'Kết nối Gemini thành công (' . count($models) . ' model). Đã cập nhật danh sách chọn.',
+            'models' => $models,
+            'current' => (string) ($this->settingModel->getByKey('ai_gemini_model') ?? 'gemini-1.5-flash'),
             'diagnostics' => $diagnostics,
         ]);
     }
 
     private function resolveOpenAiApiKey(): string
     {
+        $inputKey = trim((string) ($_POST['api_key'] ?? ''));
+        if ($inputKey !== '' && !str_contains($inputKey, '***')) {
+            return $inputKey;
+        }
+
         $candidateKeys = [
             'ai_openai_api_key',
             'openai_api_key',
@@ -457,6 +527,11 @@ class SettingController extends BaseController
 
     private function resolveGeminiApiKey(): string
     {
+        $inputKey = trim((string) ($_POST['api_key'] ?? ''));
+        if ($inputKey !== '' && !str_contains($inputKey, '***')) {
+            return $inputKey;
+        }
+
         $candidateKeys = [
             'ai_gemini_api_key',
             'gemini_api_key',
