@@ -374,14 +374,28 @@ ob_start();
                                 <?= htmlspecialchars($settings['ai_openai_model'] ?? 'gpt-4o-mini') ?>
                             </option>
                         </select>
-                        <button type="button" id="load-openai-models" class="glass-btn" style="padding: 0.55rem 0.9rem; white-space: nowrap; cursor: pointer;">Tải model</button>
+                        <div style="display:flex; gap:0.4rem;">
+                            <button type="button" id="check-openai-connection" class="glass-btn" style="padding: 0.55rem 0.9rem; white-space: nowrap; cursor: pointer;">Kiểm tra kết nối</button>
+                            <button type="button" id="load-openai-models" class="glass-btn" style="padding: 0.55rem 0.9rem; white-space: nowrap; cursor: pointer;">Tải model</button>
+                        </div>
                     </div>
                     <div id="openai-model-status" style="margin-top: 0.35rem; font-size: 0.78rem; color: var(--ios-text-secondary);"></div>
                 </div>
 
                 <div>
                     <label style="display: block; font-weight: 600; font-size: 0.85rem; margin-bottom: 0.4rem;">Gemini model</label>
-                    <input type="text" name="settings[ai_gemini_model]" class="glass-input" value="<?= htmlspecialchars($settings['ai_gemini_model'] ?? 'gemini-1.5-flash') ?>" placeholder="gemini-1.5-flash" style="width: 100%;">
+                    <div style="display: grid; grid-template-columns: 1fr auto; gap: 0.5rem; align-items: center;">
+                        <select id="gemini-model-select" name="settings[ai_gemini_model]" class="glass-input" style="width: 100%;">
+                            <option value="<?= htmlspecialchars($settings['ai_gemini_model'] ?? 'gemini-1.5-flash') ?>" selected>
+                                <?= htmlspecialchars($settings['ai_gemini_model'] ?? 'gemini-1.5-flash') ?>
+                            </option>
+                        </select>
+                        <div style="display:flex; gap:0.4rem; justify-content:flex-end;">
+                            <button type="button" id="check-gemini-connection" class="glass-btn" style="padding: 0.55rem 0.9rem; white-space: nowrap; cursor: pointer;">Kiểm tra kết nối</button>
+                            <button type="button" id="load-gemini-models" class="glass-btn" style="padding: 0.55rem 0.9rem; white-space: nowrap; cursor: pointer;">Tải model</button>
+                        </div>
+                    </div>
+                    <div id="gemini-model-status" style="margin-top: 0.35rem; font-size: 0.78rem; color: var(--ios-text-secondary);"></div>
                 </div>
 
                 <div>
@@ -481,74 +495,145 @@ function generateRandomApiKey(inputId) {
 }
 
 document.addEventListener('DOMContentLoaded', function () {
-    const loadBtn = document.getElementById('load-openai-models');
-    const select = document.getElementById('openai-model-select');
-    const status = document.getElementById('openai-model-status');
-    if (!loadBtn || !select || !status) {
-        return;
-    }
+    const openAiUi = {
+        provider: 'openai',
+        loadBtn: document.getElementById('load-openai-models'),
+        checkBtn: document.getElementById('check-openai-connection'),
+        select: document.getElementById('openai-model-select'),
+        status: document.getElementById('openai-model-status'),
+        providerLabel: 'OpenAI'
+    };
 
-    loadBtn.addEventListener('click', async function () {
-        loadBtn.disabled = true;
-        loadBtn.textContent = 'Đang tải...';
-        status.textContent = 'Đang lấy danh sách model từ OpenAI...';
+    const geminiUi = {
+        provider: 'gemini',
+        loadBtn: document.getElementById('load-gemini-models'),
+        checkBtn: document.getElementById('check-gemini-connection'),
+        select: document.getElementById('gemini-model-select'),
+        status: document.getElementById('gemini-model-status'),
+        providerLabel: 'Gemini'
+    };
 
-        try {
-            const response = await fetch('/admin/settings/ai-models', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/x-www-form-urlencoded',
-                    'Accept': 'application/json'
-                },
-                body: new URLSearchParams({
-                    provider: 'openai',
-                    csrf_token: '<?= htmlspecialchars($csrf_token) ?>'
-                })
-            });
-
-            const result = await response.json();
-            if (!response.ok || !result.success || !Array.isArray(result.models)) {
-                status.textContent = (result && result.message) ? result.message : 'Không tải được danh sách model.';
-                return;
-            }
-
-            const current = select.value || (result.current || '');
-            select.innerHTML = '';
-
-            result.models.forEach(function (modelId) {
-                const opt = document.createElement('option');
-                opt.value = modelId;
-                opt.textContent = modelId;
-                if (modelId === current) {
-                    opt.selected = true;
-                }
-                select.appendChild(opt);
-            });
-
-            if (select.options.length === 0 && result.current) {
-                const fallback = document.createElement('option');
-                fallback.value = result.current;
-                fallback.textContent = result.current;
-                fallback.selected = true;
-                select.appendChild(fallback);
-            }
-
-            if (current && !Array.from(select.options).some(function (o) { return o.value === current; })) {
-                const custom = document.createElement('option');
-                custom.value = current;
-                custom.textContent = current + ' (custom)';
-                custom.selected = true;
-                select.appendChild(custom);
-            }
-
-            status.textContent = 'Đã tải ' + result.models.length + ' model từ OpenAI.';
-        } catch (_error) {
-            status.textContent = 'Lỗi mạng hoặc timeout khi tải model.';
-        } finally {
-            loadBtn.disabled = false;
-            loadBtn.textContent = 'Tải model';
+    const renderDiagnostics = function (diagnostics) {
+        if (!diagnostics || typeof diagnostics !== 'object') {
+            return '';
         }
-    });
+
+        const dnsIp = diagnostics.dns_host_ip || '-';
+        const primaryIp = diagnostics.primary_ip || '-';
+        const errno = diagnostics.curl_errno ?? '-';
+        const httpStatus = diagnostics.http_status ?? '-';
+        const timing = diagnostics.timing || {};
+        const total = typeof timing.total === 'number' ? timing.total.toFixed(2) : '-';
+        const connect = typeof timing.connect === 'number' ? timing.connect.toFixed(2) : '-';
+        const lookup = typeof timing.namelookup === 'number' ? timing.namelookup.toFixed(2) : '-';
+
+        return ' | DNS: ' + dnsIp
+            + ' | IP: ' + primaryIp
+            + ' | CURL errno: ' + errno
+            + ' | HTTP: ' + httpStatus
+            + ' | lookup/connect/total: ' + lookup + '/' + connect + '/' + total + 's';
+    };
+
+    const wireProviderActions = function (ui) {
+        if (!ui.loadBtn || !ui.checkBtn || !ui.select || !ui.status) {
+            return;
+        }
+
+        ui.checkBtn.addEventListener('click', async function () {
+            ui.checkBtn.disabled = true;
+            ui.checkBtn.textContent = 'Đang kiểm tra...';
+            ui.status.textContent = 'Đang kiểm tra kết nối tới ' + ui.providerLabel + '...';
+
+            try {
+                const response = await fetch('/admin/settings/ai-connection-check', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                        'Accept': 'application/json'
+                    },
+                    body: new URLSearchParams({
+                        provider: ui.provider,
+                        csrf_token: '<?= htmlspecialchars($csrf_token) ?>'
+                    })
+                });
+
+                const result = await response.json();
+                const diagnosticsText = renderDiagnostics(result && result.diagnostics ? result.diagnostics : null);
+                ui.status.textContent = (result && result.message ? result.message : 'Không có phản hồi.') + diagnosticsText;
+            } catch (_error) {
+                ui.status.textContent = 'Lỗi mạng nội bộ khi gọi endpoint kiểm tra kết nối.';
+            } finally {
+                ui.checkBtn.disabled = false;
+                ui.checkBtn.textContent = 'Kiểm tra kết nối';
+            }
+        });
+
+        ui.loadBtn.addEventListener('click', async function () {
+            ui.loadBtn.disabled = true;
+            ui.loadBtn.textContent = 'Đang tải...';
+            ui.status.textContent = 'Đang lấy danh sách model từ ' + ui.providerLabel + '...';
+
+            try {
+                const response = await fetch('/admin/settings/ai-models', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                        'Accept': 'application/json'
+                    },
+                    body: new URLSearchParams({
+                        provider: ui.provider,
+                        csrf_token: '<?= htmlspecialchars($csrf_token) ?>'
+                    })
+                });
+
+                const result = await response.json();
+                if (!response.ok || !result.success || !Array.isArray(result.models)) {
+                    const diagnosticsText = renderDiagnostics(result && result.diagnostics ? result.diagnostics : null);
+                    ui.status.textContent = ((result && result.message) ? result.message : 'Không tải được danh sách model.') + diagnosticsText;
+                    return;
+                }
+
+                const current = ui.select.value || (result.current || '');
+                ui.select.innerHTML = '';
+
+                result.models.forEach(function (modelId) {
+                    const opt = document.createElement('option');
+                    opt.value = modelId;
+                    opt.textContent = modelId;
+                    if (modelId === current) {
+                        opt.selected = true;
+                    }
+                    ui.select.appendChild(opt);
+                });
+
+                if (ui.select.options.length === 0 && result.current) {
+                    const fallback = document.createElement('option');
+                    fallback.value = result.current;
+                    fallback.textContent = result.current;
+                    fallback.selected = true;
+                    ui.select.appendChild(fallback);
+                }
+
+                if (current && !Array.from(ui.select.options).some(function (o) { return o.value === current; })) {
+                    const custom = document.createElement('option');
+                    custom.value = current;
+                    custom.textContent = current + ' (custom)';
+                    custom.selected = true;
+                    ui.select.appendChild(custom);
+                }
+
+                ui.status.textContent = 'Đã tải ' + result.models.length + ' model từ ' + ui.providerLabel + '.';
+            } catch (_error) {
+                ui.status.textContent = 'Lỗi mạng hoặc timeout khi tải model.';
+            } finally {
+                ui.loadBtn.disabled = false;
+                ui.loadBtn.textContent = 'Tải model';
+            }
+        });
+    };
+
+    wireProviderActions(openAiUi);
+    wireProviderActions(geminiUi);
 });
 </script>
 
