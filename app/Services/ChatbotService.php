@@ -269,7 +269,8 @@ class ChatbotService
             );
         }
 
-        $dir = BASE_PATH . '/storage/logs';
+        $basePath = defined('BASE_PATH') ? BASE_PATH : dirname(__DIR__, 2);
+        $dir = $basePath . '/storage/logs';
         if (!is_dir($dir)) {
             @mkdir($dir, 0777, true);
         }

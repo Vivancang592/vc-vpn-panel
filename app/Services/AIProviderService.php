@@ -18,7 +18,7 @@ class AIProviderService
         $provider = strtolower(trim((string) ($provider ?: ($this->settings['ai_provider'] ?? 'openai'))));
 
         if ($provider === 'gemini') {
-            $result = $this->askGemini($messages, $model ?: ($this->settings['ai_gemini_model'] ?? 'gemini-1.5-flash'));
+            $result = $this->askGemini($messages, $model ?: ($this->settings['ai_gemini_model'] ?? 'gemini-3.7-flash'));
             $result['provider'] = 'gemini';
             return $result;
         }
@@ -134,8 +134,9 @@ class AIProviderService
         curl_setopt($ch, CURLOPT_POST, true);
         curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
         curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($payload, JSON_UNESCAPED_UNICODE));
-        curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 8);
-        curl_setopt($ch, CURLOPT_TIMEOUT, 20);
+        curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 10);
+        curl_setopt($ch, CURLOPT_TIMEOUT, 30);
+        $this->applyProxy($ch);
 
         $raw = curl_exec($ch);
         $errno = curl_errno($ch);
@@ -155,6 +156,51 @@ class AIProviderService
         }
 
         return ['ok' => true, 'error' => null, 'status' => $status, 'data' => is_array($data) ? $data : []];
+    }
+
+    private function applyProxy($ch): void
+    {
+        $proxy = trim((string) ($this->settings['ai_proxy'] ?? ''));
+        if ($proxy === '') {
+            $proxy = trim((string) (
+                getenv('AI_PROXY') ?:
+                getenv('HTTPS_PROXY') ?:
+                getenv('HTTP_PROXY') ?:
+                getenv('ALL_PROXY') ?: ''
+            ));
+        }
+
+        if ($proxy === '') {
+            $proxy = $this->detectLocalDevProxy();
+        }
+
+        if ($proxy !== '') {
+            if (preg_match('/^socks5:\/\//i', $proxy)) {
+                $proxy = preg_replace('/^socks5:\/\//i', 'socks5h://', $proxy);
+            } elseif (!preg_match('/^[a-z0-9]+:\/\//i', $proxy) && (str_contains($proxy, '10808') || str_contains($proxy, '1080'))) {
+                $proxy = 'socks5h://' . $proxy;
+            }
+            curl_setopt($ch, CURLOPT_PROXY, $proxy);
+        }
+    }
+
+    private function detectLocalDevProxy(): string
+    {
+        $ports = [
+            ['port' => 10808, 'type' => 'socks5h://'],
+            ['port' => 7890,  'type' => 'http://'],
+            ['port' => 10809, 'type' => 'http://'],
+        ];
+
+        foreach ($ports as $p) {
+            $fp = @fsockopen('127.0.0.1', $p['port'], $errno, $errstr, 0.05);
+            if ($fp) {
+                fclose($fp);
+                return $p['type'] . '127.0.0.1:' . $p['port'];
+            }
+        }
+
+        return '';
     }
 
     private function resolveConfigValue(string $settingKey, string $envKey, array $settingAliases = []): string
