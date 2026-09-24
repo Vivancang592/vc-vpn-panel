@@ -517,6 +517,7 @@ if (!response.ok || !result.valid) {
         const input = document.getElementById('vc-chatbot-input');
         const box = document.getElementById('vc-chatbot-messages');
         const page = (chatbotRoot.dataset.page || '/').replace(/^\//, '') || 'home';
+        const siteTitle = (chatbotRoot.dataset.siteTitle || 'VC VPN').trim();
 
         const trackEvent = async function (eventName, meta) {
             try {
@@ -607,46 +608,11 @@ if (!response.ok || !result.valid) {
             }
         };
 
-        const renderCta = function (label, url) {
-            if (!box || !label || !url) return;
-
-            const row = document.createElement('div');
-            row.style.display = 'flex';
-            row.style.justifyContent = 'flex-start';
-            row.style.marginBottom = '8px';
-
-            const link = document.createElement('a');
-            link.href = url;
-            link.textContent = label;
-            link.target = '_self';
-            link.style.display = 'inline-block';
-            link.style.padding = '7px 10px';
-            link.style.borderRadius = '8px';
-            link.style.background = '#eef5ff';
-            link.style.border = '1px solid rgba(10,132,255,.24)';
-            link.style.color = '#0a84ff';
-            link.style.fontSize = '13px';
-            link.style.fontWeight = '600';
-            link.style.textDecoration = 'none';
-            link.addEventListener('click', function () {
-                trackEvent('cta_clicked', { page: page, url: url });
-                if ((url || '').indexOf('/checkout') !== -1 || (url || '').indexOf('/user/plans') !== -1) {
-                    trackEvent('checkout_clicked', { page: page, url: url });
-                }
-            });
-
-            row.appendChild(link);
-            box.appendChild(row);
-            box.scrollTop = box.scrollHeight;
-
-            trackEvent('cta_shown', { page: page, url: url });
-        };
-
         const openPanel = function () {
             if (!panel) return;
             panel.hidden = false;
             if (box && box.childElementCount === 0) {
-                renderMessage('assistant', 'Xin chào bạn! Mình là trợ lý tư vấn VC VPN. Bạn cần hỗ trợ về gói dịch vụ, giá cước hay hướng dẫn cài đặt nào ạ?');
+                renderMessage('assistant', 'Xin chào bạn! Mình là trợ lý tư vấn ' + siteTitle + '. Bạn cần hỗ trợ về gói dịch vụ, giá cước hay hướng dẫn cài đặt nào ạ?');
             }
             if (input) input.focus();
         };
@@ -712,18 +678,19 @@ if (!response.ok || !result.valid) {
                     });
 
                     const data = await res.json();
+                    if (!res.ok || !data.success) {
+                        const errMsg = data && data.message ? data.message : 'Mình chưa nhận được phản hồi từ AI. Bạn thử lại sau vài giây nhé.';
+                        renderMessage('assistant', errMsg);
+                        return;
+                    }
+
                     const answer = data && data.data ? data.data.answer : '';
                     const handoff = data && data.data ? !!data.data.handoff : false;
-                    const cta = data && data.data ? data.data.cta : null;
 
                     if (answer) {
                         renderMessage('assistant', answer);
                     } else {
                         renderMessage('assistant', 'Mình chưa nhận được phản hồi từ AI. Bạn thử lại sau vài giây nhé.');
-                    }
-
-                    if (cta && cta.label && cta.url) {
-                        renderCta(cta.label, cta.url);
                     }
 
                     if (handoff) {

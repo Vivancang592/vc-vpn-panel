@@ -25,16 +25,14 @@ class ChatbotService
         $enabledRaw = trim((string) ($this->settings['ai_chatbot_enabled'] ?? '1'));
         $isEnabled = ($enabledRaw === '' || $enabledRaw === '1');
         if (!$isEnabled) {
+            $supportUrl = $this->resolveSupportUrl();
             return [
                 'success' => true,
-                'answer' => 'Trợ lý AI hiện đang tạm tắt. Vui lòng liên hệ fanpage để được hỗ trợ trực tiếp.',
+                'answer' => 'Trợ lý AI hiện đang tạm tắt. Vui lòng [Liên Hệ Fanpage](' . $supportUrl . ') để được hỗ trợ trực tiếp.',
                 'handoff' => true,
                 'provider' => 'disabled',
                 'model' => '',
-                'cta' => [
-                    'label' => 'Mở fanpage hỗ trợ',
-                    'url' => $this->resolveSupportUrl()
-                ],
+                'cta' => null,
             ];
         }
 
@@ -84,7 +82,7 @@ class ChatbotService
                     'handoff' => $this->shouldHandoff($message, (string) $cached['answer']),
                     'provider' => 'cache',
                     'model' => (string) ($cached['model'] ?? ''),
-                    'cta' => $this->buildCta($context),
+                    'cta' => null,
                 ];
             }
         }
@@ -127,7 +125,7 @@ class ChatbotService
             'handoff' => $handoff,
             'provider' => (string) ($result['provider'] ?? $preferredProvider),
             'model' => (string) ($result['model'] ?? ''),
-            'cta' => $this->buildCta($context),
+            'cta' => null,
         ];
 
         $this->logEvent('ai_reply', [
@@ -318,49 +316,6 @@ class ChatbotService
         return false;
     }
 
-    private function buildCta(array $context): array
-    {
-        $isLoggedIn = !empty($context['is_logged_in']);
-        $page = strtolower(trim((string) ($context['page'] ?? '')));
-
-        if ($isLoggedIn) {
-            if ($page === 'plans' || $page === 'checkout') {
-                return [
-                    'label' => '💳 Xem & Mua gói cước',
-                    'url' => '/user/plans'
-                ];
-            }
-            if ($page === 'guides' || $page === 'faq') {
-                return [
-                    'label' => '📖 Hướng dẫn sử dụng',
-                    'url' => '/user/guides'
-                ];
-            }
-            if ($page === 'subscriptions') {
-                return [
-                    'label' => '⚡ Gói dịch vụ của tôi',
-                    'url' => '/subscriptions'
-                ];
-            }
-            return [
-                'label' => '🚀 Xem gói dịch vụ VPN',
-                'url' => '/user/plans'
-            ];
-        }
-
-        if ($page === 'faq' || $page === 'download') {
-            return [
-                'label' => '📥 Tải ứng dụng VPN',
-                'url' => '/download'
-            ];
-        }
-
-        return [
-            'label' => '🎁 Xem bảng giá & Ưu đãi',
-            'url' => '/#bang-gia'
-        ];
-    }
-
     private function fallbackResponse(string $message): array
     {
         return [
@@ -369,10 +324,7 @@ class ChatbotService
             'handoff' => true,
             'provider' => 'fallback',
             'model' => '',
-            'cta' => [
-                'label' => 'Liên hệ hỗ trợ trực tiếp',
-                'url' => $this->resolveSupportUrl()
-            ],
+            'cta' => null,
         ];
     }
 
