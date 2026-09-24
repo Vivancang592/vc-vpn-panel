@@ -246,7 +246,21 @@ ob_start();
                 </div>
 
                 <!-- Cấu Hình API Key Webhook / SePay -->
-                <div class="settings-payment-gateway" data-title="API Key Webhook / SePay" data-hint="Khóa bảo mật xác thực Webhook tự động cho các cổng thanh toán." style="display: grid; grid-template-columns: 1fr; gap: 1rem; align-items: end; background: rgba(255,255,255,0.02); padding: 1rem; border-radius: 8px; border: 1px solid var(--glass-border); min-width: 800px;">
+                <?php
+                    $protocol = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https://' : 'http://';
+                    $host = $_SERVER['HTTP_HOST'] ?? 'yourdomain.com';
+                    $paymentWebhookUrl = $protocol . $host . '/api/payment/webhook';
+                ?>
+                <div class="settings-payment-gateway" data-title="Cổng Webhook Tự Động (SePay / MacroDroid / Ngân Hàng)" data-hint="Đường dẫn nhận thông báo biến động số dư và khóa bảo mật xác thực Webhook tự động." style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; align-items: end; background: rgba(255,255,255,0.02); padding: 1rem; border-radius: 8px; border: 1px solid var(--glass-border); min-width: 800px;">
+                    <div>
+                        <label style="display: block; font-weight: 600; font-size: 0.85rem; margin-bottom: 0.4rem;">Payment Webhook URL (Callback URL)</label>
+                        <div style="display: flex; gap: 0.4rem;">
+                            <input type="text" id="payment_webhook_url_input" class="glass-input" value="<?= htmlspecialchars($paymentWebhookUrl) ?>" readonly style="flex: 1; min-width: 0; background: rgba(0,0,0,0.15); color: var(--ios-blue); font-weight: 600; font-family: monospace;">
+                            <button type="button" class="glass-btn" onclick="navigator.clipboard.writeText(document.getElementById('payment_webhook_url_input').value); alert('Đã sao chép Payment Webhook URL: <?= htmlspecialchars($paymentWebhookUrl) ?>');" title="Sao chép Webhook URL" style="padding: 0 0.85rem; white-space: nowrap; cursor: pointer; font-size: 0.8rem;">
+                                📋 Sao chép
+                            </button>
+                        </div>
+                    </div>
                     <div>
                         <label style="display: block; font-weight: 600; font-size: 0.85rem; margin-bottom: 0.4rem;">API Key / Secret Token Webhook (SePay / MacroDroid)</label>
                         <div style="display: flex; gap: 0.4rem;">
