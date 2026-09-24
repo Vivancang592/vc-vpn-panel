@@ -204,6 +204,7 @@ return [
     'GET /admin/settings'         => ['Admin\SettingController', 'index'],
     'POST /admin/settings/save'   => ['Admin\SettingController', 'save'],
     'POST /admin/settings/ai-models' => ['Admin\SettingController', 'aiModels'],
+    'POST /admin/settings/ai-connection-check' => ['Admin\SettingController', 'aiConnectionCheck'],
 
     // Nhật ký hệ thống (Logs)
     'GET /admin/logs'                   => ['Admin\LogController', 'index'],
