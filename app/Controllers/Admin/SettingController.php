@@ -122,6 +122,7 @@ class SettingController extends BaseController
         ]);
         curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 12);
         curl_setopt($ch, CURLOPT_TIMEOUT, 30);
+        $this->applyProxy($ch);
 
         $raw = curl_exec($ch);
         $errno = curl_errno($ch);
@@ -236,6 +237,7 @@ class SettingController extends BaseController
         ]);
         curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 12);
         curl_setopt($ch, CURLOPT_TIMEOUT, 30);
+        $this->applyProxy($ch);
 
         $raw = curl_exec($ch);
         $errno = curl_errno($ch);
@@ -337,6 +339,7 @@ class SettingController extends BaseController
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
         curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 12);
         curl_setopt($ch, CURLOPT_TIMEOUT, 30);
+        $this->applyProxy($ch);
 
         $raw = curl_exec($ch);
         $errno = curl_errno($ch);
@@ -416,6 +419,7 @@ class SettingController extends BaseController
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
         curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 12);
         curl_setopt($ch, CURLOPT_TIMEOUT, 30);
+        $this->applyProxy($ch);
 
         $raw = curl_exec($ch);
         $errno = curl_errno($ch);
@@ -549,6 +553,51 @@ class SettingController extends BaseController
             $envValue = trim((string) (getenv($envKey) ?: ''));
             if ($envValue !== '') {
                 return $envValue;
+            }
+        }
+
+        return '';
+    }
+
+    private function applyProxy($ch): void
+    {
+        $proxy = trim((string) ($this->settingModel->getByKey('ai_proxy') ?? ''));
+        if ($proxy === '') {
+            $proxy = trim((string) (
+                getenv('AI_PROXY') ?:
+                getenv('HTTPS_PROXY') ?:
+                getenv('HTTP_PROXY') ?:
+                getenv('ALL_PROXY') ?: ''
+            ));
+        }
+
+        if ($proxy === '') {
+            $proxy = $this->detectLocalDevProxy();
+        }
+
+        if ($proxy !== '') {
+            if (preg_match('/^socks5:\/\//i', $proxy)) {
+                $proxy = preg_replace('/^socks5:\/\//i', 'socks5h://', $proxy);
+            } elseif (!preg_match('/^[a-z0-9]+:\/\//i', $proxy) && (str_contains($proxy, '10808') || str_contains($proxy, '1080'))) {
+                $proxy = 'socks5h://' . $proxy;
+            }
+            curl_setopt($ch, CURLOPT_PROXY, $proxy);
+        }
+    }
+
+    private function detectLocalDevProxy(): string
+    {
+        $ports = [
+            ['port' => 10808, 'type' => 'socks5h://'],
+            ['port' => 7890,  'type' => 'http://'],
+            ['port' => 10809, 'type' => 'http://'],
+        ];
+
+        foreach ($ports as $p) {
+            $fp = @fsockopen('127.0.0.1', $p['port'], $errno, $errstr, 0.05);
+            if ($fp) {
+                fclose($fp);
+                return $p['type'] . '127.0.0.1:' . $p['port'];
             }
         }
 

@@ -397,6 +397,11 @@ ob_start();
                     <label data-hint="Kịch bản hệ thống, quy tắc và phong cách xưng hô của bot đối với khách hàng." style="display: block; font-weight: 600; font-size: 0.85rem;">Prompt Hệ Thống (System Prompt)</label>
                     <textarea name="settings[ai_system_prompt]" rows="4" class="glass-input" style="width: 100%; resize: vertical;"><?= htmlspecialchars($settings['ai_system_prompt'] ?? '') ?></textarea>
                 </div>
+
+                <div>
+                    <label data-hint="Tùy chọn proxy outbound cho cURL (VD: socks5h://127.0.0.1:10808 hoặc http://127.0.0.1:7890). Để trống nếu chạy trực tiếp." style="display: block; font-weight: 600; font-size: 0.85rem;">Proxy cURL cho AI (Tùy chọn)</label>
+                    <input type="text" name="settings[ai_proxy]" class="glass-input" value="<?= htmlspecialchars($settings['ai_proxy'] ?? '') ?>" placeholder="socks5h://127.0.0.1:10808 hoặc để trống" style="width: 100%;">
+                </div>
             </div>
 
             <!-- Cấu hình OpenAI -->
