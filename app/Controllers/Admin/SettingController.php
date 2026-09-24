@@ -75,4 +75,82 @@ class SettingController extends BaseController
 
         $this->redirect('/admin/settings');
     }
+
+    public function aiModels(): void
+    {
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            $this->json(['success' => false, 'message' => 'Method not allowed'], 405);
+            return;
+        }
+
+        if (!$this->validateCsrfToken($_POST['csrf_token'] ?? '')) {
+            $this->json(['success' => false, 'message' => 'CSRF token không hợp lệ.'], 403);
+            return;
+        }
+
+        $provider = strtolower(trim((string) ($_POST['provider'] ?? 'openai')));
+        if ($provider !== 'openai') {
+            $this->json(['success' => false, 'message' => 'Provider chưa được hỗ trợ.'], 422);
+            return;
+        }
+
+        $apiKey = trim((string) ($this->settingModel->getByKey('ai_openai_api_key') ?? getenv('OPENAI_API_KEY') ?: ''));
+        if ($apiKey === '') {
+            $this->json(['success' => false, 'message' => 'Chưa có OpenAI API key trong cài đặt hoặc .env.'], 422);
+            return;
+        }
+
+        $ch = curl_init('https://api.openai.com/v1/models');
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+        curl_setopt($ch, CURLOPT_HTTPHEADER, [
+            'Authorization: Bearer ' . $apiKey,
+            'Content-Type: application/json'
+        ]);
+        curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 8);
+        curl_setopt($ch, CURLOPT_TIMEOUT, 18);
+
+        $raw = curl_exec($ch);
+        $errno = curl_errno($ch);
+        $error = curl_error($ch);
+        $status = (int) curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        curl_close($ch);
+
+        if ($errno !== 0) {
+            $this->json(['success' => false, 'message' => 'Lỗi kết nối OpenAI: ' . $error], 502);
+            return;
+        }
+
+        $data = json_decode((string) $raw, true);
+        if ($status < 200 || $status >= 300 || !is_array($data)) {
+            $this->json(['success' => false, 'message' => 'Không lấy được danh sách model từ OpenAI.'], 502);
+            return;
+        }
+
+        $models = [];
+        foreach (($data['data'] ?? []) as $item) {
+            $id = trim((string) ($item['id'] ?? ''));
+            if ($id === '') {
+                continue;
+            }
+
+            // Ưu tiên model họ GPT/O cho chat completion.
+            if (
+                str_starts_with($id, 'gpt-')
+                || str_starts_with($id, 'o1')
+                || str_starts_with($id, 'o3')
+                || str_starts_with($id, 'o4')
+            ) {
+                $models[] = $id;
+            }
+        }
+
+        $models = array_values(array_unique($models));
+        sort($models);
+
+        $this->json([
+            'success' => true,
+            'models' => $models,
+            'current' => (string) ($this->settingModel->getByKey('ai_openai_model') ?? 'gpt-4o-mini')
+        ]);
+    }
 }

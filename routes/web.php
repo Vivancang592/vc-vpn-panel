@@ -203,6 +203,7 @@ return [
     // Cài đặt hệ thống (Settings)
     'GET /admin/settings'         => ['Admin\SettingController', 'index'],
     'POST /admin/settings/save'   => ['Admin\SettingController', 'save'],
+    'POST /admin/settings/ai-models' => ['Admin\SettingController', 'aiModels'],
 
     // Nhật ký hệ thống (Logs)
     'GET /admin/logs'                   => ['Admin\LogController', 'index'],

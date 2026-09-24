@@ -368,7 +368,15 @@ ob_start();
 
                 <div>
                     <label style="display: block; font-weight: 600; font-size: 0.85rem; margin-bottom: 0.4rem;">OpenAI model</label>
-                    <input type="text" name="settings[ai_openai_model]" class="glass-input" value="<?= htmlspecialchars($settings['ai_openai_model'] ?? 'gpt-4o-mini') ?>" placeholder="gpt-4o-mini" style="width: 100%;">
+                    <div style="display: grid; grid-template-columns: 1fr auto; gap: 0.5rem; align-items: center;">
+                        <select id="openai-model-select" name="settings[ai_openai_model]" class="glass-input" style="width: 100%;">
+                            <option value="<?= htmlspecialchars($settings['ai_openai_model'] ?? 'gpt-4o-mini') ?>" selected>
+                                <?= htmlspecialchars($settings['ai_openai_model'] ?? 'gpt-4o-mini') ?>
+                            </option>
+                        </select>
+                        <button type="button" id="load-openai-models" class="glass-btn" style="padding: 0.55rem 0.9rem; white-space: nowrap; cursor: pointer;">Tải model</button>
+                    </div>
+                    <div id="openai-model-status" style="margin-top: 0.35rem; font-size: 0.78rem; color: var(--ios-text-secondary);"></div>
                 </div>
 
                 <div>
@@ -471,6 +479,77 @@ function generateRandomApiKey(inputId) {
         input.focus();
     }
 }
+
+document.addEventListener('DOMContentLoaded', function () {
+    const loadBtn = document.getElementById('load-openai-models');
+    const select = document.getElementById('openai-model-select');
+    const status = document.getElementById('openai-model-status');
+    if (!loadBtn || !select || !status) {
+        return;
+    }
+
+    loadBtn.addEventListener('click', async function () {
+        loadBtn.disabled = true;
+        loadBtn.textContent = 'Đang tải...';
+        status.textContent = 'Đang lấy danh sách model từ OpenAI...';
+
+        try {
+            const response = await fetch('/admin/settings/ai-models', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                    'Accept': 'application/json'
+                },
+                body: new URLSearchParams({
+                    provider: 'openai',
+                    csrf_token: '<?= htmlspecialchars($csrf_token) ?>'
+                })
+            });
+
+            const result = await response.json();
+            if (!response.ok || !result.success || !Array.isArray(result.models)) {
+                status.textContent = (result && result.message) ? result.message : 'Không tải được danh sách model.';
+                return;
+            }
+
+            const current = select.value || (result.current || '');
+            select.innerHTML = '';
+
+            result.models.forEach(function (modelId) {
+                const opt = document.createElement('option');
+                opt.value = modelId;
+                opt.textContent = modelId;
+                if (modelId === current) {
+                    opt.selected = true;
+                }
+                select.appendChild(opt);
+            });
+
+            if (select.options.length === 0 && result.current) {
+                const fallback = document.createElement('option');
+                fallback.value = result.current;
+                fallback.textContent = result.current;
+                fallback.selected = true;
+                select.appendChild(fallback);
+            }
+
+            if (current && !Array.from(select.options).some(function (o) { return o.value === current; })) {
+                const custom = document.createElement('option');
+                custom.value = current;
+                custom.textContent = current + ' (custom)';
+                custom.selected = true;
+                select.appendChild(custom);
+            }
+
+            status.textContent = 'Đã tải ' + result.models.length + ' model từ OpenAI.';
+        } catch (_error) {
+            status.textContent = 'Lỗi mạng hoặc timeout khi tải model.';
+        } finally {
+            loadBtn.disabled = false;
+            loadBtn.textContent = 'Tải model';
+        }
+    });
+});
 </script>
 
 <?php

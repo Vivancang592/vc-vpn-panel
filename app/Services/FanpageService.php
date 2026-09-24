@@ -34,7 +34,9 @@ class FanpageService
 
     public function handleWebhook(array $payload): void
     {
-        if ((string) ($this->settings['ai_chatbot_enabled'] ?? '1') !== '1') {
+        $enabledRaw = trim((string) ($this->settings['ai_chatbot_enabled'] ?? '1'));
+        $isEnabled = ($enabledRaw === '' || $enabledRaw === '1');
+        if (!$isEnabled) {
             return;
         }
 
