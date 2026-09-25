@@ -31,10 +31,27 @@ class FanpageWebhookController extends BaseController
     {
         $raw = file_get_contents('php://input');
         $payload = json_decode((string) $raw, true);
-        $signature = (string) ($_SERVER['HTTP_X_HUB_SIGNATURE_256'] ?? '');
+
+        // Lấy signature từ nhiều biến môi trường header để đảm bảo tương thích mọi webserver
+        $signature = (string) ($_SERVER['HTTP_X_HUB_SIGNATURE_256'] 
+            ?? $_SERVER['HTTP_X_HUB_SIGNATURE'] 
+            ?? $_SERVER['X_HUB_SIGNATURE_256'] 
+            ?? $_SERVER['X_HUB_SIGNATURE'] 
+            ?? '');
+
+        if ($signature === '' && function_exists('getallheaders')) {
+            $headers = getallheaders();
+            foreach ($headers as $k => $v) {
+                if (strcasecmp($k, 'X-Hub-Signature-256') === 0 || strcasecmp($k, 'X-Hub-Signature') === 0) {
+                    $signature = (string) $v;
+                    break;
+                }
+            }
+        }
 
         $service = new FanpageService();
         if (!$service->validateSignature((string) $raw, $signature)) {
+            $service->logSignatureFailure((string) $raw, $signature);
             $this->json(['success' => false, 'message' => 'Invalid signature'], 401);
             return;
         }

@@ -1,4 +1,5 @@
 <?php
+$post = $post ?? [];
 $pageTitle = "Chỉnh Sửa Bài Đăng - Quản Trị Hệ Thống";
 $activeMenu = "auto-post";
 
@@ -60,10 +61,15 @@ ob_start();
 
             <!-- 4. Prompt Sinh Ảnh AI -->
             <div style="margin-bottom: 1.1rem;">
-                <label data-hint="Mô tả hình ảnh bằng tiếng Anh hoặc tiếng Việt để AI DALL-E 3 vẽ ảnh." style="display: block; font-weight: 600; font-size: 0.85rem; margin-bottom: 0.4rem;">
-                    Prompt Sinh Ảnh AI (DALL-E 3)
-                </label>
-                <textarea id="post_image_prompt" name="image_prompt" rows="2" class="glass-input" style="width: 100%; font-size: 0.85rem;"><?= htmlspecialchars($post['image_prompt'] ?? '') ?></textarea>
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.4rem;">
+                    <label data-hint="Mô tả hình ảnh bằng tiếng Anh hoặc tiếng Việt để AI vẽ ảnh." style="font-weight: 600; font-size: 0.85rem;">
+                        Prompt Sinh Ảnh AI
+                    </label>
+                    <button type="button" id="btnAiGenerateImage" class="glass-btn" style="font-size: 0.78rem; padding: 0.25rem 0.6rem; background: rgba(175, 82, 222, 0.15); color: #af52de; border-color: rgba(175, 82, 222, 0.3); cursor: pointer;">
+                        🎨 Vẽ Ảnh AI Ngay
+                    </button>
+                </div>
+                <textarea id="post_image_prompt" name="image_prompt" rows="3" class="glass-input" style="width: 100%; font-size: 0.85rem;" placeholder="A futuristic digital artwork depicting..."><?= htmlspecialchars($post['image_prompt'] ?? '') ?></textarea>
             </div>
 
         </div>
@@ -165,6 +171,48 @@ document.getElementById('btnAiGenerate').addEventListener('click', async functio
         btn.innerHTML = originalText;
     }
 });
+
+// Nút Sinh ảnh AI chuyên biệt
+const btnAiGenImg = document.getElementById('btnAiGenerateImage');
+if (btnAiGenImg) {
+    btnAiGenImg.addEventListener('click', async function() {
+        const imagePrompt = document.getElementById('post_image_prompt').value.trim();
+        if (!imagePrompt) {
+            alert('Vui lòng nhập Prompt Sinh Ảnh AI trước khi bấm tạo ảnh.');
+            document.getElementById('post_image_prompt').focus();
+            return;
+        }
+
+        const originalText = btnAiGenImg.innerHTML;
+        btnAiGenImg.disabled = true;
+        btnAiGenImg.innerHTML = '🎨 Đang Vẽ Ảnh...';
+
+        try {
+            const formData = new FormData();
+            formData.append('only_image', '1');
+            formData.append('image_prompt', imagePrompt);
+
+            const res = await fetch('/admin/auto-post/ajax-generate', {
+                method: 'POST',
+                body: formData
+            });
+            const data = await res.json();
+
+            if (data.ok && data.image_url) {
+                document.getElementById('post_image_url').value = data.image_url;
+                document.getElementById('imagePreview').src = data.image_url;
+                document.getElementById('imagePreviewContainer').style.display = 'block';
+            } else {
+                alert('Lỗi sinh ảnh: ' + (data.message || 'Không thể tạo ảnh'));
+            }
+        } catch (e) {
+            alert('Có lỗi khi kết nối máy chủ: ' + e.message);
+        } finally {
+            btnAiGenImg.disabled = false;
+            btnAiGenImg.innerHTML = originalText;
+        }
+    });
+}
 
 function previewSelectedImage(event) {
     const file = event.target.files[0];

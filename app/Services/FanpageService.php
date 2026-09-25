@@ -34,6 +34,8 @@ class FanpageService
 
     public function handleWebhook(array $payload): void
     {
+        $this->logFanpage(200, json_encode($payload, JSON_UNESCAPED_UNICODE), 'webhook_incoming');
+
         $entries = $payload['entry'] ?? [];
         if (!is_array($entries)) {
             return;
@@ -70,6 +72,8 @@ class FanpageService
                             $this->logFanpage(500, 'Comment error: ' . $e->getMessage(), 'system');
                         }
                     }
+                } else {
+                    $this->logFanpage(200, 'Tự động trả lời bình luận đang tắt trong cài đặt (ai_comment_auto_reply = 0).', 'comment_disabled');
                 }
             }
         }
@@ -152,8 +156,8 @@ class FanpageService
      */
     private function handleFeedCommentEvent(array $change, string $pageId): void
     {
-        $field = $change['field'] ?? '';
-        if ($field !== 'feed') {
+        $field = (string) ($change['field'] ?? '');
+        if ($field !== 'feed' && $field !== 'comments') {
             return;
         }
 
@@ -161,8 +165,11 @@ class FanpageService
         $item = (string) ($value['item'] ?? '');
         $verb = (string) ($value['verb'] ?? '');
 
-        // Chỉ xử lý sự kiện thêm bình luận mới
-        if ($item !== 'comment' || $verb !== 'add') {
+        // Facebook webhook có thể gửi item='comment' hoặc value chứa comment_id và message
+        $isComment = ($item === 'comment') || (!empty($value['comment_id']) && !empty($value['message']));
+        $isNotDelete = !in_array($verb, ['remove', 'delete', 'hide'], true);
+
+        if (!$isComment || !$isNotDelete) {
             return;
         }
 
@@ -182,7 +189,8 @@ class FanpageService
         }
 
         // 2. Chống phản hồi trùng lặp (Deduplication / Idempotency)
-        $cacheKey = 'fp_cmt_replied_' . $commentId;
+        // Sử dụng sha1 để đảm bảo đúng 40 ký tự cho cột CHAR(40) trong MySQL
+        $cacheKey = sha1('fp_cmt_replied_' . $commentId);
         if (class_exists(\App\Models\ChatAiCache::class)) {
             $existing = (new \App\Models\ChatAiCache())->findFresh($cacheKey, 1440);
             if ($existing) {
@@ -250,6 +258,15 @@ class FanpageService
             'max_tokens'  => 180,
             'temperature' => 0.3
         ]);
+
+        // Dự phòng: Nếu provider chính gặp lỗi mạng/quota, thử provider thứ hai
+        if (!$reply['ok'] || trim((string) ($reply['content'] ?? '')) === '') {
+            $fallbackProvider = ($commentProvider === 'openai') ? 'gemini' : 'openai';
+            $reply = $aiProvider->ask($messages, $fallbackProvider, null, [
+                'max_tokens'  => 180,
+                'temperature' => 0.3
+            ]);
+        }
 
         $replyText = trim((string) ($reply['content'] ?? ''));
 
@@ -352,11 +369,15 @@ class FanpageService
     /**
      * Trả lời công khai vào bình luận của khách
      */
+    /**
+     * Trả lời công khai vào bình luận của khách
+     */
     public function replyComment(string $commentId, string $message): array
     {
         $token = trim((string) ($this->settings['fanpage_page_access_token'] ?? getenv('FANPAGE_PAGE_ACCESS_TOKEN') ?: ''));
         if ($token === '' || $commentId === '' || trim($message) === '') {
-            return ['ok' => false, 'error' => 'Thiếu thông tin hoặc token'];
+            $this->logFanpage(400, 'Thiếu Page Access Token hoặc Comment ID hoặc Nội dung.', 'comment_' . $commentId);
+            return ['ok' => false, 'error' => 'Thiếu Page Access Token hoặc nội dung bài viết.'];
         }
 
         $url = 'https://graph.facebook.com/v20.0/' . rawurlencode($commentId) . '/comments?access_token=' . rawurlencode($token);
@@ -368,19 +389,28 @@ class FanpageService
         curl_setopt($ch, CURLOPT_HTTPHEADER, ['Content-Type: application/json']);
         curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($payload, JSON_UNESCAPED_UNICODE));
         curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 8);
-        curl_setopt($ch, CURLOPT_TIMEOUT, 15);
+        curl_setopt($ch, CURLOPT_TIMEOUT, 20);
+        $this->applyProxy($ch);
+
         $raw = curl_exec($ch);
+        $errno = curl_errno($ch);
+        $error = curl_error($ch);
         $status = (int) curl_getinfo($ch, CURLINFO_HTTP_CODE);
         curl_close($ch);
 
-        $this->logFanpage($status, $raw, 'comment_' . $commentId);
+        $this->logFanpage($status, $raw ?: ($error ? 'CURL Error: ' . $error : ''), 'comment_' . $commentId);
+
+        if ($errno !== 0) {
+            return ['ok' => false, 'error' => 'Lỗi kết nối Facebook: ' . $error];
+        }
 
         $res = json_decode((string) $raw, true);
         if ($status >= 200 && $status < 300 && !empty($res['id'])) {
             return ['ok' => true, 'id' => $res['id']];
         }
 
-        return ['ok' => false, 'error' => $res['error']['message'] ?? 'Lỗi khi phản hồi comment (HTTP ' . $status . ')'];
+        $errorMsg = $res['error']['message'] ?? ('Lỗi khi phản hồi comment (HTTP ' . $status . ')');
+        return ['ok' => false, 'error' => $errorMsg];
     }
 
     /**
@@ -403,6 +433,8 @@ class FanpageService
         curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($payload, JSON_UNESCAPED_UNICODE));
         curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 10);
         curl_setopt($ch, CURLOPT_TIMEOUT, 30);
+        $this->applyProxy($ch);
+
         $raw = curl_exec($ch);
         $status = (int) curl_getinfo($ch, CURLINFO_HTTP_CODE);
         curl_close($ch);
@@ -447,6 +479,7 @@ class FanpageService
         curl_setopt($ch, CURLOPT_POST, true);
         curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 10);
         curl_setopt($ch, CURLOPT_TIMEOUT, 60);
+        $this->applyProxy($ch);
 
         // Nếu file có thật trên disk và curl hỗ trợ upload CURLFile
         if (str_starts_with($imageUrl, '/') && file_exists($localFilePath) && class_exists('\CURLFile')) {
@@ -488,12 +521,26 @@ class FanpageService
         }
 
         $signatureHeader = trim($signatureHeader);
-        if (!str_starts_with($signatureHeader, 'sha256=')) {
+        if ($signatureHeader === '') {
             return false;
         }
 
-        $expected = 'sha256=' . hash_hmac('sha256', $rawPayload, $appSecret);
-        return hash_equals($expected, $signatureHeader);
+        if (str_starts_with($signatureHeader, 'sha256=')) {
+            $expected = 'sha256=' . hash_hmac('sha256', $rawPayload, $appSecret);
+            return hash_equals($expected, $signatureHeader);
+        }
+
+        if (str_starts_with($signatureHeader, 'sha1=')) {
+            $expected = 'sha1=' . hash_hmac('sha1', $rawPayload, $appSecret);
+            return hash_equals($expected, $signatureHeader);
+        }
+
+        return false;
+    }
+
+    public function logSignatureFailure(string $rawPayload, string $signatureHeader): void
+    {
+        $this->logFanpage(401, 'Xác thực chữ ký Meta thất bại (X-Hub-Signature: ' . $signatureHeader . ')', 'security');
     }
 
     private function resolveFanpageSession(string $senderId): ?array
@@ -542,11 +589,58 @@ class FanpageService
         curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($payload, JSON_UNESCAPED_UNICODE));
         curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 8);
         curl_setopt($ch, CURLOPT_TIMEOUT, 15);
+        $this->applyProxy($ch);
+
         $raw = curl_exec($ch);
         $status = (int) curl_getinfo($ch, CURLINFO_HTTP_CODE);
         curl_close($ch);
 
         $this->logFanpage($status, $raw, $recipientId);
+    }
+
+    private function applyProxy($ch): void
+    {
+        $proxy = trim((string) ($this->settings['ai_proxy'] ?? ''));
+        if ($proxy === '') {
+            $proxy = trim((string) (
+                getenv('AI_PROXY') ?:
+                getenv('HTTPS_PROXY') ?:
+                getenv('HTTP_PROXY') ?:
+                getenv('ALL_PROXY') ?: ''
+            ));
+        }
+
+        if ($proxy === '') {
+            $proxy = $this->detectLocalDevProxy();
+        }
+
+        if ($proxy !== '') {
+            if (preg_match('/^socks5:\/\//i', $proxy)) {
+                $proxy = preg_replace('/^socks5:\/\//i', 'socks5h://', $proxy);
+            } elseif (!preg_match('/^[a-z0-9]+:\/\//i', $proxy) && (str_contains($proxy, '10808') || str_contains($proxy, '1080'))) {
+                $proxy = 'socks5h://' . $proxy;
+            }
+            curl_setopt($ch, CURLOPT_PROXY, $proxy);
+        }
+    }
+
+    private function detectLocalDevProxy(): string
+    {
+        $ports = [
+            ['port' => 10808, 'type' => 'socks5h://'],
+            ['port' => 7890,  'type' => 'http://'],
+            ['port' => 10809, 'type' => 'http://'],
+        ];
+
+        foreach ($ports as $p) {
+            $fp = @fsockopen('127.0.0.1', $p['port'], $errno, $errstr, 0.05);
+            if ($fp) {
+                fclose($fp);
+                return $p['type'] . '127.0.0.1:' . $p['port'];
+            }
+        }
+
+        return '';
     }
 
     private function logFanpage(int $status, mixed $raw, string $recipientId): void

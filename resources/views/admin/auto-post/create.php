@@ -73,7 +73,7 @@ ob_start();
                 </div>
 
                 <!-- Tần suất đăng -->
-                <div style="margin-bottom: 1.5rem;">
+                <div style="margin-bottom: 1.25rem;">
                     <label data-hint="Khoảng cách thời gian giữa các bài đăng liên tiếp trong chiến dịch." style="display: block; font-weight: 600; font-size: 0.82rem; margin-bottom: 0.4rem;">
                         Tần Suất Đăng
                     </label>
@@ -84,6 +84,17 @@ ob_start();
                         <option value="48h">2 ngày 1 bài (Cách 48 tiếng)</option>
                         <option value="72h">3 ngày 1 bài (Cách 72 tiếng)</option>
                     </select>
+                </div>
+
+                <!-- Tùy chọn sinh ảnh ngay -->
+                <div style="margin-bottom: 1.5rem; padding: 0.75rem; background: rgba(0,0,0,0.03); border-radius: 8px;">
+                    <label style="display: flex; align-items: center; gap: 0.5rem; font-size: 0.82rem; font-weight: 600; cursor: pointer;">
+                        <input type="checkbox" name="generate_images_now" value="1" style="cursor: pointer;">
+                        <span>🖼️ Sinh ảnh AI ngay cho toàn bộ bài viết</span>
+                    </label>
+                    <div style="font-size: 0.73rem; color: var(--ios-text-secondary); margin-top: 0.25rem; margin-left: 1.4rem;">
+                        Nếu không tích chọn, AI sẽ tự động sinh ảnh khi tới giờ đăng bài (tiết kiệm tài nguyên).
+                    </div>
                 </div>
 
                 <!-- Nút Submit -->

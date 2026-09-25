@@ -1,4 +1,7 @@
 <?php
+$posts = $posts ?? [];
+$counts = $counts ?? [];
+$settings = $settings ?? [];
 $pageTitle = "Quản Lý Đăng Bài Fanpage Tự Động - Quản Trị Hệ Thống";
 $activeMenu = "auto-post";
 
@@ -202,6 +205,13 @@ ob_start();
                 <img id="modalPostImage" src="" alt="Post image" style="width: 100%; max-height: 380px; object-fit: cover; display: block;">
             </div>
 
+            <!-- Prompt Box khi chưa có ảnh -->
+            <div id="modalPostImagePromptBox" style="display: none; background: #f0f2f5; border-radius: 8px; padding: 0.75rem; margin-bottom: 0.75rem; font-size: 0.8rem; color: #65676b; border-left: 3px solid #af52de;">
+                <div style="font-weight: 700; color: #af52de; margin-bottom: 0.25rem;">🎨 Prompt Sinh Ảnh AI:</div>
+                <div id="modalPostImagePromptText" style="line-height: 1.45; font-style: italic;"></div>
+                <div style="font-size: 0.72rem; color: #8a8d91; margin-top: 0.35rem;">💡 Ảnh sẽ tự động được AI vẽ khi đăng bài hoặc bạn có thể vào "Sửa" để vẽ ảnh ngay.</div>
+            </div>
+
             <!-- FB Post Footer Simulated -->
             <div style="border-top: 1px solid #e4e6eb; padding-top: 0.5rem; display: flex; justify-content: space-around; color: #65676b; font-size: 0.85rem; font-weight: 600;">
                 <div>👍 Thích</div>
@@ -217,6 +227,8 @@ function openPreviewModal(post) {
     const modal = document.getElementById('facebookPreviewModal');
     const content = document.getElementById('modalPostContent');
     const mediaContainer = document.getElementById('modalPostMediaContainer');
+    const promptBox = document.getElementById('modalPostImagePromptBox');
+    const promptText = document.getElementById('modalPostImagePromptText');
     const image = document.getElementById('modalPostImage');
     const timeEl = document.getElementById('modalPostTime');
 
@@ -225,11 +237,14 @@ function openPreviewModal(post) {
     if (post.image_url) {
         image.src = post.image_url;
         mediaContainer.style.display = 'block';
+        promptBox.style.display = 'none';
     } else if (post.image_prompt) {
         mediaContainer.style.display = 'none';
-        content.textContent += '\n\n[🖼️ Ảnh sẽ được AI DALL-E 3 tự động sinh theo prompt: "' + post.image_prompt + '"]';
+        promptText.textContent = post.image_prompt;
+        promptBox.style.display = 'block';
     } else {
         mediaContainer.style.display = 'none';
+        promptBox.style.display = 'none';
     }
 
     if (post.scheduled_at) {

@@ -120,7 +120,10 @@ class ScheduledPostController extends BaseController
         }
 
         // 3. Lặp qua mảng JSON, tự động tính thời gian và INSERT vào database
+        $generateImagesNow = !empty($_POST['generate_images_now']);
+        $imageSize = (string)($this->settingModel->getByKey('ai_image_size') ?? '1024x1024');
         $insertedCount = 0;
+
         foreach ($postsArray as $index => $item) {
             $topic = trim((string)($item['topic'] ?? ''));
             $content = trim((string)($item['content'] ?? ''));
@@ -131,13 +134,21 @@ class ScheduledPostController extends BaseController
             }
 
             $scheduledAt = date('Y-m-d H:i:s', $startTimestamp + ($index * $intervalSeconds));
+            $imageUrl = null;
+
+            if ($generateImagesNow && $imagePrompt !== '') {
+                $imgRes = $aiProvider->generateImage($imagePrompt, $imageSize);
+                if ($imgRes['ok'] && !empty($imgRes['url'])) {
+                    $imageUrl = $imgRes['url'];
+                }
+            }
 
             $this->postModel->create([
                 'topic'             => $topic ?: ('Bài viết #' . ($index + 1) . ' - ' . mb_substr($coreTopics, 0, 30)),
                 'content_prompt'    => $coreTopics,
                 'generated_content' => $content ?: null,
                 'image_prompt'      => $imagePrompt ?: null,
-                'image_url'         => null,
+                'image_url'         => $imageUrl,
                 'scheduled_at'      => $scheduledAt,
                 'status'            => 'pending',
                 'meta_data'         => json_encode([
@@ -297,30 +308,50 @@ class ScheduledPostController extends BaseController
         $contentPrompt = trim($_POST['content_prompt'] ?? '');
         $imagePrompt = trim($_POST['image_prompt'] ?? '');
         $generateImage = !empty($_POST['generate_image']);
+        $onlyImage = !empty($_POST['only_image']);
 
+        $aiProvider = new AIProviderService();
+        $response = [
+            'ok' => true,
+            'content' => null,
+            'image_url' => null
+        ];
+
+        // 1. Trường hợp chỉ sinh ảnh (Tiết kiệm token tối đa, không gọi lại LLM văn bản)
+        if ($onlyImage) {
+            if ($imagePrompt === '') {
+                echo json_encode(['ok' => false, 'message' => 'Vui lòng nhập Prompt sinh ảnh AI trước khi tạo ảnh.']);
+                return;
+            }
+            $imageSize = (string)($this->settingModel->getByKey('ai_image_size') ?? '1024x1024');
+            $imageRes = $aiProvider->generateImage($imagePrompt, $imageSize);
+            if ($imageRes['ok'] && !empty($imageRes['url'])) {
+                $response['image_url'] = $imageRes['url'];
+                echo json_encode($response, JSON_UNESCAPED_UNICODE);
+            } else {
+                echo json_encode(['ok' => false, 'message' => $imageRes['error'] ?? 'Lỗi không thể sinh ảnh AI.']);
+            }
+            return;
+        }
+
+        // 2. Sinh văn bản
         if ($topic === '') {
             echo json_encode(['ok' => false, 'message' => 'Vui lòng nhập chủ đề bài viết.']);
             return;
         }
 
-        $aiProvider = new AIProviderService();
-
-        // 1. Sinh văn bản
         $contentRes = $aiProvider->generateContent($topic, $contentPrompt);
         if (!$contentRes['ok']) {
             echo json_encode(['ok' => false, 'message' => $contentRes['error'] ?? 'Lỗi sinh nội dung AI.']);
             return;
         }
 
-        $response = [
-            'ok' => true,
-            'content' => $contentRes['content'],
-            'image_url' => null
-        ];
+        $response['content'] = $contentRes['content'];
 
-        // 2. Sinh ảnh nếu có yêu cầu
+        // 3. Sinh ảnh kèm theo nếu có yêu cầu
         if ($generateImage && !empty($imagePrompt)) {
-            $imageRes = $aiProvider->generateImage($imagePrompt);
+            $imageSize = (string)($this->settingModel->getByKey('ai_image_size') ?? '1024x1024');
+            $imageRes = $aiProvider->generateImage($imagePrompt, $imageSize);
             if ($imageRes['ok']) {
                 $response['image_url'] = $imageRes['url'];
             } else {
@@ -369,10 +400,12 @@ class ScheduledPostController extends BaseController
         }
 
         if ($imageUrl === '' && !empty($post['image_prompt'])) {
-            $imageResult = $aiProvider->generateImage($post['image_prompt']);
+            $imageSize = (string)($this->settingModel->getByKey('ai_image_size') ?? '1024x1024');
+            $imageResult = $aiProvider->generateImage($post['image_prompt'], $imageSize);
             if ($imageResult['ok'] && !empty($imageResult['url'])) {
                 $imageUrl = $imageResult['url'];
                 $metaData['image_url'] = $imageUrl;
+                $this->postModel->update($id, ['image_url' => $imageUrl]);
             }
         }
 
