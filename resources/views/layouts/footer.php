@@ -82,7 +82,7 @@ $chatbotTitle = $chatbotTitle !== '' ? $chatbotTitle : 'VC VPN';
 </footer>
 
 <?php if ($chatbotEnabled): ?>
-    <div id="vc-chatbot" data-enabled="1" data-site-title="<?= htmlspecialchars($chatbotTitle) ?>" data-page="<?= htmlspecialchars((string) parse_url((string) ($_SERVER['REQUEST_URI'] ?? '/'), PHP_URL_PATH)) ?>">
+    <div id="vc-chatbot" data-enabled="1" data-site-title="<?= htmlspecialchars($chatbotTitle) ?>" data-page="<?= htmlspecialchars((string) parse_url((string) ($_SERVER['REQUEST_URI'] ?? '/'), PHP_URL_PATH)) ?>" style="position: relative; z-index: 2147483647;">
         <button id="vc-chatbot-toggle" type="button" aria-label="Mở trợ lý AI">💬</button>
         <div id="vc-chatbot-panel" hidden class="vc-chatbot-panel-wrapper">
             <div class="vc-chatbot-header">

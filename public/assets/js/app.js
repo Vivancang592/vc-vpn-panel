@@ -511,6 +511,11 @@ if (!response.ok || !result.valid) {
     // 11. Chatbot widget (web)
     const chatbotRoot = document.getElementById('vc-chatbot');
     if (chatbotRoot) {
+        // Đưa chatbot ra trực tiếp thẻ body để tránh bị giam trong stacking context / overflow của navbar và layout
+        if (chatbotRoot.parentElement && chatbotRoot.parentElement !== document.body) {
+            document.body.appendChild(chatbotRoot);
+        }
+
         if (!document.getElementById('vc-chatbot-styles')) {
             const styleTag = document.createElement('style');
             styleTag.id = 'vc-chatbot-styles';
@@ -519,11 +524,16 @@ if (!response.ok || !result.valid) {
 @keyframes vcSlideDownMobile { 0% { transform: translateY(-100%); opacity: 0; } 100% { transform: translateY(0); opacity: 1; } }
 @keyframes vcFadeInDesktop { 0% { transform: translateY(12px) scale(0.98); opacity: 0; } 100% { transform: translateY(0) scale(1); opacity: 1; } }
 
+#vc-chatbot {
+    position: relative;
+    z-index: 2147483647;
+}
+
 #vc-chatbot-toggle {
     position: fixed;
     right: 20px;
     bottom: 20px;
-    z-index: 2500;
+    z-index: 2147483647;
     width: 56px;
     height: 56px;
     border: none;
@@ -547,7 +557,7 @@ if (!response.ok || !result.valid) {
     position: fixed;
     right: 20px;
     bottom: 86px;
-    z-index: 2501;
+    z-index: 2147483647 !important;
     width: 560px;
     max-width: calc(100vw - 32px);
     height: min(620px, calc(100vh - 120px));
@@ -576,24 +586,28 @@ if (!response.ok || !result.valid) {
     justify-content: space-between;
     box-shadow: 0 2px 8px rgba(0,0,0,0.08);
     flex-shrink: 0;
+    position: relative;
+    z-index: 10;
 }
 
 #vc-chatbot-close {
     border: none;
-    background: rgba(255,255,255,0.2);
+    background: rgba(255,255,255,0.25);
     color: #fff;
-    width: 28px;
-    height: 28px;
+    width: 32px;
+    height: 32px;
     border-radius: 50%;
-    font-size: 14px;
+    font-size: 15px;
     cursor: pointer;
     display: flex;
     align-items: center;
     justify-content: center;
-    transition: background 0.15s ease;
+    transition: background 0.15s ease, transform 0.15s ease;
+    flex-shrink: 0;
 }
 #vc-chatbot-close:hover {
-    background: rgba(255,255,255,0.35);
+    background: rgba(255,255,255,0.4);
+    transform: scale(1.05);
 }
 
 #vc-chatbot-messages {
@@ -649,6 +663,16 @@ if (!response.ok || !result.valid) {
 
 /* Giao diện Full Màn Hình & Trượt từ trên xuống cho Mobile */
 @media (max-width: 767px) {
+    #vc-chatbot {
+        position: fixed !important;
+        inset: 0 !important;
+        pointer-events: none;
+        z-index: 2147483647 !important;
+    }
+    #vc-chatbot > * {
+        pointer-events: auto;
+    }
+
     .vc-chatbot-panel-wrapper {
         position: fixed !important;
         top: 0 !important;
@@ -662,27 +686,32 @@ if (!response.ok || !result.valid) {
         border-radius: 0 !important;
         border: none !important;
         box-shadow: none !important;
-        z-index: 999999 !important;
-        animation: vcSlideDownMobile 0.32s cubic-bezier(0.16, 1, 0.3, 1) forwards !important;
+        z-index: 2147483647 !important;
+        animation: vcSlideDownMobile 0.28s cubic-bezier(0.16, 1, 0.3, 1) forwards !important;
     }
 
     .vc-chatbot-header {
-        padding: max(12px, env(safe-area-inset-top, 12px)) 16px 12px 16px !important;
+        padding: max(14px, env(safe-area-inset-top, 14px)) 16px 14px 16px !important;
         font-size: 1rem !important;
+        min-height: 56px !important;
     }
 
     #vc-chatbot-close {
-        width: 32px !important;
-        height: 32px !important;
-        font-size: 16px !important;
+        width: 36px !important;
+        height: 36px !important;
+        font-size: 18px !important;
     }
 
     #vc-chatbot-form {
-        padding: 10px 12px max(10px, env(safe-area-inset-bottom, 10px)) 12px !important;
+        padding: 10px 12px max(12px, env(safe-area-inset-bottom, 12px)) 12px !important;
     }
 
     body.vc-chatbot-open {
         overflow: hidden !important;
+    }
+
+    body.vc-chatbot-open .navbar-container {
+        z-index: 1 !important;
     }
 }
 `;
