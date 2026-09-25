@@ -40,7 +40,7 @@ class ScheduledPostController extends BaseController
     }
 
     /**
-     * Form tạo bài đăng mới
+     * Form giao việc cho AI lên chiến dịch bài đăng
      */
     public function showCreate(): void
     {
@@ -52,7 +52,7 @@ class ScheduledPostController extends BaseController
     }
 
     /**
-     * Xử lý tạo bài đăng mới
+     * Xử lý giao việc cho AI lên toàn bộ chiến dịch bài đăng (Campaign Automation)
      */
     public function create(): void
     {
@@ -61,58 +61,103 @@ class ScheduledPostController extends BaseController
             return;
         }
 
-        $topic            = trim($_POST['topic'] ?? '');
-        $contentPrompt    = trim($_POST['content_prompt'] ?? '');
-        $generatedContent = trim($_POST['generated_content'] ?? '');
-        $imagePrompt      = trim($_POST['image_prompt'] ?? '');
-        $imageUrl         = trim($_POST['image_url'] ?? '');
-        $scheduledAt      = trim($_POST['scheduled_at'] ?? '');
-        $publishNow       = !empty($_POST['publish_now']);
+        $coreTopics        = trim($_POST['core_topics'] ?? '');
+        $postCount         = max(1, min(30, (int)($_POST['post_count'] ?? 5)));
+        $startTimeRaw      = trim($_POST['start_time'] ?? '');
+        $frequency         = trim($_POST['frequency'] ?? '24h');
+        $customInstruction = trim($_POST['custom_instruction'] ?? '');
 
-        // Xử lý upload ảnh thủ công nếu có
-        if (!empty($_FILES['image_file']['tmp_name'])) {
-            $uploadedUrl = $this->handleImageUpload($_FILES['image_file']);
-            if ($uploadedUrl) {
-                $imageUrl = $uploadedUrl;
-            }
-        }
-
-        if ($topic === '') {
-            $_SESSION['flash_message'] = 'Vui lòng nhập chủ đề bài viết!';
+        if ($coreTopics === '') {
+            $_SESSION['flash_message'] = 'Vui lòng nhập danh sách các chủ đề cốt lõi để AI xây dựng chiến dịch!';
             $_SESSION['flash_type'] = 'danger';
             $this->redirect('/admin/auto-post/create');
             return;
         }
 
-        if (empty($scheduledAt)) {
-            $scheduledAt = date('Y-m-d H:i:s');
+        $startTimestamp = !empty($startTimeRaw) ? strtotime($startTimeRaw) : time();
+        if ($startTimestamp === false) {
+            $startTimestamp = time();
+        }
+
+        // Tần suất đăng bài tính theo giây
+        $intervalHours = match($frequency) {
+            '6h'    => 6,
+            '12h'   => 12,
+            '24h'   => 24, // Mỗi ngày 1 bài
+            '48h'   => 48, // 2 ngày 1 bài
+            '72h'   => 72, // 3 ngày 1 bài
+            default => 24
+        };
+        $intervalSeconds = $intervalHours * 3600;
+
+        // 1. Gửi prompt tổng sang AIProviderService yêu cầu JSON Array
+        $aiProvider = new AIProviderService();
+        $result = $aiProvider->generateCampaignPlan($coreTopics, $postCount, $customInstruction);
+
+        if (!$result['ok'] || trim((string)($result['content'] ?? '')) === '') {
+            $_SESSION['flash_message'] = 'Lỗi kết nối AI: ' . ($result['error'] ?? 'Không nhận được phản hồi từ mô hình AI.');
+            $_SESSION['flash_type'] = 'danger';
+            $this->redirect('/admin/auto-post/create');
+            return;
+        }
+
+        // 2. Parse chuỗi JSON chặt chẽ
+        $rawContent = trim((string)$result['content']);
+        if (preg_match('/```(?:json)?\s*(\[[\s\S]*?\])\s*```/i', $rawContent, $matches)) {
+            $jsonString = $matches[1];
+        } elseif (preg_match('/\[[\s\S]*\]/', $rawContent, $matches)) {
+            $jsonString = $matches[0];
         } else {
-            $scheduledAt = date('Y-m-d H:i:s', strtotime($scheduledAt));
+            $jsonString = $rawContent;
         }
 
-        $postData = [
-            'topic'             => $topic,
-            'content_prompt'    => $contentPrompt ?: null,
-            'generated_content' => $generatedContent ?: null,
-            'image_prompt'      => $imagePrompt ?: null,
-            'image_url'         => $imageUrl ?: null,
-            'scheduled_at'      => $scheduledAt,
-            'status'            => 'pending',
-            'created_by'        => (int)$_SESSION['user_id']
-        ];
+        $postsArray = json_decode($jsonString, true);
+        if (!is_array($postsArray) || empty($postsArray)) {
+            $_SESSION['flash_message'] = 'AI không trả về đúng định dạng JSON danh sách bài viết. Vui lòng thử lại!';
+            $_SESSION['flash_type'] = 'danger';
+            $this->redirect('/admin/auto-post/create');
+            return;
+        }
 
-        $this->postModel->create($postData);
+        // 3. Lặp qua mảng JSON, tự động tính thời gian và INSERT vào database
+        $insertedCount = 0;
+        foreach ($postsArray as $index => $item) {
+            $topic = trim((string)($item['topic'] ?? ''));
+            $content = trim((string)($item['content'] ?? ''));
+            $imagePrompt = trim((string)($item['image_prompt'] ?? ''));
 
-        // Lấy ID vừa tạo để xử lý đăng ngay nếu chọn "publish_now"
-        if ($publishNow) {
-            $lastId = (int) $this->getLastInsertId();
-            if ($lastId > 0) {
-                $this->executePublish($lastId);
-                return;
+            if ($topic === '' && $content === '') {
+                continue;
             }
+
+            $scheduledAt = date('Y-m-d H:i:s', $startTimestamp + ($index * $intervalSeconds));
+
+            $this->postModel->create([
+                'topic'             => $topic ?: ('Bài viết #' . ($index + 1) . ' - ' . mb_substr($coreTopics, 0, 30)),
+                'content_prompt'    => $coreTopics,
+                'generated_content' => $content ?: null,
+                'image_prompt'      => $imagePrompt ?: null,
+                'image_url'         => null,
+                'scheduled_at'      => $scheduledAt,
+                'status'            => 'pending',
+                'meta_data'         => json_encode([
+                    'campaign_generated' => true,
+                    'provider' => $result['provider'] ?? 'ai',
+                    'model' => $result['model'] ?? ''
+                ], JSON_UNESCAPED_UNICODE),
+                'created_by'        => (int)($_SESSION['user_id'] ?? 1)
+            ]);
+            $insertedCount++;
         }
 
-        $_SESSION['flash_message'] = 'Đã lên lịch đăng bài thành công!';
+        if ($insertedCount === 0) {
+            $_SESSION['flash_message'] = 'Không có bài viết hợp lệ nào được khởi tạo từ AI.';
+            $_SESSION['flash_type'] = 'danger';
+            $this->redirect('/admin/auto-post/create');
+            return;
+        }
+
+        $_SESSION['flash_message'] = "🎉 AI đã lên chiến dịch thành công với {$insertedCount} bài viết trong hàng đợi tự động!";
         $_SESSION['flash_type'] = 'success';
         $this->redirect('/admin/auto-post');
     }

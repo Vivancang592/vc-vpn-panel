@@ -1,5 +1,5 @@
 <?php
-$pageTitle = "Lên Lịch Bài Đăng Mới - Quản Trị Hệ Thống";
+$pageTitle = "Tạo Chiến Dịch Bài Đăng AI - Quản Trị Hệ Thống";
 $activeMenu = "auto-post";
 
 ob_start();
@@ -13,102 +13,96 @@ ob_start();
     </div>
 <?php endif; ?>
 
-<div style="margin-bottom: 1.25rem; display: flex; justify-content: space-between; align-items: center;">
+<div style="margin-bottom: 1.25rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.75rem;">
     <div>
-        <h1 style="font-size: 1.5rem; font-weight: 700;">➕ Lên Lịch Đăng Bài Fanpage AI</h1>
-        <p style="color: var(--ios-text-secondary); font-size: 0.85rem;">Tự động sinh nội dung viral, thiết kế ảnh qua DALL-E & đăng tự động</p>
+        <h1 style="font-size: 1.5rem; font-weight: 700;">🚀 Giao Việc Cho AI Lên Chiến Dịch Bài Đăng</h1>
+        <p style="color: var(--ios-text-secondary); font-size: 0.85rem;">Nhập các chủ đề cốt lõi, AI sẽ tự động sinh hàng loạt bài viết đa góc nhìn kèm lịch đăng và prompt vẽ ảnh.</p>
     </div>
-    <a href="/admin/auto-post" class="glass-btn" style="text-decoration: none; font-size: 0.85rem;">← Quay Lại</a>
+    <a href="/admin/auto-post" class="glass-btn" style="text-decoration: none; font-size: 0.85rem;">← Hàng Đợi Bài Viết</a>
 </div>
 
-<form action="/admin/auto-post/create" method="POST" enctype="multipart/form-data">
+<form id="campaignForm" action="/admin/auto-post/create" method="POST">
     <div style="display: grid; grid-template-columns: 1fr 340px; gap: 1.25rem; align-items: start;">
         
-        <!-- Cột Trái: Nội dung & Prompts -->
+        <!-- Cột Trái: Chủ đề cốt lõi & Hướng dẫn -->
         <div class="glass-card" style="padding: 1.25rem;">
             
-            <!-- 1. Chủ đề bài viết -->
-            <div style="margin-bottom: 1.1rem;">
-                <label data-hint="Chủ đề chính để AI bám sát và triển khai bài viết." style="display: block; font-weight: 600; font-size: 0.85rem; margin-bottom: 0.4rem;">
-                    Chủ Đề / Tiêu Đề Bài Viết <span style="color: var(--ios-danger);">*</span>
+            <!-- 1. Danh sách chủ đề cốt lõi -->
+            <div style="margin-bottom: 1.25rem;">
+                <label data-hint="Nhập danh sách các từ khóa, gói cước hoặc chủ đề bạn muốn AI triển khai thành chiến dịch." style="display: block; font-weight: 600; font-size: 0.9rem; margin-bottom: 0.4rem;">
+                    Danh Sách Chủ Đề Cốt Lõi / Từ Khóa Chiến Dịch <span style="color: var(--ios-danger);">*</span>
                 </label>
-                <input type="text" id="post_topic" name="topic" class="glass-input" placeholder="Ví dụ: Ưu đãi 50% gói VPN 4G tốc độ cao đón lễ 30/4" style="width: 100%; font-weight: 600;" required>
-            </div>
-
-            <!-- 2. Định hướng Prompt AI -->
-            <div style="margin-bottom: 1.1rem;">
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.4rem;">
-                    <label data-hint="Hướng dẫn thêm cho AI về đối tượng mục tiêu, khuyến mãi hoặc văn phong." style="font-weight: 600; font-size: 0.85rem;">
-                        Định Hướng Nội Dung Thêm Cho AI (Tùy chọn)
-                    </label>
-                    <button type="button" id="btnAiGenerate" class="glass-btn" style="font-size: 0.78rem; padding: 0.25rem 0.6rem; background: rgba(0, 122, 255, 0.12); color: var(--ios-blue); border-color: rgba(0, 122, 255, 0.3);">
-                        ⚡ AI Viết Thử Ngay
-                    </button>
+                <textarea id="core_topics" name="core_topics" rows="8" class="glass-input" style="width: 100%; font-size: 0.9rem; line-height: 1.6; font-family: inherit;" placeholder="Ví dụ:&#10;1. Giảm lag, hạ Ping khi chơi game Liên Quân, Free Fire, PUBG&#10;2. Bí quyết xem Netflix 4K, Youtube mượt mà khi cáp quang biển đứt&#10;3. Gói VPN 4G data không giới hạn chỉ từ 20k/tháng&#10;4. Bảo mật kết nối wifi công cộng quán cafe, bảo vệ thẻ ngân hàng&#10;5. Hướng dẫn cài đặt VPN 1 chạm trên iPhone và Android" required></textarea>
+                <div style="font-size: 0.78rem; color: var(--ios-text-secondary); margin-top: 0.35rem;">
+                    💡 Mẹo: Bạn có thể nhập 3 - 10 gạch đầu dòng, AI sẽ tự động phân tích và viết từng bài theo góc nhìn độc lập, hấp dẫn.
                 </div>
-                <textarea id="post_content_prompt" name="content_prompt" rows="3" class="glass-input" style="width: 100%; font-size: 0.85rem;" placeholder="Ví dụ: Nêu bật tính năng chơi game Ping 15ms không giật lag, kèm mã giảm giá 'GAMING2027', kêu gọi nhắn tin fanpage..."></textarea>
             </div>
 
-            <!-- 3. Nội dung bài viết (Có thể chỉnh sửa tay hoặc để AI sinh khi đến giờ) -->
-            <div style="margin-bottom: 1.1rem;">
-                <label data-hint="Nếu bạn để trống, AI sẽ tự động sinh nội dung vào đúng thời điểm bài được đăng." style="display: block; font-weight: 600; font-size: 0.85rem; margin-bottom: 0.4rem;">
-                    Nội Dung Bài Viết (Tự sinh hoặc Biên tập trước)
+            <!-- 2. Định hướng / Yêu cầu văn phong bổ sung -->
+            <div style="margin-bottom: 1rem;">
+                <label data-hint="Các yêu cầu đặc biệt như mã giảm giá, văn phong hài hước, hoặc nhóm khách hàng mục tiêu." style="display: block; font-weight: 600; font-size: 0.85rem; margin-bottom: 0.4rem;">
+                    Ghi Chú / Yêu Cầu Bổ Sung Cho AI (Tùy chọn)
                 </label>
-                <textarea id="post_generated_content" name="generated_content" rows="9" class="glass-input" style="width: 100%; font-size: 0.88rem; line-height: 1.5; font-family: inherit;" placeholder="Để trống nếu muốn AI tự động sinh khi đến lịch đăng, hoặc bấm 'AI Viết Thử Ngay' ở trên để xem trước..."></textarea>
-            </div>
-
-            <!-- 4. Prompt Sinh Ảnh AI -->
-            <div style="margin-bottom: 1.1rem;">
-                <label data-hint="Mô tả hình ảnh bằng tiếng Anh hoặc tiếng Việt để AI DALL-E 3 vẽ ảnh." style="display: block; font-weight: 600; font-size: 0.85rem; margin-bottom: 0.4rem;">
-                    Prompt Sinh Ảnh AI (DALL-E 3)
-                </label>
-                <textarea id="post_image_prompt" name="image_prompt" rows="2" class="glass-input" style="width: 100%; font-size: 0.85rem;" placeholder="Ví dụ: A futuristic high-speed cybersecurity VPN shield with neon blue fiber optic lights in cyberpunk style, 4k ultra-detailed"></textarea>
+                <textarea name="custom_instruction" rows="4" class="glass-input" style="width: 100%; font-size: 0.85rem; line-height: 1.5;" placeholder="Ví dụ: Giọng văn thân thiện trẻ trung, gắn mã giảm giá 'VCVPN2027' giảm 20%, kêu gọi khách inbox Fanpage nhận mã test 3 ngày miễn phí..."></textarea>
             </div>
 
         </div>
 
-        <!-- Cột Phải: Hình Ảnh & Lên Lịch -->
+        <!-- Cột Phải: Thông số chiến dịch & Lịch xuất bản -->
         <div style="display: flex; flex-direction: column; gap: 1.25rem;">
             
-            <!-- Box Lên Lịch & Đăng Ngay -->
             <div class="glass-card" style="padding: 1.25rem;">
-                <h3 style="font-size: 0.95rem; font-weight: 700; margin-bottom: 0.85rem;">⏰ Thời Gian Đăng Bài</h3>
+                <h3 style="font-size: 0.95rem; font-weight: 700; margin-bottom: 1rem; color: var(--ios-blue);">
+                    ⚙️ Thiết Lập Lịch Tự Động
+                </h3>
                 
+                <!-- Số lượng bài viết -->
                 <div style="margin-bottom: 1rem;">
-                    <label style="display: block; font-weight: 600; font-size: 0.82rem; margin-bottom: 0.4rem;">Ngày & Giờ Xuất Bản</label>
-                    <input type="datetime-local" name="scheduled_at" class="glass-input" value="<?= date('Y-m-d\TH:i') ?>" style="width: 100%;">
-                </div>
-
-                <div style="margin-bottom: 1.25rem; padding: 0.75rem; background: rgba(0, 122, 255, 0.06); border-radius: var(--radius-sm); border: 1px solid rgba(0, 122, 255, 0.15);">
-                    <label style="display: flex; align-items: center; gap: 0.5rem; font-size: 0.85rem; font-weight: 600; cursor: pointer; color: var(--ios-blue);">
-                        <input type="checkbox" name="publish_now" value="1" style="width: 16px; height: 16px; cursor: pointer;">
-                        Đăng Lên Fanpage Ngay Lập Tức
+                    <label data-hint="Số lượng bài viết AI sẽ tạo ra trong chiến dịch này (tối đa 20 bài)." style="display: block; font-weight: 600; font-size: 0.82rem; margin-bottom: 0.4rem;">
+                        Số Lượng Bài Viết Cần Tạo
                     </label>
-                    <div style="font-size: 0.75rem; color: var(--ios-text-secondary); margin-top: 0.3rem;">
-                        Hệ thống sẽ gọi AI và đẩy trực tiếp lên Facebook sau khi bấm Lưu.
-                    </div>
+                    <input type="number" name="post_count" class="glass-input" value="5" min="1" max="20" style="width: 100%; font-weight: 700; font-size: 1rem;">
                 </div>
 
-                <button type="submit" class="glass-btn" style="width: 100%; padding: 0.75rem; font-weight: 700; background: var(--ios-blue); color: #fff; cursor: pointer;">
-                    💾 Lưu & Lên Lịch Đăng
+                <!-- Ngày giờ bắt đầu đăng -->
+                <div style="margin-bottom: 1rem;">
+                    <label data-hint="Thời điểm bài viết đầu tiên trong chiến dịch được đăng lên Facebook." style="display: block; font-weight: 600; font-size: 0.82rem; margin-bottom: 0.4rem;">
+                        Ngày Giờ Bắt Đầu Đăng
+                    </label>
+                    <input type="datetime-local" name="start_time" class="glass-input" value="<?= date('Y-m-d\TH:i', strtotime('+15 minutes')) ?>" style="width: 100%;">
+                </div>
+
+                <!-- Tần suất đăng -->
+                <div style="margin-bottom: 1.5rem;">
+                    <label data-hint="Khoảng cách thời gian giữa các bài đăng liên tiếp trong chiến dịch." style="display: block; font-weight: 600; font-size: 0.82rem; margin-bottom: 0.4rem;">
+                        Tần Suất Đăng
+                    </label>
+                    <select name="frequency" class="glass-input" style="width: 100%; cursor: pointer;">
+                        <option value="6h">Mỗi 6 tiếng 1 bài</option>
+                        <option value="12h">Mỗi 12 tiếng 1 bài (2 bài / ngày)</option>
+                        <option value="24h" selected>Mỗi ngày 1 bài (Cách 24 tiếng)</option>
+                        <option value="48h">2 ngày 1 bài (Cách 48 tiếng)</option>
+                        <option value="72h">3 ngày 1 bài (Cách 72 tiếng)</option>
+                    </select>
+                </div>
+
+                <!-- Nút Submit -->
+                <button type="submit" id="btnSubmitCampaign" class="glass-btn" style="width: 100%; padding: 0.85rem; font-weight: 700; font-size: 0.95rem; background: #0a84ff; color: #fff; border: none; cursor: pointer; border-radius: var(--radius-sm);">
+                    🚀 Yêu Cầu AI Lên Chiến Dịch
                 </button>
+
+                <div id="campaignLoading" style="display: none; margin-top: 0.85rem; font-size: 0.8rem; color: var(--ios-blue); text-align: center; font-weight: 600;">
+                    ⏳ AI đang phân tích chủ đề, sáng tạo nội dung & tạo prompt ảnh... Vui lòng đợi trong giây lát!
+                </div>
             </div>
 
-            <!-- Box Tải Ảnh Thủ Công / Preview Ảnh -->
-            <div class="glass-card" style="padding: 1.25rem;">
-                <h3 style="font-size: 0.95rem; font-weight: 700; margin-bottom: 0.85rem;">🖼️ Ảnh Minh Họa</h3>
-                
-                <div style="margin-bottom: 0.85rem;">
-                    <label style="display: block; font-weight: 600; font-size: 0.82rem; margin-bottom: 0.4rem;">Tải Ảnh Từ Máy Tính</label>
-                    <input type="file" name="image_file" accept="image/*" class="glass-input" style="width: 100%; font-size: 0.8rem;" onchange="previewSelectedImage(event)">
+            <!-- Box Thông Tin Thêm -->
+            <div class="glass-card" style="padding: 1rem; background: rgba(0, 122, 255, 0.04); border-left: 3px solid var(--ios-blue);">
+                <div style="font-weight: 700; font-size: 0.85rem; color: var(--ios-blue); margin-bottom: 0.35rem;">
+                    🤖 Cơ chế tự động hóa
                 </div>
-
-                <div style="margin-bottom: 0.85rem;">
-                    <label style="display: block; font-weight: 600; font-size: 0.82rem; margin-bottom: 0.4rem;">Hoặc Đường Dẫn Ảnh (URL / Path)</label>
-                    <input type="text" id="post_image_url" name="image_url" class="glass-input" placeholder="/uploads/posts/... hoặc https://..." style="width: 100%; font-size: 0.8rem;">
-                </div>
-
-                <div id="imagePreviewContainer" style="display: none; margin-top: 0.75rem; text-align: center;">
-                    <img id="imagePreview" src="" alt="Preview" style="max-width: 100%; max-height: 180px; border-radius: 8px; border: 1px solid var(--glass-border); object-fit: cover;">
+                <div style="font-size: 0.78rem; color: var(--ios-text-secondary); line-height: 1.5;">
+                    Sau khi AI hoàn tất việc lên chiến dịch, các bài viết sẽ tự động xếp vào hàng đợi. Cronjob sẽ kích hoạt đăng bài lên Fanpage theo đúng ngày giờ đã tính toán.
                 </div>
             </div>
 
@@ -118,63 +112,21 @@ ob_start();
 </form>
 
 <script>
-document.getElementById('btnAiGenerate').addEventListener('click', async function() {
-    const topic = document.getElementById('post_topic').value.trim();
-    const contentPrompt = document.getElementById('post_content_prompt').value.trim();
-    const imagePrompt = document.getElementById('post_image_prompt').value.trim();
-
-    if (!topic) {
-        alert('Vui lòng nhập Chủ đề bài viết trước khi bấm AI Viết Thử.');
-        document.getElementById('post_topic').focus();
+document.getElementById('campaignForm').addEventListener('submit', function (e) {
+    const topics = document.getElementById('core_topics').value.trim();
+    if (!topics) {
+        alert('Vui lòng nhập danh sách chủ đề cốt lõi!');
+        e.preventDefault();
         return;
     }
 
-    const btn = this;
-    const originalText = btn.innerHTML;
+    const btn = document.getElementById('btnSubmitCampaign');
+    const loading = document.getElementById('campaignLoading');
     btn.disabled = true;
-    btn.innerHTML = '⏳ AI Đang Viết...';
-
-    try {
-        const formData = new FormData();
-        formData.append('topic', topic);
-        formData.append('content_prompt', contentPrompt);
-        formData.append('image_prompt', imagePrompt);
-
-        const res = await fetch('/admin/auto-post/ajax-generate', {
-            method: 'POST',
-            body: formData
-        });
-        const data = await res.json();
-
-        if (data.ok) {
-            document.getElementById('post_generated_content').value = data.content;
-            if (data.image_url) {
-                document.getElementById('post_image_url').value = data.image_url;
-                document.getElementById('imagePreview').src = data.image_url;
-                document.getElementById('imagePreviewContainer').style.display = 'block';
-            }
-        } else {
-            alert('Lỗi: ' + (data.message || 'Không thể sinh nội dung'));
-        }
-    } catch (e) {
-        alert('Có lỗi xảy ra trong quá trình gọi AI: ' + e.message);
-    } finally {
-        btn.disabled = false;
-        btn.innerHTML = originalText;
-    }
+    btn.style.opacity = '0.6';
+    btn.textContent = '⏳ Đang Xử Lý Chiến Dịch...';
+    loading.style.display = 'block';
 });
-
-function previewSelectedImage(event) {
-    const file = event.target.files[0];
-    if (file) {
-        const reader = new FileReader();
-        reader.onload = function(e) {
-            document.getElementById('imagePreview').src = e.target.result;
-            document.getElementById('imagePreviewContainer').style.display = 'block';
-        };
-        reader.readAsDataURL(file);
-    }
-}
 </script>
 
 <?php
