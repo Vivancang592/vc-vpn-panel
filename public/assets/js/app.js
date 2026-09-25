@@ -514,7 +514,178 @@ if (!response.ok || !result.valid) {
         if (!document.getElementById('vc-chatbot-styles')) {
             const styleTag = document.createElement('style');
             styleTag.id = 'vc-chatbot-styles';
-            styleTag.textContent = '@keyframes vcChatSpin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }';
+            styleTag.textContent = `
+@keyframes vcChatSpin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+@keyframes vcSlideDownMobile { 0% { transform: translateY(-100%); opacity: 0; } 100% { transform: translateY(0); opacity: 1; } }
+@keyframes vcFadeInDesktop { 0% { transform: translateY(12px) scale(0.98); opacity: 0; } 100% { transform: translateY(0) scale(1); opacity: 1; } }
+
+#vc-chatbot-toggle {
+    position: fixed;
+    right: 20px;
+    bottom: 20px;
+    z-index: 2500;
+    width: 56px;
+    height: 56px;
+    border: none;
+    border-radius: 50%;
+    cursor: pointer;
+    background: linear-gradient(135deg, #0a84ff, #34c759);
+    color: #fff;
+    box-shadow: 0 10px 24px rgba(10,132,255,.36);
+    font-size: 25px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.2s ease;
+}
+#vc-chatbot-toggle:hover {
+    transform: scale(1.08);
+    box-shadow: 0 12px 28px rgba(10,132,255,.45);
+}
+
+.vc-chatbot-panel-wrapper {
+    position: fixed;
+    right: 20px;
+    bottom: 86px;
+    z-index: 2501;
+    width: 560px;
+    max-width: calc(100vw - 32px);
+    height: min(620px, calc(100vh - 120px));
+    background: #ffffff;
+    border: 1px solid rgba(0,0,0,.12);
+    border-radius: 18px;
+    box-shadow: 0 24px 48px rgba(0,0,0,.22), 0 8px 16px rgba(0,0,0,.08);
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    animation: vcFadeInDesktop 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.vc-chatbot-panel-wrapper[hidden] {
+    display: none !important;
+}
+
+.vc-chatbot-header {
+    padding: 12px 16px;
+    background: linear-gradient(135deg, #0a84ff, #34c759);
+    color: #fff;
+    font-weight: 700;
+    font-size: 0.95rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    flex-shrink: 0;
+}
+
+#vc-chatbot-close {
+    border: none;
+    background: rgba(255,255,255,0.2);
+    color: #fff;
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    font-size: 14px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.15s ease;
+}
+#vc-chatbot-close:hover {
+    background: rgba(255,255,255,0.35);
+}
+
+#vc-chatbot-messages {
+    flex: 1;
+    overflow-y: auto;
+    padding: 14px;
+    background: #f6f9fc;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    -webkit-overflow-scrolling: touch;
+}
+
+#vc-chatbot-form {
+    display: flex;
+    gap: 8px;
+    padding: 12px 14px;
+    border-top: 1px solid rgba(0,0,0,.08);
+    background: #ffffff;
+    flex-shrink: 0;
+}
+
+#vc-chatbot-input {
+    flex: 1;
+    border: 1px solid rgba(0,0,0,.15);
+    border-radius: 22px;
+    padding: 10px 16px;
+    font-size: 14px;
+    outline: none;
+    transition: border-color 0.2s, box-shadow 0.2s;
+    background: #f8fafc;
+}
+#vc-chatbot-input:focus {
+    border-color: #0a84ff;
+    background: #fff;
+    box-shadow: 0 0 0 3px rgba(10,132,255,0.15);
+}
+
+#vc-chatbot-form button[type="submit"] {
+    border: none;
+    border-radius: 22px;
+    background: #0a84ff;
+    color: #fff;
+    padding: 0 18px;
+    cursor: pointer;
+    font-weight: 600;
+    font-size: 14px;
+    transition: background 0.2s;
+}
+#vc-chatbot-form button[type="submit"]:hover {
+    background: #0070e0;
+}
+
+/* Giao diện Full Màn Hình & Trượt từ trên xuống cho Mobile */
+@media (max-width: 767px) {
+    .vc-chatbot-panel-wrapper {
+        position: fixed !important;
+        top: 0 !important;
+        left: 0 !important;
+        right: 0 !important;
+        bottom: 0 !important;
+        width: 100vw !important;
+        max-width: 100vw !important;
+        height: 100% !important;
+        height: 100dvh !important;
+        border-radius: 0 !important;
+        border: none !important;
+        box-shadow: none !important;
+        z-index: 999999 !important;
+        animation: vcSlideDownMobile 0.32s cubic-bezier(0.16, 1, 0.3, 1) forwards !important;
+    }
+
+    .vc-chatbot-header {
+        padding: max(12px, env(safe-area-inset-top, 12px)) 16px 12px 16px !important;
+        font-size: 1rem !important;
+    }
+
+    #vc-chatbot-close {
+        width: 32px !important;
+        height: 32px !important;
+        font-size: 16px !important;
+    }
+
+    #vc-chatbot-form {
+        padding: 10px 12px max(10px, env(safe-area-inset-bottom, 10px)) 12px !important;
+    }
+
+    body.vc-chatbot-open {
+        overflow: hidden !important;
+    }
+}
+`;
             document.head.appendChild(styleTag);
         }
 
@@ -650,10 +821,17 @@ if (!response.ok || !result.valid) {
         const openPanel = function () {
             if (!panel) return;
             panel.hidden = false;
+            if (toggleBtn) {
+                toggleBtn.style.display = 'none';
+            }
+            document.body.classList.add('vc-chatbot-open');
+
             if (box && box.childElementCount === 0) {
                 renderMessage('assistant', 'Xin chào bạn! Mình là trợ lý tư vấn ' + siteTitle + '. Bạn cần hỗ trợ về gói dịch vụ, giá cước hay hướng dẫn cài đặt nào ạ?');
             }
-            if (input) input.focus();
+            setTimeout(function () {
+                if (input) input.focus();
+            }, 100);
         };
 
         const resetConversation = async function () {
@@ -672,6 +850,10 @@ if (!response.ok || !result.valid) {
         const closePanel = function () {
             if (!panel) return;
             panel.hidden = true;
+            if (toggleBtn) {
+                toggleBtn.style.display = 'flex';
+            }
+            document.body.classList.remove('vc-chatbot-open');
             resetConversation();
         };
 
