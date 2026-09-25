@@ -30,7 +30,6 @@ class FanpageWebhookController extends BaseController
     public function webhook(): void
     {
         $raw = file_get_contents('php://input');
-        @file_put_contents(BASE_PATH . '/storage/logs/raw_webhook.txt', date('Y-m-d H:i:s') . "\n" . $raw . "\n\n", FILE_APPEND);
         $payload = json_decode((string) $raw, true);
 
         // Lấy signature từ nhiều biến môi trường header để đảm bảo tương thích mọi webserver
@@ -61,6 +60,16 @@ class FanpageWebhookController extends BaseController
             $this->json(['success' => false, 'message' => 'Payload khong hop le'], 400);
             return;
         }
+
+        // === THÊM ĐOẠN KIỂM TRA NÀY VÀO ĐÂY ===
+        $senderId = $payload['entry'][0]['changes'][0]['value']['from']['id'] ?? null;
+        $pageId = '104365435936840'; // ID Fanpage của bạn
+        
+        if ($senderId && $senderId === $pageId) {
+            $this->json(['success' => true, 'message' => 'Ignored self comment']);
+            return;
+        }
+        // ===================================
 
         $service->handleWebhook($payload);
 
