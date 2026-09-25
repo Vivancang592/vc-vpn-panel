@@ -50,6 +50,7 @@ class SettingController extends BaseController
             $sensitiveKeys = [
                 'ai_openai_api_key',
                 'ai_gemini_api_key',
+                'ai_image_api_key',
                 'fanpage_verify_token',
                 'fanpage_app_secret',
                 'fanpage_page_access_token',

@@ -28,6 +28,115 @@ class AIProviderService
         return $result;
     }
 
+    /**
+     * Sinh nội dung bài viết quảng cáo / hướng dẫn / tương tác chuyên sâu cho Fanpage
+     */
+    public function generateContent(string $topic, ?string $contentPrompt = null, ?string $customSystemPrompt = null): array
+    {
+        $provider = strtolower(trim((string) ($this->settings['ai_content_provider'] ?? $this->settings['ai_provider'] ?? 'openai')));
+        $model = trim((string) ($this->settings['ai_content_model'] ?? ''));
+
+        if ($customSystemPrompt === null || trim($customSystemPrompt) === '') {
+            $customSystemPrompt = trim((string) ($this->settings['ai_content_system_prompt'] ?? ''));
+        }
+
+        if ($customSystemPrompt === '') {
+            $siteName = $this->settings['site_name'] ?? 'VC VPN';
+            $customSystemPrompt = "Bạn là một chuyên gia Marketing & Copywriter hàng đầu cho dịch vụ VPN cao cấp {$siteName}.\n"
+                . "Nhiệm vụ của bạn là viết các bài đăng Fanpage hấp dẫn, hiện đại, chạm đúng nỗi đau của người dùng (tốc độ mạng chậm, đứt cáp quang, lag khi chơi game, chặn truy cập quốc tế, bảo mật dữ liệu riêng tư).\n"
+                . "Yêu cầu bài viết:\n"
+                . "1. Tiêu đề (Headline) giật tít, thu hút, có emoji sinh động.\n"
+                . "2. Thân bài nêu bật lợi ích vượt trội: Băng thông không giới hạn, máy chủ Singapore/Hongkong/Việt Nam độ trễ thấp, hỗ trợ 4G/5G thả ga.\n"
+                . "3. Kêu gọi hành động (CTA) rõ ràng, hướng dẫn truy cập website hoặc nhắn tin Fanpage để nhận ưu đãi dùng thử.\n"
+                . "4. Kèm 4-8 hashtag thịnh hành (VD: #VPN #InternetTocDoCao #GamingVPN #GiaiphapMang).\n"
+                . "5. Sử dụng tiếng Việt tự nhiên, trẻ trung, không quá dài dòng (khoảng 150 - 350 từ).";
+        }
+
+        $userInstruction = "Chủ đề bài viết: " . $topic;
+        if (!empty($contentPrompt)) {
+            $userInstruction .= "\nĐịnh hướng & Yêu cầu chi tiết: " . $contentPrompt;
+        }
+
+        $messages = [
+            ['role' => 'system', 'content' => $customSystemPrompt],
+            ['role' => 'user', 'content' => $userInstruction]
+        ];
+
+        if ($provider === 'gemini') {
+            $targetModel = $model ?: ($this->settings['ai_gemini_model'] ?? 'gemini-2.5-flash');
+            $result = $this->askGemini($messages, $targetModel);
+            $result['provider'] = 'gemini';
+            return $result;
+        }
+
+        $targetModel = $model ?: ($this->settings['ai_openai_model'] ?? 'openai/gpt-4o-mini');
+        $result = $this->askOpenAI($messages, $targetModel);
+        $result['provider'] = 'openai';
+        return $result;
+    }
+
+    /**
+     * Sinh ảnh minh họa bằng AI (DALL-E 3 hoặc Imagen) và lưu trữ cục bộ
+     */
+    public function generateImage(string $prompt, string $size = '1024x1024'): array
+    {
+        $prompt = trim($prompt);
+        if ($prompt === '') {
+            return ['ok' => false, 'url' => '', 'error' => 'Prompt sinh ảnh không được để trống.'];
+        }
+
+        $apiKey = $this->resolveConfigValue('ai_image_api_key', 'OPENAI_API_KEY', ['ai_openai_api_key', 'OPENROUTER_API_KEY', 'ai_openrouter_api_key']);
+        if ($apiKey === '') {
+            return ['ok' => false, 'url' => '', 'error' => 'Chưa cấu hình API Key để sinh ảnh.'];
+        }
+
+        // Tạo thư mục lưu trữ ảnh bài đăng nếu chưa có
+        $uploadDir = BASE_PATH . '/public/uploads/posts';
+        if (!is_dir($uploadDir)) {
+            @mkdir($uploadDir, 0777, true);
+        }
+
+        $payload = [
+            'model' => 'dall-e-3',
+            'prompt' => $prompt,
+            'n' => 1,
+            'size' => $size ?: '1024x1024',
+            'response_format' => 'url'
+        ];
+
+        $response = $this->requestJson(
+            'https://api.openai.com/v1/images/generations',
+            $payload,
+            [
+                'Authorization: Bearer ' . $apiKey,
+                'Content-Type: application/json'
+            ]
+        );
+
+        if (!$response['ok']) {
+            return ['ok' => false, 'url' => '', 'error' => $response['error']];
+        }
+
+        $remoteImageUrl = (string) ($response['data']['data'][0]['url'] ?? '');
+        if ($remoteImageUrl === '') {
+            return ['ok' => false, 'url' => '', 'error' => 'Không nhận được URL ảnh từ AI provider.'];
+        }
+
+        // Tải ảnh về lưu trữ cục bộ để đảm bảo link không bị hết hạn
+        $imageContent = @file_get_contents($remoteImageUrl);
+        if ($imageContent === false) {
+            // Nếu không thể curl về máy, sử dụng trực tiếp link tạm
+            return ['ok' => true, 'url' => $remoteImageUrl, 'error' => null];
+        }
+
+        $fileName = 'ai_post_' . date('Ymd_His') . '_' . bin2hex(random_bytes(4)) . '.png';
+        $localFilePath = $uploadDir . '/' . $fileName;
+        @file_put_contents($localFilePath, $imageContent);
+
+        $publicUrl = '/uploads/posts/' . $fileName;
+        return ['ok' => true, 'url' => $publicUrl, 'error' => null];
+    }
+
     private function askOpenAI(array $messages, string $model): array
     {
         $apiKey = $this->resolveConfigValue('ai_openai_api_key', 'OPENROUTER_API_KEY', ['ai_openrouter_api_key', 'openrouter_api_key', 'OPENAI_API_KEY', 'openai_api_key']);

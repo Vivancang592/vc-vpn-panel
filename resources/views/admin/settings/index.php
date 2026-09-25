@@ -484,7 +484,7 @@ ob_start();
 
             <!-- Facebook Fanpage Webhook -->
             <h3 style="font-size: 1rem; font-weight: 700; margin-top: 1rem; margin-bottom: 0.5rem; border-bottom: 1px solid var(--glass-border); padding-bottom: 0.5rem; color: #1877f2;">
-                🔵 Facebook Fanpage Webhook (Meta Messenger)
+                🔵 Facebook Fanpage Webhook & Graph API
             </h3>
 
             <div class="settings-field-list">
@@ -519,8 +519,72 @@ ob_start();
                 </div>
 
                 <div>
-                    <label data-hint="Page Access Token dài hạn của Fanpage để cho phép bot gửi tin phản hồi khách hàng." style="display: block; font-weight: 600; font-size: 0.85rem;">Page Access Token</label>
+                    <label data-hint="Page Access Token dài hạn của Fanpage để cho phép bot gửi tin phản hồi khách hàng và đăng bài tự động." style="display: block; font-weight: 600; font-size: 0.85rem;">Page Access Token</label>
                     <input type="password" name="settings[fanpage_page_access_token]" class="glass-input" value="<?= !empty($settings['fanpage_page_access_token']) ? '************' : '' ?>" placeholder="EAAG..." style="width: 100%;">
+                </div>
+            </div>
+
+            <!-- Cấu hình AI Sinh Nội Dung & Ảnh Đăng Bài -->
+            <h3 style="font-size: 1rem; font-weight: 700; margin-top: 1rem; margin-bottom: 0.5rem; border-bottom: 1px solid var(--glass-border); padding-bottom: 0.5rem; color: #af52de;">
+                📢 Cấu Hình AI Sáng Tạo Nội Dung & Sinh Ảnh (Marketing Auto-Post)
+            </h3>
+
+            <div class="settings-field-list">
+                <div>
+                    <label data-hint="Nhà cung cấp AI chuyên dùng để viết nội dung bài đăng Fanpage." style="display: block; font-weight: 600; font-size: 0.85rem;">Provider Viết Bài</label>
+                    <select name="settings[ai_content_provider]" class="glass-input" style="width: 100%; cursor: pointer;">
+                        <option value="openai" <?= ($settings['ai_content_provider'] ?? 'openai') === 'openai' ? 'selected' : '' ?>>OpenRouter (GPT-4o / Claude 3.5 Sonnet / Llama 3...)</option>
+                        <option value="gemini" <?= ($settings['ai_content_provider'] ?? '') === 'gemini' ? 'selected' : '' ?>>Google Gemini (Gemini 2.5/3.7 Pro / Flash)</option>
+                    </select>
+                </div>
+
+                <div>
+                    <label data-hint="Model AI chuyên trách sáng tạo bài viết (để trống sẽ tự lấy model chat mặc định)." style="display: block; font-weight: 600; font-size: 0.85rem;">Model Sáng Tạo Bài Viết</label>
+                    <input type="text" name="settings[ai_content_model]" class="glass-input" value="<?= htmlspecialchars($settings['ai_content_model'] ?? '') ?>" placeholder="VD: anthropic/claude-3.5-sonnet hoặc gemini-2.5-flash" style="width: 100%;">
+                </div>
+
+                <div class="settings-field-row" style="border-bottom: 1px solid var(--glass-border); align-items: start;">
+                    <label data-hint="Định vị thương hiệu, phong cách copywriting, quy tắc hashtag và call-to-action khi AI viết bài Fanpage." style="display: block; font-weight: 600; font-size: 0.85rem; padding-top: 0.35rem;">System Prompt Cho Bài Viết</label>
+                    <textarea name="settings[ai_content_system_prompt]" rows="6" class="glass-input" style="width: 100%; min-height: 140px; resize: vertical; line-height: 1.5; font-size: 0.85rem;" placeholder="Nhập kịch bản hướng dẫn phong cách viết bài quảng cáo Fanpage..."><?= htmlspecialchars($settings['ai_content_system_prompt'] ?? '') ?></textarea>
+                </div>
+
+                <div>
+                    <label data-hint="API Key riêng cho DALL-E 3 (để trống sẽ sử dụng OpenRouter/OpenAI API Key ở trên)." style="display: block; font-weight: 600; font-size: 0.85rem;">API Key Sinh Ảnh (DALL-E 3)</label>
+                    <input type="password" name="settings[ai_image_api_key]" class="glass-input" value="<?= !empty($settings['ai_image_api_key']) ? '************' : '' ?>" placeholder="sk-... (để trống nếu dùng chung)" style="width: 100%;">
+                </div>
+
+                <div>
+                    <label data-hint="Kích thước ảnh do DALL-E 3 sinh ra." style="display: block; font-weight: 600; font-size: 0.85rem;">Kích Thước Ảnh Chuẩn</label>
+                    <select name="settings[ai_image_size]" class="glass-input" style="width: 100%; cursor: pointer;">
+                        <option value="1024x1024" <?= ($settings['ai_image_size'] ?? '1024x1024') === '1024x1024' ? 'selected' : '' ?>>Hình vuông 1:1 (1024 x 1024 px)</option>
+                        <option value="1792x1024" <?= ($settings['ai_image_size'] ?? '') === '1792x1024' ? 'selected' : '' ?>>Hình chữ nhật ngang 16:9 (1792 x 1024 px)</option>
+                        <option value="1024x1792" <?= ($settings['ai_image_size'] ?? '') === '1024x1792' ? 'selected' : '' ?>>Hình dọc Story 9:16 (1024 x 1792 px)</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- Cấu hình Trả Lời Bình Luận Tự Động -->
+            <h3 style="font-size: 1rem; font-weight: 700; margin-top: 1rem; margin-bottom: 0.5rem; border-bottom: 1px solid var(--glass-border); padding-bottom: 0.5rem; color: #ff9500;">
+                💬 Cấu Hình Tự Động Trả Lời Bình Luận Fanpage (AI Auto Reply Comment)
+            </h3>
+
+            <div class="settings-field-list">
+                <div>
+                    <label data-hint="Tự động lắng nghe webhook và phản hồi công khai các bình luận mới trên Fanpage." style="display: block; font-weight: 600; font-size: 0.85rem;">Tự Động Trả Lời Bình Luận</label>
+                    <select name="settings[ai_comment_auto_reply]" class="glass-input" style="width: 100%; cursor: pointer;">
+                        <option value="1" <?= ($settings['ai_comment_auto_reply'] ?? '1') === '1' ? 'selected' : '' ?>>Bật</option>
+                        <option value="0" <?= ($settings['ai_comment_auto_reply'] ?? '1') === '0' ? 'selected' : '' ?>>Tắt</option>
+                    </select>
+                </div>
+
+                <div>
+                    <label data-hint="Danh sách từ khóa cấm, spam hoặc nhạy cảm cách nhau bằng dấu phẩy (nếu comment chứa từ này bot sẽ bỏ qua không trả lời)." style="display: block; font-weight: 600; font-size: 0.85rem;">Danh Sách Từ Khóa Bỏ Qua (Blacklist)</label>
+                    <input type="text" name="settings[ai_comment_keywords_blacklist]" class="glass-input" value="<?= htmlspecialchars($settings['ai_comment_keywords_blacklist'] ?? '') ?>" placeholder="lừa đảo, chửi thề, spam, vay tiền..." style="width: 100%;">
+                </div>
+
+                <div class="settings-field-row" style="border-bottom: 1px solid var(--glass-border); align-items: start;">
+                    <label data-hint="Prompt định hướng phong cách trả lời ngắn gọn, thân thiện và điều hướng khách vào inbox." style="display: block; font-weight: 600; font-size: 0.85rem; padding-top: 0.35rem;">Prompt Trả Lời Bình Luận</label>
+                    <textarea name="settings[ai_comment_system_prompt]" rows="5" class="glass-input" style="width: 100%; min-height: 110px; resize: vertical; line-height: 1.5; font-size: 0.85rem;" placeholder="Nhập hướng dẫn cho AI khi phản hồi bình luận..."><?= htmlspecialchars($settings['ai_comment_system_prompt'] ?? '') ?></textarea>
                 </div>
             </div>
 

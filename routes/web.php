@@ -186,6 +186,18 @@ return [
     'GET /admin/posts/detail'     => ['Admin\PostController', 'detail'],
     'POST /admin/posts/delete'    => ['Admin\PostController', 'delete'],
 
+    // Quản lý tự động đăng bài Fanpage AI (Auto Post)
+    'GET /admin/auto-post'                 => ['Admin\ScheduledPostController', 'index'],
+    'GET /admin/auto-post/create'          => ['Admin\ScheduledPostController', 'showCreate'],
+    'POST /admin/auto-post/create'         => ['Admin\ScheduledPostController', 'create'],
+    'GET /admin/auto-post/edit'            => ['Admin\ScheduledPostController', 'showEdit'],
+    'POST /admin/auto-post/edit'           => ['Admin\ScheduledPostController', 'edit'],
+    'GET /admin/auto-post/delete'          => ['Admin\ScheduledPostController', 'delete'],
+    'POST /admin/auto-post/delete'         => ['Admin\ScheduledPostController', 'delete'],
+    'GET /admin/auto-post/retry'           => ['Admin\ScheduledPostController', 'retry'],
+    'GET /admin/auto-post/force-publish'   => ['Admin\ScheduledPostController', 'forcePublish'],
+    'POST /admin/auto-post/ajax-generate'  => ['Admin\ScheduledPostController', 'ajaxGenerate'],
+
     // Quản lý hỗ trợ (Tickets)
     'GET /admin/tickets'          => ['Admin\TicketController', 'index'],
     'GET /admin/tickets/detail'   => ['Admin\TicketController', 'detail'],
@@ -216,6 +228,7 @@ return [
     'POST /admin/logs/delete'           => ['Admin\LogController', 'delete'],
     'POST /admin/logs/macrodroid/clear' => ['Admin\LogController', 'clearMacrodroid'],
 
-    // Tự động quét gói cước (Cron Job)
+    // Tự động quét gói cước & Đăng bài Fanpage (Cron Job)
     'GET /api/cron/check-subscriptions' => ['CronController', 'checkSubscriptions'],
+    'GET /api/cron/auto-post'           => ['CronController', 'autoPostFanpage'],
 ];
