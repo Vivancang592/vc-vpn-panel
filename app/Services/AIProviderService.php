@@ -35,8 +35,11 @@ class AIProviderService
             return ['ok' => false, 'content' => '', 'error' => 'Thiếu API key OpenRouter.'];
         }
 
-        $maxTokens = (int) ($this->settings['ai_max_output_tokens'] ?? 800);
-        $maxTokens = max(500, min(2500, $maxTokens));
+        $maxTokens = (int) ($this->settings['ai_max_output_tokens'] ?? 2000);
+        if ($maxTokens < 1200) {
+            $maxTokens = 2000;
+        }
+        $maxTokens = max(1000, min(4096, $maxTokens));
 
         $payload = [
             'model' => $model,
@@ -105,10 +108,13 @@ class AIProviderService
             ];
         }
 
-        $maxTokens = (int) ($this->settings['ai_max_output_tokens'] ?? 500);
+        $maxTokens = (int) ($this->settings['ai_max_output_tokens'] ?? 2000);
+        if ($maxTokens < 1200) {
+            $maxTokens = 2000;
+        }
         // Với Gemini thế hệ mới (2.5, 3.x Flash), maxOutputTokens bao gồm cả Thinking Tokens + Answer Tokens.
-        // Cần cấp đủ headroom (tối thiểu 2500 - 4000 tokens) để không bị ngắt giữa chừng.
-        $maxOutputTokens = max(2500, min(4096, $maxTokens + 2000));
+        // Cần cấp đủ headroom (tối thiểu 3000 - 8192 tokens) để không bị ngắt giữa chừng.
+        $maxOutputTokens = max(3000, min(8192, $maxTokens + 2500));
 
         $payload = [
             'contents' => $contents,
