@@ -23,16 +23,16 @@ class AIProviderService
             return $result;
         }
 
-        $result = $this->askOpenAI($messages, $model ?: ($this->settings['ai_openai_model'] ?? 'gpt-4o-mini'));
+        $result = $this->askOpenAI($messages, $model ?: ($this->settings['ai_openai_model'] ?? 'openai/gpt-4o-mini'));
         $result['provider'] = 'openai';
         return $result;
     }
 
     private function askOpenAI(array $messages, string $model): array
     {
-        $apiKey = $this->resolveConfigValue('ai_openai_api_key', 'OPENAI_API_KEY', ['openai_api_key']);
+        $apiKey = $this->resolveConfigValue('ai_openai_api_key', 'OPENROUTER_API_KEY', ['ai_openrouter_api_key', 'openrouter_api_key', 'OPENAI_API_KEY', 'openai_api_key']);
         if ($apiKey === '') {
-            return ['ok' => false, 'content' => '', 'error' => 'Thiếu API key OpenAI.'];
+            return ['ok' => false, 'content' => '', 'error' => 'Thiếu API key OpenRouter.'];
         }
 
         $maxTokens = (int) ($this->settings['ai_max_output_tokens'] ?? 800);
@@ -46,11 +46,13 @@ class AIProviderService
         ];
 
         $response = $this->requestJson(
-            'https://api.openai.com/v1/chat/completions',
+            'https://openrouter.ai/api/v1/chat/completions',
             $payload,
             [
                 'Authorization: Bearer ' . $apiKey,
-                'Content-Type: application/json'
+                'Content-Type: application/json',
+                'HTTP-Referer: http://localhost',
+                'X-Title: VC VPN Chatbot'
             ]
         );
 
@@ -60,7 +62,7 @@ class AIProviderService
 
         $content = (string) ($response['data']['choices'][0]['message']['content'] ?? '');
         if (trim($content) === '') {
-            return ['ok' => false, 'content' => '', 'error' => 'OpenAI trả về nội dung rỗng.'];
+            return ['ok' => false, 'content' => '', 'error' => 'OpenRouter trả về nội dung rỗng.'];
         }
 
         return ['ok' => true, 'content' => $content, 'error' => null, 'model' => $model];

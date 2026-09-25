@@ -110,15 +110,17 @@ class SettingController extends BaseController
 
         $apiKey = $this->resolveOpenAiApiKey();
         if ($apiKey === '') {
-            $this->json(['success' => false, 'message' => 'Chưa có OpenAI API key trong cài đặt hoặc .env.'], 422);
+            $this->json(['success' => false, 'message' => 'Chưa có OpenRouter API key trong cài đặt hoặc .env.'], 422);
             return;
         }
 
-        $ch = curl_init('https://api.openai.com/v1/models');
+        $ch = curl_init('https://openrouter.ai/api/v1/models');
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
         curl_setopt($ch, CURLOPT_HTTPHEADER, [
             'Authorization: Bearer ' . $apiKey,
-            'Content-Type: application/json'
+            'Content-Type: application/json',
+            'HTTP-Referer: http://localhost',
+            'X-Title: VC VPN Chatbot'
         ]);
         curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 12);
         curl_setopt($ch, CURLOPT_TIMEOUT, 30);
@@ -135,7 +137,7 @@ class SettingController extends BaseController
         if ($errno !== 0) {
             $this->json([
                 'success' => false,
-                'message' => 'Lỗi mạng khi kết nối OpenAI: ' . $error,
+                'message' => 'Lỗi mạng khi kết nối OpenRouter: ' . $error,
                 'diagnostics' => [
                     'curl_errno' => $errno,
                     'primary_ip' => $primaryIp,
@@ -150,7 +152,7 @@ class SettingController extends BaseController
             $providerMessage = is_array($data)
                 ? trim((string)($data['error']['message'] ?? ''))
                 : '';
-            $message = 'Không lấy được danh sách model từ OpenAI. HTTP ' . $status;
+            $message = 'Không lấy được danh sách model từ OpenRouter. HTTP ' . $status;
             if ($providerMessage !== '') {
                 $message .= ' - ' . $providerMessage;
             }
@@ -161,28 +163,8 @@ class SettingController extends BaseController
         $models = [];
         foreach (($data['data'] ?? []) as $item) {
             $id = trim((string) ($item['id'] ?? ''));
-            if ($id === '') {
-                continue;
-            }
-
-            // Ưu tiên model họ GPT/O cho chat completion.
-            if (
-                str_starts_with($id, 'gpt-')
-                || str_starts_with($id, 'o1')
-                || str_starts_with($id, 'o3')
-                || str_starts_with($id, 'o4')
-                || str_starts_with($id, 'chatgpt-')
-            ) {
+            if ($id !== '') {
                 $models[] = $id;
-            }
-        }
-
-        if (empty($models) && !empty($data['data'])) {
-            foreach ($data['data'] as $item) {
-                $id = trim((string) ($item['id'] ?? ''));
-                if ($id !== '' && !str_contains($id, 'whisper') && !str_contains($id, 'tts') && !str_contains($id, 'dall-e') && !str_contains($id, 'embedding')) {
-                    $models[] = $id;
-                }
             }
         }
 
@@ -191,9 +173,9 @@ class SettingController extends BaseController
 
         $this->json([
             'success' => true,
-            'message' => 'Đã tải thành công ' . count($models) . ' model từ OpenAI.',
+            'message' => 'Đã tải thành công ' . count($models) . ' model từ OpenRouter.',
             'models' => $models,
-            'current' => (string) ($this->settingModel->getByKey('ai_openai_model') ?? 'gpt-4o-mini')
+            'current' => (string) ($this->settingModel->getByKey('ai_openai_model') ?? 'openai/gpt-4o-mini')
         ]);
     }
 
@@ -222,18 +204,20 @@ class SettingController extends BaseController
 
         $apiKey = $this->resolveOpenAiApiKey();
         if ($apiKey === '') {
-            $this->json(['success' => false, 'message' => 'Chưa có OpenAI API key trong cài đặt hoặc .env.'], 422);
+            $this->json(['success' => false, 'message' => 'Chưa có OpenRouter API key trong cài đặt hoặc .env.'], 422);
             return;
         }
 
-        $url = 'https://api.openai.com/v1/models';
-        $hostIp = gethostbyname('api.openai.com');
+        $url = 'https://openrouter.ai/api/v1/models';
+        $hostIp = gethostbyname('openrouter.ai');
 
         $ch = curl_init($url);
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
         curl_setopt($ch, CURLOPT_HTTPHEADER, [
             'Authorization: Bearer ' . $apiKey,
-            'Content-Type: application/json'
+            'Content-Type: application/json',
+            'HTTP-Referer: http://localhost',
+            'X-Title: VC VPN Chatbot'
         ]);
         curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 12);
         curl_setopt($ch, CURLOPT_TIMEOUT, 30);
@@ -264,7 +248,7 @@ class SettingController extends BaseController
         if ($errno !== 0) {
             $this->json([
                 'success' => false,
-                'message' => 'Không kết nối được OpenAI: ' . $error,
+                'message' => 'Không kết nối được OpenRouter: ' . $error,
                 'diagnostics' => $diagnostics,
             ], 502);
             return;
@@ -275,7 +259,7 @@ class SettingController extends BaseController
             $providerMessage = is_array($data)
                 ? trim((string) ($data['error']['message'] ?? ''))
                 : '';
-            $message = 'OpenAI phản hồi lỗi HTTP ' . $status;
+            $message = 'OpenRouter phản hồi lỗi HTTP ' . $status;
             if ($providerMessage !== '') {
                 $message .= ': ' . $providerMessage;
             }
@@ -290,27 +274,8 @@ class SettingController extends BaseController
         $models = [];
         foreach (($data['data'] ?? []) as $item) {
             $id = trim((string) ($item['id'] ?? ''));
-            if ($id === '') {
-                continue;
-            }
-
-            if (
-                str_starts_with($id, 'gpt-')
-                || str_starts_with($id, 'o1')
-                || str_starts_with($id, 'o3')
-                || str_starts_with($id, 'o4')
-                || str_starts_with($id, 'chatgpt-')
-            ) {
+            if ($id !== '') {
                 $models[] = $id;
-            }
-        }
-
-        if (empty($models) && !empty($data['data'])) {
-            foreach ($data['data'] as $item) {
-                $id = trim((string) ($item['id'] ?? ''));
-                if ($id !== '' && !str_contains($id, 'whisper') && !str_contains($id, 'tts') && !str_contains($id, 'dall-e') && !str_contains($id, 'embedding')) {
-                    $models[] = $id;
-                }
             }
         }
 
@@ -319,9 +284,9 @@ class SettingController extends BaseController
 
         $this->json([
             'success' => true,
-            'message' => 'Kết nối OpenAI thành công (' . count($models) . ' model). Đã cập nhật danh sách chọn.',
+            'message' => 'Kết nối OpenRouter thành công (' . count($models) . ' model). Đã cập nhật danh sách chọn.',
             'models' => $models,
-            'current' => (string) ($this->settingModel->getByKey('ai_openai_model') ?? 'gpt-4o-mini'),
+            'current' => (string) ($this->settingModel->getByKey('ai_openai_model') ?? 'openai/gpt-4o-mini'),
             'diagnostics' => $diagnostics,
         ]);
     }
@@ -508,6 +473,9 @@ class SettingController extends BaseController
 
         $candidateKeys = [
             'ai_openai_api_key',
+            'ai_openrouter_api_key',
+            'openrouter_api_key',
+            'OPENROUTER_API_KEY',
             'openai_api_key',
             'OPENAI_API_KEY',
         ];
@@ -519,7 +487,7 @@ class SettingController extends BaseController
             }
         }
 
-        foreach (['OPENAI_API_KEY', 'openai_api_key'] as $envKey) {
+        foreach (['OPENROUTER_API_KEY', 'openrouter_api_key', 'OPENAI_API_KEY', 'openai_api_key'] as $envKey) {
             $envValue = trim((string) (getenv($envKey) ?: ''));
             if ($envValue !== '') {
                 return $envValue;
