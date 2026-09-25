@@ -511,6 +511,13 @@ if (!response.ok || !result.valid) {
     // 11. Chatbot widget (web)
     const chatbotRoot = document.getElementById('vc-chatbot');
     if (chatbotRoot) {
+        if (!document.getElementById('vc-chatbot-styles')) {
+            const styleTag = document.createElement('style');
+            styleTag.id = 'vc-chatbot-styles';
+            styleTag.textContent = '@keyframes vcChatSpin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }';
+            document.head.appendChild(styleTag);
+        }
+
         const toggleBtn = document.getElementById('vc-chatbot-toggle');
         const closeBtn = document.getElementById('vc-chatbot-close');
         const panel = document.getElementById('vc-chatbot-panel');
@@ -597,6 +604,37 @@ if (!response.ok || !result.valid) {
             box.scrollTop = box.scrollHeight;
         };
 
+        const showTypingIndicator = function () {
+            if (!box) return;
+            hideTypingIndicator();
+            const row = document.createElement('div');
+            row.id = 'vc-chatbot-typing-indicator';
+            row.style.display = 'flex';
+            row.style.justifyContent = 'flex-start';
+            row.style.marginBottom = '8px';
+
+            const bubble = document.createElement('div');
+            bubble.style.background = '#fff';
+            bubble.style.border = '1px solid rgba(0,0,0,.08)';
+            bubble.style.padding = '8px 12px';
+            bubble.style.borderRadius = '10px';
+            bubble.style.fontSize = '12.5px';
+            bubble.style.lineHeight = '1.4';
+            bubble.style.display = 'inline-flex';
+            bubble.style.alignItems = 'center';
+            bubble.style.gap = '7px';
+            bubble.innerHTML = '<span style="display:inline-block;width:12px;height:12px;border:2px solid #0a84ff;border-top-color:transparent;border-radius:50%;animation:vcChatSpin 0.75s linear infinite;box-sizing:border-box;"></span> <span style="color:#636366;font-style:italic;">Đang trả lời...</span>';
+
+            row.appendChild(bubble);
+            box.appendChild(row);
+            box.scrollTop = box.scrollHeight;
+        };
+
+        const hideTypingIndicator = function () {
+            const el = document.getElementById('vc-chatbot-typing-indicator');
+            if (el) el.remove();
+        };
+
         const setLoading = function (loading) {
             if (!form) return;
             const submitBtn = form.querySelector('button[type="submit"]');
@@ -666,6 +704,7 @@ if (!response.ok || !result.valid) {
                 renderMessage('user', message);
                 input.value = '';
                 setLoading(true);
+                showTypingIndicator();
 
                 try {
                     const res = await fetch('/api/chat/message', {
@@ -681,6 +720,8 @@ if (!response.ok || !result.valid) {
                     });
 
                     const data = await res.json();
+                    hideTypingIndicator();
+
                     if (!res.ok || !data.success) {
                         const errMsg = data && data.message ? data.message : 'Mình chưa nhận được phản hồi từ AI. Bạn thử lại sau vài giây nhé.';
                         renderMessage('assistant', errMsg);
@@ -701,8 +742,10 @@ if (!response.ok || !result.valid) {
                         trackEvent('handoff_requested', { page: page });
                     }
                 } catch (_error) {
+                    hideTypingIndicator();
                     renderMessage('assistant', 'Kết nối đang gián đoạn. Bạn thử lại sau ít phút nhé.');
                 } finally {
+                    hideTypingIndicator();
                     setLoading(false);
                     if (input) input.focus();
                 }

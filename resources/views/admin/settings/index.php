@@ -383,8 +383,8 @@ ob_start();
                 </div>
 
                 <div>
-                    <label data-hint="Độ dài tối đa của phản hồi trả về từ AI (120 - 900 tokens)." style="display: block; font-weight: 600; font-size: 0.85rem;">Giới Hạn Output Tokens</label>
-                    <input type="number" name="settings[ai_max_output_tokens]" class="glass-input" value="<?= htmlspecialchars($settings['ai_max_output_tokens'] ?? '500') ?>" min="120" max="900" step="10" style="width: 100%;">
+                    <label data-hint="Độ dài tối đa của phản hồi trả về từ AI (500 - 4000 tokens)." style="display: block; font-weight: 600; font-size: 0.85rem;">Giới Hạn Output Tokens</label>
+                    <input type="number" name="settings[ai_max_output_tokens]" class="glass-input" value="<?= htmlspecialchars($settings['ai_max_output_tokens'] ?? '2000') ?>" min="500" max="4000" step="50" style="width: 100%;">
                 </div>
 
                 <div>
