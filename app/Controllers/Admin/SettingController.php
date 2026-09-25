@@ -349,8 +349,17 @@ class SettingController extends BaseController
             }
 
             $methods = $item['supportedGenerationMethods'] ?? [];
-            if (!empty($methods) && is_array($methods) && !in_array('generateContent', $methods, true)) {
-                continue;
+            if (!empty($methods) && is_array($methods)) {
+                $hasSupportedMethod = false;
+                foreach (['generateContent', 'predict', 'imageGeneration', 'generateImages'] as $m) {
+                    if (in_array($m, $methods, true)) {
+                        $hasSupportedMethod = true;
+                        break;
+                    }
+                }
+                if (!$hasSupportedMethod) {
+                    continue;
+                }
             }
 
             $normalized = str_starts_with($name, 'models/') ? substr($name, 7) : $name;
@@ -443,8 +452,17 @@ class SettingController extends BaseController
             }
 
             $methods = $item['supportedGenerationMethods'] ?? [];
-            if (!empty($methods) && is_array($methods) && !in_array('generateContent', $methods, true)) {
-                continue;
+            if (!empty($methods) && is_array($methods)) {
+                $hasSupportedMethod = false;
+                foreach (['generateContent', 'predict', 'imageGeneration', 'generateImages'] as $m) {
+                    if (in_array($m, $methods, true)) {
+                        $hasSupportedMethod = true;
+                        break;
+                    }
+                }
+                if (!$hasSupportedMethod) {
+                    continue;
+                }
             }
 
             $normalized = str_starts_with($name, 'models/') ? substr($name, 7) : $name;

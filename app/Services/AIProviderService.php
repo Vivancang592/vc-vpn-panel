@@ -13,17 +13,17 @@ class AIProviderService
         $this->settings = (new Setting())->getAllAsKeyValue();
     }
 
-    public function ask(array $messages, ?string $provider = null, ?string $model = null): array
+    public function ask(array $messages, ?string $provider = null, ?string $model = null, array $options = []): array
     {
         $provider = strtolower(trim((string) ($provider ?: ($this->settings['ai_provider'] ?? 'openai'))));
 
         if ($provider === 'gemini') {
-            $result = $this->askGemini($messages, $model ?: ($this->settings['ai_gemini_model'] ?? 'gemini-3.7-flash'));
+            $result = $this->askGemini($messages, $model ?: ($this->settings['ai_gemini_model'] ?? 'gemini-3.7-flash'), $options);
             $result['provider'] = 'gemini';
             return $result;
         }
 
-        $result = $this->askOpenAI($messages, $model ?: ($this->settings['ai_openai_model'] ?? 'openai/gpt-4o-mini'));
+        $result = $this->askOpenAI($messages, $model ?: ($this->settings['ai_openai_model'] ?? 'openai/gpt-4o-mini'), $options);
         $result['provider'] = 'openai';
         return $result;
     }
@@ -125,7 +125,7 @@ class AIProviderService
     }
 
     /**
-     * Sinh ảnh minh họa bằng AI (OpenRouter DALL-E / Gemini Imagen) và lưu trữ cục bộ
+     * Sinh ảnh minh họa bằng AI (OpenRouter / Gemini) và lưu trữ cục bộ
      */
     public function generateImage(string $prompt, string $size = '1024x1024'): array
     {
@@ -134,150 +134,285 @@ class AIProviderService
             return ['ok' => false, 'url' => '', 'error' => 'Prompt sinh ảnh không được để trống.'];
         }
 
-        $apiKey = $this->resolveConfigValue('ai_image_api_key', 'OPENROUTER_API_KEY', ['ai_openrouter_api_key', 'openrouter_api_key', 'OPENAI_API_KEY', 'openai_api_key']);
-        if ($apiKey === '') {
-            return ['ok' => false, 'url' => '', 'error' => 'Chưa cấu hình API Key để sinh ảnh.'];
-        }
-
-        // Tạo thư mục lưu trữ ảnh bài đăng nếu chưa có
+        $size = trim($size) ?: '1024x1024';
         $uploadDir = BASE_PATH . '/public/uploads/posts';
         if (!is_dir($uploadDir)) {
             @mkdir($uploadDir, 0777, true);
         }
 
-        $imageModel = trim((string) ($this->settings['ai_image_model'] ?? 'dall-e-3'));
-
-        // Ưu tiên dùng setting provider (từ UI), nếu chưa chọn thì tự phát hiện từ model string
-        // OpenRouter giữ nguyên model như "dall-e-3", "stability/stable-diffusion-xl", v.v.
-        // Gemini Imagen chứa "imagen" hoặc "gemini"
         $explicitProvider = strtolower(trim((string) ($this->settings['ai_image_provider'] ?? '')));
-        $isGeminiImage = ($explicitProvider === 'gemini') || ($explicitProvider === '' && (stripos($imageModel, 'imagen') !== false || stripos($imageModel, 'gemini') !== false));
+        $imageModel = trim((string) ($this->settings['ai_image_model'] ?? ''));
 
-        if ($isGeminiImage) {
-            // Sử dụng Gemini Imagen API qua Vertex AI
-            $url = 'https://generativelanguage.googleapis.com/v1beta/models/'
-                . rawurlencode($imageModel)
-                . ':generateContent?key='
-                . rawurlencode($apiKey);
+        // Kiểm tra xem là Gemini hay OpenRouter
+        $isGemini = ($explicitProvider === 'gemini') || ($explicitProvider === '' && (stripos($imageModel, 'imagen') !== false || stripos($imageModel, 'gemini') !== false));
 
-            $payload = [
-                'contents' => [
-                    [
-                        'role' => 'user',
-                        'parts' => [
-                            [
-                                'text' => $prompt,
-                                'generationConfig' => [
-                                    'responseSchema' => [
-                                        'mimeType' => 'image/png',
-                                        'name' => 'generated_image'
-                                    ]
-                                ]
-                            ]
-                        ]
-                    ]
-                ],
-                'generationConfig' => [
-                    'temperature' => 0.4,
-                    'maxOutputTokens' => 8192,
-                ]
-            ];
-
-            $response = $this->requestJson($url, $payload, ['Content-Type: application/json']);
-
-            if (!$response['ok']) {
-                return ['ok' => false, 'url' => '', 'error' => $response['error']];
+        if ($isGemini) {
+            if ($imageModel === '') {
+                $imageModel = 'imagen-3.0-generate-002';
             }
-
-            $candidates = $response['data']['candidates'] ?? [];
-            $imageData = '';
-
-            foreach ($candidates as $candidate) {
-                $parts = $candidate['content']['parts'] ?? [];
-                foreach ($parts as $part) {
-                    if (!empty($part['inlineData']['data'])) {
-                        $imageData = (string) $part['inlineData']['data'];
-                        break 2;
-                    }
-                    if (!empty($part['text'])) {
-                        $imageData = (string) $part['text'];
-                    }
-                }
+            $apiKey = $this->resolveConfigValue('ai_image_api_key', 'GEMINI_API_KEY', ['ai_gemini_api_key', 'gemini_api_key']);
+            if ($apiKey === '') {
+                return ['ok' => false, 'url' => '', 'error' => 'Chưa cấu hình Gemini API Key cho sinh ảnh.'];
             }
-
-            if ($imageData === '') {
-                return ['ok' => false, 'url' => '', 'error' => 'Không nhận được dữ liệu ảnh từ Gemini Imagen.'];
-            }
-
-            $fileName = 'ai_post_' . date('Ymd_His') . '_' . bin2hex(random_bytes(4)) . '.png';
-            $localFilePath = $uploadDir . '/' . $fileName;
-            @file_put_contents($localFilePath, base64_decode($imageData));
-
-            $publicUrl = '/uploads/posts/' . $fileName;
-            return ['ok' => true, 'url' => $publicUrl, 'error' => null];
+            return $this->generateImageGemini($prompt, $imageModel, $size, $apiKey, $uploadDir);
         }
 
-        // Mặc định: OpenRouter Images API (DALL-E 3 hoặc model sinh ảnh khác)
+        // Mặc định: OpenRouter với model được chọn
+        if ($imageModel === '') {
+            $imageModel = 'openai/dall-e-3';
+        }
+        $apiKey = $this->resolveConfigValue('ai_image_api_key', 'OPENROUTER_API_KEY', ['ai_openrouter_api_key', 'openrouter_api_key', 'ai_openai_api_key', 'openai_api_key', 'OPENAI_API_KEY']);
+        if ($apiKey === '') {
+            return ['ok' => false, 'url' => '', 'error' => 'Chưa cấu hình OpenRouter API Key cho sinh ảnh.'];
+        }
+
+        return $this->generateImageOpenRouter($prompt, $imageModel, $size, $apiKey, $uploadDir);
+    }
+
+    private function generateImageOpenRouter(string $prompt, string $model, string $size, string $apiKey, string $uploadDir): array
+    {
+        $validSizes = ['1024x1024', '1792x1024', '1024x1792'];
+        $targetSize = in_array($size, $validSizes, true) ? $size : '1024x1024';
+
+        // 1. Thử qua OpenRouter Images API (/api/v1/images/generations)
         $payload = [
-            'model' => $imageModel,
+            'model' => $model,
             'prompt' => $prompt,
             'n' => 1,
-            'size' => $size ?: '1024x1024',
+            'size' => $targetSize,
             'response_format' => 'url'
+        ];
+
+        $headers = [
+            'Authorization: Bearer ' . $apiKey,
+            'Content-Type: application/json',
+            'HTTP-Referer: http://localhost',
+            'X-Title: VC VPN Chatbot'
         ];
 
         $response = $this->requestJson(
             'https://openrouter.ai/api/v1/images/generations',
             $payload,
-            [
-                'Authorization: Bearer ' . $apiKey,
-                'Content-Type: application/json',
-                'HTTP-Referer: http://localhost',
-                'X-Title: VC VPN Chatbot'
-            ]
+            $headers
         );
 
-        if (!$response['ok']) {
-            return ['ok' => false, 'url' => '', 'error' => $response['error']];
+        if ($response['ok']) {
+            $remoteUrl = (string) ($response['data']['data'][0]['url'] ?? '');
+            $b64 = (string) ($response['data']['data'][0]['b64_json'] ?? '');
+
+            if ($remoteUrl !== '') {
+                $saveResult = $this->downloadAndSaveImage($remoteUrl, $uploadDir);
+                if ($saveResult['ok']) {
+                    return $saveResult;
+                }
+            }
+
+            if ($b64 !== '') {
+                $fileName = 'ai_post_' . date('Ymd_His') . '_' . bin2hex(random_bytes(4)) . '.png';
+                $localFilePath = $uploadDir . '/' . $fileName;
+                @file_put_contents($localFilePath, base64_decode($b64));
+                if (file_exists($localFilePath) && filesize($localFilePath) > 0) {
+                    return ['ok' => true, 'url' => '/uploads/posts/' . $fileName, 'error' => null];
+                }
+            }
         }
 
-        $remoteImageUrl = (string) ($response['data']['data'][0]['url'] ?? '');
-        if ($remoteImageUrl === '') {
-            return ['ok' => false, 'url' => '', 'error' => 'Không nhận được URL ảnh từ AI provider.'];
+        // 2. Thử qua OpenRouter Chat Completions nếu model là multimodal/chat image generator
+        $chatPayload = [
+            'model' => $model,
+            'messages' => [
+                ['role' => 'user', 'content' => "Generate an image based on this description: {$prompt}"]
+            ],
+            'max_tokens' => 1000
+        ];
+
+        $chatResponse = $this->requestJson(
+            'https://openrouter.ai/api/v1/chat/completions',
+            $chatPayload,
+            $headers
+        );
+
+        if ($chatResponse['ok']) {
+            $choice = $chatResponse['data']['choices'][0]['message'] ?? [];
+            $content = (string) ($choice['content'] ?? '');
+            $images = $choice['images'] ?? [];
+
+            if (!empty($images) && is_array($images)) {
+                $imgUrl = (string) ($images[0]['url'] ?? $images[0]['image_url']['url'] ?? $images[0]);
+                if ($imgUrl !== '') {
+                    if (str_starts_with($imgUrl, 'data:image')) {
+                        $parts = explode(',', $imgUrl, 2);
+                        if (isset($parts[1])) {
+                            $fileName = 'ai_post_' . date('Ymd_His') . '_' . bin2hex(random_bytes(4)) . '.png';
+                            $localFilePath = $uploadDir . '/' . $fileName;
+                            @file_put_contents($localFilePath, base64_decode($parts[1]));
+                            if (file_exists($localFilePath) && filesize($localFilePath) > 0) {
+                                return ['ok' => true, 'url' => '/uploads/posts/' . $fileName, 'error' => null];
+                            }
+                        }
+                    } else {
+                        $saveResult = $this->downloadAndSaveImage($imgUrl, $uploadDir);
+                        if ($saveResult['ok']) {
+                            return $saveResult;
+                        }
+                    }
+                }
+            }
+
+            // Tìm URL ảnh trong markdown content ![] hoặc https://...
+            if (preg_match('/!\[.*?\]\((https?:\/\/[^\s\)]+)\)/i', $content, $m) || preg_match('/(https?:\/\/[^\s\)\"\']+\.(?:png|jpg|jpeg|webp))/i', $content, $m)) {
+                $saveResult = $this->downloadAndSaveImage($m[1], $uploadDir);
+                if ($saveResult['ok']) {
+                    return $saveResult;
+                }
+            }
         }
 
-        // Tải ảnh về lưu trữ cục bộ để đảm bảo link không bị hết hạn
-        $imageContent = @file_get_contents($remoteImageUrl);
-        if ($imageContent === false) {
-            // Nếu không thể curl về máy, sử dụng trực tiếp link tạm
-            return ['ok' => true, 'url' => $remoteImageUrl, 'error' => null];
+        $error = $response['error'] ?? $chatResponse['error'] ?? 'OpenRouter không thể tạo ảnh với model ' . $model;
+        return ['ok' => false, 'url' => '', 'error' => $error];
+    }
+
+    private function generateImageGemini(string $prompt, string $model, string $size, string $apiKey, string $uploadDir): array
+    {
+        $aspectRatio = match ($size) {
+            '1792x1024' => '16:9',
+            '1024x1792' => '9:16',
+            default     => '1:1',
+        };
+
+        $targetModel = $model ?: 'imagen-3.0-generate-002';
+
+        // 1. Thử gọi qua Imagen :predict API
+        $url = 'https://generativelanguage.googleapis.com/v1beta/models/'
+            . rawurlencode($targetModel)
+            . ':predict?key='
+            . rawurlencode($apiKey);
+
+        $payload = [
+            'instances' => [
+                ['prompt' => $prompt]
+            ],
+            'parameters' => [
+                'sampleCount' => 1,
+                'aspectRatio' => $aspectRatio,
+                'outputMimeType' => 'image/png'
+            ]
+        ];
+
+        $response = $this->requestJson($url, $payload, ['Content-Type: application/json']);
+
+        if ($response['ok']) {
+            $predictions = $response['data']['predictions'] ?? [];
+            foreach ($predictions as $pred) {
+                $b64 = (string) ($pred['bytesBase64Encoded'] ?? '');
+                if ($b64 !== '') {
+                    $fileName = 'ai_post_' . date('Ymd_His') . '_' . bin2hex(random_bytes(4)) . '.png';
+                    $localFilePath = $uploadDir . '/' . $fileName;
+                    @file_put_contents($localFilePath, base64_decode($b64));
+                    if (file_exists($localFilePath) && filesize($localFilePath) > 0) {
+                        return ['ok' => true, 'url' => '/uploads/posts/' . $fileName, 'error' => null];
+                    }
+                }
+            }
+        }
+
+        // 2. Thử gọi qua :generateContent API (nếu model là multimodal)
+        $urlGen = 'https://generativelanguage.googleapis.com/v1beta/models/'
+            . rawurlencode($targetModel)
+            . ':generateContent?key='
+            . rawurlencode($apiKey);
+
+        $payloadGen = [
+            'contents' => [
+                [
+                    'role' => 'user',
+                    'parts' => [['text' => $prompt]]
+                ]
+            ],
+            'generationConfig' => [
+                'temperature' => 0.4,
+                'responseSchema' => [
+                    'mimeType' => 'image/png'
+                ]
+            ]
+        ];
+
+        $responseGen = $this->requestJson($urlGen, $payloadGen, ['Content-Type: application/json']);
+        if ($responseGen['ok']) {
+            $candidates = $responseGen['data']['candidates'] ?? [];
+            foreach ($candidates as $candidate) {
+                $parts = $candidate['content']['parts'] ?? [];
+                foreach ($parts as $part) {
+                    if (!empty($part['inlineData']['data'])) {
+                        $b64 = (string) $part['inlineData']['data'];
+                        $fileName = 'ai_post_' . date('Ymd_His') . '_' . bin2hex(random_bytes(4)) . '.png';
+                        $localFilePath = $uploadDir . '/' . $fileName;
+                        @file_put_contents($localFilePath, base64_decode($b64));
+                        if (file_exists($localFilePath) && filesize($localFilePath) > 0) {
+                            return ['ok' => true, 'url' => '/uploads/posts/' . $fileName, 'error' => null];
+                        }
+                    }
+                }
+            }
+        }
+
+        return ['ok' => false, 'url' => '', 'error' => $response['error'] ?? $responseGen['error'] ?? 'Không nhận được dữ liệu ảnh từ Gemini.'];
+    }
+
+    private function downloadAndSaveImage(string $url, string $uploadDir): array
+    {
+        $ch = curl_init($url);
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+        curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
+        curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 15);
+        curl_setopt($ch, CURLOPT_TIMEOUT, 60);
+        curl_setopt($ch, CURLOPT_USERAGENT, 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)');
+        $this->applyProxy($ch);
+
+        $imageContent = curl_exec($ch);
+        $errno = curl_errno($ch);
+        $status = (int) curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        curl_close($ch);
+
+        if ($errno !== 0 || $status < 200 || $status >= 400 || empty($imageContent)) {
+            return ['ok' => false, 'url' => '', 'error' => 'Không thể tải ảnh từ máy chủ AI (HTTP ' . $status . ')'];
         }
 
         $fileName = 'ai_post_' . date('Ymd_His') . '_' . bin2hex(random_bytes(4)) . '.png';
         $localFilePath = $uploadDir . '/' . $fileName;
         @file_put_contents($localFilePath, $imageContent);
 
+        if (!file_exists($localFilePath) || filesize($localFilePath) === 0) {
+            return ['ok' => false, 'url' => '', 'error' => 'Không thể lưu file ảnh vào bộ nhớ máy chủ.'];
+        }
+
         $publicUrl = '/uploads/posts/' . $fileName;
         return ['ok' => true, 'url' => $publicUrl, 'error' => null];
     }
 
-    private function askOpenAI(array $messages, string $model): array
+    private function askOpenAI(array $messages, string $model, array $options = []): array
     {
         $apiKey = $this->resolveConfigValue('ai_openai_api_key', 'OPENROUTER_API_KEY', ['ai_openrouter_api_key', 'openrouter_api_key', 'OPENAI_API_KEY', 'openai_api_key']);
         if ($apiKey === '') {
             return ['ok' => false, 'content' => '', 'error' => 'Thiếu API key OpenRouter.'];
         }
 
-        $maxTokens = (int) ($this->settings['ai_max_output_tokens'] ?? 2000);
-        if ($maxTokens < 1200) {
-            $maxTokens = 2000;
+        if (isset($options['max_tokens'])) {
+            $maxTokens = max(50, min(4096, (int) $options['max_tokens']));
+        } else {
+            $maxTokens = (int) ($this->settings['ai_max_output_tokens'] ?? 2000);
+            if ($maxTokens < 1200) {
+                $maxTokens = 2000;
+            }
+            $maxTokens = max(1000, min(4096, $maxTokens));
         }
-        $maxTokens = max(1000, min(4096, $maxTokens));
+
+        $temperature = isset($options['temperature']) ? (float) $options['temperature'] : 0.45;
 
         $payload = [
             'model' => $model,
             'messages' => $messages,
-            'temperature' => 0.45,
+            'temperature' => $temperature,
             'max_tokens' => $maxTokens,
         ];
 
@@ -304,7 +439,7 @@ class AIProviderService
         return ['ok' => true, 'content' => $content, 'error' => null, 'model' => $model];
     }
 
-    private function askGemini(array $messages, string $model): array
+    private function askGemini(array $messages, string $model, array $options = []): array
     {
         $apiKey = $this->resolveConfigValue('ai_gemini_api_key', 'GEMINI_API_KEY', ['gemini_api_key']);
         if ($apiKey === '') {
@@ -341,18 +476,23 @@ class AIProviderService
             ];
         }
 
-        $maxTokens = (int) ($this->settings['ai_max_output_tokens'] ?? 2000);
-        if ($maxTokens < 1200) {
-            $maxTokens = 2000;
+        if (isset($options['max_tokens'])) {
+            $requestedTokens = max(50, min(4096, (int) $options['max_tokens']));
+            $maxOutputTokens = max(300, min(8192, $requestedTokens + 500));
+        } else {
+            $maxTokens = (int) ($this->settings['ai_max_output_tokens'] ?? 2000);
+            if ($maxTokens < 1200) {
+                $maxTokens = 2000;
+            }
+            $maxOutputTokens = max(3000, min(8192, $maxTokens + 2500));
         }
-        // Với Gemini thế hệ mới (2.5, 3.x Flash), maxOutputTokens bao gồm cả Thinking Tokens + Answer Tokens.
-        // Cần cấp đủ headroom (tối thiểu 3000 - 8192 tokens) để không bị ngắt giữa chừng.
-        $maxOutputTokens = max(3000, min(8192, $maxTokens + 2500));
+
+        $temperature = isset($options['temperature']) ? (float) $options['temperature'] : 0.4;
 
         $payload = [
             'contents' => $contents,
             'generationConfig' => [
-                'temperature' => 0.4,
+                'temperature' => $temperature,
                 'maxOutputTokens' => $maxOutputTokens,
             ]
         ];
