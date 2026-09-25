@@ -30,6 +30,7 @@ class FanpageWebhookController extends BaseController
     public function webhook(): void
     {
         $raw = file_get_contents('php://input');
+        @file_put_contents(BASE_PATH . '/storage/logs/raw_webhook.txt', date('Y-m-d H:i:s') . "\n" . $raw . "\n\n", FILE_APPEND);
         $payload = json_decode((string) $raw, true);
 
         // Lấy signature từ nhiều biến môi trường header để đảm bảo tương thích mọi webserver
