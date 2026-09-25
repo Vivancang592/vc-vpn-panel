@@ -29,7 +29,7 @@ ob_start();
             ⚙️ Cấu Hình Prompt & Model
         </a>
         <a href="/admin/auto-post/create" class="glass-btn" style="text-decoration: none; font-weight: 600; background: var(--ios-blue); color: #fff;">
-            + Lên Lịch Bài Mới
+            🚀 Tạo Chiến Dịch Mới
         </a>
     </div>
 </div>

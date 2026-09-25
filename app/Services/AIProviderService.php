@@ -29,6 +29,55 @@ class AIProviderService
     }
 
     /**
+     * Lập kế hoạch chiến dịch bài đăng đa dạng góc nhìn, trả về cấu trúc mảng JSON chuẩn
+     */
+    public function generateCampaignPlan(string $coreTopics, int $postCount = 5, ?string $customInstruction = null): array
+    {
+        $provider = strtolower(trim((string) ($this->settings['ai_content_provider'] ?? $this->settings['ai_provider'] ?? 'openai')));
+        $model = trim((string) ($this->settings['ai_content_model'] ?? ''));
+        $siteName = $this->settings['site_name'] ?? 'VC VPN';
+
+        $customSystemPrompt = trim((string) ($this->settings['ai_content_system_prompt'] ?? ''));
+        if ($customSystemPrompt === '') {
+            $customSystemPrompt = "Bạn là chuyên gia Content Creator & Digital Marketer hàng đầu cho dịch vụ VPN {$siteName}.";
+        }
+
+        $systemPrompt = $customSystemPrompt . "\n\n"
+            . "NHIỆM VỤ QUAN TRỌNG: Bạn phải lên kế hoạch chiến dịch gồm đúng {$postCount} bài đăng Fanpage Facebook độc lập, sáng tạo, tiếp cận khách hàng từ nhiều góc độ khác nhau (tốc độ cao, chơi game mượt, bảo mật wifi công cộng, xem phim 4K không lag, vượt tường lửa, ưu đãi gói cước).\n"
+            . "YÊU CẦU BẮT BUỘC VỀ ĐỊNH DẠNG ĐẦU RA:\n"
+            . "- Trả về DUY NHẤT một chuỗi JSON ARRAY hợp lệ (Valid JSON Array).\n"
+            . "- KHÔNG viết thêm bất kỳ lời chào, giải thích, markdown fence hay text thừa nào ngoài JSON.\n"
+            . "- Mỗi phần tử trong mảng JSON là một object chứa đúng 3 khóa:\n"
+            . "  1. \"topic\": Tiêu đề / chủ đề ngắn gọn của bài viết (dưới 100 ký tự).\n"
+            . "  2. \"content\": Toàn bộ nội dung bài đăng chi tiết (150 - 300 từ) có emoji sinh động, lời kêu gọi hành động (CTA) và 4-8 hashtag #VPN liên quan.\n"
+            . "  3. \"image_prompt\": Prompt mô tả hình ảnh bằng tiếng Anh chi tiết cho DALL-E 3 (chủ đề mạng máy tính, cyberpunk, 3D render, tốc độ ánh sáng, bảo mật công nghệ).\n"
+            . "- Đảm bảo mảng có đúng {$postCount} phần tử.";
+
+        $userPrompt = "Danh sách các chủ đề cốt lõi / từ khóa chiến dịch:\n" . $coreTopics . "\n";
+        if (!empty($customInstruction)) {
+            $userPrompt .= "Yêu cầu bổ sung:\n" . $customInstruction . "\n";
+        }
+        $userPrompt .= "\nHãy tạo đúng {$postCount} bài viết và xuất kết quả theo định dạng JSON ARRAY.";
+
+        $messages = [
+            ['role' => 'system', 'content' => $systemPrompt],
+            ['role' => 'user', 'content' => $userPrompt]
+        ];
+
+        if ($provider === 'gemini') {
+            $targetModel = $model ?: ($this->settings['ai_gemini_model'] ?? 'gemini-2.5-flash');
+            $result = $this->askGemini($messages, $targetModel);
+            $result['provider'] = 'gemini';
+            return $result;
+        }
+
+        $targetModel = $model ?: ($this->settings['ai_openai_model'] ?? 'openai/gpt-4o-mini');
+        $result = $this->askOpenAI($messages, $targetModel);
+        $result['provider'] = 'openai';
+        return $result;
+    }
+
+    /**
      * Sinh nội dung bài viết quảng cáo / hướng dẫn / tương tác chuyên sâu cho Fanpage
      */
     public function generateContent(string $topic, ?string $contentPrompt = null, ?string $customSystemPrompt = null): array

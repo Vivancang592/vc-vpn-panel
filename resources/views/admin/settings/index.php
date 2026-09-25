@@ -532,15 +532,27 @@ ob_start();
             <div class="settings-field-list">
                 <div>
                     <label data-hint="Nhà cung cấp AI chuyên dùng để viết nội dung bài đăng Fanpage." style="display: block; font-weight: 600; font-size: 0.85rem;">Provider Viết Bài</label>
-                    <select name="settings[ai_content_provider]" class="glass-input" style="width: 100%; cursor: pointer;">
+                    <select id="content-provider-select" name="settings[ai_content_provider]" class="glass-input" style="width: 100%; cursor: pointer;">
                         <option value="openai" <?= ($settings['ai_content_provider'] ?? 'openai') === 'openai' ? 'selected' : '' ?>>OpenRouter (GPT-4o / Claude 3.5 Sonnet / Llama 3...)</option>
                         <option value="gemini" <?= ($settings['ai_content_provider'] ?? '') === 'gemini' ? 'selected' : '' ?>>Google Gemini (Gemini 2.5/3.7 Pro / Flash)</option>
                     </select>
                 </div>
 
                 <div>
-                    <label data-hint="Model AI chuyên trách sáng tạo bài viết (để trống sẽ tự lấy model chat mặc định)." style="display: block; font-weight: 600; font-size: 0.85rem;">Model Sáng Tạo Bài Viết</label>
-                    <input type="text" name="settings[ai_content_model]" class="glass-input" value="<?= htmlspecialchars($settings['ai_content_model'] ?? '') ?>" placeholder="VD: anthropic/claude-3.5-sonnet hoặc gemini-2.5-flash" style="width: 100%;">
+                    <label data-hint="Chọn model AI chuyên trách sáng tạo bài viết. Bấm Tải model để đồng bộ từ nhà cung cấp." style="display: block; font-weight: 600; font-size: 0.85rem;">Model Sáng Tạo Bài Viết</label>
+                    <div style="display: flex; flex-direction: column; gap: 0.4rem; width: 100%;">
+                        <div style="display: flex; gap: 0.5rem; align-items: center; width: 100%;">
+                            <select id="content-model-select" name="settings[ai_content_model]" class="glass-input" style="flex: 1; min-width: 0; cursor: pointer;">
+                                <option value="<?= htmlspecialchars($settings['ai_content_model'] ?? 'openai/gpt-4o-mini') ?>" selected>
+                                    <?= htmlspecialchars($settings['ai_content_model'] ?? 'openai/gpt-4o-mini') ?>
+                                </option>
+                            </select>
+                            <button type="button" id="load-content-models" class="glass-btn" style="padding: 0.52rem 0.85rem; white-space: nowrap; cursor: pointer; background: #af52de; color: #fff; border: none; font-size: 0.8rem;">
+                                ⬇️ Tải danh sách Model
+                            </button>
+                        </div>
+                        <div id="content-model-status" style="font-size: 0.8rem; color: var(--ios-text-secondary); line-height: 1.45; word-break: break-word;"></div>
+                    </div>
                 </div>
 
                 <div class="settings-field-row" style="border-bottom: 1px solid var(--glass-border); align-items: start;">
@@ -549,8 +561,16 @@ ob_start();
                 </div>
 
                 <div>
-                    <label data-hint="API Key riêng cho DALL-E 3 (để trống sẽ sử dụng OpenRouter/OpenAI API Key ở trên)." style="display: block; font-weight: 600; font-size: 0.85rem;">API Key Sinh Ảnh (DALL-E 3)</label>
-                    <input type="password" name="settings[ai_image_api_key]" class="glass-input" value="<?= !empty($settings['ai_image_api_key']) ? '************' : '' ?>" placeholder="sk-... (để trống nếu dùng chung)" style="width: 100%;">
+                    <label data-hint="API Key riêng cho DALL-E 3 (để trống sẽ sử dụng OpenRouter/OpenAI API Key ở trên)." style="display: block; font-weight: 600; font-size: 0.85rem;">API Key Sinh Ảnh (DALL-E 3 / OpenAI)</label>
+                    <input type="password" id="image-api-key-input" name="settings[ai_image_api_key]" class="glass-input" value="<?= !empty($settings['ai_image_api_key']) ? '************' : '' ?>" placeholder="sk-... (để trống nếu dùng chung API key OpenRouter)" style="width: 100%;">
+                </div>
+
+                <div>
+                    <label data-hint="Model sinh ảnh AI được sử dụng." style="display: block; font-weight: 600; font-size: 0.85rem;">Model Sinh Ảnh (Image Model)</label>
+                    <select id="image-model-select" name="settings[ai_image_model]" class="glass-input" style="width: 100%; cursor: pointer;">
+                        <option value="dall-e-3" <?= ($settings['ai_image_model'] ?? 'dall-e-3') === 'dall-e-3' ? 'selected' : '' ?>>DALL-E 3 (OpenAI - Chất lượng cao 4K)</option>
+                        <option value="dall-e-2" <?= ($settings['ai_image_model'] ?? '') === 'dall-e-2' ? 'selected' : '' ?>>DALL-E 2 (OpenAI - Tốc độ nhanh)</option>
+                    </select>
                 </div>
 
                 <div>
@@ -793,6 +813,63 @@ document.addEventListener('DOMContentLoaded', function () {
 
     wireProviderActions(openAiUi);
     wireProviderActions(geminiUi);
+
+    // Tải danh sách Model cho Content Creator
+    const loadContentBtn = document.getElementById('load-content-models');
+    const contentSelect = document.getElementById('content-model-select');
+    const contentStatus = document.getElementById('content-model-status');
+    const contentProviderSelect = document.getElementById('content-provider-select');
+
+    if (loadContentBtn && contentSelect && contentStatus) {
+        loadContentBtn.addEventListener('click', async function () {
+            const provider = contentProviderSelect ? contentProviderSelect.value : 'openai';
+            loadContentBtn.disabled = true;
+            loadContentBtn.textContent = 'Đang tải...';
+            contentStatus.style.color = 'var(--ios-text-secondary)';
+            contentStatus.textContent = 'Đang lấy danh sách model từ ' + (provider === 'gemini' ? 'Google Gemini' : 'OpenRouter') + '...';
+
+            const payload = {
+                provider: provider,
+                csrf_token: '<?= htmlspecialchars($csrf_token) ?>'
+            };
+
+            const apiKeyInput = provider === 'gemini'
+                ? document.getElementById('gemini-api-key-input')
+                : document.getElementById('openai-api-key-input');
+
+            if (apiKeyInput && apiKeyInput.value && !apiKeyInput.value.includes('***')) {
+                payload.api_key = apiKeyInput.value.trim();
+            }
+
+            try {
+                const response = await fetch('/admin/settings/ai-models', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                        'Accept': 'application/json'
+                    },
+                    body: new URLSearchParams(payload)
+                });
+
+                const result = await response.json();
+                if (!response.ok || !result.success || !Array.isArray(result.models)) {
+                    contentStatus.style.color = 'var(--ios-danger)';
+                    contentStatus.textContent = (result && result.message) ? result.message : 'Không tải được danh sách model.';
+                    return;
+                }
+
+                updateModelSelect({ select: contentSelect }, result.models, contentSelect.value);
+                contentStatus.style.color = 'var(--ios-success)';
+                contentStatus.textContent = 'Đã tải thành công ' + result.models.length + ' model cho Content Creator.';
+            } catch (_err) {
+                contentStatus.style.color = 'var(--ios-danger)';
+                contentStatus.textContent = 'Lỗi mạng khi tải model.';
+            } finally {
+                loadContentBtn.disabled = false;
+                loadContentBtn.textContent = '⬇️ Tải danh sách Model';
+            }
+        });
+    }
 });
 </script>
 
