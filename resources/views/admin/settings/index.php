@@ -579,7 +579,7 @@ ob_start();
 
                 <div>
                     <label data-hint="API Key riêng cho sinh ảnh (để trống sẽ sử dụng API Key của provider ở trên)." style="display: block; font-weight: 600; font-size: 0.85rem;">API Key Sinh Ảnh (Tùy chọn)</label>
-                    <input type="password" id="image-api-key-input" name="settings[ai_image_api_key]" class="glass-input" value="<?= !empty($settings['ai_image_api_key']) ? '************' : '' ?>" placeholder="sk-... (để trống nếu dùng chung API key OpenRouter/Gemini)" style="width: 100%;">
+                    <input type="password" id="image-api-key-input" name="settings[ai_image_api_key]" class="glass-input" value="<?= (!empty($settings['ai_image_api_key']) && strpos($settings['ai_image_api_key'], '***') === false) ? '************' : '' ?>" placeholder="sk-... (để trống nếu dùng chung API key OpenRouter/Gemini)" style="width: 100%;">
                 </div>
 
                 <div>
