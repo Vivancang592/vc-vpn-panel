@@ -147,9 +147,11 @@ class AIProviderService
 
         $imageModel = trim((string) ($this->settings['ai_image_model'] ?? 'dall-e-3'));
 
-        // Phát hiện provider dựa trên model string: Gemini Imagen chứa "imagen" hoặc "gemini"
+        // Ưu tiên dùng setting provider (từ UI), nếu chưa chọn thì tự phát hiện từ model string
         // OpenRouter giữ nguyên model như "dall-e-3", "stability/stable-diffusion-xl", v.v.
-        $isGeminiImage = (stripos($imageModel, 'imagen') !== false || stripos($imageModel, 'gemini') !== false);
+        // Gemini Imagen chứa "imagen" hoặc "gemini"
+        $explicitProvider = strtolower(trim((string) ($this->settings['ai_image_provider'] ?? '')));
+        $isGeminiImage = ($explicitProvider === 'gemini') || ($explicitProvider === '' && (stripos($imageModel, 'imagen') !== false || stripos($imageModel, 'gemini') !== false));
 
         if ($isGeminiImage) {
             // Sử dụng Gemini Imagen API qua Vertex AI
