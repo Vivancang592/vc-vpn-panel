@@ -570,6 +570,10 @@ ob_start();
                     <select id="image-model-select" name="settings[ai_image_model]" class="glass-input" style="width: 100%; cursor: pointer;">
                         <option value="dall-e-3" <?= ($settings['ai_image_model'] ?? 'dall-e-3') === 'dall-e-3' ? 'selected' : '' ?>>DALL-E 3 (OpenAI - Chất lượng cao 4K)</option>
                         <option value="dall-e-2" <?= ($settings['ai_image_model'] ?? '') === 'dall-e-2' ? 'selected' : '' ?>>DALL-E 2 (OpenAI - Tốc độ nhanh)</option>
+                        <option value="stability/stable-diffusion-xl" <?= ($settings['ai_image_model'] ?? '') === 'stability/stable-diffusion-xl' ? 'selected' : '' ?>>Stable Diffusion XL</option>
+                        <option value="fal-ai/flux" <?= ($settings['ai_image_model'] ?? '') === 'fal-ai/flux' ? 'selected' : '' ?>>FLUX.1 (Fal AI)</option>
+                        <option value="imagen-3.0-generate-001" <?= ($settings['ai_image_model'] ?? '') === 'imagen-3.0-generate-001' ? 'selected' : '' ?>>Imagen 3 (Gemini - Chất lượng cao)</option>
+                        <option value="imagen-3.0-fast-generate-001" <?= ($settings['ai_image_model'] ?? '') === 'imagen-3.0-fast-generate-001' ? 'selected' : '' ?>>Imagen 3 Fast (Gemini - Nhanh)</option>
                     </select>
                 </div>
 
@@ -605,6 +609,11 @@ ob_start();
                 <div class="settings-field-row" style="border-bottom: 1px solid var(--glass-border); align-items: start;">
                     <label data-hint="Prompt định hướng phong cách trả lời ngắn gọn, thân thiện và điều hướng khách vào inbox." style="display: block; font-weight: 600; font-size: 0.85rem; padding-top: 0.35rem;">Prompt Trả Lời Bình Luận</label>
                     <textarea name="settings[ai_comment_system_prompt]" rows="5" class="glass-input" style="width: 100%; min-height: 110px; resize: vertical; line-height: 1.5; font-size: 0.85rem;" placeholder="Nhập hướng dẫn cho AI khi phản hồi bình luận..."><?= htmlspecialchars($settings['ai_comment_system_prompt'] ?? '') ?></textarea>
+                </div>
+
+                <div>
+                    <label data-hint="Model AI dùng để sinh phản hồi tự động cho bình luận. Để trống sẽ dùng model mặc định của provider." style="display: block; font-weight: 600; font-size: 0.85rem;">Model Bình Luận (AI Auto-Comment)</label>
+                    <input type="text" name="settings[ai_comment_model]" class="glass-input" value="<?= htmlspecialchars($settings['ai_comment_model'] ?? '') ?>" placeholder="Ví dụ: openai/gpt-4o-mini, gemini-2.5-flash" style="width: 100%;">
                 </div>
             </div>
 
