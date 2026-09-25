@@ -9,7 +9,10 @@ use App\Models\NodeTask;
 use App\Models\Setting;
 use App\Models\Order;
 use App\Models\Payment;
+use App\Models\ScheduledPost;
 use App\Services\MailService;
+use App\Services\AIProviderService;
+use App\Services\FanpageService;
 
 class CronController extends BaseController
 {
@@ -291,5 +294,98 @@ class CronController extends BaseController
             'subject'   => '%' . $subjectKeyword . '%'
         ]);
         return ((int)$stmt->fetchColumn()) > 0;
+    }
+
+    /**
+     * Cronjob tự động đăng bài Fanpage và sinh nội dung/hình ảnh bằng AI
+     */
+    public function autoPostFanpage(): void
+    {
+        $settingModel = new Setting();
+        $cronSecret = $settingModel->get('cron_secret_key', 'VC_VPN_CRON_2027_SECRET');
+        $providedKey = $_GET['key'] ?? '';
+
+        if (!hash_equals($cronSecret, $providedKey)) {
+            $this->json(['status' => false, 'message' => 'Truy cập không hợp lệ.'], 403);
+            return;
+        }
+
+        $postModel = new ScheduledPost();
+        $aiProvider = new AIProviderService();
+        $fanpageService = new FanpageService();
+
+        $posts = $postModel->getPendingQueue(5);
+        if (empty($posts)) {
+            $this->json([
+                'status' => true,
+                'message' => 'Không có bài viết nào trong hàng đợi cần đăng.',
+                'processed' => 0
+            ]);
+            return;
+        }
+
+        $stats = [
+            'total' => count($posts),
+            'success' => 0,
+            'failed' => 0,
+            'details' => []
+        ];
+
+        foreach ($posts as $post) {
+            $postId = (int) $post['id'];
+            $postModel->markAsGenerating($postId);
+
+            $content = trim((string) ($post['generated_content'] ?? ''));
+            $imageUrl = trim((string) ($post['image_url'] ?? ''));
+            $metaData = !empty($post['meta_data']) ? (is_array($post['meta_data']) ? $post['meta_data'] : json_decode((string) $post['meta_data'], true)) : [];
+
+            // 1. Sinh nội dung nếu chưa có sẵn
+            if ($content === '') {
+                $contentResult = $aiProvider->generateContent($post['topic'], $post['content_prompt']);
+                if (!$contentResult['ok'] || trim((string) $contentResult['content']) === '') {
+                    $errorMsg = 'Lỗi sinh nội dung AI: ' . ($contentResult['error'] ?? 'Nội dung rỗng');
+                    $postModel->markAsFailed($postId, $errorMsg);
+                    $stats['failed']++;
+                    $stats['details'][] = ['id' => $postId, 'status' => 'failed', 'error' => $errorMsg];
+                    continue;
+                }
+                $content = trim((string) $contentResult['content']);
+                $metaData['content_provider'] = $contentResult['provider'] ?? 'ai';
+                $metaData['content_model'] = $contentResult['model'] ?? '';
+            }
+
+            // 2. Sinh hình ảnh nếu có prompt ảnh nhưng chưa có link ảnh
+            if ($imageUrl === '' && !empty($post['image_prompt'])) {
+                $imageResult = $aiProvider->generateImage($post['image_prompt']);
+                if ($imageResult['ok'] && !empty($imageResult['url'])) {
+                    $imageUrl = $imageResult['url'];
+                    $metaData['image_url'] = $imageUrl;
+                }
+            }
+
+            // 3. Đẩy lên Fanpage qua Meta Graph API
+            if ($imageUrl !== '') {
+                $publishResult = $fanpageService->publishPhoto($content, $imageUrl);
+            } else {
+                $publishResult = $fanpageService->publishPost($content);
+            }
+
+            if ($publishResult['ok'] && !empty($publishResult['id'])) {
+                $postModel->markAsPublished($postId, $publishResult['id'], $content, $imageUrl ?: null, $metaData);
+                $stats['success']++;
+                $stats['details'][] = ['id' => $postId, 'status' => 'published', 'facebook_post_id' => $publishResult['id']];
+            } else {
+                $errorMsg = 'Lỗi đăng Fanpage: ' . ($publishResult['error'] ?? 'Không rõ nguyên nhân');
+                $postModel->markAsFailed($postId, $errorMsg);
+                $stats['failed']++;
+                $stats['details'][] = ['id' => $postId, 'status' => 'failed', 'error' => $errorMsg];
+            }
+        }
+
+        $this->json([
+            'status' => true,
+            'message' => 'Đã hoàn tất tiến trình quét và đăng bài Fanpage.',
+            'stats' => $stats
+        ]);
     }
 }
