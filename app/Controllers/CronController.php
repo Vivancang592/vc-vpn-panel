@@ -356,7 +356,8 @@ class CronController extends BaseController
 
             // 2. Sinh hình ảnh nếu có prompt ảnh nhưng chưa có link ảnh
             if ($imageUrl === '' && !empty($post['image_prompt'])) {
-                $imageResult = $aiProvider->generateImage($post['image_prompt']);
+                $imageSize = (string)($settingModel->get('ai_image_size', '1024x1024'));
+                $imageResult = $aiProvider->generateImage($post['image_prompt'], $imageSize);
                 if ($imageResult['ok'] && !empty($imageResult['url'])) {
                     $imageUrl = $imageResult['url'];
                     $metaData['image_url'] = $imageUrl;

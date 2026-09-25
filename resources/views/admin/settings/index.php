@@ -524,6 +524,15 @@ ob_start();
                 </div>
             </div>
 
+            <!-- Hướng dẫn đăng ký Webhook Meta -->
+            <div style="background: rgba(24, 119, 242, 0.05); border: 1px solid rgba(24, 119, 242, 0.2); border-radius: 8px; padding: 0.85rem 1rem; margin-top: 0.75rem; font-size: 0.8rem; line-height: 1.5; color: var(--ios-text-secondary);">
+                <strong style="color: #1877f2;">💡 Yêu cầu trên Meta for Developers để AI nhận & trả lời bình luận:</strong>
+                <ul style="margin: 0.35rem 0 0 1.2rem; padding: 0;">
+                    <li>Trong mục <strong>Webhooks > Page</strong>: Bấm <em>Subscribe to this object</em> và tích chọn trường <code>feed</code> (để nhận bình luận) và <code>messages</code> (để nhận tin nhắn).</li>
+                    <li>Page Access Token cần các quyền tối thiểu: <code>pages_manage_posts</code>, <code>pages_manage_engagement</code>, <code>pages_read_user_content</code>, <code>pages_messaging</code>.</li>
+                </ul>
+            </div>
+
             <!-- Cấu hình AI Sinh Nội Dung & Ảnh Đăng Bài -->
             <h3 style="font-size: 1rem; font-weight: 700; margin-top: 1rem; margin-bottom: 0.5rem; border-bottom: 1px solid var(--glass-border); padding-bottom: 0.5rem; color: #af52de;">
                 📢 Cấu Hình AI Sáng Tạo Nội Dung & Sinh Ảnh (Marketing Auto-Post)
