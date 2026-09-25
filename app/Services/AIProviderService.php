@@ -125,7 +125,7 @@ class AIProviderService
     }
 
     /**
-     * Sinh ảnh minh họa bằng AI (OpenRouter / Gemini) và lưu trữ cục bộ
+     * Sinh ảnh minh họa bằng AI (OpenRouter / Gemini / OpenAI) và lưu trữ cục bộ
      */
     public function generateImage(string $prompt, string $size = '1024x1024'): array
     {
@@ -157,13 +157,20 @@ class AIProviderService
             return $this->generateImageGemini($prompt, $imageModel, $size, $apiKey, $uploadDir);
         }
 
-        // Mặc định: OpenRouter với model được chọn
+        // Mặc định: OpenRouter / OpenAI với model được chọn
         if ($imageModel === '') {
             $imageModel = 'openai/dall-e-3';
         }
-        $apiKey = $this->resolveConfigValue('ai_image_api_key', 'OPENROUTER_API_KEY', ['ai_openrouter_api_key', 'openrouter_api_key', 'ai_openai_api_key', 'openai_api_key', 'OPENAI_API_KEY']);
+        $apiKey = $this->resolveConfigValue('ai_image_api_key', 'OPENROUTER_API_KEY', [
+            'ai_openai_api_key',
+            'ai_openrouter_api_key',
+            'openrouter_api_key',
+            'openai_api_key',
+            'OPENAI_API_KEY'
+        ]);
+
         if ($apiKey === '') {
-            return ['ok' => false, 'url' => '', 'error' => 'Chưa cấu hình OpenRouter API Key cho sinh ảnh.'];
+            return ['ok' => false, 'url' => '', 'error' => 'Chưa cấu hình API Key OpenRouter/OpenAI cho sinh ảnh.'];
         }
 
         return $this->generateImageOpenRouter($prompt, $imageModel, $size, $apiKey, $uploadDir);
@@ -217,7 +224,7 @@ class AIProviderService
             }
         }
 
-        // 2. Thử qua OpenRouter Chat Completions nếu model là multimodal/chat image generator
+        // 2. Thử qua OpenRouter Chat Completions nếu model là multimodal/chat image generator (như FLUX, Imagen, v.v.)
         $chatPayload = [
             'model' => $model,
             'messages' => [
@@ -268,7 +275,38 @@ class AIProviderService
             }
         }
 
-        $error = $response['error'] ?? $chatResponse['error'] ?? 'OpenRouter không thể tạo ảnh với model ' . $model;
+        // 3. Nếu API key là trực tiếp của OpenAI (sk-proj-... hoặc sk-...) hoặc model là DALL-E, thử qua OpenAI API chính thức
+        if (str_starts_with($apiKey, 'sk-') && !str_starts_with($apiKey, 'sk-or-')) {
+            $openAiModel = (stripos($model, 'dall-e-2') !== false) ? 'dall-e-2' : 'dall-e-3';
+            $openAiPayload = [
+                'model' => $openAiModel,
+                'prompt' => $prompt,
+                'n' => 1,
+                'size' => $targetSize,
+                'response_format' => 'url'
+            ];
+
+            $openAiResponse = $this->requestJson(
+                'https://api.openai.com/v1/images/generations',
+                $openAiPayload,
+                [
+                    'Authorization: Bearer ' . $apiKey,
+                    'Content-Type: application/json'
+                ]
+            );
+
+            if ($openAiResponse['ok']) {
+                $remoteUrl = (string) ($openAiResponse['data']['data'][0]['url'] ?? '');
+                if ($remoteUrl !== '') {
+                    $saveResult = $this->downloadAndSaveImage($remoteUrl, $uploadDir);
+                    if ($saveResult['ok']) {
+                        return $saveResult;
+                    }
+                }
+            }
+        }
+
+        $error = $response['error'] ?? $chatResponse['error'] ?? 'Không thể tạo ảnh với model ' . $model;
         return ['ok' => false, 'url' => '', 'error' => $error];
     }
 
@@ -626,19 +664,46 @@ class AIProviderService
 
     private function resolveConfigValue(string $settingKey, string $envKey, array $settingAliases = []): string
     {
+        $isValidKey = static function (mixed $val): bool {
+            if (!is_string($val)) {
+                return false;
+            }
+            $trimmed = trim($val);
+            // Chuỗi rỗng hoặc chứa ký tự che mask (***) là không hợp lệ
+            return $trimmed !== '' && strpos($trimmed, '***') === false && strlen($trimmed) > 5;
+        };
+
         $settingValue = trim((string) ($this->settings[$settingKey] ?? ''));
-        if ($settingValue !== '') {
+        if ($isValidKey($settingValue)) {
             return $settingValue;
         }
 
         foreach ($settingAliases as $alias) {
             $aliasValue = trim((string) ($this->settings[$alias] ?? ''));
-            if ($aliasValue !== '') {
+            if ($isValidKey($aliasValue)) {
                 return $aliasValue;
             }
         }
 
         $envValue = trim((string) (getenv($envKey) ?: ''));
-        return $envValue;
+        if ($isValidKey($envValue)) {
+            return $envValue;
+        }
+
+        // Tự động tìm thêm biến môi trường dự phòng
+        $fallbackEnvList = match ($envKey) {
+            'OPENROUTER_API_KEY', 'OPENAI_API_KEY' => ['OPENROUTER_API_KEY', 'openrouter_api_key', 'OPENAI_API_KEY', 'openai_api_key'],
+            'GEMINI_API_KEY' => ['GEMINI_API_KEY', 'gemini_api_key', 'GOOGLE_API_KEY'],
+            default => []
+        };
+
+        foreach ($fallbackEnvList as $fKey) {
+            $fVal = trim((string) (getenv($fKey) ?: ''));
+            if ($isValidKey($fVal)) {
+                return $fVal;
+            }
+        }
+
+        return '';
     }
 }

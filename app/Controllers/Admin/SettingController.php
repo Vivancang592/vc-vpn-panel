@@ -63,11 +63,16 @@ class SettingController extends BaseController
 
                     if (in_array($key, $sensitiveKeys, true)) {
                         $isMasked = is_string($normalized) && preg_match('/^\*{6,}$/', $normalized) === 1;
-                        if ($normalized === '' || $isMasked) {
+                        if ($isMasked) {
                             $current = $this->settingModel->getByKey($key);
-                            if ($current !== null) {
+                            if ($current !== null && !preg_match('/^\*{6,}$/', $current)) {
                                 $normalized = $current;
+                            } else {
+                                $normalized = '';
                             }
+                        } elseif ($normalized === '' && $key === 'ai_image_api_key') {
+                            // Cho phép để trống API Key riêng cho sinh ảnh để kế thừa API Key OpenRouter/Gemini chính
+                            $normalized = '';
                         }
                     }
 
