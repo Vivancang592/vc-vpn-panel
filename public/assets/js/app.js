@@ -560,7 +560,7 @@ if (!response.ok || !result.valid) {
     z-index: 2147483647 !important;
     width: 560px;
     max-width: calc(100vw - 32px);
-    height: min(620px, calc(100vh - 120px));
+    height: min(574px, calc(100vh - 120px));
     background: #ffffff;
     border: 1px solid rgba(0,0,0,.12);
     border-radius: 18px;
