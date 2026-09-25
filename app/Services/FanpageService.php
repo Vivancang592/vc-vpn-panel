@@ -201,12 +201,13 @@ class FanpageService
         }
 
         $aiProvider = new AIProviderService();
+        $model = trim((string) ($this->settings['ai_comment_model'] ?? ''));
         $messages = [
             ['role' => 'system', 'content' => $customPrompt],
             ['role' => 'user', 'content' => "Khách hàng {$fromName} vừa bình luận: \"{$message}\". Hãy viết 1 câu trả lời công khai ngắn gọn, lịch sự."]
         ];
 
-        $reply = $aiProvider->ask($messages);
+        $reply = $aiProvider->ask($messages, null, $model ?: ($this->settings['ai_comment_model'] ?? ''));
         $replyText = trim((string) ($reply['content'] ?? ''));
 
         if ($replyText !== '') {

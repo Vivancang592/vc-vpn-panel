@@ -125,7 +125,7 @@ class AIProviderService
     }
 
     /**
-     * Sinh ảnh minh họa bằng AI (DALL-E 3 hoặc Imagen) và lưu trữ cục bộ
+     * Sinh ảnh minh họa bằng AI (OpenRouter DALL-E / Gemini Imagen) và lưu trữ cục bộ
      */
     public function generateImage(string $prompt, string $size = '1024x1024'): array
     {
@@ -134,7 +134,7 @@ class AIProviderService
             return ['ok' => false, 'url' => '', 'error' => 'Prompt sinh ảnh không được để trống.'];
         }
 
-        $apiKey = $this->resolveConfigValue('ai_image_api_key', 'OPENAI_API_KEY', ['ai_openai_api_key', 'OPENROUTER_API_KEY', 'ai_openrouter_api_key']);
+        $apiKey = $this->resolveConfigValue('ai_image_api_key', 'OPENROUTER_API_KEY', ['ai_openrouter_api_key', 'openrouter_api_key', 'OPENAI_API_KEY', 'openai_api_key']);
         if ($apiKey === '') {
             return ['ok' => false, 'url' => '', 'error' => 'Chưa cấu hình API Key để sinh ảnh.'];
         }
@@ -145,8 +145,79 @@ class AIProviderService
             @mkdir($uploadDir, 0777, true);
         }
 
+        $imageModel = trim((string) ($this->settings['ai_image_model'] ?? 'dall-e-3'));
+
+        // Phát hiện provider dựa trên model string: Gemini Imagen chứa "imagen" hoặc "gemini"
+        // OpenRouter giữ nguyên model như "dall-e-3", "stability/stable-diffusion-xl", v.v.
+        $isGeminiImage = (stripos($imageModel, 'imagen') !== false || stripos($imageModel, 'gemini') !== false);
+
+        if ($isGeminiImage) {
+            // Sử dụng Gemini Imagen API qua Vertex AI
+            $url = 'https://generativelanguage.googleapis.com/v1beta/models/'
+                . rawurlencode($imageModel)
+                . ':generateContent?key='
+                . rawurlencode($apiKey);
+
+            $payload = [
+                'contents' => [
+                    [
+                        'role' => 'user',
+                        'parts' => [
+                            [
+                                'text' => $prompt,
+                                'generationConfig' => [
+                                    'responseSchema' => [
+                                        'mimeType' => 'image/png',
+                                        'name' => 'generated_image'
+                                    ]
+                                ]
+                            ]
+                        ]
+                    ]
+                ],
+                'generationConfig' => [
+                    'temperature' => 0.4,
+                    'maxOutputTokens' => 8192,
+                ]
+            ];
+
+            $response = $this->requestJson($url, $payload, ['Content-Type: application/json']);
+
+            if (!$response['ok']) {
+                return ['ok' => false, 'url' => '', 'error' => $response['error']];
+            }
+
+            $candidates = $response['data']['candidates'] ?? [];
+            $imageData = '';
+
+            foreach ($candidates as $candidate) {
+                $parts = $candidate['content']['parts'] ?? [];
+                foreach ($parts as $part) {
+                    if (!empty($part['inlineData']['data'])) {
+                        $imageData = (string) $part['inlineData']['data'];
+                        break 2;
+                    }
+                    if (!empty($part['text'])) {
+                        $imageData = (string) $part['text'];
+                    }
+                }
+            }
+
+            if ($imageData === '') {
+                return ['ok' => false, 'url' => '', 'error' => 'Không nhận được dữ liệu ảnh từ Gemini Imagen.'];
+            }
+
+            $fileName = 'ai_post_' . date('Ymd_His') . '_' . bin2hex(random_bytes(4)) . '.png';
+            $localFilePath = $uploadDir . '/' . $fileName;
+            @file_put_contents($localFilePath, base64_decode($imageData));
+
+            $publicUrl = '/uploads/posts/' . $fileName;
+            return ['ok' => true, 'url' => $publicUrl, 'error' => null];
+        }
+
+        // Mặc định: OpenRouter Images API (DALL-E 3 hoặc model sinh ảnh khác)
         $payload = [
-            'model' => 'dall-e-3',
+            'model' => $imageModel,
             'prompt' => $prompt,
             'n' => 1,
             'size' => $size ?: '1024x1024',
@@ -154,11 +225,13 @@ class AIProviderService
         ];
 
         $response = $this->requestJson(
-            'https://api.openai.com/v1/images/generations',
+            'https://openrouter.ai/api/v1/images/generations',
             $payload,
             [
                 'Authorization: Bearer ' . $apiKey,
-                'Content-Type: application/json'
+                'Content-Type: application/json',
+                'HTTP-Referer: http://localhost',
+                'X-Title: VC VPN Chatbot'
             ]
         );
 
@@ -283,7 +356,7 @@ class AIProviderService
         ];
 
         if (!empty($systemParts)) {
-            $payload['systemInstruction'] = [ 
+            $payload['systemInstruction'] = [
                 'role' => 'system',
                 'parts' => $systemParts
             ];
