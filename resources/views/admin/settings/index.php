@@ -377,7 +377,7 @@ ob_start();
                 <div>
                     <label data-hint="Chọn nhà cung cấp AI chính thức xử lý các đoạn hội thoại." style="display: block; font-weight: 600; font-size: 0.85rem;">Nhà Cung Cấp AI Mặc Định</label>
                     <select name="settings[ai_provider]" class="glass-input" style="width: 100%; cursor: pointer;">
-                        <option value="openai" <?= ($settings['ai_provider'] ?? 'openai') === 'openai' ? 'selected' : '' ?>>OpenAI (ChatGPT)</option>
+                        <option value="openai" <?= ($settings['ai_provider'] ?? 'openai') === 'openai' ? 'selected' : '' ?>>OpenRouter (OpenAI/Claude/Llama/DeepSeek...)</option>
                         <option value="gemini" <?= ($settings['ai_provider'] ?? '') === 'gemini' ? 'selected' : '' ?>>Google Gemini</option>
                     </select>
                 </div>
@@ -418,24 +418,24 @@ ob_start();
                 </div>
             </div>
 
-            <!-- Cấu hình OpenAI -->
+            <!-- Cấu hình OpenRouter -->
             <h3 style="font-size: 1rem; font-weight: 700; margin-top: 1rem; margin-bottom: 0.5rem; border-bottom: 1px solid var(--glass-border); padding-bottom: 0.5rem; color: #10a37f;">
-                🟢 Cấu Hình OpenAI (ChatGPT)
+                🟢 Cấu Hình OpenRouter.ai (OpenAI / Claude / Meta / DeepSeek...)
             </h3>
 
             <div class="settings-field-list">
                 <div>
-                    <label data-hint="API Key lấy từ OpenAI Platform (bắt đầu bằng sk-...)." style="display: block; font-weight: 600; font-size: 0.85rem;">OpenAI API Key</label>
-                    <input type="password" id="openai-api-key-input" name="settings[ai_openai_api_key]" class="glass-input" value="<?= !empty($settings['ai_openai_api_key']) ? '************' : '' ?>" placeholder="sk-..." style="width: 100%;" autocomplete="new-password">
+                    <label data-hint="API Key lấy từ OpenRouter (https://openrouter.ai/keys, bắt đầu bằng sk-or-v1-...)." style="display: block; font-weight: 600; font-size: 0.85rem;">OpenRouter API Key</label>
+                    <input type="password" id="openai-api-key-input" name="settings[ai_openai_api_key]" class="glass-input" value="<?= !empty($settings['ai_openai_api_key']) ? '************' : '' ?>" placeholder="sk-or-v1-..." style="width: 100%;" autocomplete="new-password">
                 </div>
 
                 <div>
-                    <label data-hint="Chọn model OpenAI (VD: gpt-4o-mini, gpt-4o...). Bấm Tải model để đồng bộ từ tài khoản." style="display: block; font-weight: 600; font-size: 0.85rem;">OpenAI Model</label>
+                    <label data-hint="Chọn model từ OpenRouter (VD: openai/gpt-4o-mini, anthropic/claude-3.5-sonnet, deepseek/deepseek-chat...). Bấm Tải model để đồng bộ." style="display: block; font-weight: 600; font-size: 0.85rem;">OpenRouter Model</label>
                     <div style="display: flex; flex-direction: column; gap: 0.4rem; width: 100%;">
                         <div style="display: flex; gap: 0.5rem; align-items: center; width: 100%;">
                             <select id="openai-model-select" name="settings[ai_openai_model]" class="glass-input" style="flex: 1; min-width: 0; cursor: pointer;">
-                                <option value="<?= htmlspecialchars($settings['ai_openai_model'] ?? 'gpt-4o-mini') ?>" selected>
-                                    <?= htmlspecialchars($settings['ai_openai_model'] ?? 'gpt-4o-mini') ?>
+                                <option value="<?= htmlspecialchars($settings['ai_openai_model'] ?? 'openai/gpt-4o-mini') ?>" selected>
+                                    <?= htmlspecialchars($settings['ai_openai_model'] ?? 'openai/gpt-4o-mini') ?>
                                 </option>
                             </select>
                             <button type="button" id="check-openai-connection" class="glass-btn" style="padding: 0.52rem 0.85rem; white-space: nowrap; cursor: pointer; background: rgba(255,255,255,0.08); border: 1px solid var(--glass-border); color: var(--ios-text); font-size: 0.8rem;">
@@ -566,7 +566,7 @@ document.addEventListener('DOMContentLoaded', function () {
         select: document.getElementById('openai-model-select'),
         status: document.getElementById('openai-model-status'),
         apiKeyInput: document.getElementById('openai-api-key-input'),
-        providerLabel: 'OpenAI'
+        providerLabel: 'OpenRouter'
     };
 
     const geminiUi = {
