@@ -83,16 +83,19 @@ $chatbotTitle = $chatbotTitle !== '' ? $chatbotTitle : 'VC VPN';
 
 <?php if ($chatbotEnabled): ?>
     <div id="vc-chatbot" data-enabled="1" data-site-title="<?= htmlspecialchars($chatbotTitle) ?>" data-page="<?= htmlspecialchars((string) parse_url((string) ($_SERVER['REQUEST_URI'] ?? '/'), PHP_URL_PATH)) ?>">
-        <button id="vc-chatbot-toggle" type="button" aria-label="Mở trợ lý AI" style="position: fixed; right: 16px; bottom: 16px; z-index: 2500; width: 56px; height: 56px; border: none; border-radius: 50%; cursor: pointer; background: linear-gradient(135deg, #0a84ff, #34c759); color: #fff; box-shadow: 0 10px 24px rgba(10,132,255,.32); font-size: 24px;">💬</button>
-        <div id="vc-chatbot-panel" hidden style="position: fixed; right: 16px; bottom: 82px; z-index: 2500; width: min(360px, calc(100vw - 20px)); background: #fff; border: 1px solid rgba(0,0,0,.12); border-radius: 14px; box-shadow: 0 18px 32px rgba(0,0,0,.2); overflow: hidden;">
-            <div style="padding: 10px 12px; background: linear-gradient(135deg, #0a84ff, #34c759); color: #fff; font-weight: 700; display: flex; align-items: center; justify-content: space-between;">
-                <span>Trợ lý AI - <?= htmlspecialchars($chatbotTitle) ?></span>
-                <button id="vc-chatbot-close" type="button" aria-label="Đóng" style="border: none; background: transparent; color: #fff; font-size: 18px; cursor: pointer;">×</button>
+        <button id="vc-chatbot-toggle" type="button" aria-label="Mở trợ lý AI">💬</button>
+        <div id="vc-chatbot-panel" hidden class="vc-chatbot-panel-wrapper">
+            <div class="vc-chatbot-header">
+                <div style="display: flex; align-items: center; gap: 8px;">
+                    <span style="display: inline-block; width: 9px; height: 9px; border-radius: 50%; background: #34c759; box-shadow: 0 0 8px #34c759;"></span>
+                    <span>Trợ lý AI - <?= htmlspecialchars($chatbotTitle) ?></span>
+                </div>
+                <button id="vc-chatbot-close" type="button" aria-label="Đóng">✕</button>
             </div>
-            <div id="vc-chatbot-messages" style="height: 300px; overflow-y: auto; padding: 10px; background: #f6f9ff;"></div>
-            <form id="vc-chatbot-form" data-no-loader="true" style="display: flex; gap: 8px; padding: 10px; border-top: 1px solid rgba(0,0,0,.08); background: #fff;">
-                <input id="vc-chatbot-input" type="text" placeholder="Nhập câu hỏi của bạn..." style="flex: 1; border: 1px solid rgba(0,0,0,.15); border-radius: 8px; padding: 10px; font-size: 14px;" maxlength="500">
-                <button type="submit" style="border: none; border-radius: 8px; background: #0a84ff; color: #fff; padding: 0 12px; cursor: pointer; font-weight: 600;">Gửi</button>
+            <div id="vc-chatbot-messages"></div>
+            <form id="vc-chatbot-form" data-no-loader="true">
+                <input id="vc-chatbot-input" type="text" placeholder="Nhập câu hỏi của bạn..." maxlength="500" autocomplete="off">
+                <button type="submit">Gửi</button>
             </form>
         </div>
     </div>

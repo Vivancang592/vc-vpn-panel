@@ -407,9 +407,9 @@ ob_start();
                     <input type="number" name="settings[ai_cache_ttl_minutes]" class="glass-input" value="<?= htmlspecialchars($settings['ai_cache_ttl_minutes'] ?? '60') ?>" min="1" max="1440" step="1" style="width: 100%;">
                 </div>
 
-                <div class="settings-field-row" style="border-bottom: 1px solid var(--glass-border);">
-                    <label data-hint="Kịch bản hệ thống, quy tắc và phong cách xưng hô của bot đối với khách hàng." style="display: block; font-weight: 600; font-size: 0.85rem;">Prompt Hệ Thống (System Prompt)</label>
-                    <textarea name="settings[ai_system_prompt]" rows="4" class="glass-input" style="width: 100%; resize: vertical;"><?= htmlspecialchars($settings['ai_system_prompt'] ?? '') ?></textarea>
+                <div class="settings-field-row" style="border-bottom: 1px solid var(--glass-border); align-items: start;">
+                    <label data-hint="Kịch bản hệ thống, quy tắc và phong cách xưng hô của bot đối với khách hàng." style="display: block; font-weight: 600; font-size: 0.85rem; padding-top: 0.35rem;">Prompt Hệ Thống (System Prompt)</label>
+                    <textarea name="settings[ai_system_prompt]" rows="10" class="glass-input" style="width: 100%; min-height: 220px; resize: vertical; line-height: 1.6; font-size: 0.875rem; padding: 0.75rem; font-family: inherit;" placeholder="Nhập kịch bản hướng dẫn, phong cách và quy tắc bổ sung cho AI..."><?= htmlspecialchars($settings['ai_system_prompt'] ?? '') ?></textarea>
                 </div>
 
                 <div>
