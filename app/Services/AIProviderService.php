@@ -283,7 +283,8 @@ class AIProviderService
         ];
 
         if (!empty($systemParts)) {
-            $payload['system_instruction'] = [
+            $payload['systemInstruction'] = [ 
+                'role' => 'system',
                 'parts' => $systemParts
             ];
         }
