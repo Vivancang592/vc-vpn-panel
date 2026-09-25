@@ -925,10 +925,11 @@ document.addEventListener('DOMContentLoaded', function () {
             loadImageBtn.disabled = true;
             loadImageBtn.textContent = 'Đang tải...';
             imageStatus.style.color = 'var(--ios-text-secondary)';
-            imageStatus.textContent = 'Đang lấy danh sách model từ ' + (provider === 'gemini' ? 'Google Gemini' : 'OpenRouter') + '...';
+            imageStatus.textContent = 'Đang lấy danh sách model từ ' + (provider === 'gemini' ? 'Google Gemini' : 'OpenRouter / OpenAI') + '...';
 
             const payload = {
                 provider: provider,
+                type: 'image',
                 csrf_token: '<?= htmlspecialchars($csrf_token) ?>'
             };
 

@@ -1,4 +1,7 @@
 <?php
+$csrf_token = $csrf_token ?? ($_SESSION['csrf_token'] ?? '');
+$logContent = $logContent ?? '';
+$logs = $logs ?? [];
 $activeLogTab = $activeLogTab ?? 'system';
 $logTabs = [
     'system' => [
@@ -257,9 +260,9 @@ ob_start();
                         <th>ID</th>
                         <th>Sự Kiện</th>
                         <th>Nguồn</th>
-                        <th>Phiên</th>
-                        <th>Thành Viên</th>
-                        <th>Dữ Liệu</th>
+                        <th>Phiên / Đối Tượng</th>
+                        <th>Người Dùng</th>
+                        <th>Nội Dung Chi Tiết</th>
                         <th>Thời Gian</th>
                     </tr>
                 </thead>
@@ -269,24 +272,67 @@ ob_start();
                             <?php
                                 $rawData = trim((string)($log['event_data'] ?? ''));
                                 $decoded = $rawData !== '' ? json_decode($rawData, true) : null;
-                                $displayData = is_array($decoded)
-                                    ? json_encode($decoded, JSON_UNESCAPED_UNICODE)
-                                    : ($rawData !== '' ? $rawData : '-');
+                                $eventName = (string)($log['event_name'] ?? '-');
+
+                                $badgeClass = match($eventName) {
+                                    'fanpage_comment_reply'  => 'logs-badge-green',
+                                    'fanpage_comment_failed' => 'logs-badge-danger',
+                                    'fanpage_comment_skipped'=> 'logs-badge-blue',
+                                    'fanpage_inbound'        => 'logs-badge-blue',
+                                    'ai_reply'               => 'logs-badge-green',
+                                    'ai_failed'              => 'logs-badge-danger',
+                                    default                  => 'logs-badge-blue'
+                                };
+
+                                $eventLabel = match($eventName) {
+                                    'fanpage_comment_reply'  => '💬 Bình luận Fanpage',
+                                    'fanpage_comment_failed' => '❌ Lỗi Comment',
+                                    'fanpage_comment_skipped'=> '⏭️ Bỏ qua Comment',
+                                    'fanpage_inbound'        => '📩 Messenger 1-1',
+                                    'ai_reply'               => '🤖 AI Trả lời',
+                                    'ai_failed'              => '⚠️ AI Lỗi',
+                                    default                  => $eventName
+                                };
+
+                                $authorName = (string)($log['username'] ?? '');
+                                if ($authorName === '' && is_array($decoded) && !empty($decoded['from_name'])) {
+                                    $authorName = (string)$decoded['from_name'];
+                                }
+                                if ($authorName === '') {
+                                    $authorName = 'Khách';
+                                }
                             ?>
                             <tr>
                                 <td class="logs-select-column"><input type="checkbox" name="log_ids[]" value="<?= (int)$log['id'] ?>" class="logs-row-select" aria-label="Chọn log #<?= (int)$log['id'] ?>"></td>
                                 <td class="logs-id">#<?= (int)$log['id'] ?></td>
-                                <td><span class="logs-badge logs-badge-blue"><?= htmlspecialchars((string)($log['event_name'] ?? '-')) ?></span></td>
+                                <td><span class="logs-badge <?= $badgeClass ?>"><?= htmlspecialchars($eventLabel) ?></span></td>
                                 <td><span class="logs-badge logs-badge-green"><?= htmlspecialchars((string)($log['source'] ?? $log['session_source'] ?? 'web')) ?></span></td>
                                 <td>
-                                    <div class="logs-user-name">SID: <?= (int)($log['session_id'] ?? 0) ?></div>
-                                    <div class="logs-user-email"><?= htmlspecialchars((string)($log['external_id'] ?? $log['visitor_token'] ?? '-')) ?></div>
+                                    <?php if (!empty($log['session_id'])): ?>
+                                        <div class="logs-user-name">SID: <?= (int)$log['session_id'] ?></div>
+                                        <div class="logs-user-email"><?= htmlspecialchars((string)($log['external_id'] ?? $log['visitor_token'] ?? '-')) ?></div>
+                                    <?php elseif (is_array($decoded) && !empty($decoded['comment_id'])): ?>
+                                        <div class="logs-user-name">CMT: <?= htmlspecialchars((string)$decoded['comment_id']) ?></div>
+                                    <?php else: ?>
+                                        <div class="logs-user-email">-</div>
+                                    <?php endif; ?>
                                 </td>
                                 <td>
-                                    <div class="logs-user-name"><?= htmlspecialchars((string)($log['username'] ?? 'Khách')) ?></div>
+                                    <div class="logs-user-name"><?= htmlspecialchars($authorName) ?></div>
                                     <div class="logs-user-email"><?= htmlspecialchars((string)($log['email'] ?? '')) ?></div>
                                 </td>
-                                <td class="logs-truncate"><?= htmlspecialchars($displayData) ?></td>
+                                <td class="logs-truncate" style="max-width: 480px; white-space: normal;">
+                                    <?php if ($eventName === 'fanpage_comment_reply' && is_array($decoded)): ?>
+                                        <div style="font-weight: 600; color: var(--ios-blue); font-size: 0.82rem; margin-bottom: 0.2rem;">👤 <?= htmlspecialchars((string)($decoded['from_name'] ?? 'Khách')) ?>: &ldquo;<?= htmlspecialchars((string)($decoded['user_message'] ?? '')) ?>&rdquo;</div>
+                                        <div style="font-size: 0.82rem; color: var(--ios-text-primary); background: rgba(255,255,255,0.05); padding: 0.35rem 0.5rem; border-radius: 6px;">🤖 <strong>Bot:</strong> <?= htmlspecialchars((string)($decoded['ai_reply'] ?? '')) ?></div>
+                                    <?php elseif ($eventName === 'fanpage_comment_skipped' && is_array($decoded)): ?>
+                                        <div style="font-size: 0.82rem; color: var(--ios-text-secondary);">⏭️ Bỏ qua bình luận của <strong><?= htmlspecialchars((string)($decoded['from_name'] ?? 'Khách')) ?></strong> (Lý do: <?= htmlspecialchars((string)($decoded['reason'] ?? $decoded['keyword'] ?? '')) ?>)</div>
+                                    <?php elseif ($eventName === 'fanpage_comment_failed' && is_array($decoded)): ?>
+                                        <div style="font-size: 0.82rem; color: var(--ios-danger);">❌ Lỗi phản hồi: <?= htmlspecialchars((string)($decoded['error'] ?? '')) ?></div>
+                                    <?php else: ?>
+                                        <?= htmlspecialchars(is_array($decoded) ? json_encode($decoded, JSON_UNESCAPED_UNICODE) : ($rawData !== '' ? $rawData : '-')) ?>
+                                    <?php endif; ?>
+                                </td>
                                 <td class="logs-time"><?= !empty($log['created_at']) ? date('d/m/Y H:i:s', strtotime($log['created_at'])) : '-' ?></td>
                             </tr>
                         <?php endforeach; ?>
