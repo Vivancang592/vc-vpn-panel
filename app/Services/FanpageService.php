@@ -201,13 +201,16 @@ class FanpageService
         }
 
         $aiProvider = new AIProviderService();
-        $model = trim((string) ($this->settings['ai_comment_model'] ?? ''));
+        $commentProvider = strtolower(trim((string) ($this->settings['ai_comment_provider'] ?? '')));
+        $commentModel = trim((string) ($this->settings['ai_comment_model'] ?? ''));
         $messages = [
             ['role' => 'system', 'content' => $customPrompt],
             ['role' => 'user', 'content' => "Khách hàng {$fromName} vừa bình luận: \"{$message}\". Hãy viết 1 câu trả lời công khai ngắn gọn, lịch sự."]
         ];
 
-        $reply = $aiProvider->ask($messages, null, $model ?: ($this->settings['ai_comment_model'] ?? ''));
+        // Truyền provider và model chuyên dụng cho bình luận, nếu provider là gemini thì dùng Gemini,
+        // ngược lại dùng OpenRouter (mặc định là OpenAI model qua OpenRouter)
+        $reply = $aiProvider->ask($messages, $commentProvider ?: null, $commentModel ?: ($this->settings['ai_comment_model'] ?? ''));
         $replyText = trim((string) ($reply['content'] ?? ''));
 
         if ($replyText !== '') {
