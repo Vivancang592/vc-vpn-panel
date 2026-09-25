@@ -275,38 +275,7 @@ class AIProviderService
             }
         }
 
-        // 3. Nếu API key là trực tiếp của OpenAI (sk-proj-... hoặc sk-...) hoặc model là DALL-E, thử qua OpenAI API chính thức
-        if (str_starts_with($apiKey, 'sk-') && !str_starts_with($apiKey, 'sk-or-')) {
-            $openAiModel = (stripos($model, 'dall-e-2') !== false) ? 'dall-e-2' : 'dall-e-3';
-            $openAiPayload = [
-                'model' => $openAiModel,
-                'prompt' => $prompt,
-                'n' => 1,
-                'size' => $targetSize,
-                'response_format' => 'url'
-            ];
-
-            $openAiResponse = $this->requestJson(
-                'https://api.openai.com/v1/images/generations',
-                $openAiPayload,
-                [
-                    'Authorization: Bearer ' . $apiKey,
-                    'Content-Type: application/json'
-                ]
-            );
-
-            if ($openAiResponse['ok']) {
-                $remoteUrl = (string) ($openAiResponse['data']['data'][0]['url'] ?? '');
-                if ($remoteUrl !== '') {
-                    $saveResult = $this->downloadAndSaveImage($remoteUrl, $uploadDir);
-                    if ($saveResult['ok']) {
-                        return $saveResult;
-                    }
-                }
-            }
-        }
-
-        $error = $response['error'] ?? $chatResponse['error'] ?? 'Không thể tạo ảnh với model ' . $model;
+        $error = $response['error'] ?? $chatResponse['error'] ?? 'OpenRouter không thể tạo ảnh với model ' . $model;
         return ['ok' => false, 'url' => '', 'error' => $error];
     }
 
