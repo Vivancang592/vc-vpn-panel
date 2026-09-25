@@ -172,7 +172,12 @@ class FanpageService
         $message = trim((string) ($value['message'] ?? ''));
 
         // 1. Chống lặp: Không tự trả lời bình luận của chính Page
-        if ($fromId === '' || $commentId === '' || $message === '' || $fromId === $pageId) {
+        if ($commentId === '' || $message === '') {
+            return;
+        }
+
+        // Chỉ chặn nếu Facebook có trả về ID và ID đó trùng với Fanpage (Bot tự comment)
+        if ($fromId !== '' && $fromId === $pageId) {
             return;
         }
 
