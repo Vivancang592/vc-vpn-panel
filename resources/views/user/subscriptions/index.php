@@ -9,7 +9,7 @@ ob_start();
 <section class="user-subscriptions-page">
 	<header class="user-subscriptions-header">
 		<div class="user-subscriptions-intro">
-			<h2 style="color: #020af4; font-family: emoji;">DỊCH VỤ VPN</h2>
+			<h2 class="u-plans-title">DỊCH VỤ VPN</h2>
 			<p>Quản lý dung lượng, thời hạn và cấu hình kết nối của bạn.</p>
 		</div>
 		<div class="user-subscriptions-title-row">

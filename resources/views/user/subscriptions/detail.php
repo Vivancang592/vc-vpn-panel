@@ -22,7 +22,7 @@ ob_start();
 
 <section class="user-subscriptions-page">
 	<header class="user-orders-header">
-		<div class="user-orders-intro"><h2 style="color: #020af4; font-family: emoji;">CHI TIẾT GÓI DỊCH VỤ</h2></div>
+		<div class="user-orders-intro"><h2 class="u-plans-title">CHI TIẾT GÓI DỊCH VỤ</h2></div>
 		<div class="user-orders-title-row"><h1><span>Gói: </span><?= htmlspecialchars($subscription['plan_name'] ?? ('Gói dịch vụ #' . ($subscription['plan_id'] ?? ''))) ?></h1></div>
 	</header>
 

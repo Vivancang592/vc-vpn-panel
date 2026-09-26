@@ -91,7 +91,7 @@ ob_start();
 
 <header class="user-checkout-header">
 
-    <h2 style="color: #020af4; font-family: emoji;">
+    <h2 class="u-plans-title">
         <?= htmlspecialchars($pageHeading) ?>
     </h2>
 
@@ -250,25 +250,25 @@ ob_start();
 
                 <?php if ($isDeposit): ?>
 
-                    <h4 style="color: #0702f7; text-align: center;">
+                    <h4 class="user-checkout-tab-title">
                         NẠP TIỀN
                     </h4>
 
                 <?php elseif ($isRenewal): ?>
 
-                    <h4 style="color: #0702f7; text-align: center;">
+                    <h4 class="user-checkout-tab-title">
                         XÁC NHẬN GIA HẠN
                     </h4>
 
                 <?php else: ?>
 
-                    <h4 style="color: #0702f7; text-align: center;">
+                    <h4 class="user-checkout-tab-title">
                         XÁC NHẬN ĐĂNG KÝ
                     </h4>
 
                 <?php endif; ?>
 
-                <hr style="border: 1px solid #0602f72f; margin-top: 0.2em; margin-bottom: 1em;">
+                <hr class="user-checkout-tab-rule">
 
             </div>
 
@@ -540,19 +540,13 @@ ob_start();
 
             <div class="user-checkout-tab-head">
 
-                <h4
-                    style="
-                        color: #0702f7;
-                        text-align: center;
-                        font-family: serif;
-                    "
-                >
+                <h4 class="user-checkout-tab-title user-checkout-tab-title--serif">
                     CỔNG THANH TOÁN HIỆN HÀNH
                 </h4>
 
-                <hr style="border: 1px solid #0602f730; margin-top: 0.2em; margin-bottom: 1em;">
+                <hr class="user-checkout-tab-rule">
 
-                <h5 style="text-align: center; color: #6f5c7a;">
+                <h5 class="user-checkout-tab-subtitle">
                     Chọn cổng thanh toán
                 </h5>
 

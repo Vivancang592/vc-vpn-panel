@@ -5,7 +5,7 @@ ob_start();
 <section class="user-record-page" style="width: 100%;">
     <header class="user-orders-header">
         <div class="user-orders-intro">
-            <h2 style="color: #020af4; font-family: emoji;">TRUNG TÂM HỖ TRỢ</h2>
+            <h2 class="u-plans-title">TRUNG TÂM HỖ TRỢ</h2>
             <p style="margin: 0;">
                 Mô tả chi tiết vấn đề bạn đang gặp phải để đội ngũ kỹ thuật viên phản hồi nhanh nhất.
             </p>

@@ -14,7 +14,7 @@ ob_start();
 ?>
 
 <div class="wallet-page-header">
-	<h2 style="color: #020af4; font-family: emoji; text-align: center;">VÍ TIỀN CỦA BẠN</h2>
+	<h2 class="u-plans-title">VÍ TIỀN CỦA BẠN</h2>
 	<p style="text-align: center;">Theo dõi số dư và nạp tiền vào tài khoản.</p>
 </div>
 

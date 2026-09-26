@@ -205,8 +205,7 @@ ob_start();
             class="user-payment-qr-instruction"
             style="color: #00e6f6; text-align: center;"
         >
-            Thanh toán đúng số tiền và nội dung để hệ thống tự động
-            xác nhận giao dịch.
+        Quét mã QR bằng ứng dụng thanh toán của bạn.    
         </p>
 
         <p id="payment-countdown" class="user-payment-qr-instruction" style="text-align: center;">
@@ -234,7 +233,8 @@ ob_start();
 
 
         <p>
-            Quét mã QR bằng ứng dụng thanh toán của bạn.
+            Thanh toán đúng số tiền và nội dung để hệ thống tự động
+            xác nhận giao dịch.
         </p>
 
     </article>

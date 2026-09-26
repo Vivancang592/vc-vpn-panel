@@ -66,7 +66,7 @@ ob_start();
 <section class="user-record-page">
     <header class="user-orders-header">
         <div class="user-orders-intro">
-            <h2 style="color: #020af4; font-family: emoji;">TRUNG TÂM HƯỚNG DẪN</h2>
+            <h2 class="u-plans-title">TRUNG TÂM HƯỚNG DẪN</h2>
             <p style="margin: 0;">Xem nhanh tài liệu cài đặt và sử dụng VPN từ khu vực tài khoản của bạn.</p>
         </div>
         <div class="user-orders-title-row">
@@ -79,8 +79,8 @@ ob_start();
             <?php foreach ($posts as $idx => $post): ?>
                 <?php $slug = trim((string)($post['slug'] ?? '')); ?>
                 <?php $thumb = $getGuideThumbnail($post, (int)$idx); ?>
-                <article class="glass-card" style="padding: .9rem; border: 1px solid var(--glass-border); border-radius: 10px; display: flex; flex-wrap: wrap; gap: .9rem; align-items: start;">
-                    <img src="<?= htmlspecialchars($thumb) ?>" alt="<?= htmlspecialchars($post['title'] ?? 'Hướng dẫn') ?>" style="width: 100%; max-width: 180px; flex: 1 1 180px; aspect-ratio: 16 / 9; object-fit: cover; border-radius: 8px; border: 1px solid var(--glass-border);">
+                <article class="glass-card user-guide-card" style="padding: .9rem; border: 1px solid var(--glass-border); border-radius: 10px; display: flex; flex-wrap: wrap; gap: .9rem; align-items: start;">
+                    <img src="<?= htmlspecialchars($thumb) ?>" alt="<?= htmlspecialchars($post['title'] ?? 'Hướng dẫn') ?>" class="user-guide-thumb" style="width: 100%; max-width: 180px; flex: 1 1 180px; aspect-ratio: 16 / 9; object-fit: cover; border-radius: 8px; border: 1px solid var(--glass-border);">
                     <div style="min-width: 0; flex: 2 1 260px;">
                         <h2 style="margin: 0 0 .45rem; font-size: 1.05rem; line-height: 1.35;">
                             <a href="<?= $slug !== '' ? '/user/guides/detail?slug=' . urlencode($slug) : '#' ?>" style="color: var(--ios-blue); text-decoration: none;">

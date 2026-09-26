@@ -20,7 +20,7 @@ ob_start();
 
 <section class="user-plans-page" style="width: 100% !important; max-width: 100% !important; box-sizing: border-box;">
 	<header class="user-plans-header">
-		<h2 style="color: #020af4; font-family: emoji;">CHỌN GÓI DỊCH VỤ PHÙ HỢP VỚI BẠN</h2>
+		<h2 class="u-plans-title">CHỌN GÓI DỊCH VỤ PHÙ HỢP VỚI BẠN</h2>
 		<p>Kết nối ổn định, bảo mật và linh hoạt trên mọi thiết bị.</p>
 	</header>
 

@@ -23,7 +23,7 @@ ob_start();
 ?>
 <section class="user-record-page" style="width: 100%;">
     <header class="user-orders-header">
-        <div class="user-orders-intro"><h2 style="color: #020af4; font-family: emoji;">CHI TIẾT YÊU CẦU HỖ TRỢ</h2></div>
+        <div class="user-orders-intro"><h2 class="u-plans-title">CHI TIẾT YÊU CẦU HỖ TRỢ</h2></div>
         <div class="user-orders-title-row">
             <div style="display: flex; align-items: center; gap: 0.6rem; flex-wrap: wrap; margin-bottom: 0.35rem;">
                 <span style="font-size: 0.8rem; font-weight: 700; background: <?= $currentBadge['bg'] ?>; color: <?= $currentBadge['color'] ?>; border: 1px solid <?= $currentBadge['border'] ?>; padding: 0.2rem 0.65rem; border-radius: 9999px;">
@@ -79,7 +79,7 @@ ob_start();
                     </div>
 
                     <!-- Nội dung tin nhắn bong bóng -->
-                    <div style="max-width: 82%; padding: 0.85rem 1.1rem; border-radius: 14px; font-size: 0.9rem; line-height: 1.55; word-break: break-word; <?= $isAdmin ? 'background: rgba(0, 122, 255, 0.1); border: 1px solid rgba(0, 122, 255, 0.25); color: var(--ios-text); border-top-left-radius: 3px;' : 'background: rgba(255, 255, 255, 0.35); border: 1px solid var(--glass-border); color: var(--ios-text); border-top-right-radius: 3px;' ?>">
+                    <div class="ticket-chat-bubble<?= ($isAdmin) ? ' is-staff' : ' is-user' ?>">
                         <?= nl2br(htmlspecialchars($item['message'] ?? '')) ?>
                     </div>
                 </div>

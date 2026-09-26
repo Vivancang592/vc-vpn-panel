@@ -7,7 +7,7 @@ ob_start();
 <section class="user-record-page">
     <header class="user-orders-header">
         <div class="user-orders-intro">
-            <h2 style="color: #020af4; font-family: emoji;">TRUNG TÂM THÔNG BÁO</h2>
+            <h2 class="u-plans-title">TRUNG TÂM THÔNG BÁO</h2>
             <p style="margin: 0;">
                 Cập nhật đơn hàng, gói cước, hỗ trợ kỹ thuật và biến động dịch vụ.
             </p>
@@ -25,7 +25,7 @@ ob_start();
             <div style="display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap;">
                 <?php if ($unreadCount > 0): ?>
                     <form method="POST" action="/notifications/read-all" style="margin: 0;">
-                        <button type="submit" class="glass-btn" style="font-size: 0.8rem; padding: 0.4rem 0.8rem; background: rgba(0, 122, 255, 0.15); border: 1px solid rgba(0, 122, 255, 0.3); color: var(--ios-blue, #007aff); border-radius: var(--radius-sm, 8px); cursor: pointer; font-weight: 600;">
+                        <button type="submit" class="glass-btn" style="font-size: 0.8rem; padding: 0.4rem 0.8rem; background: rgba(0, 122, 255, 0.15); border: 1px solid rgba(0, 122, 255, 0.3); color: var(--ios-Green, #00ff00); border-radius: var(--radius-sm, 8px); cursor: pointer; font-weight: 600;">
                             ✓ Đánh dấu tất cả đã xem
                         </button>
                     </form>

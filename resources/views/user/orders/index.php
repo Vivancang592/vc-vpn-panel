@@ -17,7 +17,7 @@ ob_start();
 <section class="user-orders-page">
 	<header class="user-orders-header">
 		<div class="user-orders-intro">
-			<h2 style="color: #020af4; font-family: emoji;">LỊCH SỬ MUA HÀNG</h2>
+			<h2 class="u-plans-title">LỊCH SỬ MUA HÀNG</h2>
 			<p>Theo dõi trạng thái thanh toán và gói dịch vụ đã đăng ký.</p>
 		</div>
 		<div class="user-orders-title-row">

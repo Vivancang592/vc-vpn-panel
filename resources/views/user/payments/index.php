@@ -6,7 +6,7 @@ ob_start();
 ?>
 <section class="user-record-page">
 	<header class="user-orders-header">
-		<div class="user-orders-intro"><h2 style="color: #020af4; font-family: emoji;">LỊCH SỬ GIAO DỊCH</h2><p>Theo dõi các khoản nạp tiền, mua gói và gia hạn.</p></div>
+		<div class="user-orders-intro"><h2 class="u-plans-title">LỊCH SỬ GIAO DỊCH</h2><p>Theo dõi các khoản nạp tiền, mua gói và gia hạn.</p></div>
 		<div class="user-orders-title-row"><h1>Giao dịch</h1><a class="glass-btn" href="/checkout?type=deposit">Nạp tiền</a></div>
 	</header>
 	<?php if (!empty($_SESSION['success']) || !empty($_SESSION['error'])): ?><div class="user-record-alert <?= !empty($_SESSION['error']) ? 'is-error' : '' ?>"><span><?= htmlspecialchars($_SESSION['error'] ?? $_SESSION['success']) ?></span><button type="button" class="alert-close-btn" onclick="this.parentElement.remove();" aria-label="Đóng">&times;</button></div><?php unset($_SESSION['success'], $_SESSION['error']); endif; ?>

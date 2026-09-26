@@ -3,29 +3,8 @@
 ob_start();
 ?>
 
-<style>
-/* CSS Layout riêng cho trang Profile đồng bộ với app.css */
-.profile-grid { display: grid; grid-template-columns: 2fr 1fr; gap: 1.2rem; }
-@media (max-width: 768px) { .profile-grid { grid-template-columns: 1fr; } .profile-summary { order: -1; } }
-@media (max-width: 576px) { .form-grid-2 { grid-template-columns: 1fr !important; } }
-
-.form-grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
-.form-group { margin-bottom: 1.2rem; }
-.form-label { display: block; font-size: 0.85rem; font-weight: 600; color: var(--ios-text); margin-bottom: 0.5rem; }
-
-.profile-page-header { margin-bottom: 1rem; }
-.profile-page-header h1 { margin: 0; font-size: 1.5rem; font-weight: 700; color: var(--ios-text); }
-.profile-page-header p { margin: .3rem 0 0; color: var(--ios-text-secondary); font-size: .85rem; }
-.profile-header { font-size: 1.15rem; font-weight: 700; margin: 0 0 1.2rem; padding-bottom: 0.8rem; border-bottom: 1px solid var(--glass-border); color: var(--ios-text); }
-.profile-info-list { list-style: none; padding: 0; margin: 0; }
-.profile-info-list li { padding: 0.8rem 0; border-bottom: 1px dashed var(--glass-border); display: flex; justify-content: space-between; font-size: 0.9rem; }
-.profile-info-list li:last-child { border-bottom: none; padding-bottom: 0; }
-
-.alert-success { background: rgba(52, 199, 89, 0.15); color: var(--ios-success); padding: 0.8rem; border-radius: var(--radius-md); margin-bottom: 1.2rem; font-size: 0.9rem; font-weight: 600; border: 1px solid rgba(52, 199, 89, 0.3); }
-</style>
-
 <header class="user-orders-header">
-    <div class="user-orders-intro"><h2 style="color: #020af4; font-family: emoji;">TÀI KHOẢN</h2><p>Quản lý thông tin cá nhân và bảo mật tài khoản.</p></div>
+    <div class="user-orders-intro"><h2 class="u-plans-title">TÀI KHOẢN</h2><p>Quản lý thông tin cá nhân và bảo mật tài khoản.</p></div>
     <div class="user-orders-title-row"><h1>Tài Khoản</h1></div>
 </header>
 
@@ -91,7 +70,7 @@ ob_start();
             <input class="glass-input" type="password" id="new_password" name="new_password" minlength="6" required placeholder="Nhập mật khẩu mới...">
         </div>
         <div style="text-align: right; margin-top: 1.5rem;">
-            <button type="submit" class="glass-btn">Lưu thay đổi</button>
+            <button type="submit" class="glass-btn u-profile-submit">Lưu thay đổi</button>
         </div>
     </form>
     </div>

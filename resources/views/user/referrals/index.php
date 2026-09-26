@@ -16,7 +16,7 @@ ob_start();
 <section class="user-record-page" style="width: 100%;">
 	<header class="user-orders-header">
 		<div class="user-orders-intro">
-			<h2 style="color: #020af4; font-family: emoji;">TIẾP THỊ LIÊN KẾT</h2>
+			<h2 class="u-plans-title">TIẾP THỊ LIÊN KẾT</h2>
 			<p style="margin: 0;">
 				Chia sẻ liên kết giới thiệu để nhận hoa hồng trọn đời từ các đơn hàng thành công.
 			</p>
@@ -37,7 +37,7 @@ ob_start();
 	<?php endif; ?>
 
 	<!-- Thẻ hiển thị Mã và Link giới thiệu -->
-	<div class="glass-card" style="padding: 1.25rem; margin-bottom: 1.25rem; border-radius: var(--radius-md, 12px); display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1rem; align-items: center;">
+	<div class="glass-card user-ref-card" style="padding: 1.25rem; margin-bottom: 1.25rem; border-radius: var(--radius-md, 12px); display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1rem; align-items: center;">
 		<div style="display: flex; flex-direction: column; gap: 0.35rem;">
 			<span style="font-size: 0.8rem; color: var(--ios-text-secondary); font-weight: 600; text-transform: uppercase;">Mã giới thiệu của bạn</span>
 			<div style="display: flex; align-items: center; gap: 0.5rem;">

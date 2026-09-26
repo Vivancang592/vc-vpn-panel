@@ -24,8 +24,8 @@ $extractThumb = static function (array $item): string {
 ob_start();
 ?>
 
-<section style="display: grid; grid-template-columns: minmax(0, 1fr) 320px; gap: 1rem; align-items: start;">
-    <article class="glass-card" style="padding: clamp(1.25rem, 4vw, 2.25rem); min-width: 0;">
+<section class="u-content-detail">
+    <article class="glass-card u-content-main" style="padding: clamp(1.25rem, 4vw, 2.25rem); min-width: 0;">
         <a href="/dashboard" style="display: inline-block; margin-bottom: 1rem; color: var(--ios-blue); font-size: .9rem; font-weight: 600; text-decoration: none;">&larr; Quay lại dashboard</a>
         <p style="margin: 0 0 .4rem; color: var(--ios-text-secondary); font-size: .8rem;">Cập nhật: <?= !empty($post['created_at']) ? date('d/m/Y', strtotime($post['created_at'])) : 'N/A' ?></p>
         <h1 style="margin: 0 0 1.5rem; font-size: clamp(1.45rem, 3vw, 2rem);"><?= htmlspecialchars($post['title'] ?? 'Bài viết') ?></h1>
@@ -34,7 +34,7 @@ ob_start();
         </div>
     </article>
 
-    <aside class="glass-card" style="padding: 1rem; position: sticky; top: 74px;">
+    <aside class="glass-card u-content-aside" style="padding: 1rem; position: sticky; top: 74px;">
         <h2 style="margin: 0 0 .8rem; font-size: 1rem;">Bài viết gợi ý</h2>
         <?php if (!empty($relatedPosts)): ?>
             <div style="display: grid; gap: .7rem;">
@@ -54,31 +54,6 @@ ob_start();
         <?php endif; ?>
     </aside>
 </section>
-
-<style>
-.post-content img,
-.post-content video,
-.post-content iframe,
-.post-content table {
-    max-width: 100% !important;
-}
-
-.post-content img,
-.post-content video {
-    height: auto !important;
-    border-radius: 10px;
-}
-
-@media (max-width: 920px) {
-    section[style*="grid-template-columns: minmax(0, 1fr) 320px"] {
-        grid-template-columns: 1fr !important;
-    }
-
-    section[style*="grid-template-columns: minmax(0, 1fr) 320px"] aside {
-        position: static !important;
-    }
-}
-</style>
 
 <?php
 $content = ob_get_clean();
