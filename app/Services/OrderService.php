@@ -71,6 +71,7 @@ class OrderService
             'order_code'     => $orderCode,
             'user_id'        => $userId,
             'plan_id'        => $planId,
+            'coupon_id'      => $couponId,
             'total_amount'   => $finalPrice,
             'payment_method' => $paymentMethod,
             'payment_status' => 'pending',
