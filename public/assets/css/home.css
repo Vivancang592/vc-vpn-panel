@@ -566,3 +566,28 @@ body.vpn-theme.home-festival .vc-footer-intro { margin: .35rem auto 0; text-alig
 .home-post-page { padding-top: clamp(1.5rem, 4vw, 3rem); }.home-post-page .post-detail-layout { gap: clamp(1.5rem, 4vw, 3rem); }.home-post-page .post-article { padding: clamp(1.5rem, 4vw, 2.5rem); border: 1px solid #343434; border-radius: 4px; background: #111; }.home-post-page .post-title { color: #f4f4f4 !important; }.home-post-page .post-meta { border-bottom-color: #343434 !important; color: #aaa !important; }.home-post-page .post-meta strong { color: #f5c518 !important; }.home-post-page .post-content { color: #d6d6d6 !important; }.home-post-page .post-content h2, .home-post-page .post-content h3 { color: #f4f4f4; }.home-post-page .post-content a { color: #f5c518; }.home-post-page .post-content pre { border: 1px solid #343434; background: #080808; }.home-post-page .related-posts { padding: 1.25rem; border: 1px solid #343434; border-radius: 4px; background: #111; }.home-post-page .related-posts h3 { margin-top: 0; color: #f5c518; font-size: .8rem; letter-spacing: .09em; text-transform: uppercase; }.home-post-page .related-posts a { border-bottom-color: #343434; color: #d7d7d7; }.home-post-page .related-posts a:hover { color: #f5c518; }
 
 @media (max-width: 700px) { .home-subpage { padding-right: 1rem; padding-left: 1rem; }.home-subpage-search { flex-direction: column; }.home-subpage-search .glass-btn { min-height: 44px; }.home-faq-page .faq-card { grid-template-columns: 1fr; }.home-faq-page .faq-card-thumbnail { max-height: 190px; min-height: 0; }.home-post-page .post-detail-layout { grid-template-columns: 1fr; }.home-post-page .related-posts { border-left: 1px solid #343434; }.home-download-shell { padding: 1.25rem !important; }.home-download-grid { grid-template-columns: 1fr !important; } }
+/* ===== ĐỒNG BỘ NỀN & BỀ RỘNG CHO CÁC TRANG PUBLIC (home) ===== */
+/* Loại bỏ nền sáng của <html> (app.css) để chỉ còn 1 màu nền tối duy nhất */
+html:has(body.home-festival) {
+    background-color: #050505;
+    background-image: none;
+}
+
+/* Trang public dùng trọn chiều rộng khung nội dung, không bị thu hẹp */
+body.home-festival .admin-content > .public-page.home-page,
+body.home-festival .admin-content > .public-page.home-page.home-subpage {
+    width: 100%;
+    max-width: 100%;
+    margin-right: 0;
+    margin-left: 0;
+}
+
+@media (max-width: 800px) {
+    body.home-festival .admin-content > .public-page.home-page,
+    body.home-festival .admin-content > .public-page.home-page.home-subpage {
+        width: 100%;
+        max-width: 100%;
+        margin-right: 0;
+        margin-left: 0;
+    }
+}
