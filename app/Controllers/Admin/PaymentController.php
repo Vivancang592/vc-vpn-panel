@@ -71,8 +71,18 @@ class PaymentController extends BaseController
     public function deleteCancelledDeposit(): void
     {
         $paymentId = (int) ($_POST['payment_id'] ?? 0);
+        $payment = $paymentId > 0 ? $this->paymentModel->find($paymentId) : null;
+
+        // Hủy đơn hàng liên kết trước khi xóa payment để không còn đơn "pending" mồ côi.
+        if ($payment !== null && !empty($payment['order_id'])) {
+            (new \App\Models\Order())->cancelPendingForUser(
+                (int) $payment['order_id'],
+                (int) $payment['user_id']
+            );
+        }
+
         $deleted = $this->validateCsrfToken($_POST['csrf_token'] ?? '')
-            && $paymentId > 0
+            && $payment !== null
             && $this->paymentModel->deletePendingOrFailed($paymentId);
 
         $_SESSION[$deleted ? 'flash_message' : 'error'] = $deleted

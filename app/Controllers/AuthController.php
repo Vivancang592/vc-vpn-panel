@@ -292,7 +292,7 @@ class AuthController extends BaseController
 
         $_SESSION['user_id'] = $user['id'];
         $_SESSION['username'] = $user['username'];
-        $_SESSION['role'] = $user['role'] ?? 'user';
+        $_SESSION['role'] = ($user['role'] ?? '') === 'admin' ? 'admin' : 'user';
         if ($isNewGoogleUser) {
             $this->recordAccessEvent((int)$user['id'], 'REGISTER_GOOGLE');
         }

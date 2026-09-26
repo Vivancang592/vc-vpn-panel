@@ -249,9 +249,19 @@ class PaymentController extends BaseController
             return;
         }
 
-        // 4.6 Kiểm tra theo mã giao dịch nạp tiền DEP...
+        // 4.6 Kiểm tra theo mã đơn nạp tiền DEP... (order_code của đơn nạp tiền)
         if (!empty($searchContent) && preg_match('/\bDEP\d+\b/i', $searchContent, $matches)) {
             $transCode = strtoupper($matches[0]);
+            $depOrder = method_exists($orderModel, 'findByOrderCode')
+                ? $orderModel->findByOrderCode($transCode)
+                : null;
+
+            if ($depOrder) {
+                $result = $orderService->processPaymentByOrderCode($transCode, $amount, $transId);
+                $respond($result['status'], $result['message'], $result['status'] ? 200 : 400);
+                return;
+            }
+
             $result = $paymentService->completePaymentByCode($transCode, $amount);
             $respond($result, $result ? 'Nạp tiền vào tài khoản thành công.' : 'Xử lý mã nạp tiền thất bại hoặc đã được xử lý.', $result ? 200 : 400);
             return;

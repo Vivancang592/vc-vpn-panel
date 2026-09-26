@@ -634,6 +634,32 @@ $_SESSION['success'] = 'Đã tạo đơn hàng ' . $orderCode . ' thành công. 
         $this->json(['status' => $order['payment_status'] ?? 'pending']);
     }
 
+    /**
+     * Trả JSON trạng thái của một payment (nạp tiền / gia hạn).
+     * Route: GET /payments/status?id={payment_id}
+     */
+    public function paymentStatus(): void
+    {
+        $paymentId = (int) ($_GET['id'] ?? 0);
+        if ($paymentId <= 0 || !class_exists('App\Models\Payment')) {
+            $this->json(['status' => 'not_found'], 404);
+            return;
+        }
+
+        $paymentModel = new Payment();
+        $payment = method_exists($paymentModel, 'findWithDetails')
+            ? $paymentModel->findWithDetails($paymentId)
+            : $paymentModel->find($paymentId);
+
+        if (!$payment
+            || (int) ($payment['user_id'] ?? 0) !== (int) $_SESSION['user_id']) {
+            $this->json(['status' => 'not_found'], 404);
+            return;
+        }
+
+        $this->json(['status' => $payment['status'] ?? 'pending']);
+    }
+
     private function formatCurrency(float $amount): string
 {
     $symbol = trim((string) ($this->settings['currency_symbol'] ?? 'đ'));
@@ -992,10 +1018,20 @@ $_SESSION['success'] = 'Đã tạo đơn hàng ' . $orderCode . ' thành công. 
         }
 
         $paymentId = (int) ($_POST['payment_id'] ?? 0);
-        $cancelled = $paymentId > 0 && (new Payment())->cancelPendingDeposit(
+        $paymentModel = new Payment();
+        $payment = $paymentId > 0 ? $paymentModel->find($paymentId) : null;
+        $cancelled = $payment !== null && $paymentModel->cancelPendingDeposit(
             $paymentId,
             (int) $_SESSION['user_id']
         );
+
+        // Hủy kèm đơn hàng liên kết: QR hết hiệu lực và không chặn mua gói.
+        if ($cancelled && !empty($payment['order_id'])) {
+            (new Order())->cancelPendingForUser(
+                (int) $payment['order_id'],
+                (int) $_SESSION['user_id']
+            );
+        }
 
         $_SESSION[$cancelled ? 'success' : 'error'] = $cancelled
             ? 'Đã hủy giao dịch nạp tiền đang chờ.'
@@ -1021,14 +1057,31 @@ $_SESSION['success'] = 'Đã tạo đơn hàng ' . $orderCode . ' thành công. 
 
     public function showDeposit(): void
     {
-        $this->redirect('/checkout?type=deposit');
+        $minDeposit = (float) (
+            $this->settings['min_deposit_amount'] ??
+            $this->settings['min_deposit'] ??
+            10000
+        );
+        $depositAmount = max(0, (float) ($_GET['amount'] ?? 0));
+
+        $this->render('user.plans.checkout', [
+            'checkoutType' => 'deposit',
+            'plan' => null,
+            'subscription' => null,
+            'depositAmount' => $depositAmount,
+            'minDeposit' => $minDeposit,
+            'paymentGateways' => $this->getEnabledPaymentGateways(false),
+            'pendingOrder' => null,
+            'couponPreview' => null,
+            'activeMenu' => 'wallet'
+        ]);
     }
 
     public function deposit(): void
     {
         if (!$this->validateCsrfToken($_POST['csrf_token'] ?? '')) {
             $_SESSION['error'] = 'Phiên làm việc không hợp lệ. Vui lòng tải lại trang.';
-            $this->redirect('/checkout?type=deposit');
+            $this->redirect('/payments/deposit');
             return;
         }
 
@@ -1044,14 +1097,38 @@ $_SESSION['success'] = 'Đã tạo đơn hàng ' . $orderCode . ' thành công. 
         if ($amount < $minDeposit) {
             $_SESSION['error'] = 'Số tiền nạp tối thiểu là ' .
                 $this->formatCurrency($minDeposit) . '.';
-            $this->redirect('/checkout?type=deposit&amount=' . rawurlencode((string) $amount));
+            $this->redirect('/payments/deposit?amount=' . rawurlencode((string) $amount));
+            return;
+        }
+
+        $maxDeposit = (float) ($this->settings['max_deposit_amount'] ?? 0);
+        if ($maxDeposit > 0 && $amount > $maxDeposit) {
+            $_SESSION['error'] = 'Số tiền nạp tối đa là ' .
+                $this->formatCurrency($maxDeposit) . '.';
+            $this->redirect('/payments/deposit?amount=' . rawurlencode((string) $amount));
+            return;
+        }
+
+        // Chặn tạo thêm giao dịch khi còn một nạp tiền đang chờ thanh toán.
+        $pendingDepositId = 0;
+        foreach ((new Payment())->getByUserId((int) $_SESSION['user_id']) as $candidate) {
+            if (($candidate['type'] ?? '') === 'deposit'
+                && ($candidate['status'] ?? '') === 'pending') {
+                $pendingDepositId = (int) $candidate['id'];
+                break;
+            }
+        }
+        if ($pendingDepositId > 0) {
+            $_SESSION['error'] = 'Bạn đã có giao dịch nạp tiền đang chờ thanh toán. '
+                . 'Vui lòng hoàn tất giao dịch cũ (hoặc hủy tại trang Giao dịch) trước khi nạp mới.';
+            $this->redirect('/payments/deposit?amount=' . rawurlencode((string) $amount));
             return;
         }
 
         $allowedGateways = array_column($this->getEnabledPaymentGateways(false), 'id');
         if (!in_array($paymentGateway, $allowedGateways, true)) {
             $_SESSION['error'] = 'Cổng thanh toán không hợp lệ hoặc đang tạm tắt.';
-            $this->redirect('/checkout?type=deposit&amount=' . rawurlencode((string) $amount));
+            $this->redirect('/payments/deposit?amount=' . rawurlencode((string) $amount));
             return;
         }
 
@@ -1065,7 +1142,7 @@ $_SESSION['success'] = 'Đã tạo đơn hàng ' . $orderCode . ' thành công. 
 
         if (($result['status'] ?? false) !== true) {
             $_SESSION['error'] = $result['message'] ?? 'Không thể tạo giao dịch nạp tiền.';
-            $this->redirect('/checkout?type=deposit');
+            $this->redirect('/payments/deposit');
             return;
         }
 

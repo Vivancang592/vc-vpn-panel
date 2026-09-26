@@ -151,26 +151,7 @@ if (array_key_exists($routeKey, $routes)) {
         exit;
     }
 
-    $staffAllowedRoutes = [
-        'GET /admin',
-        'GET /admin/users',
-        'GET /admin/users/detail',
-        'GET /admin/orders',
-        'GET /admin/orders/detail',
-        'POST /admin/orders/update-status',
-        'GET /admin/payments',
-        'GET /admin/payments/detail',
-        'POST /admin/payments/approve-deposit',
-        'GET /admin/subscriptions',
-        'GET /admin/subscriptions/detail',
-        'GET /admin/tickets',
-        'GET /admin/tickets/detail',
-        'POST /admin/tickets/detail'
-    ];
-    $isStaffRoute = ($_SESSION['role'] ?? '') === 'staff'
-        && in_array($routeKey, $staffAllowedRoutes, true);
-
-    if ($isAdminRoute && ($_SESSION['role'] ?? '') !== 'admin' && !$isStaffRoute) {
+    if ($isAdminRoute && ($_SESSION['role'] ?? '') !== 'admin') {
         http_response_code(403);
         header('Content-Type: text/plain; charset=utf-8');
         echo '403 | Bạn không có quyền truy cập trang này.';

@@ -44,8 +44,7 @@ ob_start();
 	<h2 id="wallet-deposit-heading">Nạp tiền vào ví</h2>
 	<p>Chọn nhanh số tiền hoặc nhập số tiền bạn muốn nạp.</p>
 
-	<form action="/checkout" method="GET">
-		<input type="hidden" name="type" value="deposit">
+	<form action="/payments/deposit" method="GET">
 
 		<div class="wallet-quick-amounts" aria-label="Chọn nhanh số tiền nạp">
 			<?php foreach ($quickAmounts as $amount): ?>
