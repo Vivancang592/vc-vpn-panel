@@ -76,89 +76,110 @@ body.vpn-theme { background: var(--color-bg); }
 @media (max-width: 480px) { .auth-card { max-width: 420px; padding: 1.5rem var(--space-4); } }
 
 /* ============================================================
-   GOTHAM / BATMAN THEME — CHỈ ÁP DỤNG CHO TRANG ĐĂNG NHẬP
-   Phạm vi khóa bằng :has() trên form[action="/login"]
-   => Không ảnh hưởng register.php / forgot-password.php
+   ADVANCED TECH THEME — dùng CHUNG cho Đăng nhập / Đăng ký / Quên mật khẩu
+   (auth.css chỉ được nạp ở các trang auth nên phạm vi đã được cô lập sẵn)
    ============================================================ */
-:root:has(.auth-form[action="/login"]) {
+@property --bat-angle { syntax: '<angle>'; initial-value: -40deg; inherits: false; }
+
+:root {
   --color-primary: #f5c518;
   --color-primary-hover: #ffd94d;
   --color-primary-soft: rgba(245, 197, 24, .16);
-  --color-secondary: #f5c518;
+  --color-secondary: #7fd6ff;
   --color-text: #e9ecf4;
   --color-text-muted: #8d95a6;
   --color-text-inverse: #06070b;
-  --color-bg: #06070b;
-  --color-surface: rgba(22, 25, 33, .92);
-  --color-surface-muted: rgba(32, 36, 47, .92);
-  --color-border: rgba(245, 197, 24, .2);
-  --color-border-strong: rgba(245, 197, 24, .4);
-  --color-overlay: rgba(3, 4, 8, .84);
-  --focus-ring: 0 0 0 3px rgba(245, 197, 24, .3);
+  --color-bg: #05070c;
+  --color-surface: rgba(16, 20, 28, .92);
+  --color-surface-muted: rgba(26, 32, 43, .92);
+  --color-border: rgba(245, 197, 24, .18);
+  --color-border-strong: rgba(245, 197, 24, .38);
+  --color-overlay: rgba(3, 5, 9, .82);
+  --focus-ring: 0 0 0 3px rgba(245, 197, 24, .28);
 }
 
-/* Nền Gotham: bầu trời đêm + vệt dơi vàng */
-body:has(.auth-form[action="/login"]) {
-  background: radial-gradient(circle at 50% -10%, rgba(245, 197, 24, .16), transparent 55%), radial-gradient(circle at 15% 110%, rgba(80, 110, 160, .18), transparent 55%), linear-gradient(180deg, #05060a, #0a0d14 55%, #05060a);
+/* --- Nền công nghệ: lưới dữ liệu, quầng sáng xoay, tia quét, hạt sáng --- */
+body.vpn-theme {
+  background: radial-gradient(circle at 50% -8%, rgba(245, 197, 24, .12), transparent 46%), radial-gradient(circle at 10% 92%, rgba(64, 128, 255, .14), transparent 52%), linear-gradient(180deg, #05070c, #080c14 58%, #04060a);
 }
-body:has(.auth-form[action="/login"]) .bg-slideshow .slide-item { background-image: none !important; background: transparent !important; }
-body:has(.auth-form[action="/login"]) .bg-slideshow { background: radial-gradient(circle at 50% 8%, rgba(245, 197, 24, .14), transparent 46%), radial-gradient(circle at 78% 22%, rgba(245, 197, 24, .07), transparent 40%); }
-body:has(.auth-form[action="/login"]) .bg-overlay { background: linear-gradient(180deg, rgba(3, 4, 8, .55), rgba(3, 4, 8, .92)); }
-body:has(.auth-form[action="/login"]) .bg-overlay::before { content: ''; position: absolute; top: -6%; left: 50%; width: 60vmin; height: 60vmin; transform: translateX(-50%); border-radius: 50%; background: radial-gradient(circle, rgba(245, 197, 24, .3), rgba(245, 197, 24, .06) 55%, transparent 70%); animation: batPulse 6s ease-in-out infinite; }
-body:has(.auth-form[action="/login"]) .glow-left { background: radial-gradient(circle, rgba(245, 197, 24, .22), transparent 70%); }
-body:has(.auth-form[action="/login"]) .glow-right { background: radial-gradient(circle, rgba(90, 120, 170, .18), transparent 70%); }
-body:has(.auth-form[action="/login"]) .glow::after { background-image: radial-gradient(rgba(245, 197, 24, .6) 1px, transparent 1px); opacity: .18; }
-body:has(.auth-form[action="/login"]) .fog-container { opacity: .12; filter: grayscale(1) brightness(.5); }
+.bg-slideshow { background-color: transparent; background-image: linear-gradient(rgba(245, 197, 24, .07) 1px, transparent 1px), linear-gradient(90deg, rgba(245, 197, 24, .07) 1px, transparent 1px), linear-gradient(rgba(96, 150, 255, .09) 1px, transparent 1px), linear-gradient(90deg, rgba(96, 150, 255, .09) 1px, transparent 1px); background-size: 24px 24px, 24px 24px, 120px 120px, 120px 120px; -webkit-mask-image: radial-gradient(ellipse at 50% 42%, #000 30%, transparent 82%); mask-image: radial-gradient(ellipse at 50% 42%, #000 30%, transparent 82%); animation: techGridDrift 24s linear infinite; }
+.bg-slideshow .slide-item { background-image: none !important; background: transparent !important; }
+
+.bg-overlay { background: linear-gradient(180deg, rgba(3, 5, 9, .5), rgba(3, 5, 9, .93)); }
+.bg-overlay::before { content: ''; position: absolute; top: 50%; left: 50%; width: 80vmin; height: 80vmin; border-radius: 50%; transform: translate(-50%, -50%); background: conic-gradient(from 0deg, transparent 0 66deg, rgba(245, 197, 24, .18) 84deg, transparent 102deg, transparent 246deg, rgba(96, 150, 255, .14) 264deg, transparent 282deg); filter: blur(14px); animation: techHaloSpin 28s linear infinite; }
+
+/* Lõi cầu công nghệ toàn cầu: lưới kinh/vĩ tuyến tự quay quanh trục */
+.corner-glow::before { content: ''; position: absolute; top: 50%; left: 50%; width: 96vmin; height: 96vmin; transform: translate(-50%, -50%); border-radius: 50%; opacity: .55; background-image: repeating-linear-gradient(90deg, rgba(245, 197, 24, .24) 0 1px, transparent 1px 22px), repeating-linear-gradient(0deg, rgba(127, 214, 255, .18) 0 1px, transparent 1px 22px), radial-gradient(circle at 34% 30%, rgba(245, 197, 24, .14), transparent 58%); box-shadow: inset 0 0 90px rgba(245, 197, 24, .16), 0 0 70px rgba(245, 197, 24, .08); -webkit-mask-image: radial-gradient(circle, #000 62%, transparent 74%); mask-image: radial-gradient(circle, #000 62%, transparent 74%); animation: techGlobeSpin 24s linear infinite, techGlobePulse 6s ease-in-out infinite; }
+
+/* Vòng quỹ đạo nghiêng quay quanh quả cầu */
+.corner-glow::after { content: ''; position: absolute; top: 50%; left: 50%; width: 116vmin; height: 34vmin; transform: translate(-50%, -50%) rotate(0deg); border: 1px solid rgba(245, 197, 24, .24); border-radius: 50%; box-shadow: 0 0 26px rgba(245, 197, 24, .1); animation: techOrbit 20s linear infinite; }
+.auth-scene::before { content: ''; position: absolute; top: 50%; left: 50%; z-index: 4; width: 104vmin; height: 26vmin; transform: translate(-50%, -50%) rotate(0deg); border: 1px solid rgba(127, 214, 255, .2); border-radius: 50%; box-shadow: 0 0 22px rgba(96, 150, 255, .1); pointer-events: none; animation: techOrbit 26s linear infinite reverse; }
+
+.glow { opacity: .5; filter: blur(40px); }
+.glow-left { background: radial-gradient(circle, rgba(245, 197, 24, .3), transparent 68%); animation: techOrb 13s ease-in-out infinite; }
+.glow-right { background: radial-gradient(circle, rgba(70, 130, 255, .24), transparent 68%); animation: techOrb 16s ease-in-out infinite reverse; }
+.glow::after { background-image: radial-gradient(rgba(245, 197, 24, .85) 1px, transparent 1px); background-size: 26px 26px; opacity: .1; animation: techDotsDrift 34s linear infinite; }
+
+.fog-container { display: none !important; }
 
 /* Logo góc: dơi vàng */
-body:has(.auth-form[action="/login"]) .auth-brand-corner { color: #f5c518; letter-spacing: .06em; text-transform: uppercase; text-shadow: 0 0 18px rgba(245, 197, 24, .45); }
-body:has(.auth-form[action="/login"]) .auth-brand-corner::before { content: ''; width: 34px; height: 15px; margin-right: 10px; background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 40'%3E%3Cpath d='M50 8C46 2 38 2 34 6 28 2 20 4 16 10 10 8 4 12 2 20 8 18 14 20 18 24 14 26 12 30 14 34 20 30 26 30 32 32 34 36 40 38 50 34 60 38 66 36 68 32 74 30 80 30 86 34 88 30 86 26 82 24 86 20 92 18 98 20 96 12 90 8 84 10 80 4 72 2 66 6 62 2 54 2 50 8Z' fill='%23f5c518'/%3E%3C/svg%3E") center/contain no-repeat; filter: drop-shadow(0 0 8px rgba(245, 197, 24, .55)); }
+body.vpn-theme .auth-brand-corner { color: #f5c518; letter-spacing: .06em; text-transform: uppercase; text-shadow: 0 0 18px rgba(245, 197, 24, .45); }
+body.vpn-theme .auth-brand-corner::before { content: ''; width: 34px; height: 15px; margin-right: 10px; background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 40'%3E%3Cpath d='M50 8C46 2 38 2 34 6 28 2 20 4 16 10 10 8 4 12 2 20 8 18 14 20 18 24 14 26 12 30 14 34 20 30 26 30 32 32 34 36 40 38 50 34 60 38 66 36 68 32 74 30 80 30 86 34 88 30 86 26 82 24 86 20 92 18 98 20 96 12 90 8 84 10 80 4 72 2 66 6 62 2 54 2 50 8Z' fill='%23f5c518'/%3E%3C/svg%3E") center/contain no-repeat; filter: drop-shadow(0 0 8px rgba(245, 197, 24, .55)); }
 
 /* Thẻ đăng nhập: phiến kim loại tối, viền vàng */
-body:has(.auth-form[action="/login"]) .auth-card { border: 1px solid rgba(245, 197, 24, .28); border-top: 2px solid #f5c518; background: linear-gradient(160deg, rgba(20, 23, 31, .96), rgba(11, 13, 19, .98)); box-shadow: 0 24px 60px rgba(0, 0, 0, .7), 0 0 0 1px rgba(245, 197, 24, .08), inset 0 1px 0 rgba(255, 255, 255, .05); }
-/* Vệt sáng chỉ chạy dọc viền TRÊN của thẻ (không quét ngang toàn thẻ) */
-body:has(.auth-form[action="/login"]) .auth-card::before,
-body:has(.auth-form[action="/login"]) .auth-card::after { inset: 0 0 auto 0; height: 2px; border-radius: var(--radius-lg) var(--radius-lg) 0 0; background-size: 40% 100%; }
-body:has(.auth-form[action="/login"]) .auth-card::before { background-image: linear-gradient(90deg, transparent, #f5c518, transparent); animation: batSweepTop 3.5s ease-in-out infinite; }
-body:has(.auth-form[action="/login"]) .auth-card::after { background-image: linear-gradient(90deg, transparent, rgba(255, 231, 138, .85), transparent); animation: batSweepTop 3.5s ease-in-out infinite reverse; }
+body.vpn-theme .auth-card { position: relative; border: 1px solid rgba(245, 197, 24, .26); background: linear-gradient(160deg, rgba(18, 22, 30, .96), rgba(9, 12, 17, .98)); box-shadow: 0 24px 60px rgba(0, 0, 0, .7), 0 0 40px rgba(245, 197, 24, .06), inset 0 1px 0 rgba(255, 255, 255, .05); }
+
+/* Ánh sáng chạy BO THEO GÓC thẻ: vòng conic-gradient + mask chỉ giữ lại viền */
+body.vpn-theme .auth-card::before,
+body.vpn-theme .auth-card::after { content: ''; position: absolute; inset: -1px; border-radius: inherit; padding: 2px; pointer-events: none; opacity: .7; background: conic-gradient(from var(--bat-angle), transparent 0 68%, rgba(245, 197, 24, .15) 74%, #ffe88a 81%, #f5c518 86%, transparent 92% 100%); background-size: 100% 100%; background-repeat: no-repeat; -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0); -webkit-mask-composite: xor; mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0); mask-composite: exclude; animation: batBorderSpin 4.5s linear infinite; }
+body.vpn-theme .auth-card::after { inset: -2px; padding: 1px; opacity: .3; filter: blur(4px); animation-direction: reverse; }
 
 /* Tiêu đề: vàng kim phát sáng */
-body:has(.auth-form[action="/login"]) .royal-title { color: #f5c518; letter-spacing: .04em; text-transform: uppercase; text-shadow: 0 0 22px rgba(245, 197, 24, .4); }
-body:has(.auth-form[action="/login"]) .text-sparkle { color: #f5c518; animation: batGlow 3.5s ease-in-out infinite; }
-body:has(.auth-form[action="/login"]) .auth-subtitle { color: #9aa3b5; letter-spacing: .08em; text-transform: uppercase; }
+body.vpn-theme .royal-title { color: #f5c518; letter-spacing: .04em; text-transform: uppercase; text-shadow: 0 0 22px rgba(245, 197, 24, .4); }
+body.vpn-theme .text-sparkle { color: #f5c518; animation: batGlow 3.5s ease-in-out infinite; }
+body.vpn-theme .auth-subtitle { color: #9aa3b5; letter-spacing: .08em; text-transform: uppercase; }
 
 /* Ô nhập liệu tối */
-body:has(.auth-form[action="/login"]) .form-group label { color: #c8cedb; letter-spacing: .04em; text-transform: uppercase; }
-body:has(.auth-form[action="/login"]) .input-group-custom { background: rgba(9, 11, 16, .85); border-color: rgba(245, 197, 24, .18); }
-body:has(.auth-form[action="/login"]) .input-group-custom:focus-within { border-color: #f5c518; box-shadow: 0 0 0 3px rgba(245, 197, 24, .22), 0 0 18px rgba(245, 197, 24, .16); }
-body:has(.auth-form[action="/login"]) .input-group-text-custom { filter: grayscale(1) sepia(1) saturate(4) hue-rotate(2deg); }
-body:has(.auth-form[action="/login"]) .btn-toggle-pw:hover { color: #f5c518; }
+body.vpn-theme .form-group label { color: #c8cedb; letter-spacing: .04em; text-transform: uppercase; }
+body.vpn-theme .input-group-custom { background: rgba(9, 11, 16, .85); border-color: rgba(245, 197, 24, .18); }
+body.vpn-theme .input-group-custom:focus-within { border-color: #f5c518; box-shadow: 0 0 0 3px rgba(245, 197, 24, .22), 0 0 18px rgba(245, 197, 24, .16); }
+body.vpn-theme .btn-toggle-pw:hover { color: #f5c518; }
 
 /* Nút đăng nhập: vàng dơi */
-body:has(.auth-form[action="/login"]) .btn-login { border-color: #f5c518; background: linear-gradient(180deg, #ffd94d, #f5c518); color: #06070b; box-shadow: 0 6px 22px rgba(245, 197, 24, .35); }
-body:has(.auth-form[action="/login"]) .btn-login:hover { background: linear-gradient(180deg, #ffe27a, #ffd043); box-shadow: 0 10px 30px rgba(245, 197, 24, .5); }
+body.vpn-theme .btn-login { border-color: #f5c518; background: linear-gradient(180deg, #ffd94d, #f5c518); color: #06070b; box-shadow: 0 6px 22px rgba(245, 197, 24, .35); }
+body.vpn-theme .btn-login:hover { background: linear-gradient(180deg, #ffe27a, #ffd043); box-shadow: 0 10px 30px rgba(245, 197, 24, .5); }
 
 /* Nút Google: viền vàng trên nền tối */
-body:has(.auth-form[action="/login"]) .btn-google { background: rgba(20, 23, 31, .9); border-color: rgba(245, 197, 24, .25); color: #e9ecf4; }
-body:has(.auth-form[action="/login"]) .btn-google:hover { border-color: #f5c518; background: rgba(245, 197, 24, .1); }
+body.vpn-theme .btn-google { background: rgba(20, 23, 31, .9); border-color: rgba(245, 197, 24, .25); color: #e9ecf4; }
+body.vpn-theme .btn-google:hover { border-color: #f5c518; background: rgba(245, 197, 24, .1); }
 
 /* Đường phân cách & footer */
-body:has(.auth-form[action="/login"]) .auth-divider::before,
-body:has(.auth-form[action="/login"]) .auth-divider::after { border-bottom-color: rgba(245, 197, 24, .22); }
-body:has(.auth-form[action="/login"]) .auth-divider span { color: #8d95a6; }
-body:has(.auth-form[action="/login"]) .auth-footer { color: #8d95a6; }
-body:has(.auth-form[action="/login"]) .auth-footer a { color: #f5c518; }
-body:has(.auth-form[action="/login"]) .auth-footer a:hover { color: #ffd94d; }
+body.vpn-theme .auth-divider::before,
+body.vpn-theme .auth-divider::after { border-bottom-color: rgba(245, 197, 24, .22); }
+body.vpn-theme .auth-divider span { color: #8d95a6; }
+body.vpn-theme .auth-footer { color: #8d95a6; }
+body.vpn-theme .auth-footer a { color: #f5c518; }
+body.vpn-theme .auth-footer a:hover { color: #ffd94d; }
 
 /* Cảnh báo trên nền tối */
-body:has(.auth-form[action="/login"]) .alert-error { background: rgba(220, 38, 38, .14); border-color: rgba(248, 113, 113, .35); color: #fca5a5; }
-body:has(.auth-form[action="/login"]) .alert-success { background: rgba(245, 197, 24, .12); border-color: rgba(245, 197, 24, .35); color: #f5c518; }
+body.vpn-theme .alert-error { background: rgba(220, 38, 38, .14); border-color: rgba(248, 113, 113, .35); color: #fca5a5; }
+body.vpn-theme .alert-success { background: rgba(245, 197, 24, .12); border-color: rgba(245, 197, 24, .35); color: #f5c518; }
 
 /* Autofill giữ nền tối */
-body:has(.auth-form[action="/login"]) .form-control-custom:-webkit-autofill,
-body:has(.auth-form[action="/login"]) .form-control-custom:-webkit-autofill:hover,
-body:has(.auth-form[action="/login"]) .form-control-custom:-webkit-autofill:focus { -webkit-text-fill-color: #e9ecf4 !important; -webkit-box-shadow: 0 0 0 40px rgba(9, 11, 16, .98) inset !important; }
+body.vpn-theme .form-control-custom:-webkit-autofill,
+body.vpn-theme .form-control-custom:-webkit-autofill:hover,
+body.vpn-theme .form-control-custom:-webkit-autofill:focus { -webkit-text-fill-color: #e9ecf4 !important; -webkit-box-shadow: 0 0 0 40px rgba(9, 11, 16, .98) inset !important; }
 
-@keyframes batPulse { 0%, 100% { opacity: .75; transform: translateX(-50%) scale(1); } 50% { opacity: 1; transform: translateX(-50%) scale(1.06); } }
-@keyframes batSweepTop { 0% { background-position: -40% 0; opacity: 0; } 15%, 85% { opacity: 1; } 100% { background-position: 140% 0; opacity: 0; } }
+@keyframes batBorderSpin { to { --bat-angle: 320deg; } }
 @keyframes batGlow { 0%, 100% { color: #f5c518; text-shadow: 0 0 14px rgba(245, 197, 24, .35); } 50% { color: #ffe27a; text-shadow: 0 0 26px rgba(245, 197, 24, .7); } }
+@keyframes techGridDrift { from { background-position: 0 0, 0 0, 0 0, 0 0; } to { background-position: 0 240px, 240px 0, 0 360px, 360px 0; } }
+@keyframes techHaloSpin { to { transform: translate(-50%, -50%) rotate(360deg); } }
+@keyframes techGlobeSpin { from { background-position: 0 0, 0 0, 0 0; } to { background-position: 240px 0, 0 0, 0 0; } }
+@keyframes techGlobePulse { 0%, 100% { opacity: .42; } 50% { opacity: .62; } }
+@keyframes techOrbit { from { transform: translate(-50%, -50%) rotate(0deg); } to { transform: translate(-50%, -50%) rotate(360deg); } }
+@keyframes techOrb { 0%, 100% { transform: translate(0, 0) scale(1); } 50% { transform: translate(4%, 3%) scale(1.08); } }
+@keyframes techDotsDrift { from { background-position: 0 0; } to { background-position: 260px 260px; } }
+
+@media (prefers-reduced-motion: reduce) {
+  .auth-card::before, .auth-card::after, .bg-slideshow, .bg-overlay::before, .corner-glow::before, .corner-glow::after, .auth-scene::before, .glow, .glow::after { animation: none !important; }
+}
