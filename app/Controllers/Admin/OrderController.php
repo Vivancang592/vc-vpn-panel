@@ -190,13 +190,25 @@ class OrderController extends BaseController
         
         if ($status === 'completed' && ($order['payment_status'] ?? '') !== 'completed') {
             $orderUpdate['approved_by'] = (int) $_SESSION['user_id'];
+
+            /*
+             * Kích hoạt đơn TRƯỚC khi ghi trạng thái completed.
+             * activateOrder() là idempotent: nếu đơn đã completed thì nó return
+             * ngay mà KHÔNG cộng số dư / tạo gói — nên ghi completed trước sẽ bỏ sót.
+             */
+            $activated = (new \App\Services\OrderService())->activateOrder($id);
+            if (!$activated) {
+                $_SESSION['flash_message'] = 'Không thể cộng số dư / kích hoạt gói cho đơn hàng này!';
+                $_SESSION['flash_type'] = 'danger';
+                $this->redirect('/admin/orders' . ($userId > 0 ? '?user_id=' . $userId : ''));
+                return;
+            }
         }
 
         if ($this->orderModel->update($id, $orderUpdate)) {
             if ($status === 'completed' && $order['payment_status'] !== 'completed') {
-                $orderService = new \App\Services\OrderService();
-                $orderService->activateOrder($id);
-
+                // Đồng bộ payment record (activateOrder ở trên đã cộng tiền / tạo gói).
+                // Nếu payment đã success rồi thì bỏ qua, tránh cộng tiền lần 2.
                 $paymentModel = new Payment();
                 if ($paymentModel->findSuccessfulByOrderId($id) === null) {
                     $existingPending = $paymentModel->findPendingByOrderId($id);
