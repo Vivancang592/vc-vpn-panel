@@ -17,5 +17,9 @@
     <?php if (isset($extraCss) && $extraCss !== 'app'): ?>
         <link rel="stylesheet" href="/assets/css/<?= $extraCss ?>.css?v=<?= time() ?>">
     <?php endif; ?>
+    <?php if (($pageArea ?? '') === 'user'): ?>
+        <!-- Design system mới cho khu vực user (load sau cùng để thắng cascade) -->
+        <link rel="stylesheet" href="/assets/css/user.css?v=<?= time() ?>">
+    <?php endif; ?>
 </head>
-<body class="vpn-theme user-festival<?= ($extraCss ?? '') === 'home' ? ' home-festival' : '' ?>">
+<body class="vpn-theme user-festival<?= ($extraCss ?? '') === 'home' ? ' home-festival' : '' ?><?= ($pageArea ?? '') === 'user' ? ' user-area' : '' ?>">

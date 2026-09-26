@@ -1,8 +1,17 @@
 <?php 
 $extraCss = $extraCss ?? 'admin';
 $extraJs = $extraJs ?? 'app';
+// Phân vùng khu vực User: các trang có sidebar (dashboard, orders, wallet...)
+// nhận body class "user-area" để nạp user.css & scope CSS riêng, không ảnh
+// hưởng admin / home / policies / auth.
+$pageArea = !empty($showSidebar) ? 'user' : ($pageArea ?? '');
 require_once __DIR__ . '/header.php'; 
 ?>
+
+<?php if (($pageArea ?? '') === 'user'): ?>
+    <!-- Sprite icon SVG dùng chung cho khu vực user (nạp 1 lần) -->
+    <?php require_once BASE_PATH . '/resources/views/components/icons.php'; ?>
+<?php endif; ?>
 
 <!-- Màn hình chờ Đang tải... -->
 <div id="page-preloader">

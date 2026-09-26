@@ -91,7 +91,7 @@ function getNoticeFallbackThumb($id) {
 <!-- Phần 2: Slide bài viết thông báo -->
 <?php if (!empty($noticePosts)): ?>
 <div style="margin-top: 1.5rem;">
-    <h3 style="font-size: 1.05rem; font-weight: 600; margin: 0 0 0.8rem 0;">📢 Thông Báo Hệ Thống</h3>
+    <h3 class="u-section-title">📢 Thông Báo Hệ Thống</h3>
     <div class="glass-card tutorial-slider-container">
         <div class="tutorial-slider-wrapper">
             <div class="tutorial-slider" id="tutorialSlider">
@@ -149,7 +149,7 @@ function getNoticeFallbackThumb($id) {
 
 <!-- Phần 3: 4 thẻ thống kê chuẩn đẹp -->
 <div style="margin-top: 1.5rem;">
-    <h3 style="font-size: 1.05rem; font-weight: 600; margin: 0 0 0.8rem 0;">📊 Thống Kê Tài Khoản</h3>
+    <h3 class="u-section-title">📊 Thống Kê Tài Khoản</h3>
     <div class="dashboard-grid-4">
         <div class="glass-card stat-card-item festival-stat-card">
             <span class="festival-stat-icon festival-stat-moon" aria-hidden="true"></span>
@@ -188,9 +188,9 @@ function getNoticeFallbackThumb($id) {
 
 <!-- Phần 4: Bảng giá mặc định thuộc nhóm đầu tiên -->
 <div style="margin-top: 1.5rem;">
-    <h3 style="font-size: 1.5rem; font-weight: 600; margin: 0 0 0.3rem 0; text-align: center;">Bảng giá gói dịch vụ</h3>
-    <div style="font-size: 0.85rem; color: var(--ios-text-secondary); margin-bottom: 1.25rem; text-align: center;">
-        💡 Bạn muốn tham khảo thêm nhiều gói cước hơn, hãy truy cập trang <a href="/plans" style="color: var(--ios-blue); text-decoration: none;">Cửa Hàng</a> của chúng tôi.
+    <h3 class="u-section-title u-section-title--lg">Bảng giá gói dịch vụ</h3>
+    <div class="u-section-note">
+        💡 Bạn muốn tham khảo thêm nhiều gói cước hơn, hãy truy cập trang <a href="/user/plans" style="color: var(--ios-blue); text-decoration: none;">Cửa Hàng</a> của chúng tôi.
     </div>
 
     <div class="plans-grid" id="plansGrid">
