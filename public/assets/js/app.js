@@ -313,6 +313,16 @@ function formatAmount(amount) {
             removeCouponButton.addEventListener('click', resetCoupon);
         }
 
+        const depositInput = checkoutForm.querySelector('#deposit_amount');
+        if (depositInput) {
+            const syncDepositTotal = function () {
+                const value = Number(depositInput.value || 0);
+                if (finalAmount) finalAmount.textContent = formatAmount(value);
+            };
+            depositInput.addEventListener('input', syncDepositTotal);
+            syncDepositTotal();
+        }
+
         if (applyCouponButton && couponInput && csrfToken && planId) {
             applyCouponButton.addEventListener('click', async function () {
                 const couponCode = couponInput.value.trim();
@@ -415,20 +425,41 @@ if (!response.ok || !result.valid) {
         startTimer();
     }
 
-    // 8. Chọn nhanh số tiền nạp tại trang Ví tiền
+    // 8. Chọn nhanh số tiền nạp (trang Ví tiền & trang thanh toán nạp tiền)
     const depositAmountInput = document.getElementById('deposit-amount');
     const quickAmountButtons = document.querySelectorAll('.wallet-quick-amount');
+    const quickAmountGroups = document.querySelectorAll('[data-quick-amount-group]');
 
-    if (depositAmountInput && quickAmountButtons.length > 0) {
-        quickAmountButtons.forEach(function (button) {
+    function bindQuickAmounts(buttons, input) {
+        if (!input || buttons.length === 0) return;
+
+        buttons.forEach(function (button) {
             button.addEventListener('click', function () {
-                depositAmountInput.value = button.dataset.amount;
-                quickAmountButtons.forEach(function (item) {
+                input.value = button.dataset.amount;
+                buttons.forEach(function (item) {
                     item.classList.toggle('active', item === button);
                 });
+                input.dispatchEvent(new Event('input', { bubbles: true }));
+            });
+        });
+
+        input.addEventListener('input', function () {
+            buttons.forEach(function (item) {
+                item.classList.toggle('active', item.dataset.amount === String(input.value));
             });
         });
     }
+
+    if (depositAmountInput && quickAmountButtons.length > 0) {
+        bindQuickAmounts(Array.from(quickAmountButtons), depositAmountInput);
+    }
+
+    quickAmountGroups.forEach(function (group) {
+        const target = group.dataset.quickAmountTarget
+            ? document.querySelector(group.dataset.quickAmountTarget)
+            : null;
+        bindQuickAmounts(Array.from(group.querySelectorAll('.wallet-quick-amount')), target);
+    });
 
     document.querySelectorAll('[data-confirm-submit]').forEach(function (form) {
         form.addEventListener('submit', function (event) {

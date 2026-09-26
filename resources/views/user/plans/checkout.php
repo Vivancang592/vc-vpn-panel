@@ -30,6 +30,15 @@ $price = (float) ($selectedPlan['price'] ?? 0);
 $depositAmount = (float) ($depositAmount ?? 0);
 $minDeposit = max(0, (float) ($minDeposit ?? 0));
 
+$quickAmountDefaults = [20000, 50000, 100000, 200000, 500000];
+$quickAmounts = array_values(array_unique(array_filter(
+    array_merge(
+        [$minDeposit > 0 ? $minDeposit : 20000],
+        $quickAmountDefaults
+    ),
+    static fn($amount): bool => $amount >= ($minDeposit > 0 ? $minDeposit : 0)
+)));
+
 $discountAmount = (
     $couponPreview &&
     ($couponPreview['valid'] ?? false)
@@ -280,6 +289,23 @@ ob_start();
                     <label for="deposit_amount">
                         Số tiền muốn nạp
                     </label>
+
+                    <div
+                        class="wallet-quick-amounts"
+                        data-quick-amount-group
+                        data-quick-amount-target="#deposit_amount"
+                        aria-label="Chọn nhanh số tiền nạp"
+                    >
+                        <?php foreach ($quickAmounts as $amount): ?>
+                            <button
+                                type="button"
+                                class="wallet-quick-amount"
+                                data-amount="<?= (int) $amount ?>"
+                            >
+                                <?= $formatPrice($amount) ?>
+                            </button>
+                        <?php endforeach; ?>
+                    </div>
 
                     <input
                         id="deposit_amount"
