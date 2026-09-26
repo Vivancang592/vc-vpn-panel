@@ -116,8 +116,11 @@ body:has(.auth-form[action="/login"]) .auth-brand-corner::before { content: ''; 
 
 /* Thẻ đăng nhập: phiến kim loại tối, viền vàng */
 body:has(.auth-form[action="/login"]) .auth-card { border: 1px solid rgba(245, 197, 24, .28); border-top: 2px solid #f5c518; background: linear-gradient(160deg, rgba(20, 23, 31, .96), rgba(11, 13, 19, .98)); box-shadow: 0 24px 60px rgba(0, 0, 0, .7), 0 0 0 1px rgba(245, 197, 24, .08), inset 0 1px 0 rgba(255, 255, 255, .05); }
-body:has(.auth-form[action="/login"]) .auth-card::before { background-image: linear-gradient(270deg, transparent, rgba(245, 197, 24, .9), transparent); }
-body:has(.auth-form[action="/login"]) .auth-card::after { background-image: linear-gradient(90deg, transparent, rgba(245, 197, 24, .35), transparent); }
+/* Vệt sáng chỉ chạy dọc viền TRÊN của thẻ (không quét ngang toàn thẻ) */
+body:has(.auth-form[action="/login"]) .auth-card::before,
+body:has(.auth-form[action="/login"]) .auth-card::after { inset: 0 0 auto 0; height: 2px; border-radius: var(--radius-lg) var(--radius-lg) 0 0; background-size: 40% 100%; }
+body:has(.auth-form[action="/login"]) .auth-card::before { background-image: linear-gradient(90deg, transparent, #f5c518, transparent); animation: batSweepTop 3.5s ease-in-out infinite; }
+body:has(.auth-form[action="/login"]) .auth-card::after { background-image: linear-gradient(90deg, transparent, rgba(255, 231, 138, .85), transparent); animation: batSweepTop 3.5s ease-in-out infinite reverse; }
 
 /* Tiêu đề: vàng kim phát sáng */
 body:has(.auth-form[action="/login"]) .royal-title { color: #f5c518; letter-spacing: .04em; text-transform: uppercase; text-shadow: 0 0 22px rgba(245, 197, 24, .4); }
@@ -157,4 +160,5 @@ body:has(.auth-form[action="/login"]) .form-control-custom:-webkit-autofill:hove
 body:has(.auth-form[action="/login"]) .form-control-custom:-webkit-autofill:focus { -webkit-text-fill-color: #e9ecf4 !important; -webkit-box-shadow: 0 0 0 40px rgba(9, 11, 16, .98) inset !important; }
 
 @keyframes batPulse { 0%, 100% { opacity: .75; transform: translateX(-50%) scale(1); } 50% { opacity: 1; transform: translateX(-50%) scale(1.06); } }
+@keyframes batSweepTop { 0% { background-position: -40% 0; opacity: 0; } 15%, 85% { opacity: 1; } 100% { background-position: 140% 0; opacity: 0; } }
 @keyframes batGlow { 0%, 100% { color: #f5c518; text-shadow: 0 0 14px rgba(245, 197, 24, .35); } 50% { color: #ffe27a; text-shadow: 0 0 26px rgba(245, 197, 24, .7); } }
