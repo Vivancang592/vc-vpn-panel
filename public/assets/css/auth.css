@@ -17,7 +17,7 @@ body.vpn-theme { background: var(--color-bg); }
 .glow::after { content: ''; position: absolute; inset: 0; background-image: radial-gradient(var(--color-secondary) 1px, transparent 1px); background-size: 20px 20px; opacity: .25; animation: star-sparkle 10s linear infinite; }
 
 .auth-wrapper { position: fixed !important; inset: 0 !important; z-index: 999 !important; display: flex !important; align-items: center !important; justify-content: center !important; padding: var(--space-4) !important; overflow-y: auto !important; }
-.auth-card { position: relative; width: 100%; max-width: 380px; margin: auto !important; padding: 1.75rem 1.5rem; border: 1px solid var(--color-border); border-top-color: var(--color-secondary); border-radius: var(--radius-lg); background: rgba(255, 255, 255, .94); box-shadow: var(--shadow-lg); animation: fadeInCard .6s ease-out forwards; }
+.auth-card { position: relative; width: 100%; max-width: 480px; margin: auto !important; padding: 1.75rem 1.5rem; border: 1px solid var(--color-border); border-top-color: var(--color-secondary); border-radius: var(--radius-lg); background: rgba(255, 255, 255, .94); box-shadow: var(--shadow-lg); animation: fadeInCard .6s ease-out forwards; }
 .auth-card::before, .auth-card::after { content: ''; position: absolute; inset: -1px; border-radius: inherit; pointer-events: none; background-repeat: no-repeat; background-size: 50% 100%; opacity: .7; }
 .auth-card::before { background-image: linear-gradient(270deg, transparent, var(--color-secondary), transparent); animation: sweepLeft 3.5s ease-in-out infinite; }
 .auth-card::after { background-image: linear-gradient(90deg, transparent, var(--color-primary), transparent); animation: sweepRight 3.5s ease-in-out infinite; }

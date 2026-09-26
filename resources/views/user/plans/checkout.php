@@ -70,7 +70,7 @@ $formatPrice = function ($amount) use ($settings, $formatMoney) {
 if ($isDeposit) {
     $pageHeading = 'NẠP TIỀN VÀO VÍ';
     $pageDescription = 'Nhập số tiền và chọn cổng thanh toán để nạp tiền.';
-    $actionUrl = '/checkout';
+    $actionUrl = '/payments/deposit';
     $submitText = 'Tiếp tục nạp tiền';
 } elseif ($isRenewal) {
     $pageHeading = 'GIA HẠN GÓI DỊCH VỤ';
