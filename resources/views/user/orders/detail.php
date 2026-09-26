@@ -31,7 +31,6 @@ ob_start();
 			<h4><?= htmlspecialchars($orderCode) ?></h4>
 			<p>Được tạo lúc <?= !empty($order['created_at']) ? date('H:i, d/m/Y', strtotime($order['created_at'])) : '-' ?></p>
 		</div>
-		<span class="user-invoice-status <?= htmlspecialchars($statusClasses[$status] ?? '') ?>"><?= htmlspecialchars($statusLabels[$status] ?? ucfirst($status)) ?></span>
 	</header>
 
 	<article class="glass-card user-invoice-card">
@@ -41,18 +40,13 @@ ob_start();
 			<section class="user-invoice-table-section">
 				<h3 class="user-invoice-section-heading">Thông tin đơn hàng</h3>
 				<div class="user-invoice-rows">
-			<div class="user-invoice-row"><span>ID đơn hàng</span><strong>#<?= $orderId ?></strong></div>
 			<div class="user-invoice-row"><span>Mã đơn hàng</span><strong><?= htmlspecialchars($orderCode) ?></strong></div>
-			<div class="user-invoice-row"><span>ID người dùng</span><strong>#<?= (int) ($order['user_id'] ?? 0) ?></strong></div>
 			<div class="user-invoice-row"><span>Loại đơn</span><strong><?= htmlspecialchars($isDeposit ? 'Nạp tiền vào ví' : ($subscriptionId > 0 ? 'Gia hạn gói dịch vụ' : 'Mua gói dịch vụ')) ?></strong></div>
 			<div class="user-invoice-row"><span>Trạng thái thanh toán</span><strong class="user-invoice-status-value <?= htmlspecialchars($statusClasses[$status] ?? '') ?>"><?= htmlspecialchars($statusLabels[$status] ?? ucfirst($status)) ?></strong></div>
 
 				<h3 class="user-invoice-section-heading">Dịch vụ và ưu đãi</h3>
 			<div class="user-invoice-row"><span>Gói dịch vụ</span><strong><?= htmlspecialchars($isDeposit ? 'Không áp dụng' : ($order['plan_name'] ?? 'Gói dịch vụ')) ?></strong></div>
-			<div class="user-invoice-row"><span>ID gói dịch vụ</span><strong><?= !empty($order['plan_id']) ? '#' . (int) $order['plan_id'] : 'Không áp dụng' ?></strong></div>
-			<div class="user-invoice-row"><span>ID gói đang gia hạn</span><strong><?= $subscriptionId > 0 ? '#' . $subscriptionId : 'Không áp dụng' ?></strong></div>
 			<div class="user-invoice-row"><span>Mã giảm giá</span><strong><?= htmlspecialchars($order['coupon_code'] ?? 'Không áp dụng') ?></strong></div>
-			<div class="user-invoice-row"><span>ID mã giảm giá</span><strong><?= !empty($order['coupon_id']) ? '#' . (int) $order['coupon_id'] : 'Không áp dụng' ?></strong></div>
 				</div>
 			</section>
 
@@ -67,11 +61,8 @@ ob_start();
 			<div class="user-invoice-row"><span>IP đặt hàng</span><strong><?= htmlspecialchars($order['purchase_ip'] ?? 'Chưa lưu') ?></strong></div>
 
 				<h3 class="user-invoice-section-heading">Đối soát</h3>
-			<div class="user-invoice-row"><span>ID người tạo</span><strong><?= !empty($order['created_by']) ? '#' . (int) $order['created_by'] : 'Không áp dụng' ?></strong></div>
 			<div class="user-invoice-row"><span>Người tạo đơn</span><strong><?= htmlspecialchars($creatorName) ?></strong></div>
-			<div class="user-invoice-row"><span>ID người duyệt</span><strong><?= !empty($order['approved_by']) ? '#' . (int) $order['approved_by'] : 'Chưa duyệt' ?></strong></div>
 			<div class="user-invoice-row"><span>Người xác nhận</span><strong><?= htmlspecialchars($approverName) ?></strong></div>
-			<div class="user-invoice-row"><span>Thời gian tạo</span><strong><?= !empty($order['created_at']) ? date('H:i, d/m/Y', strtotime($order['created_at'])) : '-' ?></strong></div>
 			<div class="user-invoice-row"><span>Cập nhật lần cuối</span><strong><?= !empty($order['updated_at']) ? date('H:i, d/m/Y', strtotime($order['updated_at'])) : '-' ?></strong></div>
 				</div>
 			</section>
