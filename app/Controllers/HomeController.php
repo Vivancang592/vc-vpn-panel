@@ -9,6 +9,11 @@ class HomeController extends BaseController
 {
     public function index(): void
     {
+        // Người dùng đã đăng nhập thì đưa thẳng vào bảng điều khiển
+        if (!empty($_SESSION['user_id'])) {
+            $this->redirect('/dashboard');
+        }
+
         $plans = [];
         if (class_exists('App\\Models\\VpnPlan')) {
             $planModel = new VpnPlan();

@@ -22,6 +22,8 @@ $loggedIn = !empty($_SESSION['user_id']);
 
 <section class="home-hero home-reveal" aria-labelledby="home-title">
     <div class="home-hero-art" aria-hidden="true">
+        <span class="home-tech-grid"></span>
+        <span class="home-scan-line"></span>
         <span class="home-radar home-radar-one"></span>
         <span class="home-radar home-radar-two"></span>
         <span class="home-signal-beam"></span>
@@ -44,7 +46,7 @@ $loggedIn = !empty($_SESSION['user_id']);
                 <p class="home-lead">Dịch vụ VPN premium giúp bảo vệ kết nối Internet, tăng quyền riêng tư và quản lý dịch vụ dễ dàng trên các thiết bị của bạn.</p>
                 <div class="home-actions">
                     <a class="home-button home-button-primary" href="#bang-gia">Bảo vệ kết nối ngay</a>
-                    <a class="home-button home-button-secondary" href="<?= $loggedIn ? '/user/dashboard' : '/register' ?>"><?= $loggedIn ? 'Mở bảng điều khiển' : 'Bắt đầu ngay' ?></a>
+                    <a class="home-button home-button-secondary" href="<?= $loggedIn ? '/dashboard' : '/register' ?>"><?= $loggedIn ? 'Mở bảng điều khiển' : 'Bắt đầu ngay' ?></a>
                 </div>
             </div>
         </div>
@@ -330,7 +332,7 @@ $loggedIn = !empty($_SESSION['user_id']);
     </div>
     <div class="home-actions">
         <a class="home-button home-button-primary" href="#bang-gia">Xem gói VPN</a>
-        <a class="home-button home-button-secondary" href="<?= $loggedIn ? '/user/dashboard' : '/register' ?>"><?= $loggedIn ? 'Bảng điều khiển' : 'Tạo tài khoản' ?></a>
+        <a class="home-button home-button-secondary" href="<?= $loggedIn ? '/dashboard' : '/register' ?>"><?= $loggedIn ? 'Bảng điều khiển' : 'Tạo tài khoản' ?></a>
     </div>
 </section>
 
