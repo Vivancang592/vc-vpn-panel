@@ -72,7 +72,47 @@ ob_start();
 		</div>
 		<div class="glass-card" style="border-left: 4px solid var(--ios-blue, #007aff);">
 			<span>Lượt đơn hàng hoa hồng</span>
-			<strong style="color: var(--ios-blue, #007aff);"><?= count($items) ?></strong>
+			<strong style="color: var(--ios-blue, #007aff);"><?= (int) ($pagination['total'] ?? count($items)) ?></strong>
+		</div>
+	</div>
+
+	<!-- Thể lệ hoa hồng (minh bạch) -->
+	<div class="glass-card" style="padding: 1.25rem; margin-bottom: 1.25rem; border-radius: var(--radius-md, 12px);">
+		<div style="display: flex; justify-content: space-between; align-items: center; gap: 1rem; flex-wrap: wrap; margin-bottom: 0.85rem;">
+			<h2 style="font-size: 1.15rem; font-weight: 700; margin: 0; color: var(--ios-text);">📖 Thể lệ hoa hồng</h2>
+			<a class="glass-btn" href="/withdrawals" style="padding: 0.45rem 0.9rem; font-size: 0.85rem; white-space: nowrap;">Lịch sử rút tiền</a>
+		</div>
+		<div class="glass-card user-record-table-wrap u-m0">
+			<table class="user-record-table">
+				<thead>
+					<tr>
+						<th>Hạng mục</th>
+						<th>Quy định</th>
+					</tr>
+				</thead>
+				<tbody>
+					<tr>
+						<td data-label="Hạng mục">Tỷ lệ hoa hồng</td>
+						<td data-label="Quy định"><?= htmlspecialchars(rtrim(rtrim(number_format((float) ($settings['referral_commission_rate'] ?? 10), 2), '0'), '.')) ?>% giá trị mỗi đơn hàng thành công</td>
+					</tr>
+					<tr>
+						<td data-label="Hạng mục">Thời điểm cộng</td>
+						<td data-label="Quy định">Ngay khi đơn hàng của người được giới thiệu được xác nhận thanh toán</td>
+					</tr>
+					<tr>
+						<td data-label="Hạng mục">Rút về số dư</td>
+						<td data-label="Quy định">Tối thiểu <?= isset($formatMoney) ? $formatMoney($minWithdrawal) : number_format($minWithdrawal) . 'đ' ?> — cộng ngay tức thì, không cần duyệt</td>
+					</tr>
+					<tr>
+						<td data-label="Hạng mục">Rút về ngân hàng</td>
+						<td data-label="Quy định">Tối thiểu <?= isset($formatMoney) ? $formatMoney($minWithdrawal) : number_format($minWithdrawal) . 'đ' ?> — duyệt trong 24–48 giờ làm việc</td>
+					</tr>
+					<tr>
+						<td data-label="Hạng mục">Hoa hồng khả dụng</td>
+						<td data-label="Quy định">Số dư hoa hồng trừ đi các yêu cầu đang chờ duyệt</td>
+					</tr>
+				</tbody>
+			</table>
 		</div>
 	</div>
 
@@ -92,8 +132,8 @@ ob_start();
 				<div>
 					<label for="withdraw-type" style="display: block; font-weight: 700; font-size: 0.88rem; margin-bottom: 0.4rem; color: var(--ios-text);">Hình thức rút tiền</label>
 					<select id="withdraw-type" name="withdraw_type" class="glass-input" style="width: 100%; padding: 0.65rem; border-radius: 8px; font-size: 0.9rem;" onchange="document.getElementById('bank-info-group').style.display = (this.value === 'bank' ? 'grid' : 'none');">
-						<option value="balance">Rút về Số Dư Tài Khoản (Cộng ngay tức thì)</option>
-						<option value="bank" selected>Rút về Tài Khoản Ngân Hàng (Chờ duyệt)</option>
+						<option value="balance">Rút về Số Dư Tài Khoản</option>
+						<option value="bank" selected>Rút về Tài Khoản Ngân Hàng</option>
 					</select>
 				</div>
 
@@ -121,7 +161,7 @@ ob_start();
 
 			<div style="display: flex; justify-content: flex-end; margin-top: 0.5rem;">
 				<button class="glass-btn" type="submit" style="padding: 0.65rem 1.5rem; font-size: 0.9rem; font-weight: 700; background: var(--ios-blue, #007aff); color: #fff; border: none; border-radius: 8px; cursor: pointer;">
-					<span>🚀</span> Gửi yêu cầu rút tiền
+					<span>🚀</span> Gửi yêu cầu
 				</button>
 			</div>
 		</form>
@@ -163,6 +203,7 @@ ob_start();
 			<p>Khi người bạn giới thiệu đăng ký và mua gói dịch vụ thành công, hoa hồng sẽ hiển thị tại đây.</p>
 		</div>
 	<?php endif; ?>
+	<?php if (!empty($pagination)) require __DIR__ . '/../../components/pagination.php'; ?>
 </section>
 <?php $content = ob_get_clean(); $showSidebar = true; require_once __DIR__ . '/../../layouts/app.php'; ?>
 
