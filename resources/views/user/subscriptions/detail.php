@@ -42,7 +42,7 @@ ob_start();
 			<h2><span class="user-subscription-title-icon" aria-hidden="true">&#9432;</span>Thông tin dịch vụ</h2>
 			<dl class="user-subscription-detail-list">
 				<div><dt>Mã gói</dt><dd><?= htmlspecialchars($subscription['plan_code'] ?? '-') ?></dd></div>
-				<div><dt>Trạng thái</dt><dd><span class="user-subscription-status user-subscription-status-<?= htmlspecialchars($status) ?>"><?= htmlspecialchars($statusLabels[$status] ?? ucfirst($status)) ?></span></dd></div>
+				<div><dt>Trạng thái</dt><dd><span class="u-status is-<?= htmlspecialchars($status) ?>"><?= htmlspecialchars($statusLabels[$status] ?? ucfirst($status)) ?></span></dd></div>
 				<div><dt>Ngày bắt đầu</dt><dd><?= !empty($subscription['start_date']) ? date('d/m/Y', strtotime($subscription['start_date'])) : '-' ?></dd></div>
 				<div><dt>Ngày hết hạn</dt><dd><?= !empty($subscription['end_date']) ? date('d/m/Y', strtotime($subscription['end_date'])) : '-' ?></dd></div>
 				<div><dt>IP kết nối cuối</dt><dd><?= htmlspecialchars($subscription['last_used_ip'] ?? 'Chưa kết nối') ?></dd></div>

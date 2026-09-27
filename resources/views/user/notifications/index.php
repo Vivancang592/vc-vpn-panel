@@ -25,8 +25,8 @@ ob_start();
             <div style="display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap;">
                 <?php if ($unreadCount > 0): ?>
                     <form method="POST" action="/notifications/read-all" style="margin: 0;">
-                        <button type="submit" class="glass-btn" style="font-size: 0.8rem; padding: 0.4rem 0.8rem; background: rgba(0, 122, 255, 0.15); border: 1px solid rgba(0, 122, 255, 0.3); color: var(--ios-Green, #00ff00); border-radius: var(--radius-sm, 8px); cursor: pointer; font-weight: 600;">
-                            ✓ Đánh dấu tất cả đã xem
+                        <button type="submit" class="glass-btn" style="font-size: 0.8rem; padding: 0.4rem 0.8rem; background: rgba(0, 122, 255, 0.32); border: 1px solid rgba(0, 122, 255, 0.6); color: #4da3ff; border-radius: var(--radius-sm, 8px); cursor: pointer; font-weight: 700;">
+                            ✓ Đã xem tất cả
                         </button>
                     </form>
                 <?php endif; ?>
@@ -74,10 +74,14 @@ ob_start();
                     };
                 ?>
                 <article class="glass-card user-notification-item" style="position: relative; padding: 1rem 2.25rem 1rem 1.25rem; border-left: 4px solid <?= $borderLeftColor ?>; <?= !$isRead ? 'background: rgba(255, 255, 255, 0.35); box-shadow: 0 4px 15px rgba(0, 122, 255, 0.1);' : 'opacity: 0.85;' ?> border-radius: var(--radius-md, 12px);">
-                    <!-- Nút X xóa thông báo ở góc phải trên -->
-                    <a href="/notifications/delete?id=<?= urlencode($item['id']) ?>" onclick="return confirm('Xóa thông báo này?');" title="Xóa thông báo" style="position: absolute; top: 0.6rem; right: 0.75rem; width: 22px; height: 22px; display: flex; align-items: center; justify-content: center; color: var(--ios-text-secondary); text-decoration: none; font-size: 1.2rem; line-height: 1; border-radius: 50%; background: transparent; transition: all 0.2s;" onmouseover="this.style.color='var(--ios-danger, #ff3b30)'; this.style.background='rgba(255,59,48,0.1)';" onmouseout="this.style.color='var(--ios-text-secondary)'; this.style.background='transparent';">
-                        &times;
-                    </a>
+                    <!-- Nút X xóa thông báo ở góc phải trên (POST để tránh mutating qua GET) -->
+                    <form method="POST" action="/notifications/delete" onsubmit="return confirm('Xóa thông báo này?');" style="margin: 0; position: absolute; top: 0.6rem; right: 0.75rem;">
+                        <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrf_token ?? '') ?>">
+                        <input type="hidden" name="id" value="<?= htmlspecialchars($item['id']) ?>">
+                        <button type="submit" title="Xóa thông báo" style="width: 22px; height: 22px; padding: 0; display: flex; align-items: center; justify-content: center; color: var(--ios-text-secondary); font-size: 1.2rem; line-height: 1; border: 0; border-radius: 50%; background: transparent; cursor: pointer; transition: all 0.2s;" onmouseover="this.style.color='var(--ios-danger, #ff3b30)'; this.style.background='rgba(255,59,48,0.1)';" onmouseout="this.style.color='var(--ios-text-secondary)'; this.style.background='transparent';">
+                            &times;
+                        </button>
+                    </form>
 
                     <div>
                         <div style="display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; margin-bottom: 0.35rem; padding-right: 1.5rem;">
@@ -121,6 +125,7 @@ ob_start();
             </p>
         </div>
     <?php endif; ?>
+    <?php if (!empty($pagination)) require __DIR__ . '/../../components/pagination.php'; ?>
 </section>
 <?php $content = ob_get_clean(); $showSidebar = true; require_once __DIR__ . '/../../layouts/app.php'; ?>
 

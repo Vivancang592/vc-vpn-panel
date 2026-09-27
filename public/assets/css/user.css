@@ -344,6 +344,19 @@ select.glass-input, select.u-input {
   background-position: right .8rem center;
   padding-right: 2.2rem;
 }
+/* Trong user-area, `.admin-content .glass-input` dùng background shorthand (0-3-1) ghi đè
+   background-image của `select.glass-input` (0-1-1) → phải set lại cho select + focus,
+   dùng icon ↑↓ (double chevron) để người dùng biết bấm để chọn */
+body.user-area .admin-content select.glass-input,
+body.user-area .admin-content select.glass-input:focus {
+  appearance: none;
+  cursor: pointer;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='14' fill='none' stroke='%239aa7bd' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><polyline points='2 5 6 1.5 10 5'/><polyline points='2 9 6 12.5 10 9'/></svg>");
+  background-repeat: no-repeat;
+  background-position: right .85rem center;
+  padding-right: 2.3rem;
+}
+body.user-area .admin-content select.glass-input:focus { background-position: right .85rem center; }
 
 /* --------------------------------------------------------------------------
    11. ALERT
@@ -1736,7 +1749,24 @@ body.user-area .wallet-form-row .glass-btn {
   white-space: nowrap;
 }
 /* Trang forms (rút hoa hồng: tạo yêu cầu) */
-body.user-area .user-form-page { width: 100%; max-width: 640px; }
+/* Trang form (withdrawals/create): header full-width như các trang khác — card form full-width, không max-width trên laptop */
+body.user-area .user-form-page { width: 100%; max-width: none; }
+body.user-area .user-form-page .user-record-form { width: 100%; max-width: none; margin-inline: auto; }
+/* Dòng gợi ý dưới tiêu đề trang rút tiền */
+body.user-area .user-form-hint {
+  margin: .5rem 0 0;
+  color: var(--u-text-2);
+  font-size: .87rem;
+  line-height: 1.55;
+}
+/* Form rút tiền: các cặp field cùng 1 hàng (2 cột / 3 cột trên laptop, 1 cột trên mobile) */
+body.user-area .user-form-field { display: grid; gap: .4rem; align-content: start; }
+body.user-area .user-form-field .glass-input { width: 100%; box-sizing: border-box; }
+body.user-area .user-form-row { display: grid; gap: .75rem; }
+@media (min-width: 769px) {
+  body.user-area .user-form-row--2 { grid-template-columns: 1fr 1fr; }
+  body.user-area .user-form-row--3 { grid-template-columns: repeat(3, 1fr); }
+}
 body.user-area .user-record-form {
   gap: .75rem;
   padding: clamp(1.2rem, 3vw, 1.6rem);
@@ -1748,18 +1778,19 @@ body.user-area .user-record-form {
 body.user-area .user-record-form label { color: var(--u-text); font-size: .86rem; font-weight: 700; }
 body.user-area .user-record-form small { color: var(--u-text-3); }
 body.user-area .user-record-form .glass-btn {
-  justify-self: start;
+  justify-self: end;
   margin-top: .6rem;
   border-radius: var(--u-r-pill);
   font-weight: 700;
 }
-body.user-area .user-text-link {
+/* a.user-text-link cần specificity cao hơn body.user-area .admin-content a (0-2-1) để không bị màu vàng mặc định override */
+body.user-area .admin-content a.user-text-link {
   color: var(--u-accent-hover);
   font-weight: 700;
   text-decoration: none;
   transition: color var(--u-t);
 }
-body.user-area .user-text-link:hover { color: #409cff; text-decoration: underline; }
+body.user-area .admin-content a.user-text-link:hover { color: #409cff; text-decoration: underline; }
 /* Pill trạng thái rút tiền — viền + nền theo status (pending/approved/rejected) */
 body.user-area .user-record-status { border: 1px solid transparent; }
 body.user-area .user-record-status.is-pending { border-color: rgba(255, 159, 10, .4); }
@@ -2160,4 +2191,316 @@ body.user-area .post-content hr { border: none; border-top: 1px solid var(--u-bo
 @media (max-width: 700px) {
   body.user-area .admin-content .user-guide-card { flex-direction: column; }
   body.user-area .user-guide-thumb { max-width: 100% !important; width: 100% !important; flex: none !important; }
+}
+
+/* ============================================================
+   §41. DASHBOARD — GÓI CỦA TÔI + THAO TÁC NHANH + STAT SUB
+   ============================================================ */
+
+/* --- Block "Gói của tôi" --- */
+body.user-area .u-my-plan {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+body.user-area .u-my-plan-head {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 1rem;
+    flex-wrap: wrap;
+}
+
+body.user-area .u-my-plan-info {
+    min-width: 0;
+}
+
+body.user-area .u-my-plan-kicker {
+    display: inline-block;
+    font-size: 0.7rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    color: var(--ios-blue, #007aff);
+    margin-bottom: 0.35rem;
+}
+
+body.user-area .u-my-plan-name {
+    margin: 0;
+    font-size: 1.15rem;
+    font-weight: 700;
+    color: var(--ios-text, #1c1c1e);
+    word-break: break-word;
+}
+
+body.user-area .u-my-plan-meta {
+    margin: 0.35rem 0 0;
+    font-size: 0.85rem;
+    color: var(--ios-text-secondary, #8e8e93);
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+}
+
+body.user-area .u-my-plan-badge {
+    display: inline-block;
+    padding: 0.15rem 0.55rem;
+    border-radius: 999px;
+    font-size: 0.72rem;
+    font-weight: 700;
+}
+
+body.user-area .u-my-plan-badge.is-ok {
+    background: rgba(52, 199, 89, 0.15);
+    color: var(--ios-success, #34c759);
+}
+
+body.user-area .u-my-plan-badge.is-warning {
+    background: rgba(255, 149, 0, 0.15);
+    color: var(--ios-orange, #ff9500);
+}
+
+body.user-area .u-my-plan-actions {
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+    flex-shrink: 0;
+}
+
+body.user-area .u-my-plan-usage {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+body.user-area .u-my-plan-usage-text {
+    margin: 0;
+    font-size: 0.8rem;
+    color: var(--ios-text-secondary, #8e8e93);
+}
+
+body.user-area .u-my-plan-usage-text a {
+    color: var(--ios-blue, #007aff);
+    text-decoration: none;
+    font-weight: 600;
+}
+
+/* --- Thao tác nhanh --- */
+body.user-area .u-quick-actions {
+    display: flex;
+    gap: 0.6rem;
+    flex-wrap: wrap;
+}
+
+body.user-area .u-quick-actions a.glass-btn {
+    flex: 1 1 180px;
+    text-align: center;
+    text-decoration: none;
+    white-space: nowrap;
+}
+
+/* --- Stat card sub-line (Hoa hồng) --- */
+body.user-area .stat-sub {
+    font-size: 0.75rem;
+    color: var(--ios-text-secondary, #8e8e93);
+    margin-top: 0.15rem;
+    word-break: break-word;
+}
+
+@media (max-width: 768px) {
+    body.user-area .u-my-plan-head {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    body.user-area .u-my-plan-actions a.glass-btn {
+        flex: 1;
+        text-align: center;
+    }
+}
+
+/* ============================================================
+   §42. PAGINATION + ALERT ERROR + CHECKOUT LEGAL
+   ============================================================ */
+
+/* --- Phân trang danh sách (components/pagination.php) --- */
+body.user-area .u-pagination {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: center;
+    gap: 0.4rem;
+    margin-top: 1.5rem;
+}
+body.user-area .u-pagination-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 2.1rem;
+    height: 2.1rem;
+    padding: 0 0.6rem;
+    border-radius: 8px;
+    border: 1px solid var(--glass-border, rgba(255, 255, 255, 0.18));
+    background: rgba(255, 255, 255, 0.14);
+    color: var(--ios-text, var(--u-text));
+    font-size: 0.85rem;
+    font-weight: 600;
+    text-decoration: none;
+    transition: background 0.15s ease, color 0.15s ease;
+}
+body.user-area .u-pagination-btn:hover {
+    background: rgba(0, 122, 255, 0.14);
+    color: var(--ios-blue, #007aff);
+}
+body.user-area .u-pagination-btn.is-active {
+    background: var(--ios-blue, #007aff);
+    border-color: var(--ios-blue, #007aff);
+    color: #fff;
+    cursor: default;
+}
+body.user-area .u-pagination-ellipsis {
+    color: var(--ios-text-secondary, #8e8e93);
+    font-size: 0.85rem;
+    padding: 0 0.15rem;
+}
+body.user-area .u-pagination-summary {
+    width: 100%;
+    text-align: center;
+    margin-top: 0.35rem;
+    font-size: 0.78rem;
+    color: var(--ios-text-secondary, #8e8e93);
+}
+
+/* --- Alert lỗi (bên cạnh .alert-success đã có) --- */
+body.user-area .alert-error {
+    background: rgba(255, 59, 48, 0.1);
+    color: var(--ios-danger, #ff3b30);
+    padding: 0.85rem 1rem;
+    border-radius: var(--u-r-lg, 12px);
+    margin-bottom: 1.2rem;
+    font-size: 0.9rem;
+    font-weight: 600;
+    border: 1px solid rgba(255, 59, 48, 0.3);
+}
+
+/* --- Ghi chú pháp lý tại checkout (điều khoản / hoàn tiền / VAT) --- */
+body.user-area .user-checkout-legal {
+    margin: 0.85rem 0 0;
+    font-size: 0.78rem;
+    line-height: 1.6;
+    color: var(--ios-text-secondary, #8e8e93);
+    text-align: center;
+}
+body.user-area .user-checkout-legal a {
+    color: var(--ios-blue, #007aff);
+    font-weight: 600;
+    text-decoration: none;
+}
+body.user-area .user-checkout-legal a:hover {
+    text-decoration: underline;
+}
+
+
+/* §43 — Dọn inline style + chuẩn pill trạng thái (Phase 6) */
+/* ------------------------------------------------------------------ */
+
+/* Legend nhỏ trong thẻ "Thống Kê Tài Khoản" (đè rule cũ ở §?) */
+body.user-area .u-stat-label {
+  display: block;
+  font-size: 0.75rem;
+  color: var(--ios-text-secondary, #636366);
+  font-weight: 600;
+}
+
+/* Icon tính năng nhỏ trong thẻ Gói của tôi / bảng giá */
+body.user-area .u-fig-icon {
+  flex-shrink: 0;
+  margin-top: 3px;
+}
+
+/* Block có khoảng cách trên (các mục dashboard) */
+body.user-area .u-mt-lg { margin-top: 1.5rem; }
+
+/* Không co icon trong flex container */
+body.user-area .u-noshrink { flex-shrink: 0; }
+
+/* Utility: canh phải */
+body.user-area .u-right { text-align: right; }
+
+/* Utility: bỏ margin (record-table-wrap cuối trang referrals) */
+body.user-area .u-m0 { margin: 0; }
+
+/* Cột thao tác canh phải trên desktop (rule mobile giữ nguyên) */
+body.user-area .user-record-action { text-align: right; }
+
+/* Tiêu đề cột bảng canh phải */
+body.user-area .user-orders-table th.u-right,
+body.user-area .user-record-table th.u-right { text-align: right; }
+
+/* Dòng giá gói: gọn một dòng, canh phải */
+body.user-area .plan-price,
+body.user-area .user-plan-price-duration {
+  margin: 0;
+  text-align: right;
+  white-space: nowrap;
+}
+
+/* Dropdown hành động đồng nhất giữa các bảng */
+body.user-area .action-menu { min-width: 155px; white-space: nowrap; }
+body.user-area .action-menu .action-item { color: var(--ios-blue); }
+body.user-area .action-menu .action-item.cancel { color: var(--ios-danger); }
+
+/* ==== Chuẩn pill trạng thái .u-status.is-* — gom 5 bộ class rời ==== */
+body.user-area .u-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.3rem 0.6rem;
+  border: 1px solid transparent;
+  border-radius: var(--u-r-pill, 999px);
+  background: rgba(255, 159, 10, 0.14);
+  color: var(--u-warning, #ff9f0a);
+  font-size: 0.76rem;
+  font-weight: 800;
+  line-height: 1.2;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+  vertical-align: middle;
+}
+
+/* Xanh lá — thành công / hoạt động / đã duyệt / đã giải quyết */
+body.user-area .u-status.is-success,
+body.user-area .u-status.is-completed,
+body.user-area .u-status.is-approved,
+body.user-area .u-status.is-resolved,
+body.user-area .u-status.is-active {
+  background: rgba(50, 215, 75, 0.14);
+  color: var(--u-success, #32d74b);
+  border-color: rgba(50, 215, 75, 0.4);
+}
+
+/* Đỏ — thất bại / từ chối / đã đóng / đã hủy / hết hạn / tạm dừng */
+body.user-area .u-status.is-failed,
+body.user-area .u-status.is-rejected,
+body.user-area .u-status.is-closed,
+body.user-area .u-status.is-cancelled,
+body.user-area .u-status.is-expired,
+body.user-area .u-status.is-suspended {
+  background: rgba(255, 69, 58, 0.12);
+  color: var(--u-danger, #ff453a);
+  border-color: rgba(255, 69, 58, 0.4);
+}
+
+/* Xanh dương — đang xử lý / đang mở */
+body.user-area .u-status.is-in_progress,
+body.user-area .u-status.is-open {
+  background: rgba(0, 122, 255, 0.14);
+  color: var(--u-accent, #007aff);
+  border-color: rgba(0, 122, 255, 0.4);
+}
+
+/* Cam viền (mặc định) — chờ thanh toán / chờ duyệt */
+body.user-area .u-status.is-pending {
+  border-color: rgba(255, 159, 10, 0.4);
 }

@@ -91,7 +91,7 @@ class Order extends BaseModel
                    u.username, u.email, 
                      creator.username AS creator_username,
                      approver.username AS approver_username,
-                   p.name AS plan_name, p.code AS plan_code, 
+                   p.name AS plan_name, p.code AS plan_code, p.price AS plan_price,
                    c.code AS coupon_code
             FROM `{$this->table}` o
             LEFT JOIN `vc_users` u ON o.user_id = u.id

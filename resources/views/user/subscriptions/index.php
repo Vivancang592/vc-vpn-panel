@@ -40,7 +40,7 @@ ob_start();
 							<p class="user-subscription-code"><?= htmlspecialchars($subscription['plan_code'] ?? ('GÓI #' . ($subscription['plan_id'] ?? ''))) ?></p>
 							<h2><?= htmlspecialchars($subscription['plan_name'] ?? ('Gói dịch vụ #' . ($subscription['plan_id'] ?? ''))) ?></h2>
 						</div>
-						<span class="user-subscription-status user-subscription-status-<?= htmlspecialchars($displayStatus) ?>"><?= htmlspecialchars($statusLabels[$displayStatus] ?? ucfirst($status)) ?></span>
+						<span class="u-status is-<?= htmlspecialchars($displayStatus) ?>"><?= htmlspecialchars($statusLabels[$displayStatus] ?? ucfirst($status)) ?></span>
 					</div>
 					<div class="user-subscription-usage">
 						<div><span>Lưu lượng đã dùng</span><strong><?= number_format($usedBytes / 1073741824, 2) ?> GB<?= $limitBytes > 0 ? ' / ' . number_format($limitBytes / 1073741824, 2) . ' GB' : ' / Không giới hạn' ?></strong></div>
@@ -63,7 +63,7 @@ ob_start();
 			<a href="/user/plans" class="glass-btn">Xem gói dịch vụ</a>
 		</div>
 	<?php endif; ?>
-</section>
+        <?php if (!empty($pagination)) require __DIR__ . '/../../components/pagination.php'; ?>
 
 <?php
 $content = ob_get_clean();

@@ -84,9 +84,7 @@ return [
     'GET /notifications'              => ['UserController', 'notifications'],
     'POST /notifications/read-all'    => ['UserController', 'markAllNotificationsAsRead'],
     'POST /notifications/read'        => ['UserController', 'markNotificationAsRead'],
-    'GET /notifications/read'         => ['UserController', 'markNotificationAsRead'],
     'POST /notifications/delete'      => ['UserController', 'deleteNotification'],
-    'GET /notifications/delete'       => ['UserController', 'deleteNotification'],
     'POST /notifications/clear'       => ['UserController', 'clearAllNotifications'],
 
     // Quản trị viên (Admin Panel)

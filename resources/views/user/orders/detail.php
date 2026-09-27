@@ -21,6 +21,14 @@ $formatTotal = static function (float $amount) use ($formatMoney): string {
 };
 $checkoutUrl = '/payment/checkout?order=' . $orderId
     . ($subscriptionId > 0 ? '&renewal=' . $subscriptionId : '');
+
+// Chi phí hóa đơn: tạm tính (giá niêm yết) → giảm giá (nếu có) → tổng.
+// Chỉ hiển thị khi giá niêm yết còn phù hợp (>= tổng đã trả),
+// tránh hiển thị sai nếu giá gói đã thay đổi kể từ khi đặt hàng.
+$totalAmount = (float) ($order['total_amount'] ?? 0);
+$planPrice = $isDeposit ? 0.0 : (float) ($order['plan_price'] ?? 0);
+$hasBreakdown = !$isDeposit && $planPrice >= $totalAmount && $planPrice > 0;
+$discountAmount = $hasBreakdown ? round($planPrice - $totalAmount) : 0.0;
 ob_start();
 ?>
 
@@ -53,7 +61,13 @@ ob_start();
 			<section class="user-invoice-table-section">
 				<h3 class="user-invoice-section-heading">Thanh toán</h3>
 				<div class="user-invoice-rows">
-			<div class="user-invoice-row"><span>Tổng tiền</span><strong class="user-invoice-money"><?= htmlspecialchars($formatTotal((float) ($order['total_amount'] ?? 0))) ?></strong></div>
+			<?php if ($hasBreakdown): ?>
+			<div class="user-invoice-row"><span>Tạm tính</span><strong class="user-invoice-money"><?= htmlspecialchars($formatTotal($planPrice)) ?></strong></div>
+			<?php if ($discountAmount > 0): ?>
+			<div class="user-invoice-row"><span>Giảm giá<?= !empty($order['coupon_code']) ? ' (' . htmlspecialchars($order['coupon_code']) . ')' : '' ?></span><strong class="user-invoice-money">-<?= htmlspecialchars($formatTotal($discountAmount)) ?></strong></div>
+			<?php endif; ?>
+			<?php endif; ?>
+			<div class="user-invoice-row"><span>Tổng tiền</span><strong class="user-invoice-money"><?= htmlspecialchars($formatTotal($totalAmount)) ?></strong></div>
 			<div class="user-invoice-row"><span>Phương thức thanh toán</span><strong><?= htmlspecialchars($paymentMethodLabels[$paymentMethod] ?? strtoupper($paymentMethod)) ?></strong></div>
 			<?php if (!$isBalancePayment): ?>
 			<div class="user-invoice-row"><span>Nội dung chuyển khoản</span><strong><?= htmlspecialchars($transferContent !== '' ? $transferContent : 'Không áp dụng') ?></strong></div>
@@ -63,7 +77,6 @@ ob_start();
 				<h3 class="user-invoice-section-heading">Đối soát</h3>
 			<div class="user-invoice-row"><span>Người tạo đơn</span><strong><?= htmlspecialchars($creatorName) ?></strong></div>
 			<div class="user-invoice-row"><span>Người xác nhận</span><strong><?= htmlspecialchars($approverName) ?></strong></div>
-			<div class="user-invoice-row"><span>Cập nhật lần cuối</span><strong><?= !empty($order['updated_at']) ? date('H:i, d/m/Y', strtotime($order['updated_at'])) : '-' ?></strong></div>
 				</div>
 			</section>
 		</div>

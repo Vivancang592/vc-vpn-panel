@@ -858,8 +858,11 @@ $_SESSION['success'] = 'Đã tạo đơn hàng ' . $orderCode . ' thành công. 
             $subscriptions = $subModel->getByUserId($userId);
         }
 
+        [$subscriptions, $pagination] = $this->paginateList($subscriptions);
+
         $this->render('user.subscriptions.index', [
             'subscriptions' => $subscriptions,
+            'pagination' => $pagination,
             'activeMenu' => 'subscriptions',
             'showSidebar' => true
         ]);
@@ -949,6 +952,29 @@ $_SESSION['success'] = 'Đã tạo đơn hàng ' . $orderCode . ' thành công. 
         return $subscription;
     }
 
+    /**
+     * Phân trang mảng dữ liệu theo tham số ?page= (mặc định 20 mục/trang).
+     *
+     * @return array{0: array, 1: array} [dữ liệu trang hiện tại, thông tin phân trang]
+     */
+    private function paginateList(array $items, int $perPage = 20): array
+    {
+        $total = count($items);
+        $pages = max(1, (int) ceil($total / $perPage));
+        $page = (int) ($_GET['page'] ?? 1);
+        if ($page < 1) {
+            $page = 1;
+        }
+        if ($page > $pages) {
+            $page = $pages;
+        }
+
+        return [
+            array_slice($items, ($page - 1) * $perPage, $perPage),
+            ['page' => $page, 'pages' => $pages, 'total' => $total],
+        ];
+    }
+
     public function orders(): void
     {
         $userId = $_SESSION['user_id'];
@@ -959,8 +985,21 @@ $_SESSION['success'] = 'Đã tạo đơn hàng ' . $orderCode . ' thành công. 
             $orders = $orderModel->getByUserId($userId);
         }
 
+        // Thống kê phải tính trên TOÀN BỘ đơn hàng trước khi phân trang.
+        $orderStats = [
+            'total' => count($orders),
+            'completed' => count(array_filter($orders, static fn($o) => ($o['payment_status'] ?? '') === 'completed')),
+            'pending' => count(array_filter($orders, static fn($o) => ($o['payment_status'] ?? '') === 'pending')),
+            'cancelled' => count(array_filter($orders, static fn($o) => ($o['payment_status'] ?? '') === 'cancelled')),
+            'failed' => count(array_filter($orders, static fn($o) => ($o['payment_status'] ?? '') === 'failed')),
+        ];
+
+        [$orders, $pagination] = $this->paginateList($orders);
+
         $this->render('user.orders.index', [
             'orders' => $orders,
+            'orderStats' => $orderStats,
+            'pagination' => $pagination,
             'activeMenu' => 'orders',
             'showSidebar' => true
         ]);
@@ -1003,8 +1042,11 @@ $_SESSION['success'] = 'Đã tạo đơn hàng ' . $orderCode . ' thành công. 
             $payments = $paymentModel->getByUserId($userId);
         }
 
+        [$payments, $pagination] = $this->paginateList($payments);
+
         $this->render('user.payments.index', [
             'payments' => $payments,
+            'pagination' => $pagination,
             'activeMenu' => 'payments'
         ]);
     }
@@ -1195,9 +1237,12 @@ $_SESSION['success'] = 'Đã tạo đơn hàng ' . $orderCode . ' thành công. 
         }
         $availableCommission = max(0.0, (float) ($user['commission_balance'] ?? 0) - $pendingWithdrawal);
 
+        [$commissions, $pagination] = $this->paginateList($commissions);
+
         $this->render('user.referrals.index', [
             'user' => $user,
             'commissions' => $commissions,
+            'pagination' => $pagination,
             'minWithdrawal' => $minWithdrawal,
             'pendingWithdrawal' => $pendingWithdrawal,
             'availableCommission' => $availableCommission,
@@ -1222,8 +1267,11 @@ $_SESSION['success'] = 'Đã tạo đơn hàng ' . $orderCode . ' thành công. 
             }
         }
 
+        [$tickets, $pagination] = $this->paginateList($tickets);
+
         $this->render('user.tickets.index', [
             'tickets' => $tickets,
+            'pagination' => $pagination,
             'activeMenu' => 'tickets'
         ]);
     }
@@ -1336,8 +1384,10 @@ $_SESSION['success'] = 'Đã tạo đơn hàng ' . $orderCode . ' thành công. 
     public function withdrawals(): void
     {
         $withdrawals = (new Withdrawal())->getByUserId((int) $_SESSION['user_id']);
+        [$withdrawals, $pagination] = $this->paginateList($withdrawals);
         $this->render('user.withdrawals.index', [
             'withdrawals' => $withdrawals,
+            'pagination' => $pagination,
             'activeMenu' => 'withdrawals'
         ]);
     }
@@ -1429,8 +1479,11 @@ $_SESSION['success'] = 'Đã tạo đơn hàng ' . $orderCode . ' thành công. 
         $notifications = NotificationService::getNotifications($userId);
         $unreadCount = NotificationService::getUnreadCount($userId);
 
+        [$notifications, $pagination] = $this->paginateList($notifications);
+
         $this->render('user.notifications.index', [
             'notifications' => $notifications,
+            'pagination' => $pagination,
             'unreadCount' => $unreadCount,
             'activeMenu' => 'notifications'
         ]);
@@ -1495,17 +1548,49 @@ $_SESSION['success'] = 'Đã tạo đơn hàng ' . $orderCode . ' thành công. 
 
     public function updateProfile(): void
     {
+        if (empty($_SESSION['user_id'])) {
+            $this->redirect('/login');
+            return;
+        }
+
         $userId = $_SESSION['user_id'];
         $newPassword = trim($_POST['new_password'] ?? '');
+        $currentPassword = (string) ($_POST['current_password'] ?? '');
 
         if (!empty($newPassword) && class_exists('App\Models\User')) {
             $userModel = new User();
+            $user = $userModel->findById($userId);
+            $hash = (string) ($user['password_hash'] ?? '');
+
+            // Bắt buộc xác thực mật khẩu hiện tại trước khi đổi mật khẩu mới.
+            if ($currentPassword === '') {
+                $_SESSION['error'] = 'Vui lòng nhập mật khẩu hiện tại để xác nhận thay đổi.';
+                $this->redirect('/profile');
+                return;
+            }
+
+            if ($hash === '' || !password_verify($currentPassword, $hash)) {
+                $_SESSION['error'] = 'Mật khẩu hiện tại không đúng. Vui lòng kiểm tra lại.';
+                $this->redirect('/profile');
+                return;
+            }
+
+            if (strlen($newPassword) < 6) {
+                $_SESSION['error'] = 'Mật khẩu mới phải có ít nhất 6 ký tự.';
+                $this->redirect('/profile');
+                return;
+            }
+
             $userModel->update($userId, [
                 'password_hash' => password_hash($newPassword, PASSWORD_BCRYPT)
             ]);
+
+            $_SESSION['success'] = 'Đổi mật khẩu thành công.';
+            $this->redirect('/profile');
+            return;
         }
 
         $_SESSION['success'] = 'Cập nhật thông tin cá nhân thành công.';
-        $this->redirect('/user/profile');
+        $this->redirect('/profile');
     }
 }

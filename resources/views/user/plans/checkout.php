@@ -661,6 +661,16 @@ ob_start();
             </p>
 
 
+            <p class="user-checkout-legal">
+                Giá hiển thị đã bao gồm thuế VAT (nếu có).
+                Khi xác nhận, bạn đồng ý với
+                <a href="/terms">Điều khoản sử dụng</a>
+                và
+                <a href="/refund">Chính sách hoàn tiền</a>
+                của hệ thống.
+            </p>
+
+
             <button
                 type="submit"
                 class="user-checkout-submit"

@@ -7,10 +7,13 @@ $statusLabels = [
 	'cancelled' => 'Đã hủy'
 ];
 $userOrders = isset($orders) && is_array($orders) ? $orders : [];
-$completedCount = count(array_filter($userOrders, static fn($order) => ($order['payment_status'] ?? '') === 'completed'));
-$pendingCount = count(array_filter($userOrders, static fn($order) => ($order['payment_status'] ?? '') === 'pending'));
-$cancelledCount = count(array_filter($userOrders, static fn($order) => ($order['payment_status'] ?? '') === 'cancelled'));
-$expiredCount = count(array_filter($userOrders, static fn($order) => ($order['payment_status'] ?? '') === 'failed'));
+// Ưu tiên thống kê toàn bộ dữ liệu do controller tính trước khi phân trang.
+$orderStats = isset($orderStats) && is_array($orderStats) ? $orderStats : null;
+$completedCount = (int) ($orderStats['completed'] ?? count(array_filter($userOrders, static fn($order) => ($order['payment_status'] ?? '') === 'completed')));
+$pendingCount = (int) ($orderStats['pending'] ?? count(array_filter($userOrders, static fn($order) => ($order['payment_status'] ?? '') === 'pending')));
+$cancelledCount = (int) ($orderStats['cancelled'] ?? count(array_filter($userOrders, static fn($order) => ($order['payment_status'] ?? '') === 'cancelled')));
+$expiredCount = (int) ($orderStats['failed'] ?? count(array_filter($userOrders, static fn($order) => ($order['payment_status'] ?? '') === 'failed')));
+$totalOrders = (int) ($orderStats['total'] ?? count($userOrders));
 ob_start();
 ?>
 
@@ -21,7 +24,7 @@ ob_start();
 			<p>Theo dõi trạng thái thanh toán và gói dịch vụ đã đăng ký.</p>
 		</div>
 		<div class="user-orders-title-row">
-			<h1>Đơn hàng <span class="user-orders-total-count"><?= count($userOrders) ?></span></h1>
+			<h1>Đơn hàng <span class="user-orders-total-count"><?= $totalOrders ?></span></h1>
 			<a href="/user/plans" class="glass-btn user-orders-new-link">Mua gói dịch vụ</a>
 		</div>
 	</header>
@@ -30,7 +33,7 @@ ob_start();
 		<div class="glass-card user-order-stat user-order-stat-completed"><span>Đã hoàn tất</span><strong><?= $completedCount ?></strong></div>
 		<div class="glass-card user-order-stat user-order-stat-pending"><span>Đang chờ</span><strong><?= $pendingCount ?></strong></div>
 		<div class="glass-card user-order-stat user-order-stat-cancelled"><span>Đã hủy</span><strong><?= $cancelledCount ?></strong></div>
-		<div class="glass-card user-order-stat user-order-stat-expired"><span>Hết hạn</span><strong><?= $expiredCount ?></strong></div>
+		<div class="glass-card user-order-stat user-order-stat-expired"><span>Thất bại</span><strong><?= $expiredCount ?></strong></div>
 	</div>
 
 	<?php if (!empty($_SESSION['success']) || !empty($_SESSION['error'])): ?>
@@ -45,13 +48,12 @@ ob_start();
 		<div class="glass-card user-orders-table-wrap">
 			<table class="user-orders-table">
 				<thead>
-					<tr><th>ID</th><th>Mã đơn hàng</th><th>Gói dịch vụ</th><th>Tổng tiền</th><th>Trạng thái</th><th>Ngày tạo</th><th style="text-align: right;">Thao tác</th></tr>
+					<tr><th>Mã đơn hàng</th><th>Gói dịch vụ</th><th>Tổng tiền</th><th>Trạng thái</th><th>Ngày tạo</th><th class="u-right">Thao tác</th></tr>
 				</thead>
 				<tbody>
 					<?php foreach ($userOrders as $order): ?>
 						<?php $status = $order['payment_status'] ?? 'pending'; ?>
 						<tr>
-							<td data-label="ID"><code>#<?= (int) ($order['id'] ?? 0) ?></code></td>
 							<td data-label="Mã đơn hàng"><code><?= htmlspecialchars($order['order_code'] ?? ('#' . ($order['id'] ?? ''))) ?></code></td>
 							<td data-label="Gói dịch vụ">
 								<?php if (!empty($order['plan_id'])): ?>
@@ -61,23 +63,23 @@ ob_start();
 								<?php endif; ?>
 							</td>
 							<td data-label="Tổng tiền" class="user-order-amount"><?= isset($formatMoney) ? $formatMoney($order['total_amount'] ?? 0) : number_format((float) ($order['total_amount'] ?? 0), 2) ?></td>
-							<td data-label="Trạng thái"><span class="user-order-status user-order-status-<?= htmlspecialchars($status) ?>"><?= htmlspecialchars($statusLabels[$status] ?? ucfirst($status)) ?></span></td>
+							<td data-label="Trạng thái"><span class="u-status is-<?= htmlspecialchars($status) ?>"><?= htmlspecialchars($statusLabels[$status] ?? ucfirst($status)) ?></span></td>
 							<td data-label="Ngày tạo"><?= !empty($order['created_at']) ? date('d/m/Y H:i', strtotime($order['created_at'])) : '-' ?></td>
-							<td class="user-order-action" style="text-align: right;">
+							<td class="user-order-action">
 								<div class="action-dropdown">
 									<button type="button" class="action-btn" title="Thao tác">⋮</button>
-									<div class="action-menu" style="min-width: 165px; white-space: nowrap;">
+									<div class="action-menu">
 										<a href="/orders/detail?id=<?= (int) ($order['id'] ?? 0) ?>" class="action-item">
 											<span>👁️</span> Xem chi tiết
 										</a>
 										<?php if ($status === 'pending'): ?>
-											<a href="/payment/checkout?order=<?= (int) ($order['id'] ?? 0) ?>" class="action-item" style="color: var(--ios-blue);">
+											<a href="/payment/checkout?order=<?= (int) ($order['id'] ?? 0) ?>" class="action-item">
 												<span>💳</span> Thanh toán ngay
 											</a>
 											<form method="post" action="/orders/cancel" style="margin: 0;" data-confirm-submit="Bạn có chắc chắn muốn hủy đơn hàng này không?">
 												<input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrf_token ?? '') ?>">
 												<input type="hidden" name="order_id" value="<?= (int) ($order['id'] ?? 0) ?>">
-												<button type="submit" class="action-item cancel" style="color: var(--ios-danger);">
+												<button type="submit" class="action-item cancel">
 													<span>❌</span> Hủy đơn hàng
 												</button>
 											</form>
@@ -97,7 +99,7 @@ ob_start();
 			<a href="/user/plans" class="glass-btn">Xem gói dịch vụ</a>
 		</div>
 	<?php endif; ?>
-</section>
+        <?php if (!empty($pagination)) require __DIR__ . '/../../components/pagination.php'; ?>
 
 <?php
 $content = ob_get_clean();
