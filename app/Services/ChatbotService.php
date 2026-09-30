@@ -49,7 +49,12 @@ class ChatbotService
         $isLoggedIn = !empty($context['is_logged_in']) || (!empty($context['user_id']) && (int) $context['user_id'] > 0);
         $context['is_logged_in'] = $isLoggedIn;
 
-        $systemPrompt = $this->buildSystemPrompt($context);
+        // Nguồn hội thoại (website vs Fanpage/Facebook) + tên người dùng nếu đã đăng nhập.
+        $source = strtolower((string) ($context['source'] ?? 'web'));
+        $isFacebook = in_array($source, ['fanpage', 'facebook', 'messenger'], true);
+        $userName = !empty($context['user_name']) ? trim((string) $context['user_name']) : '';
+
+        $systemPrompt = $this->resolveSystemPrompt($context, $isFacebook, $isLoggedIn, $userName);
         $knowledge = $this->buildKnowledgeSnippet($context);
         $messages = [
             ['role' => 'system', 'content' => $systemPrompt],
@@ -71,7 +76,9 @@ class ChatbotService
 
         $cacheTtl = (int) ($this->settings['ai_cache_ttl_minutes'] ?? 60);
         $cacheTtl = max(1, min(1440, $cacheTtl));
-        $cacheKey = sha1(($isLoggedIn ? 'auth_' : 'guest_') . mb_strtolower(preg_replace('/\s+/', ' ', trim($message))));
+        $cacheScope = $isFacebook ? 'fp_' : 'web_';
+        $cacheScope .= $isLoggedIn ? 'auth_' : 'guest_';
+        $cacheKey = sha1($cacheScope . mb_strtolower(preg_replace('/\s+/', ' ', trim($message))));
 
         if (class_exists(ChatAiCache::class)) {
             $cached = (new ChatAiCache())->findFresh($cacheKey, $cacheTtl);
@@ -87,19 +94,23 @@ class ChatbotService
             }
         }
 
-        $preferredProvider = strtolower(trim((string) ($this->settings['ai_provider'] ?? 'gemini')));
-        $result = $this->provider->ask($messages, $preferredProvider);
-
-        if (!$result['ok']) {
-            $fallbackProvider = $preferredProvider === 'openai' ? 'gemini' : 'openai';
-            $result = $this->provider->ask($messages, $fallbackProvider);
-        }
+        // LUỒNG AI MỚI: mọi lời gọi đi qua AI Core.
+        // - Website  → module `support_chat`
+        // - Facebook → module `fanpage_comment`
+        // Prompt được đọc từ storage/prompts/{module_key}.txt (Admin sửa được).
+        $module = $isFacebook ? 'fanpage_comment' : 'support_chat';
+        $result = $this->provider->ask($messages, null, null, [
+            'module' => $module,
+            'temperature' => 0.4,
+            'max_tokens' => (int) ($this->settings['ai_max_output_tokens'] ?? 700),
+        ]);
 
         if (!$result['ok']) {
             $this->logEvent('ai_failed', [
-                'provider' => $preferredProvider,
+                'provider' => 'kira',
+                'module' => $module,
                 'error' => (string) ($result['error'] ?? 'unknown'),
-                'source' => (string) ($context['source'] ?? 'web'),
+                'source' => $source,
                 'session_id' => (int) ($context['session_id'] ?? 0),
                 'user_id' => (int) ($context['user_id'] ?? 0),
             ]);
@@ -123,20 +134,124 @@ class ChatbotService
             'success' => true,
             'answer' => $answer,
             'handoff' => $handoff,
-            'provider' => (string) ($result['provider'] ?? $preferredProvider),
+            'provider' => (string) ($result['provider'] ?? 'kira'),
             'model' => (string) ($result['model'] ?? ''),
             'cta' => null,
         ];
 
         $this->logEvent('ai_reply', [
             'provider' => $response['provider'],
+            'module' => $module,
             'handoff' => $handoff ? 1 : 0,
-            'source' => (string) ($context['source'] ?? 'web'),
+            'source' => $source,
             'session_id' => (int) ($context['session_id'] ?? 0),
             'user_id' => (int) ($context['user_id'] ?? 0),
         ]);
 
         return $response;
+    }
+
+    /**
+     * Xây system prompt cho lượt chat này.
+     *
+     * Ưu tiên PROMPT FILE do Admin cấu hình ở Trung Tâm AI:
+     *   storage/prompts/{support_chat|fanpage_comment}.txt
+     * Nếu chưa có file → dùng PromptRegistry (DB/default) → cuối cùng mới dựng
+     * văn bản mặc định bằng buildSystemPrompt().
+     */
+    private function resolveSystemPrompt(array $context, bool $isFacebook, bool $isLoggedIn, string $userName): string
+    {
+        $moduleKey = $isFacebook ? 'fanpage_comment' : 'support_chat';
+
+        $variables = [
+            'source_label' => $isFacebook ? 'Facebook Fanpage' : 'Website',
+            'user_context' => $isLoggedIn
+                ? 'Khách đã ĐĂNG NHẬP website' . ($userName !== '' ? ', tên: ' . $userName : '') . '.'
+                : 'Khách CHƯA đăng nhập (khách vãng lai).',
+            'user_name' => $userName,
+            'from_name' => $userName !== '' ? $userName : (string) ($context['from_name'] ?? ''),
+            'message' => (string) ($context['message'] ?? ''),
+            'comment' => (string) ($context['comment'] ?? $context['message'] ?? ''),
+            'post_context' => (string) ($context['post_context'] ?? ''),
+            'plans' => '',
+        ];
+
+        // NỘI QUY AI (rules_auto_reply) — đọc một lần, ghép TRƯỚC prompt kỹ thuật.
+        $rulesText = $this->rulesBlock($moduleKey, $variables);
+
+        try {
+            $registry = new \App\AI\Core\PromptRegistry();
+            $raw = $registry->rawTemplate($moduleKey);
+
+            if (is_array($raw) && ($raw['source'] ?? 'none') !== 'none') {
+                $text = (string) ($raw['system'] ?? '');
+
+                foreach ($variables as $name => $value) {
+                    if (is_array($value) || is_object($value)) {
+                        continue;
+                    }
+                    $text = str_replace('{{' . $name . '}}', (string) $value, $text);
+                }
+
+                $text = trim((string) preg_replace('/\{\{\s*[a-zA-Z0-9_]+\s*\}\}/', '', $text));
+
+                // Ghép thêm ngữ cảnh nguồn/tên khách vào cuối system prompt khi
+                // file prompt của Admin chưa có biến tương ứng.
+                $contextLine = 'Nguồn hội thoại: ' . $variables['source_label'] . '. ' . $variables['user_context'];
+                if ($text !== '' && !str_contains($text, (string) $variables['source_label'])) {
+                    $text .= "\n" . $contextLine;
+                }
+
+                if ($text !== '') {
+                    return $rulesText !== '' ? $rulesText . "\n\n" . $text : $text;
+                }
+            }
+        } catch (\Throwable) {
+            // rơi xuống builder mặc định bên dưới
+        }
+
+        $fallback = $this->buildSystemPrompt($context);
+
+        return $rulesText !== '' ? $rulesText . "\n\n" . $fallback : $fallback;
+    }
+
+    /**
+     * Đọc NỘI QUY AI của nhóm chức năng (rules_auto_reply cho chat/bình luận)
+     * và render biến ngữ cảnh sẵn có. Trả về '' nếu nội quy chưa cấu hình.
+     *
+     * @param array<string, mixed> $variables
+     */
+    private function rulesBlock(string $moduleKey, array $variables): string
+    {
+        try {
+            $registry = new \App\AI\Core\PromptRegistry();
+            $rulesKey = $registry->rulesKeyForPrompt($moduleKey);
+
+            if ($rulesKey === null) {
+                return '';
+            }
+
+            $raw = $registry->rawRules($rulesKey);
+
+            if (!is_array($raw) || ($raw['source'] ?? 'none') === 'none') {
+                return '';
+            }
+
+            $text = (string) ($raw['system'] ?? '');
+
+            foreach ($variables as $name => $value) {
+                if (is_array($value) || is_object($value)) {
+                    continue;
+                }
+                $text = str_replace('{{' . $name . '}}', (string) $value, $text);
+            }
+
+            $text = trim((string) preg_replace('/\{\{\s*[a-zA-Z0-9_]+\s*\}\}/', '', $text));
+
+            return $text;
+        } catch (\Throwable) {
+            return '';
+        }
     }
 
     private function buildSystemPrompt(array $context): string

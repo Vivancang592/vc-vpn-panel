@@ -116,6 +116,11 @@ class FanpageService
             'source' => 'fanpage',
             'page' => 'messenger',
             'sender_id' => $senderId,
+            // Người nhắn qua Messenger KHÔNG đăng nhập website → AI phải biết đây là Facebook.
+            'is_logged_in' => false,
+            'user_name' => '',
+            'from_name' => (string) ($event['sender']['name'] ?? ''),
+            'message' => $text,
             'history' => $this->loadHistory($senderId),
             'session_id' => $sessionId
         ]);
@@ -244,29 +249,38 @@ class FanpageService
 
         $userPrompt = "Khách hàng \"{$fromName}\" vừa bình luận: \"{$message}\". Hãy viết 1 câu trả lời công khai ngắn gọn, lịch sự.";
 
+        // LUỒNG AI MỚI: Prompt ưu tiên đọc từ FILE do Admin cấu hình tại
+        // Trung Tâm AI → storage/prompts/fanpage_comment.txt
+        $promptFileSystem = $this->resolveFanpagePromptFile($fromName, $message, $planSummary);
+        if ($promptFileSystem !== null) {
+            $systemPrompt = $promptFileSystem;
+        }
+
+        // Bình luận này đến từ FACEBOOK nên phải ghi rõ nguồn cho AI phân biệt.
+        if (!str_contains($systemPrompt, 'FACEBOOK')) {
+            $systemPrompt .= "\n\nNguồn: khách đang bình luận công khai trên FACEBOOK Fanpage (KHÔNG phải chat website).";
+        }
+
+        // NỘI QUY AI (rules_auto_reply) ghép TRƯỚC system prompt — một điểm
+        // merge duy nhất, áp dụng cho cả luồng file/DB và luồng dựng mặc định.
+        $rulesBlock = $this->autoReplyRulesBlock();
+        if ($rulesBlock !== '') {
+            $systemPrompt = $rulesBlock . "\n\n" . $systemPrompt;
+        }
+
         $messages = [
             ['role' => 'system', 'content' => $systemPrompt],
             ['role' => 'user', 'content' => $userPrompt]
         ];
 
-        $commentProvider = strtolower(trim((string) ($this->settings['ai_comment_provider'] ?? $this->settings['ai_provider'] ?? 'gemini')));
-        $commentModel = trim((string) ($this->settings['ai_comment_model'] ?? ''));
-
         $aiProvider = new AIProviderService();
-        // Tiết kiệm token: Giới hạn max_tokens 180 cho bình luận
-        $reply = $aiProvider->ask($messages, $commentProvider ?: null, $commentModel ?: null, [
+        // Tiết kiệm token: Giới hạn max_tokens 180 cho bình luận.
+        // Đi qua AI Core với module `fanpage_comment` (prompt file/DB/default).
+        $reply = $aiProvider->ask($messages, null, null, [
+            'module'      => 'fanpage_comment',
             'max_tokens'  => 180,
             'temperature' => 0.3
         ]);
-
-        // Dự phòng: Nếu provider chính gặp lỗi mạng/quota, thử provider thứ hai
-        if (!$reply['ok'] || trim((string) ($reply['content'] ?? '')) === '') {
-            $fallbackProvider = ($commentProvider === 'openai') ? 'gemini' : 'openai';
-            $reply = $aiProvider->ask($messages, $fallbackProvider, null, [
-                'max_tokens'  => 180,
-                'temperature' => 0.3
-            ]);
-        }
 
         $replyText = trim((string) ($reply['content'] ?? ''));
 
@@ -292,8 +306,8 @@ class FanpageService
                     $cacheKey,
                     $message,
                     $cleanReplyText,
-                    $reply['provider'] ?? $commentProvider,
-                    $reply['model'] ?? $commentModel
+                    $reply['provider'] ?? 'kira',
+                    $reply['model'] ?? ''
                 );
             }
 
@@ -305,8 +319,8 @@ class FanpageService
                 'user_message'      => $message,
                 'ai_reply'          => $cleanReplyText,
                 'facebook_reply_id' => $postResult['id'] ?? null,
-                'provider'          => $reply['provider'] ?? $commentProvider,
-                'model'             => $reply['model'] ?? $commentModel,
+                'provider'          => $reply['provider'] ?? 'kira',
+                'model'             => $reply['model'] ?? '',
                 'status'            => 'success'
             ]);
         } else {
@@ -343,6 +357,64 @@ class FanpageService
                 $items[] = "- {$p['name']}: {$price}/{$days} ngày";
             }
             return implode("\n", $items);
+        } catch (\Throwable) {
+            return '';
+        }
+    }
+
+    /**
+     * Đọc prompt bình luận từ FILE Admin cấu hình (storage/prompts/fanpage_comment.txt).
+     *
+     * Trả về văn bản system prompt đã render biến, hoặc null nếu chưa có file
+     * (khi đó dùng prompt mặc định dựng trong handleFeedCommentEvent).
+     */
+    private function resolveFanpagePromptFile(string $fromName, string $comment, string $plans): ?string
+    {
+        try {
+            $registry = new \App\AI\Core\PromptRegistry();
+            $raw = $registry->rawTemplate('fanpage_comment');
+
+            if (!is_array($raw) || ($raw['source'] ?? 'none') === 'none') {
+                return null;
+            }
+
+            $variables = [
+                'from_name'    => $fromName,
+                'comment'      => $comment,
+                'post_context' => 'Bình luận công khai trên bài đăng Fanpage.',
+                'plans'        => $plans,
+                'message'      => $comment,
+            ];
+
+            $text = (string) ($raw['system'] ?? '');
+            foreach ($variables as $name => $value) {
+                $text = str_replace('{{' . $name . '}}', (string) $value, $text);
+            }
+            $text = trim((string) preg_replace('/\{\{\s*[a-zA-Z0-9_]+\s*\}\}/', '', $text));
+
+            return $text !== '' ? $text : null;
+        } catch (\Throwable) {
+            return null;
+        }
+    }
+
+    /**
+     * Đọc NỘI QUY AI nhóm trả lời tự động (rules_auto_reply) để ghép vào ĐẦU
+     * system prompt trả lời bình luận. Trả về '' nếu nội quy chưa cấu hình.
+     */
+    private function autoReplyRulesBlock(): string
+    {
+        try {
+            $registry = new \App\AI\Core\PromptRegistry();
+            $raw = $registry->rawRules('rules_auto_reply');
+
+            if (!is_array($raw) || ($raw['source'] ?? 'none') === 'none') {
+                return '';
+            }
+
+            $text = trim((string) ($raw['system'] ?? ''));
+
+            return $text !== '' ? $text . "\n(Đây là NỘI QUY bắt buộc — mọi quy tắc dưới đây phải được tuân thủ khi viết câu trả lời.)" : '';
         } catch (\Throwable) {
             return '';
         }

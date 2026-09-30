@@ -1,0 +1,5 @@
+=== SYSTEM ===
+Bạn chuẩn bị nội dung đăng bài fanpage.
+
+=== USER ===
+{{content}}

@@ -27,6 +27,17 @@ $zaloHref = $normalizeUrl($zaloUrl, 'https://zalo.me/');
 $chatbotEnabled = (($settings['ai_chatbot_enabled'] ?? '1') === '1');
 $chatbotTitle = trim((string) ($settings['site_title'] ?? 'VC VPN'));
 $chatbotTitle = $chatbotTitle !== '' ? $chatbotTitle : 'VC VPN';
+
+// Trạng thái đăng nhập + tên người dùng hiển thị rõ ràng trên khung chat.
+$chatUser = is_array($currentUser ?? null) ? $currentUser : [];
+$chatIsLoggedIn = !empty($chatUser['id']) || !empty($_SESSION['user_id']);
+$chatUserName = trim((string) ($chatUser['name'] ?? ''));
+if ($chatUserName === '') {
+    $chatUserName = trim((string) ($chatUser['username'] ?? ''));
+}
+if ($chatUserName === '') {
+    $chatUserName = trim((string) ($_SESSION['name'] ?? $_SESSION['username'] ?? ''));
+}
 ?>
 
 <footer class="vc-footer">
@@ -82,15 +93,24 @@ $chatbotTitle = $chatbotTitle !== '' ? $chatbotTitle : 'VC VPN';
 </footer>
 
 <?php if ($chatbotEnabled): ?>
-    <div id="vc-chatbot" data-enabled="1" data-site-title="<?= htmlspecialchars($chatbotTitle) ?>" data-page="<?= htmlspecialchars((string) parse_url((string) ($_SERVER['REQUEST_URI'] ?? '/'), PHP_URL_PATH)) ?>" style="position: relative; z-index: 2147483647;">
+    <div id="vc-chatbot" data-enabled="1" data-site-title="<?= htmlspecialchars($chatbotTitle) ?>" data-page="<?= htmlspecialchars((string) parse_url((string) ($_SERVER['REQUEST_URI'] ?? '/'), PHP_URL_PATH)) ?>" data-logged-in="<?= $chatIsLoggedIn ? '1' : '0' ?>" data-user-name="<?= htmlspecialchars($chatUserName) ?>" style="position: relative; z-index: 2147483647;">
         <button id="vc-chatbot-toggle" type="button" aria-label="Mở trợ lý AI">💬</button>
         <div id="vc-chatbot-panel" hidden class="vc-chatbot-panel-wrapper">
             <div class="vc-chatbot-header">
-                <div style="display: flex; align-items: center; gap: 8px;">
-                    <span style="display: inline-block; width: 9px; height: 9px; border-radius: 50%; background: #34c759; box-shadow: 0 0 8px #34c759;"></span>
-                    <span>Trợ lý AI - <?= htmlspecialchars($chatbotTitle) ?></span>
+                <div style="display: flex; align-items: center; gap: 8px; min-width: 0;">
+                    <span style="display: inline-block; width: 9px; height: 9px; border-radius: 50%; background: #34c759; box-shadow: 0 0 8px #34c759; flex: 0 0 auto;"></span>
+                    <span style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">Trợ lý AI - <?= htmlspecialchars($chatbotTitle) ?></span>
                 </div>
                 <button id="vc-chatbot-close" type="button" aria-label="Đóng">✕</button>
+            </div>
+            <div id="vc-chatbot-identity" style="padding: 6px 12px; font-size: 11.5px; border-bottom: 1px solid rgba(0,0,0,.06); background: <?= $chatIsLoggedIn ? 'rgba(52,199,89,.09)' : 'rgba(0,122,255,.06)' ?>; color: <?= $chatIsLoggedIn ? '#1c7c3c' : '#4a4a4f' ?>; display: flex; align-items: center; gap: 6px;">
+                <?php if ($chatIsLoggedIn): ?>
+                    <span aria-hidden="true">👤</span>
+                    <span>Xin chào <strong><?= htmlspecialchars($chatUserName !== '' ? $chatUserName : 'bạn') ?></strong> — bạn đã đăng nhập (nguồn: Website)</span>
+                <?php else: ?>
+                    <span aria-hidden="true">🌐</span>
+                    <span>Bạn đang chat với tư cách <strong>khách vãng lai</strong> (nguồn: Website). <a href="/login" style="color:#0a84ff;text-decoration:underline;">Đăng nhập</a> để được hỗ trợ theo tài khoản.</span>
+                <?php endif; ?>
             </div>
             <div id="vc-chatbot-messages"></div>
             <form id="vc-chatbot-form" data-no-loader="true">

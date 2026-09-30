@@ -184,18 +184,6 @@ return [
     'GET /admin/posts/detail'     => ['Admin\PostController', 'detail'],
     'POST /admin/posts/delete'    => ['Admin\PostController', 'delete'],
 
-    // Quản lý tự động đăng bài Fanpage AI (Auto Post)
-    'GET /admin/auto-post'                 => ['Admin\ScheduledPostController', 'index'],
-    'GET /admin/auto-post/create'          => ['Admin\ScheduledPostController', 'showCreate'],
-    'POST /admin/auto-post/create'         => ['Admin\ScheduledPostController', 'create'],
-    'GET /admin/auto-post/edit'            => ['Admin\ScheduledPostController', 'showEdit'],
-    'POST /admin/auto-post/edit'           => ['Admin\ScheduledPostController', 'edit'],
-    'GET /admin/auto-post/delete'          => ['Admin\ScheduledPostController', 'delete'],
-    'POST /admin/auto-post/delete'         => ['Admin\ScheduledPostController', 'delete'],
-    'GET /admin/auto-post/retry'           => ['Admin\ScheduledPostController', 'retry'],
-    'GET /admin/auto-post/force-publish'   => ['Admin\ScheduledPostController', 'forcePublish'],
-    'POST /admin/auto-post/ajax-generate'  => ['Admin\ScheduledPostController', 'ajaxGenerate'],
-
     // Quản lý hỗ trợ (Tickets)
     'GET /admin/tickets'          => ['Admin\TicketController', 'index'],
     'GET /admin/tickets/detail'   => ['Admin\TicketController', 'detail'],
@@ -210,11 +198,10 @@ return [
     'POST /admin/expenses/edit'   => ['Admin\ExpenseController', 'edit'],
     'POST /admin/expenses/delete'  => ['Admin\ExpenseController', 'delete'],
 
-    // Cài đặt hệ thống (Settings)
+    // Cài đặt hệ thống (Settings) — CHỈ cấu hình hệ thống + Fanpage.
+    // Cấu hình AI đã chuyển sang TRUNG TÂM AI (/admin/ai/settings).
     'GET /admin/settings'         => ['Admin\SettingController', 'index'],
     'POST /admin/settings/save'   => ['Admin\SettingController', 'save'],
-    'POST /admin/settings/ai-models' => ['Admin\SettingController', 'aiModels'],
-    'POST /admin/settings/ai-connection-check' => ['Admin\SettingController', 'aiConnectionCheck'],
 
     // Nhật ký hệ thống (Logs)
     'GET /admin/logs'                   => ['Admin\LogController', 'index'],
@@ -229,4 +216,78 @@ return [
     // Tự động quét gói cước & Đăng bài Fanpage (Cron Job)
     'GET /api/cron/check-subscriptions' => ['CronController', 'checkSubscriptions'],
     'GET /api/cron/auto-post'           => ['CronController', 'autoPostFanpage'],
+
+    // =================================================================
+    // TRUNG TÂM AI (AI Core Admin) — /admin/ai/*
+    // Toàn bộ khu vực này đi qua App\Controllers\Admin\AiBaseController
+    // (chỉ admin) và CHỈ tương tác với AI Core qua TaskRunner / AICore.
+    // =================================================================
+
+    // Tổng quan
+    'GET /admin/ai'                     => ['Admin\AiDashboardController', 'index'],
+
+    // =================================================================
+    // 7 TAB CHỨC NĂNG — ảnh / video / lời thoại chạy TRỰC TIẾP khi bấm
+    // nút (không xếp hàng đợi, thư mục lưu trữ riêng từng tab); fanpage /
+    // reply vẫn đi task. Trang kỹ thuật (tasks/models/conversations/
+    // outputs) giữ route truy cập trực tiếp — ĐÃ GỠ link từ UI.
+    // =================================================================
+    'GET /admin/ai/image'               => ['Admin\AiImageController', 'index'],
+    'POST /admin/ai/image/generate'     => ['Admin\AiImageController', 'generate'],
+    'POST /admin/ai/image/delete'       => ['Admin\AiImageController', 'delete'],
+    'GET /admin/ai/video'               => ['Admin\AiVideoController', 'index'],
+    'POST /admin/ai/video/generate'     => ['Admin\AiVideoController', 'generate'],
+    'POST /admin/ai/video/poll'         => ['Admin\AiVideoController', 'poll'],
+    'POST /admin/ai/video/delete'       => ['Admin\AiVideoController', 'delete'],
+    'GET /admin/ai/dubbing'             => ['Admin\AiDubbingController', 'index'],
+    'POST /admin/ai/dubbing/generate'   => ['Admin\AiDubbingController', 'generate'],
+    'POST /admin/ai/dubbing/delete'     => ['Admin\AiDubbingController', 'delete'],
+    'GET /admin/ai/fanpage'             => ['Admin\AiFanpageController', 'index'],
+    'GET /admin/ai/reply'               => ['Admin\AiReplyController', 'index'],
+
+    // Module AI — trang hiển thị đã gộp vào /admin/ai/settings (chỉ còn POST actions)
+    'POST /admin/ai/modules/sync'       => ['Admin\AiModuleController', 'sync'],
+    'POST /admin/ai/modules/toggle'     => ['Admin\AiModuleController', 'toggle'],
+    'POST /admin/ai/modules/set-default-model' => ['Admin\AiModuleController', 'setDefaultModel'],
+    // Model key thủ công free-text (ưu tiên hơn default_model_id, lưu ở config JSON)
+    'POST /admin/ai/modules/set-model-override' => ['Admin\AiModuleController', 'setModelOverride'],
+
+    // Model AI (đồng bộ từ provider / nhập tay / bật-tắt)
+    'GET /admin/ai/models'              => ['Admin\AiModelController', 'index'],
+    'POST /admin/ai/models/sync'        => ['Admin\AiModelController', 'sync'],
+    'POST /admin/ai/models/toggle'      => ['Admin\AiModelController', 'toggle'],
+
+    // Prompt AI — trang danh sách đã BỎ; chỉ còn trang soạn thảo riêng + POST lưu file
+    'GET /admin/ai/prompts/create'      => ['Admin\AiPromptController', 'create'],
+    'POST /admin/ai/prompts/save-file'  => ['Admin\AiPromptController', 'saveFile'],
+
+    // Hội thoại AI (đọc lại bình luận / tin nhắn / chat mà AI đã trả lời)
+    'GET /admin/ai/conversations'        => ['Admin\AiConversationController', 'index'],
+    'GET /admin/ai/conversations/detail' => ['Admin\AiConversationController', 'detail'],
+
+    // Task AI (producer chính thức → TaskRunner::request)
+    // Trang DANH SÁCH GET /admin/ai/tasks + POST /admin/ai/tasks/store đã GỠ
+    // (không còn đường vào UI): xem hàng đợi tại dashboard /admin/ai, chi tiết
+    // qua tasks/detail. Task sinh từ form nhập chủ đề (storeTopics) hoặc các
+    // nút luồng nghiệp vụ của từng tab.
+    'POST /admin/ai/articles/store-topics' => ['Admin\AiTaskController', 'storeTopics'],
+    // Viết TUẦN TỰ 1 bài/lần (tab Fanpage → tab "Tiến Trình"): JS gọi liên tục
+    // tới khi hàng đợi trong session hết — đảm bảo KHÔNG viết cùng lúc.
+    'POST /admin/ai/articles/write-next' => ['Admin\AiTaskController', 'writeNext'],
+    'GET /admin/ai/tasks/detail'        => ['Admin\AiTaskController', 'detail'],
+    'POST /admin/ai/tasks/run'          => ['Admin\AiTaskController', 'run'],
+    'POST /admin/ai/tasks/drain'        => ['Admin\AiTaskController', 'drain'],
+    'POST /admin/ai/tasks/cancel'       => ['Admin\AiTaskController', 'cancel'],
+
+    // Danh Sách Bài Viết (nguồn: vc_ai_outputs) — xem / copy prompt / lên lịch / xóa
+    'GET /admin/ai/outputs'             => ['Admin\AiOutputController', 'index'],
+    'GET /admin/ai/outputs/detail'      => ['Admin\AiOutputController', 'detail'],
+    // Lên lịch → tạo dòng vc_scheduled_posts (output_id) → cron tự đăng
+    'POST /admin/ai/outputs/schedule'   => ['Admin\AiOutputController', 'schedule'],
+    'POST /admin/ai/outputs/delete'     => ['Admin\AiOutputController', 'delete'],
+
+    // Cấu hình AI (API key provider + kiểm tra kết nối thật)
+    'GET /admin/ai/settings'            => ['Admin\AiSettingController', 'index'],
+    'POST /admin/ai/settings/save'      => ['Admin\AiSettingController', 'save'],
+    'POST /admin/ai/settings/test'      => ['Admin\AiSettingController', 'test'],
 ];

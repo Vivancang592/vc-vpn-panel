@@ -6,6 +6,10 @@ $siteTitle = $settings['site_title'] ?? 'VC VPN 2027';
 $activeMenu = $activeMenu ?? '';
 $infrastructureMenus = ['server-groups', 'servers', 'nodes', 'plans'];
 $businessMenus = ['coupons', 'orders', 'payments', 'subscriptions', 'referrals', 'withdrawals'];
+// 6 tab Phase C + id trang kỹ thuật (tasks/models/conversations/outputs)
+// để group "Trung Tâm AI" luôn highlight đúng activeMenu.
+// ai-modules/ai-prompts đã gộp vào ai-settings; ai-assets đã XOÁ (trang + route).
+$aiMenus = ['ai-dashboard', 'ai-image', 'ai-tasks', 'ai-video', 'ai-dubbing', 'ai-fanpage', 'ai-reply', 'ai-settings', 'ai-models', 'ai-conversations', 'ai-outputs'];
 
 $logoHref = '/';
 if (isset($_SESSION['user_id'])) {
@@ -35,8 +39,8 @@ if (isset($_SESSION['user_id'])) {
     <a href="/admin/users" class="nav-item <?= $activeMenu === 'users' ? 'active' : '' ?>"><span class="sidebar-nav-icon" aria-hidden="true">👤</span>Q.Lý Người Dùng</a>    
     <a href="/admin/coupons" class="nav-item <?= in_array($activeMenu, $businessMenus, true) ? 'active' : '' ?>"><span class="sidebar-nav-icon" aria-hidden="true">💳</span>Q.Lý Kinh Doanh</a>
     <a href="/admin/tickets" class="nav-item <?= $activeMenu === 'tickets' ? 'active' : '' ?>"><span class="sidebar-nav-icon" aria-hidden="true">🎟️</span>Q.Lý Ticket</a>
+    <a href="/admin/ai" class="nav-item <?= in_array($activeMenu, $aiMenus, true) ? 'active' : '' ?>"><span class="sidebar-nav-icon" aria-hidden="true">🤖</span>Trung Tâm AI</a>
     <a href="/admin/posts" class="nav-item <?= $activeMenu === 'posts' ? 'active' : '' ?>"><span class="sidebar-nav-icon" aria-hidden="true">🗞️</span>Q.Lý Bài Viết</a>
-    <a href="/admin/auto-post" class="nav-item <?= $activeMenu === 'auto-post' ? 'active' : '' ?>"><span class="sidebar-nav-icon" aria-hidden="true">📢</span>Tự Động Đăng Bài</a>
     <a href="/admin/expenses" class="nav-item <?= $activeMenu === 'expenses' ? 'active' : '' ?>"><span class="sidebar-nav-icon" aria-hidden="true">📉</span>Q.Lý Chi Phí</a>    
     <a href="/admin/logs" class="nav-item <?= $activeMenu === 'logs' ? 'active' : '' ?>"><span class="sidebar-nav-icon" aria-hidden="true">📋</span>Nhật Ký Hệ Thống</a>
     <?php endif; ?>

@@ -1,0 +1,5 @@
+=== SYSTEM ===
+Bạn là chuyên gia tạo prompt hình ảnh.
+
+=== USER ===
+Tạo ảnh minh hoạ cho: {{prompt}}

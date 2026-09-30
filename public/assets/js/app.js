@@ -1,3 +1,41 @@
+/* ===== GIỮ VỊ TRÍ CUỘN QUA POST → REDIRECT CÙNG TRANG =====
+ * Nút không đổi tab/trang (Tạo ảnh/video/lời thoại, Xóa, Lưu lịch...)
+ * đều POST rồi redirect về đúng URL → trang load lại đúng vị trí cũ,
+ * không nhảy vọt lên đầu. Bỏ qua khi URL có #anchor (đã có đích cuộn riêng).
+ * Lưu ý: trang admin cuộn trong container `.admin-main` (html/body ẩn chữ),
+ * nên phải đọc/ghi scrollTop của container chứ không phải window.scrollY. */
+(function () {
+    const scrollKey = 'vcScroll:' + location.pathname + location.search;
+
+    function getScroller() {
+        const main = document.querySelector('.admin-main');
+        if (main && main.scrollHeight > main.clientHeight + 4) return main;
+        return document.scrollingElement || document.documentElement;
+    }
+
+    document.addEventListener('submit', function (e) {
+        const form = e.target;
+        if (!form || form.tagName !== 'FORM') return;
+        try {
+            sessionStorage.setItem(scrollKey, JSON.stringify({ y: getScroller().scrollTop, t: Date.now() }));
+        } catch (err) { /* sessionStorage lỗi → bỏ qua */ }
+    });
+
+    try {
+        const saved = JSON.parse(sessionStorage.getItem(scrollKey) || 'null');
+        sessionStorage.removeItem(scrollKey); // chỉ dùng đúng 1 lần
+        if (saved && !location.hash && typeof saved.y === 'number' && saved.y > 0
+            && (Date.now() - (saved.t || 0)) < 60000) {
+            const restore = function () { getScroller().scrollTop = saved.y; };
+            if (document.readyState === 'loading') {
+                document.addEventListener('DOMContentLoaded', restore);
+            } else {
+                restore();
+            }
+        }
+    } catch (err) { /* bỏ qua */ }
+})();
+
 document.addEventListener('DOMContentLoaded', function () {
     const sidebar = document.querySelector('.admin-sidebar');
     const toggleBtn = document.getElementById('sidebar-toggle');
@@ -128,6 +166,13 @@ document.addEventListener('DOMContentLoaded', function () {
     window.addEventListener('pageshow', function (event) {
         if (event.persisted) {
             hidePreloader();
+            // Quay lại trang từ bfcache (bấm Back sau khi submit) → khôi phục nút tạo
+            document.querySelectorAll('button[data-busy="1"][data-busy-label]').forEach(function (b) {
+                b.disabled = false;
+                if (b.dataset.busyOriginal) b.innerHTML = b.dataset.busyOriginal;
+                delete b.dataset.busy;
+                delete b.dataset.busyOriginal;
+            });
         }
     });
 
@@ -163,8 +208,27 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     });
 
+    // Nút "Tạo" của form AI (ảnh/video/lời thoại): bấm là hiện spinner +
+    // "Đang tạo..." và khóa nút — có phản hồi ngay, chống bấm đôi.
+    document.addEventListener('submit', function (e) {
+        if (e.defaultPrevented) return;
+        const form = e.target;
+        if (!form || form.tagName !== 'FORM') return;
+        const btn = form.querySelector('button[type="submit"][data-busy-label]');
+        if (!btn) return;
+        if (btn.dataset.busy === '1') { e.preventDefault(); return; }
+        btn.dataset.busyOriginal = btn.innerHTML;
+        btn.dataset.busy = '1';
+        btn.disabled = true;
+        btn.innerHTML = '<span class="btn-busy-spinner" aria-hidden="true"></span> ' + (btn.dataset.busyLabel || 'Đang xử lý...');
+    });
+
     document.querySelectorAll('[data-copy-value]').forEach(function (button) {
-        button.addEventListener('click', async function () {
+        button.addEventListener('click', async function (e) {
+            // Chặn bubble lên document để menu 3 chấm KHÔNG đóng ngay —
+            // người dùng còn thấy thông báo "Đã sao chép" trên chính nút.
+            e.stopPropagation();
+
             const value = button.dataset.copyValue || '';
             if (!value) return;
 
@@ -181,10 +245,12 @@ document.addEventListener('DOMContentLoaded', function () {
                 textArea.remove();
             }
 
-            const originalLabel = button.textContent;
+            // Khôi phục đúng HTML gốc (giữ nguyên icon + text đang hiển thị),
+            // tránh lệch tên nút khi data-copy-label khác nhãn thực tế.
+            const originalHTML = button.innerHTML;
             button.textContent = 'Đã sao chép';
             setTimeout(function () {
-                button.textContent = originalLabel;
+                button.innerHTML = originalHTML;
             }, 1800);
         });
     });
@@ -757,6 +823,8 @@ if (!response.ok || !result.valid) {
         const box = document.getElementById('vc-chatbot-messages');
         const page = (chatbotRoot.dataset.page || '/').replace(/^\//, '') || 'home';
         const siteTitle = (chatbotRoot.dataset.siteTitle || 'VC VPN').trim();
+        const chatLoggedIn = chatbotRoot.dataset.loggedIn === '1';
+        const chatUserName = (chatbotRoot.dataset.userName || '').trim();
 
         const trackEvent = async function (eventName, meta) {
             try {
@@ -887,7 +955,10 @@ if (!response.ok || !result.valid) {
             document.body.classList.add('vc-chatbot-open');
 
             if (box && box.childElementCount === 0) {
-                renderMessage('assistant', 'Xin chào bạn! Mình là trợ lý tư vấn ' + siteTitle + '. Bạn cần hỗ trợ về gói dịch vụ, giá cước hay hướng dẫn cài đặt nào ạ?');
+                const greeting = chatLoggedIn
+                    ? 'Xin chào ' + (chatUserName || 'bạn') + '! Mình là trợ lý tư vấn ' + siteTitle + '. Bạn đã đăng nhập nên mình sẽ hỗ trợ đúng theo tài khoản của bạn. Bạn cần tư vấn gói dịch vụ, giá cước hay hướng dẫn cài đặt ạ?'
+                    : 'Xin chào bạn! Mình là trợ lý tư vấn ' + siteTitle + '. Bạn đang chat với tư cách khách (chưa đăng nhập). Bạn cần hỗ trợ về gói dịch vụ, giá cước hay hướng dẫn cài đặt nào ạ?';
+                renderMessage('assistant', greeting);
             }
             setTimeout(function () {
                 if (input) input.focus();

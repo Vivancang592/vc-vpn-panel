@@ -36,7 +36,7 @@ ob_start();
     <button class="settings-tab-btn" data-target="tab-trial">🎁 Dùng Thử</button>
     <button class="settings-tab-btn" data-target="tab-bank">🏦 Đa Cổng Thanh Toán</button>
     <button class="settings-tab-btn" data-target="tab-email">📧 Cấu Hình Email</button>
-    <button class="settings-tab-btn" data-target="tab-ai">🤖 AI Chatbot & Fanpage</button>
+    <button class="settings-tab-btn" data-target="tab-ai">🔵 Fanpage</button>
 </div>
 
 <div class="settings-content">
@@ -357,135 +357,21 @@ ob_start();
         </form>
     </div>
 
-    <!-- TAB 6: AI CHATBOT & FANPAGE -->
+    <!-- TAB 6: FANPAGE -->
     <div id="tab-ai" class="settings-tab-pane">
         <form method="POST" action="/admin/settings/save" class="glass-card settings-form" style="padding: 1.5rem; width: 100%; display: flex; flex-direction: column; gap: 1.25rem;">
-            
-            <h2 style="font-size: 1.1rem; font-weight: 700; margin-bottom: 0.5rem; border-bottom: 1px solid var(--glass-border); padding-bottom: 0.5rem; color: #0a84ff;">
-                🤖 Cấu Hình Trợ Lý AI Chatbot
-            </h2>
 
-            <div class="settings-field-list">
-                <div>
-                    <label data-hint="Bật hoặc tắt widget AI Chatbot tự động trả lời cho khách hàng." style="display: block; font-weight: 600; font-size: 0.85rem;">Bật Chatbot Website</label>
-                    <select name="settings[ai_chatbot_enabled]" class="glass-input" style="width: 100%; cursor: pointer;">
-                        <option value="1" <?= ($settings['ai_chatbot_enabled'] ?? '1') === '1' ? 'selected' : '' ?>>Bật</option>
-                        <option value="0" <?= ($settings['ai_chatbot_enabled'] ?? '1') === '0' ? 'selected' : '' ?>>Tắt</option>
-                    </select>
-                </div>
-
-                <div>
-                    <label data-hint="Chọn nhà cung cấp AI chính thức xử lý các đoạn hội thoại." style="display: block; font-weight: 600; font-size: 0.85rem;">Nhà Cung Cấp AI Mặc Định</label>
-                    <select name="settings[ai_provider]" class="glass-input" style="width: 100%; cursor: pointer;">
-                        <option value="openai" <?= ($settings['ai_provider'] ?? 'openai') === 'openai' ? 'selected' : '' ?>>OpenRouter (OpenAI/Claude/Llama/DeepSeek...)</option>
-                        <option value="gemini" <?= ($settings['ai_provider'] ?? '') === 'gemini' ? 'selected' : '' ?>>Google Gemini</option>
-                    </select>
-                </div>
-
-                <div>
-                    <label data-hint="Độ dài tối đa của phản hồi trả về từ AI (500 - 4000 tokens)." style="display: block; font-weight: 600; font-size: 0.85rem;">Giới Hạn Output Tokens</label>
-                    <input type="number" name="settings[ai_max_output_tokens]" class="glass-input" value="<?= htmlspecialchars($settings['ai_max_output_tokens'] ?? '2000') ?>" min="500" max="4000" step="50" style="width: 100%;">
-                </div>
-
-                <div>
-                    <label data-hint="Thời gian chờ tối thiểu giữa 2 lần gửi tin của 1 khách (0.5 - 6s)." style="display: block; font-weight: 600; font-size: 0.85rem;">Cooldown Mỗi Tin (giây)</label>
-                    <input type="number" name="settings[ai_cooldown_seconds]" class="glass-input" value="<?= htmlspecialchars($settings['ai_cooldown_seconds'] ?? '1.5') ?>" min="0.5" max="6" step="0.1" style="width: 100%;">
-                </div>
-
-                <div>
-                    <label data-hint="Số tin nhắn tối đa 1 người dùng được gửi trong vòng 1 phút." style="display: block; font-weight: 600; font-size: 0.85rem;">Giới Hạn Request Mỗi Phút</label>
-                    <input type="number" name="settings[ai_rate_limit_per_minute]" class="glass-input" value="<?= htmlspecialchars($settings['ai_rate_limit_per_minute'] ?? '8') ?>" min="3" max="30" step="1" style="width: 100%;">
-                </div>
-
-                <div>
-                    <label data-hint="Khoảng thời gian chặn gửi các câu hỏi hoàn toàn giống nhau liên tiếp." style="display: block; font-weight: 600; font-size: 0.85rem;">Cửa Sổ Chặn Tin Trùng (giây)</label>
-                    <input type="number" name="settings[ai_duplicate_window_seconds]" class="glass-input" value="<?= htmlspecialchars($settings['ai_duplicate_window_seconds'] ?? '4') ?>" min="2" max="20" step="1" style="width: 100%;">
-                </div>
-
-                <div>
-                    <label data-hint="Thời gian lưu cache câu trả lời giống nhau để tiết kiệm token và tăng tốc độ phản hồi." style="display: block; font-weight: 600; font-size: 0.85rem;">Thời Gian Cache AI (phút)</label>
-                    <input type="number" name="settings[ai_cache_ttl_minutes]" class="glass-input" value="<?= htmlspecialchars($settings['ai_cache_ttl_minutes'] ?? '60') ?>" min="1" max="1440" step="1" style="width: 100%;">
-                </div>
-
-                <div class="settings-field-row" style="border-bottom: 1px solid var(--glass-border); align-items: start;">
-                    <label data-hint="Kịch bản hệ thống, quy tắc và phong cách xưng hô của bot đối với khách hàng." style="display: block; font-weight: 600; font-size: 0.85rem; padding-top: 0.35rem;">Prompt Hệ Thống (System Prompt)</label>
-                    <textarea name="settings[ai_system_prompt]" rows="10" class="glass-input" style="width: 100%; min-height: 220px; resize: vertical; line-height: 1.6; font-size: 0.875rem; padding: 0.75rem; font-family: inherit;" placeholder="Nhập kịch bản hướng dẫn, phong cách và quy tắc bổ sung cho AI..."><?= htmlspecialchars($settings['ai_system_prompt'] ?? '') ?></textarea>
-                </div>
-
-                <div>
-                    <label data-hint="Tùy chọn proxy outbound cho cURL (VD: socks5h://127.0.0.1:10808 hoặc http://127.0.0.1:7890). Để trống nếu chạy trực tiếp." style="display: block; font-weight: 600; font-size: 0.85rem;">Proxy cURL cho AI (Tùy chọn)</label>
-                    <input type="text" name="settings[ai_proxy]" class="glass-input" value="<?= htmlspecialchars($settings['ai_proxy'] ?? '') ?>" placeholder="socks5h://127.0.0.1:10808 hoặc để trống" style="width: 100%;">
-                </div>
+            <div style="padding: 0.9rem 1rem; border-radius: 8px; background: rgba(10,132,255,0.07); border: 1px solid rgba(10,132,255,0.25); font-size: 0.85rem; line-height: 1.65;">
+                <strong>ℹ️ Cấu hình AI đã chuyển sang TRUNG TÂM AI.</strong><br>
+                Nhà cung cấp AI, API key, model, prompt và nhật ký hội thoại được quản lý duy nhất tại:
+                <a href="/admin/ai/settings" style="color: var(--ios-blue); font-weight: 600;">Cấu Hình AI (phân hệ + nội quy prompt)</a> ·
+                <a href="/admin/ai#ai-models-catalog" style="color: var(--ios-blue); font-weight: 600;">Model</a>.
+                Tab này chỉ còn cấu hình kết nối Facebook Fanpage.
             </div>
 
-            <!-- Cấu hình OpenRouter -->
-            <h3 style="font-size: 1rem; font-weight: 700; margin-top: 1rem; margin-bottom: 0.5rem; border-bottom: 1px solid var(--glass-border); padding-bottom: 0.5rem; color: #10a37f;">
-                🟢 Cấu Hình OpenRouter.ai (OpenAI / Claude / Meta / DeepSeek...)
-            </h3>
-
-            <div class="settings-field-list">
-                <div>
-                    <label data-hint="API Key lấy từ OpenRouter (https://openrouter.ai/keys, bắt đầu bằng sk-or-v1-...)." style="display: block; font-weight: 600; font-size: 0.85rem;">OpenRouter API Key</label>
-                    <input type="password" id="openai-api-key-input" name="settings[ai_openai_api_key]" class="glass-input" value="<?= !empty($settings['ai_openai_api_key']) ? '************' : '' ?>" placeholder="sk-or-v1-..." style="width: 100%;" autocomplete="new-password">
-                </div>
-
-                <div>
-                    <label data-hint="Chọn model từ OpenRouter (VD: openai/gpt-4o-mini, anthropic/claude-3.5-sonnet, deepseek/deepseek-chat...). Bấm Tải model để đồng bộ." style="display: block; font-weight: 600; font-size: 0.85rem;">OpenRouter Model</label>
-                    <div style="display: flex; flex-direction: column; gap: 0.4rem; width: 100%;">
-                        <div style="display: flex; gap: 0.5rem; align-items: center; width: 100%;">
-                            <select id="openai-model-select" name="settings[ai_openai_model]" class="glass-input" style="flex: 1; min-width: 0; cursor: pointer;">
-                                <option value="<?= htmlspecialchars($settings['ai_openai_model'] ?? 'openai/gpt-4o-mini') ?>" selected>
-                                    <?= htmlspecialchars($settings['ai_openai_model'] ?? 'openai/gpt-4o-mini') ?>
-                                </option>
-                            </select>
-                            <button type="button" id="check-openai-connection" class="glass-btn" style="padding: 0.52rem 0.85rem; white-space: nowrap; cursor: pointer; background: rgba(255,255,255,0.08); border: 1px solid var(--glass-border); color: var(--ios-text); font-size: 0.8rem;">
-                                🔍 Kiểm tra kết nối
-                            </button>
-                            <button type="button" id="load-openai-models" class="glass-btn" style="padding: 0.52rem 0.85rem; white-space: nowrap; cursor: pointer; background: #10a37f; color: #fff; border: none; font-size: 0.8rem;">
-                                ⬇️ Tải model
-                            </button>
-                        </div>
-                        <div id="openai-model-status" style="font-size: 0.8rem; color: var(--ios-text-secondary); line-height: 1.45; word-break: break-word;"></div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Cấu hình Google Gemini -->
-            <h3 style="font-size: 1rem; font-weight: 700; margin-top: 1rem; margin-bottom: 0.5rem; border-bottom: 1px solid var(--glass-border); padding-bottom: 0.5rem; color: #ea4335;">
-                🔴 Cấu Hình Google Gemini
-            </h3>
-
-            <div class="settings-field-list">
-                <div>
-                    <label data-hint="API Key lấy từ Google AI Studio (bắt đầu bằng AIza...)." style="display: block; font-weight: 600; font-size: 0.85rem;">Gemini API Key</label>
-                    <input type="password" id="gemini-api-key-input" name="settings[ai_gemini_api_key]" class="glass-input" value="<?= !empty($settings['ai_gemini_api_key']) ? '************' : '' ?>" placeholder="AIza..." style="width: 100%;" autocomplete="new-password">
-                </div>
-
-                <div>
-                    <label data-hint="Chọn model Gemini (VD: gemini-1.5-flash, gemini-2.0-flash...). Bấm Tải model để đồng bộ từ tài khoản." style="display: block; font-weight: 600; font-size: 0.85rem;">Gemini Model</label>
-                    <div style="display: flex; flex-direction: column; gap: 0.4rem; width: 100%;">
-                        <div style="display: flex; gap: 0.5rem; align-items: center; width: 100%;">
-                            <select id="gemini-model-select" name="settings[ai_gemini_model]" class="glass-input" style="flex: 1; min-width: 0; cursor: pointer;">
-                                <option value="<?= htmlspecialchars($settings['ai_gemini_model'] ?? 'gemini-1.5-flash') ?>" selected>
-                                    <?= htmlspecialchars($settings['ai_gemini_model'] ?? 'gemini-1.5-flash') ?>
-                                </option>
-                            </select>
-                            <button type="button" id="check-gemini-connection" class="glass-btn" style="padding: 0.52rem 0.85rem; white-space: nowrap; cursor: pointer; background: rgba(255,255,255,0.08); border: 1px solid var(--glass-border); color: var(--ios-text); font-size: 0.8rem;">
-                                🔍 Kiểm tra kết nối
-                            </button>
-                            <button type="button" id="load-gemini-models" class="glass-btn" style="padding: 0.52rem 0.85rem; white-space: nowrap; cursor: pointer; background: #ea4335; color: #fff; border: none; font-size: 0.8rem;">
-                                ⬇️ Tải model
-                            </button>
-                        </div>
-                        <div id="gemini-model-status" style="font-size: 0.8rem; color: var(--ios-text-secondary); line-height: 1.45; word-break: break-word;"></div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Facebook Fanpage Webhook -->
-            <h3 style="font-size: 1rem; font-weight: 700; margin-top: 1rem; margin-bottom: 0.5rem; border-bottom: 1px solid var(--glass-border); padding-bottom: 0.5rem; color: #1877f2;">
+            <h2 style="font-size: 1.1rem; font-weight: 700; margin-bottom: 0.5rem; border-bottom: 1px solid var(--glass-border); padding-bottom: 0.5rem; color: #1877f2;">
                 🔵 Facebook Fanpage Webhook & Graph API
-            </h3>
+            </h2>
 
             <div class="settings-field-list">
                 <div>
@@ -524,97 +410,27 @@ ob_start();
                 </div>
             </div>
 
-            <!-- Hướng dẫn đăng ký Webhook Meta -->
-            <div style="background: rgba(24, 119, 242, 0.05); border: 1px solid rgba(24, 119, 242, 0.2); border-radius: 8px; padding: 0.85rem 1rem; margin-top: 0.75rem; font-size: 0.8rem; line-height: 1.5; color: var(--ios-text-secondary);">
+            <div style="background: rgba(24, 119, 242, 0.05); border: 1px solid rgba(24, 119, 242, 0.2); border-radius: 8px; padding: 0.85rem 1rem; margin-top: 0.25rem; font-size: 0.8rem; line-height: 1.5; color: var(--ios-text-secondary);">
                 <strong style="color: #1877f2;">💡 Yêu cầu trên Meta for Developers để AI nhận & trả lời bình luận:</strong>
                 <ul style="margin: 0.35rem 0 0 1.2rem; padding: 0;">
-                    <li>Trong mục <strong>Webhooks > Page</strong>: Bấm <em>Subscribe to this object</em> và tích chọn trường <code>feed</code> (để nhận bình luận) và <code>messages</code> (để nhận tin nhắn).</li>
+                    <li>Trong mục <strong>Webhooks &gt; Page</strong>: Bấm <em>Subscribe to this object</em> và tích chọn trường <code>feed</code> (để nhận bình luận) và <code>messages</code> (để nhận tin nhắn).</li>
                     <li>Page Access Token cần các quyền tối thiểu: <code>pages_manage_posts</code>, <code>pages_manage_engagement</code>, <code>pages_read_user_content</code>, <code>pages_messaging</code>.</li>
                 </ul>
             </div>
 
-            <!-- Cấu hình AI Sinh Nội Dung & Ảnh Đăng Bài -->
-            <h3 style="font-size: 1rem; font-weight: 700; margin-top: 1rem; margin-bottom: 0.5rem; border-bottom: 1px solid var(--glass-border); padding-bottom: 0.5rem; color: #af52de;">
-                📢 Cấu Hình AI Sáng Tạo Nội Dung & Sinh Ảnh (Marketing Auto-Post)
-            </h3>
+            <h2 style="font-size: 1.1rem; font-weight: 700; margin-top: 0.5rem; margin-bottom: 0.5rem; border-bottom: 1px solid var(--glass-border); padding-bottom: 0.5rem; color: #ff9500;">
+                💬 Tự Động Trả Lời Bình Luận Fanpage
+            </h2>
 
             <div class="settings-field-list">
                 <div>
-                    <label data-hint="Nhà cung cấp AI chuyên dùng để viết nội dung bài đăng Fanpage." style="display: block; font-weight: 600; font-size: 0.85rem;">Provider Viết Bài</label>
-                    <select id="content-provider-select" name="settings[ai_content_provider]" class="glass-input" style="width: 100%; cursor: pointer;">
-                        <option value="openai" <?= ($settings['ai_content_provider'] ?? 'openai') === 'openai' ? 'selected' : '' ?>>OpenRouter (GPT-4o / Claude 3.5 Sonnet / Llama 3...)</option>
-                        <option value="gemini" <?= ($settings['ai_content_provider'] ?? '') === 'gemini' ? 'selected' : '' ?>>Google Gemini (Gemini 2.5/3.7 Pro / Flash)</option>
+                    <label data-hint="Bật hoặc tắt trợ lý AI (chat website + trả lời bình luận Fanpage)." style="display: block; font-weight: 600; font-size: 0.85rem;">Bật Trợ Lý AI</label>
+                    <select name="settings[ai_chatbot_enabled]" class="glass-input" style="width: 100%; cursor: pointer;">
+                        <option value="1" <?= ($settings['ai_chatbot_enabled'] ?? '1') === '1' ? 'selected' : '' ?>>Bật</option>
+                        <option value="0" <?= ($settings['ai_chatbot_enabled'] ?? '1') === '0' ? 'selected' : '' ?>>Tắt</option>
                     </select>
                 </div>
 
-                <div>
-                    <label data-hint="Chọn model AI chuyên trách sáng tạo bài viết. Bấm Tải model để đồng bộ từ nhà cung cấp." style="display: block; font-weight: 600; font-size: 0.85rem;">Model Sáng Tạo Bài Viết</label>
-                    <div style="display: flex; flex-direction: column; gap: 0.4rem; width: 100%;">
-                        <div style="display: flex; gap: 0.5rem; align-items: center; width: 100%;">
-                            <select id="content-model-select" name="settings[ai_content_model]" class="glass-input" style="flex: 1; min-width: 0; cursor: pointer;">
-                                <option value="<?= htmlspecialchars($settings['ai_content_model'] ?? 'openai/gpt-4o-mini') ?>" selected>
-                                    <?= htmlspecialchars($settings['ai_content_model'] ?? 'openai/gpt-4o-mini') ?>
-                                </option>
-                            </select>
-                            <button type="button" id="load-content-models" class="glass-btn" style="padding: 0.52rem 0.85rem; white-space: nowrap; cursor: pointer; background: #af52de; color: #fff; border: none; font-size: 0.8rem;">
-                                ⬇️ Tải danh sách Model
-                            </button>
-                        </div>
-                        <div id="content-model-status" style="font-size: 0.8rem; color: var(--ios-text-secondary); line-height: 1.45; word-break: break-word;"></div>
-                    </div>
-                </div>
-
-                <div class="settings-field-row" style="border-bottom: 1px solid var(--glass-border); align-items: start;">
-                    <label data-hint="Định vị thương hiệu, phong cách copywriting, quy tắc hashtag và call-to-action khi AI viết bài Fanpage." style="display: block; font-weight: 600; font-size: 0.85rem; padding-top: 0.35rem;">System Prompt Cho Bài Viết</label>
-                    <textarea name="settings[ai_content_system_prompt]" rows="6" class="glass-input" style="width: 100%; min-height: 140px; resize: vertical; line-height: 1.5; font-size: 0.85rem;" placeholder="Nhập kịch bản hướng dẫn phong cách viết bài quảng cáo Fanpage..."><?= htmlspecialchars($settings['ai_content_system_prompt'] ?? '') ?></textarea>
-                </div>
-
-                <div>
-                    <label data-hint="Nhà cung cấp AI chuyên dùng để sinh ảnh minh họa." style="display: block; font-weight: 600; font-size: 0.85rem;">Provider Sinh Ảnh</label>
-                    <select id="image-provider-select" name="settings[ai_image_provider]" class="glass-input" style="width: 100%; cursor: pointer;">
-                        <option value="openai" <?= ($settings['ai_image_provider'] ?? 'openai') === 'openai' ? 'selected' : '' ?>>OpenRouter (DALL-E / Stable Diffusion / FLUX...)</option>
-                        <option value="gemini" <?= ($settings['ai_image_provider'] ?? '') === 'gemini' ? 'selected' : '' ?>>Google Gemini (Imagen 3)</option>
-                    </select>
-                </div>
-
-                <div>
-                    <label data-hint="API Key riêng cho sinh ảnh (để trống sẽ sử dụng API Key của provider ở trên)." style="display: block; font-weight: 600; font-size: 0.85rem;">API Key Sinh Ảnh (Tùy chọn)</label>
-                    <input type="password" id="image-api-key-input" name="settings[ai_image_api_key]" class="glass-input" value="<?= (!empty($settings['ai_image_api_key']) && strpos($settings['ai_image_api_key'], '***') === false) ? '************' : '' ?>" placeholder="sk-... (để trống nếu dùng chung API key OpenRouter/Gemini)" style="width: 100%;">
-                </div>
-
-                <div>
-                    <label data-hint="Model sinh ảnh AI được sử dụng. Bấm Tải model để đồng bộ từ nhà cung cấp." style="display: block; font-weight: 600; font-size: 0.85rem;">Model Sinh Ảnh (Image Model)</label>
-                    <div style="display: flex; flex-direction: column; gap: 0.4rem; width: 100%;">
-                        <div style="display: flex; gap: 0.5rem; align-items: center; width: 100%;">
-                            <select id="image-model-select" name="settings[ai_image_model]" class="glass-input" style="flex: 1; min-width: 0; cursor: pointer;">
-                                <option value="<?= htmlspecialchars($settings['ai_image_model'] ?? 'dall-e-3') ?>" selected>
-                                    <?= htmlspecialchars($settings['ai_image_model'] ?? 'dall-e-3') ?>
-                                </option>
-                            </select>
-                            <button type="button" id="load-image-models" class="glass-btn" style="padding: 0.52rem 0.85rem; white-space: nowrap; cursor: pointer; background: #af52de; color: #fff; border: none; font-size: 0.8rem;">
-                                ⬇️ Tải danh sách Model
-                            </button>
-                        </div>
-                        <div id="image-model-status" style="font-size: 0.8rem; color: var(--ios-text-secondary); line-height: 1.45; word-break: break-word;"></div>
-                    </div>
-                </div>
-
-                <div>
-                    <label data-hint="Kích thước ảnh do DALL-E 3 sinh ra." style="display: block; font-weight: 600; font-size: 0.85rem;">Kích Thước Ảnh Chuẩn</label>
-                    <select name="settings[ai_image_size]" class="glass-input" style="width: 100%; cursor: pointer;">
-                        <option value="1024x1024" <?= ($settings['ai_image_size'] ?? '1024x1024') === '1024x1024' ? 'selected' : '' ?>>Hình vuông 1:1 (1024 x 1024 px)</option>
-                        <option value="1792x1024" <?= ($settings['ai_image_size'] ?? '') === '1792x1024' ? 'selected' : '' ?>>Hình chữ nhật ngang 16:9 (1792 x 1024 px)</option>
-                        <option value="1024x1792" <?= ($settings['ai_image_size'] ?? '') === '1024x1792' ? 'selected' : '' ?>>Hình dọc Story 9:16 (1024 x 1792 px)</option>
-                    </select>
-                </div>
-            </div>
-
-            <!-- Cấu hình Trả Lời Bình Luận Tự Động -->
-            <h3 style="font-size: 1rem; font-weight: 700; margin-top: 1rem; margin-bottom: 0.5rem; border-bottom: 1px solid var(--glass-border); padding-bottom: 0.5rem; color: #ff9500;">
-                💬 Cấu Hình Tự Động Trả Lời Bình Luận Fanpage (AI Auto Reply Comment)
-            </h3>
-
-            <div class="settings-field-list">
                 <div>
                     <label data-hint="Tự động lắng nghe webhook và phản hồi công khai các bình luận mới trên Fanpage." style="display: block; font-weight: 600; font-size: 0.85rem;">Tự Động Trả Lời Bình Luận</label>
                     <select name="settings[ai_comment_auto_reply]" class="glass-input" style="width: 100%; cursor: pointer;">
@@ -628,40 +444,16 @@ ob_start();
                     <input type="text" name="settings[ai_comment_keywords_blacklist]" class="glass-input" value="<?= htmlspecialchars($settings['ai_comment_keywords_blacklist'] ?? '') ?>" placeholder="lừa đảo, chửi thề, spam, vay tiền..." style="width: 100%;">
                 </div>
 
-                <div class="settings-field-row" style="border-bottom: 1px solid var(--glass-border); align-items: start;">
-                    <label data-hint="Prompt định hướng phong cách trả lời ngắn gọn, thân thiện và điều hướng khách vào inbox." style="display: block; font-weight: 600; font-size: 0.85rem; padding-top: 0.35rem;">Prompt Trả Lời Bình Luận</label>
-                    <textarea name="settings[ai_comment_system_prompt]" rows="5" class="glass-input" style="width: 100%; min-height: 110px; resize: vertical; line-height: 1.5; font-size: 0.85rem;" placeholder="Nhập hướng dẫn cho AI khi phản hồi bình luận..."><?= htmlspecialchars($settings['ai_comment_system_prompt'] ?? '') ?></textarea>
-                </div>
-
-                <div>
-                    <label data-hint="Nhà cung cấp AI chuyên dùng để sinh phản hồi tự động cho bình luận." style="display: block; font-weight: 600; font-size: 0.85rem;">Provider Bình Luận</label>
-                    <select id="comment-provider-select" name="settings[ai_comment_provider]" class="glass-input" style="width: 100%; cursor: pointer;">
-                        <option value="openai" <?= ($settings['ai_comment_provider'] ?? 'openai') === 'openai' ? 'selected' : '' ?>>OpenRouter (GPT-4o / Claude 3.5 Sonnet / Llama 3...)</option>
-                        <option value="gemini" <?= ($settings['ai_comment_provider'] ?? '') === 'gemini' ? 'selected' : '' ?>>Google Gemini (Gemini 2.5/3.7 Pro / Flash)</option>
-                    </select>
-                </div>
-
-                <div>
-                    <label data-hint="Model AI dùng để sinh phản hồi tự động cho bình luận. Bấm Tải model để đồng bộ từ nhà cung cấp." style="display: block; font-weight: 600; font-size: 0.85rem;">Model Bình Luận (AI Auto-Comment)</label>
-                    <div style="display: flex; flex-direction: column; gap: 0.4rem; width: 100%;">
-                        <div style="display: flex; gap: 0.5rem; align-items: center; width: 100%;">
-                            <select id="comment-model-select" name="settings[ai_comment_model]" class="glass-input" style="flex: 1; min-width: 0; cursor: pointer;">
-                                <option value="<?= htmlspecialchars($settings['ai_comment_model'] ?? '') ?>" selected>
-                                    <?= htmlspecialchars($settings['ai_comment_model'] ?? '') ?>
-                                </option>
-                            </select>
-                            <button type="button" id="load-comment-models" class="glass-btn" style="padding: 0.52rem 0.85rem; white-space: nowrap; cursor: pointer; background: #ff9500; color: #fff; border: none; font-size: 0.8rem;">
-                                ⬇️ Tải danh sách Model
-                            </button>
-                        </div>
-                        <div id="comment-model-status" style="font-size: 0.8rem; color: var(--ios-text-secondary); line-height: 1.45; word-break: break-word;"></div>
-                    </div>
+                <div style="padding: 0.75rem 0.9rem; border-radius: 8px; background: rgba(255,149,0,0.07); border: 1px solid rgba(255,149,0,0.25); font-size: 0.82rem; line-height: 1.6;">
+                    Nội dung AI trả lời cho bình luận và cho khung chat website nay do <strong>file prompt</strong> quyết định.
+                    Sửa tại <a href="/admin/ai/settings" style="color: var(--ios-blue); font-weight: 600;">Cấu Hình AI → Nội Quy Hệ Thống</a>
+                    (dùng cho module <code>fanpage_comment</code> và <code>support_chat</code>).
                 </div>
             </div>
 
             <div style="display: flex; justify-content: flex-end; margin-top: 0.5rem;">
-                <button type="submit" class="glass-btn" style="padding: 0.75rem 2rem; background: #0a84ff; color: #fff; border: none; font-weight: 600; cursor: pointer;">
-                    💾 Lưu Cấu Hình AI & Fanpage
+                <button type="submit" class="glass-btn" style="padding: 0.75rem 2rem; background: #0f6bf2; color: #fff; border: none; font-weight: 600; cursor: pointer;">
+                    💾 Lưu Cấu Hình Fanpage
                 </button>
             </div>
         </form>
@@ -692,351 +484,6 @@ function generateRandomApiKey(inputId) {
         input.focus();
     }
 }
-
-document.addEventListener('DOMContentLoaded', function () {
-    const openAiUi = {
-        provider: 'openai',
-        loadBtn: document.getElementById('load-openai-models'),
-        checkBtn: document.getElementById('check-openai-connection'),
-        select: document.getElementById('openai-model-select'),
-        status: document.getElementById('openai-model-status'),
-        apiKeyInput: document.getElementById('openai-api-key-input'),
-        providerLabel: 'OpenRouter'
-    };
-
-    const geminiUi = {
-        provider: 'gemini',
-        loadBtn: document.getElementById('load-gemini-models'),
-        checkBtn: document.getElementById('check-gemini-connection'),
-        select: document.getElementById('gemini-model-select'),
-        status: document.getElementById('gemini-model-status'),
-        apiKeyInput: document.getElementById('gemini-api-key-input'),
-        providerLabel: 'Gemini'
-    };
-
-    const renderDiagnostics = function (diagnostics) {
-        if (!diagnostics || typeof diagnostics !== 'object') {
-            return '';
-        }
-
-        const dnsIp = diagnostics.dns_host_ip || '-';
-        const primaryIp = diagnostics.primary_ip || '-';
-        const errno = diagnostics.curl_errno ?? '-';
-        const httpStatus = diagnostics.http_status ?? '-';
-        const timing = diagnostics.timing || {};
-        const total = typeof timing.total === 'number' ? timing.total.toFixed(2) : '-';
-        const connect = typeof timing.connect === 'number' ? timing.connect.toFixed(2) : '-';
-        const lookup = typeof timing.namelookup === 'number' ? timing.namelookup.toFixed(2) : '-';
-
-        return ' | DNS: ' + dnsIp
-            + ' | IP: ' + primaryIp
-            + ' | CURL errno: ' + errno
-            + ' | HTTP: ' + httpStatus
-            + ' | time: ' + total + 's';
-    };
-
-    const updateModelSelect = function (ui, models, currentModel) {
-        if (!ui.select || !Array.isArray(models) || models.length === 0) {
-            return;
-        }
-
-        const current = ui.select.value || currentModel || '';
-        ui.select.innerHTML = '';
-
-        let matched = false;
-        models.forEach(function (modelId) {
-            const opt = document.createElement('option');
-            opt.value = modelId;
-            opt.textContent = modelId;
-            if (modelId === current) {
-                opt.selected = true;
-                matched = true;
-            }
-            ui.select.appendChild(opt);
-        });
-
-        if (!matched && current) {
-            const custom = document.createElement('option');
-            custom.value = current;
-            custom.textContent = current + ' (đang dùng)';
-            custom.selected = true;
-            ui.select.insertBefore(custom, ui.select.firstChild);
-        }
-    };
-
-    const wireProviderActions = function (ui) {
-        if (!ui.loadBtn || !ui.checkBtn || !ui.select || !ui.status) {
-            return;
-        }
-
-        ui.checkBtn.addEventListener('click', async function () {
-            ui.checkBtn.disabled = true;
-            ui.checkBtn.textContent = 'Đang kiểm tra...';
-            ui.status.style.color = 'var(--ios-text-secondary)';
-            ui.status.textContent = 'Đang kiểm tra kết nối tới ' + ui.providerLabel + '...';
-
-            const payload = {
-                provider: ui.provider,
-                csrf_token: '<?= htmlspecialchars($csrf_token) ?>'
-            };
-
-            if (ui.apiKeyInput && ui.apiKeyInput.value && !ui.apiKeyInput.value.includes('***')) {
-                payload.api_key = ui.apiKeyInput.value.trim();
-            }
-
-            try {
-                const response = await fetch('/admin/settings/ai-connection-check', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/x-www-form-urlencoded',
-                        'Accept': 'application/json'
-                    },
-                    body: new URLSearchParams(payload)
-                });
-
-                const result = await response.json();
-                const diagnosticsText = renderDiagnostics(result && result.diagnostics ? result.diagnostics : null);
-
-                if (result && result.success) {
-                    ui.status.style.color = 'var(--ios-success)';
-                    ui.status.textContent = (result.message || 'Kết nối thành công.') + diagnosticsText;
-                    if (Array.isArray(result.models) && result.models.length > 0) {
-                        updateModelSelect(ui, result.models, result.current);
-                    }
-                } else {
-                    ui.status.style.color = 'var(--ios-danger)';
-                    ui.status.textContent = (result && result.message ? result.message : 'Kiểm tra kết nối thất bại.') + diagnosticsText;
-                }
-            } catch (_error) {
-                ui.status.style.color = 'var(--ios-danger)';
-                ui.status.textContent = 'Lỗi mạng khi gọi endpoint kiểm tra kết nối.';
-            } finally {
-                ui.checkBtn.disabled = false;
-                ui.checkBtn.textContent = '🔍 Kiểm tra kết nối';
-            }
-        });
-
-        ui.loadBtn.addEventListener('click', async function () {
-            ui.loadBtn.disabled = true;
-            ui.loadBtn.textContent = 'Đang tải...';
-            ui.status.style.color = 'var(--ios-text-secondary)';
-            ui.status.textContent = 'Đang lấy danh sách model từ ' + ui.providerLabel + '...';
-
-            const payload = {
-                provider: ui.provider,
-                csrf_token: '<?= htmlspecialchars($csrf_token) ?>'
-            };
-
-            if (ui.apiKeyInput && ui.apiKeyInput.value && !ui.apiKeyInput.value.includes('***')) {
-                payload.api_key = ui.apiKeyInput.value.trim();
-            }
-
-            try {
-                const response = await fetch('/admin/settings/ai-models', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/x-www-form-urlencoded',
-                        'Accept': 'application/json'
-                    },
-                    body: new URLSearchParams(payload)
-                });
-
-                const result = await response.json();
-                if (!response.ok || !result.success || !Array.isArray(result.models)) {
-                    const diagnosticsText = renderDiagnostics(result && result.diagnostics ? result.diagnostics : null);
-                    ui.status.style.color = 'var(--ios-danger)';
-                    ui.status.textContent = ((result && result.message) ? result.message : 'Không tải được danh sách model.') + diagnosticsText;
-                    return;
-                }
-
-                updateModelSelect(ui, result.models, result.current);
-                ui.status.style.color = 'var(--ios-success)';
-                ui.status.textContent = 'Đã tải thành công ' + result.models.length + ' model từ ' + ui.providerLabel + '.';
-            } catch (_error) {
-                ui.status.style.color = 'var(--ios-danger)';
-                ui.status.textContent = 'Lỗi mạng hoặc timeout khi tải model.';
-            } finally {
-                ui.loadBtn.disabled = false;
-                ui.loadBtn.textContent = '⬇️ Tải model';
-            }
-        });
-    };
-
-    wireProviderActions(openAiUi);
-    wireProviderActions(geminiUi);
-
-    // Tải danh sách Model cho Content Creator
-    const loadContentBtn = document.getElementById('load-content-models');
-    const contentSelect = document.getElementById('content-model-select');
-    const contentStatus = document.getElementById('content-model-status');
-    const contentProviderSelect = document.getElementById('content-provider-select');
-
-    if (loadContentBtn && contentSelect && contentStatus) {
-        loadContentBtn.addEventListener('click', async function () {
-            const provider = contentProviderSelect ? contentProviderSelect.value : 'openai';
-            loadContentBtn.disabled = true;
-            loadContentBtn.textContent = 'Đang tải...';
-            contentStatus.style.color = 'var(--ios-text-secondary)';
-            contentStatus.textContent = 'Đang lấy danh sách model từ ' + (provider === 'gemini' ? 'Google Gemini' : 'OpenRouter') + '...';
-
-            const payload = {
-                provider: provider,
-                csrf_token: '<?= htmlspecialchars($csrf_token) ?>'
-            };
-
-            const apiKeyInput = provider === 'gemini'
-                ? document.getElementById('gemini-api-key-input')
-                : document.getElementById('openai-api-key-input');
-
-            if (apiKeyInput && apiKeyInput.value && !apiKeyInput.value.includes('***')) {
-                payload.api_key = apiKeyInput.value.trim();
-            }
-
-            try {
-                const response = await fetch('/admin/settings/ai-models', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/x-www-form-urlencoded',
-                        'Accept': 'application/json'
-                    },
-                    body: new URLSearchParams(payload)
-                });
-
-                const result = await response.json();
-                if (!response.ok || !result.success || !Array.isArray(result.models)) {
-                    contentStatus.style.color = 'var(--ios-danger)';
-                    contentStatus.textContent = (result && result.message) ? result.message : 'Không tải được danh sách model.';
-                    return;
-                }
-
-                updateModelSelect({ select: contentSelect }, result.models, contentSelect.value);
-                contentStatus.style.color = 'var(--ios-success)';
-                contentStatus.textContent = 'Đã tải thành công ' + result.models.length + ' model cho Content Creator.';
-            } catch (_err) {
-                contentStatus.style.color = 'var(--ios-danger)';
-                contentStatus.textContent = 'Lỗi mạng khi tải model.';
-            } finally {
-                loadContentBtn.disabled = false;
-                loadContentBtn.textContent = '⬇️ Tải danh sách Model';
-            }
-        });
-    }
-
-    // Tải danh sách Model cho Image Creator
-    const loadImageBtn = document.getElementById('load-image-models');
-    const imageSelect = document.getElementById('image-model-select');
-    const imageStatus = document.getElementById('image-model-status');
-    const imageProviderSelect = document.getElementById('image-provider-select');
-
-    if (loadImageBtn && imageSelect && imageStatus) {
-        loadImageBtn.addEventListener('click', async function () {
-            const provider = imageProviderSelect ? imageProviderSelect.value : 'openai';
-            loadImageBtn.disabled = true;
-            loadImageBtn.textContent = 'Đang tải...';
-            imageStatus.style.color = 'var(--ios-text-secondary)';
-            imageStatus.textContent = 'Đang lấy danh sách model từ ' + (provider === 'gemini' ? 'Google Gemini' : 'OpenRouter / OpenAI') + '...';
-
-            const payload = {
-                provider: provider,
-                type: 'image',
-                csrf_token: '<?= htmlspecialchars($csrf_token) ?>'
-            };
-
-            const apiKeyInput = provider === 'gemini'
-                ? document.getElementById('gemini-api-key-input')
-                : document.getElementById('openai-api-key-input');
-
-            if (apiKeyInput && apiKeyInput.value && !apiKeyInput.value.includes('***')) {
-                payload.api_key = apiKeyInput.value.trim();
-            }
-
-            try {
-                const response = await fetch('/admin/settings/ai-models', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/x-www-form-urlencoded',
-                        'Accept': 'application/json'
-                    },
-                    body: new URLSearchParams(payload)
-                });
-
-                const result = await response.json();
-                if (!response.ok || !result.success || !Array.isArray(result.models)) {
-                    imageStatus.style.color = 'var(--ios-danger)';
-                    imageStatus.textContent = (result && result.message) ? result.message : 'Không tải được danh sách model.';
-                    return;
-                }
-
-                updateModelSelect({ select: imageSelect }, result.models, imageSelect.value);
-                imageStatus.style.color = 'var(--ios-success)';
-                imageStatus.textContent = 'Đã tải thành công ' + result.models.length + ' model cho Image Creator.';
-            } catch (_err) {
-                imageStatus.style.color = 'var(--ios-danger)';
-                imageStatus.textContent = 'Lỗi mạng khi tải model.';
-            } finally {
-                loadImageBtn.disabled = false;
-                loadImageBtn.textContent = '⬇️ Tải danh sách Model';
-            }
-        });
-    }
-
-    // Tải danh sách Model cho Comment Creator
-    const loadCommentBtn = document.getElementById('load-comment-models');
-    const commentSelect = document.getElementById('comment-model-select');
-    const commentStatus = document.getElementById('comment-model-status');
-    const commentProviderSelect = document.getElementById('comment-provider-select');
-
-    if (loadCommentBtn && commentSelect && commentStatus) {
-        loadCommentBtn.addEventListener('click', async function () {
-            const provider = commentProviderSelect ? commentProviderSelect.value : 'openai';
-            loadCommentBtn.disabled = true;
-            loadCommentBtn.textContent = 'Đang tải...';
-            commentStatus.style.color = 'var(--ios-text-secondary)';
-            commentStatus.textContent = 'Đang lấy danh sách model từ ' + (provider === 'gemini' ? 'Google Gemini' : 'OpenRouter') + '...';
-
-            const payload = {
-                provider: provider,
-                csrf_token: '<?= htmlspecialchars($csrf_token) ?>'
-            };
-
-            const apiKeyInput = provider === 'gemini'
-                ? document.getElementById('gemini-api-key-input')
-                : document.getElementById('openai-api-key-input');
-
-            if (apiKeyInput && apiKeyInput.value && !apiKeyInput.value.includes('***')) {
-                payload.api_key = apiKeyInput.value.trim();
-            }
-
-            try {
-                const response = await fetch('/admin/settings/ai-models', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/x-www-form-urlencoded',
-                        'Accept': 'application/json'
-                    },
-                    body: new URLSearchParams(payload)
-                });
-
-                const result = await response.json();
-                if (!response.ok || !result.success || !Array.isArray(result.models)) {
-                    commentStatus.style.color = 'var(--ios-danger)';
-                    commentStatus.textContent = (result && result.message) ? result.message : 'Không tải được danh sách model.';
-                    return;
-                }
-
-                updateModelSelect({ select: commentSelect }, result.models, commentSelect.value);
-                commentStatus.style.color = 'var(--ios-success)';
-                commentStatus.textContent = 'Đã tải thành công ' + result.models.length + ' model cho Comment Creator.';
-            } catch (_err) {
-                commentStatus.style.color = 'var(--ios-danger)';
-                commentStatus.textContent = 'Lỗi mạng khi tải model.';
-            } finally {
-                loadCommentBtn.disabled = false;
-                loadCommentBtn.textContent = '⬇️ Tải danh sách Model';
-            }
-        });
-    }
-});
 </script>
 
 <?php
