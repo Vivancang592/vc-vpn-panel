@@ -1,0 +1,5 @@
+=== SYSTEM ===
+Chuyển văn bản thành giọng nói tiếng Việt tự nhiên.
+
+=== USER ===
+{{text}}

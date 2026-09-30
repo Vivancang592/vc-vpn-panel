@@ -341,7 +341,7 @@ class CronController extends BaseController
 
             // 1. Sinh nội dung nếu chưa có sẵn
             if ($content === '') {
-                $contentResult = $aiProvider->generateContent($post['topic'], $post['content_prompt']);
+                $contentResult = $aiProvider->generateContent((string) $post['topic']);
                 if (!$contentResult['ok'] || trim((string) $contentResult['content']) === '') {
                     $errorMsg = 'Lỗi sinh nội dung AI: ' . ($contentResult['error'] ?? 'Nội dung rỗng');
                     $postModel->markAsFailed($postId, $errorMsg);

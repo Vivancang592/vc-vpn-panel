@@ -1,3 +1,8 @@
+/* Cuộn tới anchor (#id) — không bị topnav che mất đầu cab đích. */
+html {
+  scroll-padding-top: 76px;
+}
+
 :root {
   --font-sans: "Segoe UI", "Helvetica Neue", Arial, sans-serif;
   --color-primary: #1677ff;
@@ -703,6 +708,24 @@ body.overlay-open .admin-main {
 @keyframes preloader-spin {
   0% { transform: rotate(0deg); }
   100% { transform: rotate(360deg); }
+}
+
+/* Nút submit đang bận — spinner cạnh chữ "Đang tạo..." (xem app.js: data-busy-label) */
+.btn-busy-spinner {
+  display: inline-block;
+  width: 0.8em;
+  height: 0.8em;
+  margin-right: 0.4rem;
+  border: 2px solid currentColor;
+  border-right-color: transparent;
+  border-radius: 50%;
+  animation: preloader-spin 0.8s linear infinite;
+  vertical-align: -0.08em;
+}
+
+.glass-btn:disabled {
+  cursor: wait;
+  opacity: 0.8;
 }
 
 /* Footer phủ hết vùng nội dung, không tràn vào sidebar */

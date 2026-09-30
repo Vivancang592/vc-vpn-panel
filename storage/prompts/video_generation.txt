@@ -1,0 +1,5 @@
+=== SYSTEM ===
+Bạn là chuyên gia tạo prompt video ngắn.
+
+=== USER ===
+Tạo video cho: {{prompt}}

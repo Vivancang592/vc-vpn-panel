@@ -7,21 +7,93 @@ class ScheduledPost extends BaseModel
     protected string $table = 'vc_scheduled_posts';
 
     /**
-     * Lấy danh sách tất cả bài đăng theo phân trang / thứ tự mới nhất
+     * Lấy dòng hàng đợi đang gắn với một Bài Viết AI (vc_ai_outputs).
+     *
+     * @return array<string, mixed>|null
      */
-    public function getAllWithAuthor(int $limit = 50, int $offset = 0): array
+    public function findByOutput(int $outputId): ?array
     {
+        if ($outputId <= 0) {
+            return null;
+        }
+
         $stmt = self::$db->prepare("
-            SELECT sp.*, u.username AS author_name
-            FROM `{$this->table}` sp
-            LEFT JOIN `vc_users` u ON sp.created_by = u.id
-            ORDER BY sp.id DESC
-            LIMIT :limit OFFSET :offset
+            SELECT * FROM `{$this->table}`
+            WHERE `output_id` = :output_id
+            ORDER BY `id` DESC
+            LIMIT 1
         ");
-        $stmt->bindValue(':limit', $limit, \PDO::PARAM_INT);
-        $stmt->bindValue(':offset', $offset, \PDO::PARAM_INT);
-        $stmt->execute();
-        return $stmt->fetchAll() ?: [];
+        $stmt->execute(['output_id' => $outputId]);
+        $row = $stmt->fetch();
+
+        return $row ?: null;
+    }
+
+    /**
+     * Lên lịch (hoặc CẬP NHẬT lịch) cho một Bài Viết AI.
+     *
+     * Tạo mới nếu bài chưa có dòng hàng đợi; nếu đã có thì ghi đè lịch và
+     * đưa lại về trạng thái 'pending' để cron tự đăng (kể cả khi lần trước lỗi).
+     *
+     * image_url (tùy chọn): ảnh từ thư mục tab Tạo Ảnh để cron đăng kèm.
+     * KHÔNG truyền (null) = bỏ ảnh đã chọn trước đó → cron tự sinh ảnh theo prompt.
+     *
+     * @param array<string, mixed> $data topic | generated_content | image_prompt | image_url | scheduled_at | output_id | created_by
+     */
+    public function scheduleForOutput(array $data): bool
+    {
+        $outputId = (int) ($data['output_id'] ?? 0);
+        if ($outputId <= 0) {
+            return false;
+        }
+
+        $existing = $this->findByOutput($outputId);
+
+        $imageUrl = ($data['image_url'] ?? null) !== null && trim((string) $data['image_url']) !== ''
+            ? trim((string) $data['image_url'])
+            : null;
+
+        $base = [
+            'topic'             => (string) ($data['topic'] ?? ''),
+            'generated_content' => ($data['generated_content'] ?? null) !== null ? (string) $data['generated_content'] : null,
+            'image_prompt'      => ($data['image_prompt'] ?? null) !== null && trim((string) $data['image_prompt']) !== '' ? (string) $data['image_prompt'] : null,
+            'image_url'         => $imageUrl,
+            'scheduled_at'      => (string) ($data['scheduled_at'] ?? ''),
+            'status'            => 'pending',
+            'retry_count'       => 0,
+            'error_message'     => null,
+        ];
+
+        if ($existing !== null) {
+            // Bài đã đăng rồi mà lên lịch lại → coi như một lượt đăng mới.
+            // (image_url đã nằm trong $base — null nếu admin bỏ chọn ảnh.)
+            if ((string) ($existing['status'] ?? '') === 'published') {
+                $base['published_at']     = null;
+                $base['facebook_post_id'] = null;
+            }
+
+            return $this->update((int) $existing['id'], $base);
+        }
+
+        return $this->create(array_merge($base, [
+            'output_id'  => $outputId,
+            'created_by' => (int) ($data['created_by'] ?? 0) ?: null,
+        ]));
+    }
+
+    /**
+     * Xoá dòng hàng đợi gắn với một Bài Viết AI (khi xoá bài).
+     */
+    public function deleteByOutput(int $outputId): int
+    {
+        if ($outputId <= 0) {
+            return 0;
+        }
+
+        $stmt = self::$db->prepare("DELETE FROM `{$this->table}` WHERE `output_id` = :output_id");
+        $stmt->execute(['output_id' => $outputId]);
+
+        return $stmt->rowCount();
     }
 
     /**
@@ -108,52 +180,5 @@ class ScheduledPost extends BaseModel
             'id' => $id,
             'error_message' => $errorMessage
         ]);
-    }
-
-    /**
-     * Cập nhật lại trạng thái thành pending để thử lại
-     */
-    public function retry(int $id): bool
-    {
-        $stmt = self::$db->prepare("
-            UPDATE `{$this->table}`
-            SET `status` = 'pending',
-                `retry_count` = 0,
-                `error_message` = NULL,
-                `updated_at` = NOW()
-            WHERE `id` = :id
-        ");
-        return $stmt->execute(['id' => $id]);
-    }
-
-    /**
-     * Đếm tổng số bài theo từng trạng thái
-     */
-    public function getCountsByStatus(): array
-    {
-        $stmt = self::$db->query("
-            SELECT `status`, COUNT(*) as `total`
-            FROM `{$this->table}`
-            GROUP BY `status`
-        ");
-        $results = $stmt->fetchAll() ?: [];
-        $counts = [
-            'all' => 0,
-            'pending' => 0,
-            'generating' => 0,
-            'ready' => 0,
-            'publishing' => 0,
-            'published' => 0,
-            'failed' => 0
-        ];
-        foreach ($results as $row) {
-            $st = $row['status'] ?? '';
-            $cnt = (int)($row['total'] ?? 0);
-            if (isset($counts[$st])) {
-                $counts[$st] = $cnt;
-            }
-            $counts['all'] += $cnt;
-        }
-        return $counts;
     }
 }

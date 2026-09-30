@@ -79,6 +79,53 @@ if [ -f "$ORDER_AUDIT_MIGRATION" ] && [ -f "$APP_PATH/.env" ]; then
     echo -e " ${GREEN}✔ Hoàn tất cập nhật cấu trúc audit đơn hàng.${NC}"
 fi
 
+# 3.2. Áp dụng migration AI Core (an toàn khi chạy lại nhiều lần)
+AI_CORE_MIGRATION="$APP_PATH/database/migrations/20260927_add_ai_core_tables.sql"
+if [ -f "$AI_CORE_MIGRATION" ] && [ -f "$APP_PATH/.env" ]; then
+    set -a
+    . "$APP_PATH/.env"
+    set +a
+    MYSQL_PWD="${DB_PASSWORD:-}" mysql \
+        -h "${DB_HOST:-127.0.0.1}" \
+        -P "${DB_PORT:-3306}" \
+        -u "${DB_USERNAME:-root}" \
+        "${DB_DATABASE:-vpn_service}" < "$AI_CORE_MIGRATION"
+    echo -e " ${GREEN}✔ Hoàn tất cập nhật cấu trúc AI Core.${NC}"
+fi
+
+# 3.3. Dọn bảng AI chết (P6: 7 bảng, P9: 2 bảng prompt — chạy lại an toàn)
+AI_DROP_MIGRATION="$APP_PATH/database/migrations/20260928_drop_unused_ai_tables.sql"
+AI_DROP_PROMPT_MIGRATION="$APP_PATH/database/migrations/20260928_drop_prompt_tables.sql"
+for MIG in "$AI_DROP_MIGRATION" "$AI_DROP_PROMPT_MIGRATION"; do
+    if [ -f "$MIG" ] && [ -f "$APP_PATH/.env" ]; then
+        set -a
+        . "$APP_PATH/.env"
+        set +a
+        MYSQL_PWD="${DB_PASSWORD:-}" mysql \
+            -h "${DB_HOST:-127.0.0.1}" \
+            -P "${DB_PORT:-3306}" \
+            -u "${DB_USERNAME:-root}" \
+            "${DB_DATABASE:-vpn_service}" < "$MIG"
+    fi
+done
+if [ -f "$AI_DROP_MIGRATION" ]; then
+    echo -e " ${GREEN}✔ Hoàn tất dọn bảng AI chết (7 bảng P6 + 2 bảng prompt P9).${NC}"
+fi
+
+# 3.4. Liên kết Bài Viết AI với hàng đợi đăng Fanpage (an toàn khi chạy lại)
+OUTPUT_LINK_MIGRATION="$APP_PATH/database/migrations/20260930_add_output_id_scheduled_posts.sql"
+if [ -f "$OUTPUT_LINK_MIGRATION" ] && [ -f "$APP_PATH/.env" ]; then
+    set -a
+    . "$APP_PATH/.env"
+    set +a
+    MYSQL_PWD="${DB_PASSWORD:-}" mysql \
+        -h "${DB_HOST:-127.0.0.1}" \
+        -P "${DB_PORT:-3306}" \
+        -u "${DB_USERNAME:-root}" \
+        "${DB_DATABASE:-vpn_service}" < "$OUTPUT_LINK_MIGRATION"
+    echo -e " ${GREEN}✔ Hoàn tất liên kết Bài Viết AI ↔ hàng đợi đăng Fanpage (output_id).${NC}"
+fi
+
 # 4. Thiết lập lại phân quyền thư mục
 echo -e "${CYAN}[3/3] Đặt lại phân quyền bảo mật thư mục...${NC}"
 mkdir -p "$APP_PATH/storage/logs"

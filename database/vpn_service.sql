@@ -351,7 +351,6 @@ CREATE TABLE IF NOT EXISTS `vc_chat_events` (
 CREATE TABLE IF NOT EXISTS `vc_scheduled_posts` (
     `id` BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     `topic` VARCHAR(255) NOT NULL,
-    `content_prompt` TEXT NULL,
     `generated_content` LONGTEXT NULL,
     `image_prompt` TEXT NULL,
     `image_url` VARCHAR(1024) NULL,
