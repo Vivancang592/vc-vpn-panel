@@ -2,6 +2,7 @@
 $csrf_token = $csrf_token ?? ($_SESSION['csrf_token'] ?? '');
 $logContent = $logContent ?? '';
 $logs = $logs ?? [];
+$pagination = $pagination ?? [];
 $activeLogTab = $activeLogTab ?? 'system';
 $logTabs = [
     'system' => [
@@ -88,8 +89,9 @@ ob_start();
         <form method="POST" action="/admin/logs/delete" class="logs-bulk-form">
             <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrf_token) ?>">
             <input type="hidden" name="log_type" value="system">
+            <input type="hidden" name="page" value="<?= (int)($pagination['page'] ?? 1) ?>">
             <div class="logs-bulk-actions">
-                <label class="logs-select-all-label"><input type="checkbox" class="logs-select-all"> Chọn tất cả</label>
+                <label class="logs-select-all-label"><input type="checkbox" class="logs-select-all"> Chọn tất cả trang này</label>
                 <div class="logs-delete-actions">
                     <button type="submit" class="logs-delete-selected" onclick="return confirm('Bạn có chắc chắn muốn xóa các bản ghi đã chọn?');">Xóa mục đã chọn</button>
                 </div>
@@ -131,8 +133,9 @@ ob_start();
         <form method="POST" action="/admin/logs/delete" class="logs-bulk-form">
             <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrf_token) ?>">
             <input type="hidden" name="log_type" value="access">
+            <input type="hidden" name="page" value="<?= (int)($pagination['page'] ?? 1) ?>">
             <div class="logs-bulk-actions">
-                <label class="logs-select-all-label"><input type="checkbox" class="logs-select-all"> Chọn tất cả</label>
+                <label class="logs-select-all-label"><input type="checkbox" class="logs-select-all"> Chọn tất cả trang này</label>
                 <div class="logs-delete-actions">
                     <button type="submit" class="logs-delete-selected" onclick="return confirm('Bạn có chắc chắn muốn xóa các bản ghi đã chọn?');">Xóa mục đã chọn</button>
                 </div>
@@ -197,8 +200,9 @@ ob_start();
         <form method="POST" action="/admin/logs/delete" class="logs-bulk-form">
             <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrf_token) ?>">
             <input type="hidden" name="log_type" value="email">
+            <input type="hidden" name="page" value="<?= (int)($pagination['page'] ?? 1) ?>">
             <div class="logs-bulk-actions">
-                <label class="logs-select-all-label"><input type="checkbox" class="logs-select-all"> Chọn tất cả</label>
+                <label class="logs-select-all-label"><input type="checkbox" class="logs-select-all"> Chọn tất cả trang này</label>
                 <div class="logs-delete-actions">
                     <button type="submit" class="logs-delete-selected" onclick="return confirm('Bạn có chắc chắn muốn xóa các bản ghi đã chọn?');">Xóa mục đã chọn</button>
                 </div>
@@ -246,8 +250,9 @@ ob_start();
         <form method="POST" action="/admin/logs/delete" class="logs-bulk-form">
             <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrf_token) ?>">
             <input type="hidden" name="log_type" value="chatbot">
+            <input type="hidden" name="page" value="<?= (int)($pagination['page'] ?? 1) ?>">
             <div class="logs-bulk-actions">
-                <label class="logs-select-all-label"><input type="checkbox" class="logs-select-all"> Chọn tất cả</label>
+                <label class="logs-select-all-label"><input type="checkbox" class="logs-select-all"> Chọn tất cả trang này</label>
                 <div class="logs-delete-actions">
                     <button type="submit" class="logs-delete-selected" onclick="return confirm('Bạn có chắc chắn muốn xóa các bản ghi đã chọn?');">Xóa mục đã chọn</button>
                 </div>
@@ -352,6 +357,10 @@ ob_start();
                 <span>Các yêu cầu Webhook mới từ MacroDroid sẽ tự động xuất hiện tại đây.</span>
             </div>
         <?php endif; ?>
+    <?php endif; ?>
+
+    <?php if (!empty($pagination) && $activeLogTab !== 'macrodroid'): ?>
+        <?php require BASE_PATH . '/resources/views/components/pagination.php'; ?>
     <?php endif; ?>
 </div>
 

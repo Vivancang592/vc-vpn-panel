@@ -55,39 +55,8 @@ $formatBytes = static function (int $bytes): string {
 };
 ?>
 
-<!-- Thư mục tab (gallery) — lưới kết quả, nút Xem/Xoá chỉ hiện khi rê/chạm vào card -->
-<style>
-    .ai-media-card .ai-media-actions { opacity: 0; visibility: hidden; transition: opacity 0.15s ease; }
-    .ai-media-card:hover .ai-media-actions,
-    .ai-media-card:focus-within .ai-media-actions,
-    .ai-media-card.is-open .ai-media-actions { opacity: 1; visibility: visible; }
-    /* Nút Xem/Xoá luôn ở GIỮA vùng ảnh/video (overlay), không nằm dưới card. */
-    .ai-media-thumb { position: relative; }
-    .ai-media-thumb .ai-media-actions {
-        position: absolute;
-        inset: 0;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        gap: 0.5rem;
-        flex-wrap: wrap;
-        background: rgba(0, 0, 0, 0.55);
-        z-index: 2;
-        /* Backdrop không chặn nút play/seek của video/audio phía dưới;
-           chỉ 2 nút bấm thật sự nhận sự kiện chuột/chạm. */
-        pointer-events: none;
-    }
-    .ai-media-thumb .ai-media-actions a,
-    .ai-media-thumb .ai-media-actions button { pointer-events: auto; }
-    .ai-media-thumb .ai-media-actions .glass-btn { backdrop-filter: none; }
-    @media (hover: none) {
-        /* Điện thoại không hover được — tap tạo "pseudo-hover" nên phải loại
-           card đang mở khỏi rule ẩn, nếu không will is-open bị rule :hover đè. */
-        .ai-media-card:hover:not(.is-open) .ai-media-actions { opacity: 0; visibility: hidden; }
-        .ai-media-card.is-open .ai-media-actions,
-        .ai-media-card:focus-within .ai-media-actions { opacity: 1; visibility: visible; }
-    }
-</style>
+<!-- Thư mục tab (gallery) — lưới kết quả, nút Xem/Xoá chỉ hiện khi rê/chạm vào card.
+     CSS gom trong public/assets/css/admin.css (khối Trung Tâm AI) -->
 <script>
 (function () {
     'use strict';

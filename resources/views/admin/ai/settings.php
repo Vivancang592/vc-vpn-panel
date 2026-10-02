@@ -307,51 +307,7 @@ $cfgValue = static function ($value, string $key = '') use ($errLabels, $aiLabel
 </div>
 <?php endif; ?>
 
-<!-- Thông số vận hành thực tế -->
-<style>
-    #ai-operational-settings .ai-operational-grid {
-        display: grid;
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-        grid-template-areas:
-            "fanpage media"
-            "retry storage";
-        gap: 1rem;
-        font-size: 0.82rem;
-    }
-    #ai-operational-settings .ai-retry-row {
-        display: grid;
-        grid-template-columns: minmax(0, 1fr) minmax(7rem, 46%);
-        gap: 0.75rem;
-        align-items: start;
-        padding: 0.48rem 0;
-        border-bottom: 1px solid var(--ios-border, rgba(128,128,128,.18));
-    }
-    #ai-operational-settings .ai-retry-row span {
-        color: var(--ios-text-secondary);
-        line-height: 1.35;
-    }
-    #ai-operational-settings .ai-retry-row strong {
-        color: var(--ios-text);
-        text-align: right;
-        line-height: 1.35;
-        overflow-wrap: anywhere;
-    }
-    #ai-operational-settings .ai-operational-fanpage { grid-area: fanpage; }
-    #ai-operational-settings .ai-operational-retry { grid-area: retry; }
-    #ai-operational-settings .ai-operational-media { grid-area: media; }
-    #ai-operational-settings .ai-operational-storage { grid-area: storage; }
-    @media (max-width: 700px) {
-        #ai-operational-settings .ai-operational-grid {
-            grid-template-columns: 1fr;
-            grid-template-areas:
-                "fanpage"
-                "retry"
-                "media"
-                "storage";
-        }
-        #ai-operational-settings .ai-retry-row { grid-template-columns: minmax(0, 1fr) minmax(8rem, 44%); }
-    }
-</style>
+<!-- Thông số vận hành thực tế — CSS gom trong public/assets/css/admin.css -->
 <div id="ai-operational-settings" class="glass-card" style="padding: 1.25rem; margin-top: 1rem; width: 100%; box-sizing: border-box;">
     <h2 style="font-size: 1rem; font-weight: 700; margin-bottom: 0.35rem;">Cách Hệ Thống AI Hoạt Động</h2>
     <p style="font-size: 0.78rem; color: var(--ios-text-secondary); margin-bottom: 0.75rem;">

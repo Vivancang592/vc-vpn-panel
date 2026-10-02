@@ -1,7 +1,108 @@
-<?php 
+<?php
 $extraCss = 'admin';
 $extraJs = 'admin';
-require_once __DIR__ . '/header.php'; 
+
+/* --- Nhóm tab admin + trang hiện tại (tính TRƯỚC khi render) --- */
+$adminGroups = [
+    'infrastructure' => [
+        'menus' => ['server-groups', 'servers', 'nodes', 'plans'],
+        'label' => 'Quản Lý Hạ Tầng VPN',
+        'tabs' => [
+            'server-groups' => ['label' => 'Nhóm Máy Chủ', 'icon' => '📁', 'url' => '/admin/server-groups'],
+            'servers' => ['label' => 'Máy Chủ', 'icon' => '🖥️', 'url' => '/admin/servers'],
+            'nodes' => ['label' => 'Node Inbound', 'icon' => '🌐', 'url' => '/admin/nodes'],
+            'plans' => ['label' => 'Gói Cước', 'icon' => '💎', 'url' => '/admin/plans']
+        ]
+    ],
+    'business' => [
+        'menus' => ['coupons', 'orders', 'payments', 'subscriptions', 'referrals', 'withdrawals'],
+        'label' => 'Quản Lý Kinh Doanh',
+        'tabs' => [
+            'coupons' => ['label' => 'Mã Giảm Giá', 'icon' => '🏷️', 'url' => '/admin/coupons'],
+            'orders' => ['label' => 'Đơn Hàng', 'icon' => '🧾', 'url' => '/admin/orders'],
+            'payments' => ['label' => 'Thanh Toán', 'icon' => '💵', 'url' => '/admin/payments'],
+            'subscriptions' => ['label' => 'Đăng Ký VPN', 'icon' => '🔑', 'url' => '/admin/subscriptions'],
+            'referrals' => ['label' => 'Hoa Hồng', 'icon' => '🤝', 'url' => '/admin/referrals'],
+            'withdrawals' => ['label' => 'Rút Tiền', 'icon' => '🏦', 'url' => '/admin/withdrawals']
+        ]
+    ],
+    'ai' => [
+        // menus = danh sách id đầy đủ (kể cả trang kỹ thuật không còn là tab
+        // như ai-tasks/ai-models/ai-conversations/ai-outputs —
+        // ai-modules/ai-prompts đã gộp/bỏ, ai-assets đã XOÁ, xem
+        // /admin/ai/settings) để group highlight đúng activeMenu khi Admin
+        // truy cập từ dashboard. KHÔNG dùng để hiển thị tab.
+        'menus' => ['ai-dashboard', 'ai-image', 'ai-tasks', 'ai-video', 'ai-dubbing', 'ai-fanpage', 'ai-reply', 'ai-settings', 'ai-models', 'ai-conversations', 'ai-outputs'],
+        'label' => 'Trung Tâm AI',
+        // 7 tab chức năng — trang kỹ thuật truy cập từ dashboard.
+        'tabs' => [
+            'ai-dashboard' => ['label' => 'Tổng Quan Hệ Thống AI', 'icon' => '📊', 'url' => '/admin/ai'],
+            'ai-image'     => ['label' => 'Tạo Ảnh', 'icon' => '🖼️', 'url' => '/admin/ai/image'],
+            'ai-video'     => ['label' => 'Tạo Video', 'icon' => '🎬', 'url' => '/admin/ai/video'],
+            'ai-dubbing'   => ['label' => 'Lời Thoại', 'icon' => '🗣️', 'url' => '/admin/ai/dubbing'],
+            'ai-fanpage'   => ['label' => 'Nội Dung Fanpage', 'icon' => '📰', 'url' => '/admin/ai/fanpage'],
+            'ai-reply'     => ['label' => 'Trả Lời Tự Động', 'icon' => '💬', 'url' => '/admin/ai/reply'],
+            'ai-settings'  => ['label' => 'Cấu Hình AI', 'icon' => '⚙️', 'url' => '/admin/ai/settings']
+        ]
+    ]
+];
+$activeMenu = $activeMenu ?? '';
+$activeAdminGroup = null;
+foreach ($adminGroups as $group) {
+    if (in_array($activeMenu, $group['menus'], true)) {
+        $activeAdminGroup = $group;
+        break;
+    }
+}
+
+/* Khoảnh header + tab nhóm (dùng cho trang đầy đủ và fragment partial) */
+$renderGroupTabs = function () use ($activeAdminGroup, $activeMenu) {
+    if ($activeAdminGroup === null) {
+        return '';
+    }
+    ob_start();
+    ?>
+    <div class="admin-group-header">
+        <h1><?= htmlspecialchars($activeAdminGroup['label']) ?></h1>
+    </div>
+    <nav class="admin-group-tabs" aria-label="<?= htmlspecialchars($activeAdminGroup['label']) ?>">
+        <?php foreach ($activeAdminGroup['tabs'] as $tabMenu => $tab): ?>
+            <a href="<?= $tab['url'] ?>" class="admin-group-tab <?= $activeMenu === $tabMenu ? 'active' : '' ?>" <?= $activeMenu === $tabMenu ? 'aria-current="page"' : '' ?>>
+                <span><?= $tab['icon'] ?></span> <?= htmlspecialchars($tab['label']) ?>
+            </a>
+        <?php endforeach; ?>
+    </nav>
+    <?php
+    return ob_get_clean();
+};
+
+/* --- PARTIAL-LOAD: admin.js tải fragment JSON (header X-VC-Partial) →
+ * chỉ trả về nội dung .admin-content + sidebar, KHÔNG render trang đầy đủ.
+ *Điều hướng nội bộ trong /admin vì thế không reload trang, không nháy
+ * màn hình (xem public/assets/js/admin.js). --- */
+if (($_SERVER['HTTP_X_VC_PARTIAL'] ?? '') === '1') {
+    ob_start();
+    echo $renderGroupTabs();
+    echo $content ?? '';
+    $fragmentMain = ob_get_clean();
+
+    ob_start();
+    require __DIR__ . '/admin-sidebar.php';
+    $fragmentSidebar = ob_get_clean();
+
+    header('Content-Type: application/json; charset=utf-8');
+    header('Cache-Control: no-store');
+    echo json_encode([
+        'ok' => true,
+        'title' => $pageTitle ?? 'VC VPN 2027',
+        'activeMenu' => $activeMenu,
+        'html' => $fragmentMain,
+        'sidebar' => $fragmentSidebar,
+    ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+    exit;
+}
+
+require_once __DIR__ . '/header.php';
 ?>
 
 <!-- Màn hình chờ Đang tải... -->
@@ -13,60 +114,6 @@ require_once __DIR__ . '/header.php';
 <div class="admin-app">
     <?php require_once __DIR__ . '/admin-sidebar.php'; ?>
 
-    <?php
-    $adminGroups = [
-        'infrastructure' => [
-            'menus' => ['server-groups', 'servers', 'nodes', 'plans'],
-            'label' => 'Quản Lý Hạ Tầng VPN',
-            'tabs' => [
-                'server-groups' => ['label' => 'Nhóm Máy Chủ', 'icon' => '📁', 'url' => '/admin/server-groups'],
-                'servers' => ['label' => 'Máy Chủ', 'icon' => '🖥️', 'url' => '/admin/servers'],
-                'nodes' => ['label' => 'Node Inbound', 'icon' => '🌐', 'url' => '/admin/nodes'],
-                'plans' => ['label' => 'Gói Cước', 'icon' => '💎', 'url' => '/admin/plans']
-            ]
-        ],
-        'business' => [
-            'menus' => ['coupons', 'orders', 'payments', 'subscriptions', 'referrals', 'withdrawals'],
-            'label' => 'Quản Lý Kinh Doanh',
-            'tabs' => [
-                'coupons' => ['label' => 'Mã Giảm Giá', 'icon' => '🏷️', 'url' => '/admin/coupons'],
-                'orders' => ['label' => 'Đơn Hàng', 'icon' => '🧾', 'url' => '/admin/orders'],
-                'payments' => ['label' => 'Thanh Toán', 'icon' => '💵', 'url' => '/admin/payments'],
-                'subscriptions' => ['label' => 'Đăng Ký VPN', 'icon' => '🔑', 'url' => '/admin/subscriptions'],
-                'referrals' => ['label' => 'Hoa Hồng', 'icon' => '🤝', 'url' => '/admin/referrals'],
-                'withdrawals' => ['label' => 'Rút Tiền', 'icon' => '🏦', 'url' => '/admin/withdrawals']
-            ]
-        ],
-        'ai' => [
-            // menus = danh sách id đầy đủ (kể cả trang kỹ thuật không còn là tab
-            // như ai-tasks/ai-models/ai-conversations/ai-outputs —
-            // ai-modules/ai-prompts đã gộp/bỏ, ai-assets đã XOÁ, xem
-            // /admin/ai/settings) để group highlight đúng activeMenu khi Admin
-            // truy cập từ dashboard. KHÔNG dùng để hiển thị tab.
-            'menus' => ['ai-dashboard', 'ai-image', 'ai-tasks', 'ai-video', 'ai-dubbing', 'ai-fanpage', 'ai-reply', 'ai-settings', 'ai-models', 'ai-conversations', 'ai-outputs'],
-            'label' => 'Trung Tâm AI',
-            // 7 tab chức năng — trang kỹ thuật truy cập từ dashboard.
-            'tabs' => [
-                'ai-dashboard' => ['label' => 'Tổng Quan Hệ Thống AI', 'icon' => '📊', 'url' => '/admin/ai'],
-                'ai-image'     => ['label' => 'Tạo Ảnh', 'icon' => '🖼️', 'url' => '/admin/ai/image'],
-                'ai-video'     => ['label' => 'Tạo Video', 'icon' => '🎬', 'url' => '/admin/ai/video'],
-                'ai-dubbing'   => ['label' => 'Lời Thoại', 'icon' => '🗣️', 'url' => '/admin/ai/dubbing'],
-                'ai-fanpage'   => ['label' => 'Nội Dung Fanpage', 'icon' => '📰', 'url' => '/admin/ai/fanpage'],
-                'ai-reply'     => ['label' => 'Trả Lời Tự Động', 'icon' => '💬', 'url' => '/admin/ai/reply'],
-                'ai-settings'  => ['label' => 'Cấu Hình AI', 'icon' => '⚙️', 'url' => '/admin/ai/settings']
-            ]
-        ]
-    ];
-    $activeMenu = $activeMenu ?? '';
-    $activeAdminGroup = null;
-    foreach ($adminGroups as $group) {
-        if (in_array($activeMenu, $group['menus'], true)) {
-            $activeAdminGroup = $group;
-            break;
-        }
-    }
-    ?>
-
     <div class="admin-main-wrapper">
         <?php require_once __DIR__ . '/navbar.php'; ?>
         
@@ -74,18 +121,7 @@ require_once __DIR__ . '/header.php';
 
         <main class="admin-main">
             <div class="admin-content">
-                <?php if ($activeAdminGroup !== null): ?>
-                    <div class="admin-group-header">
-                        <h1><?= htmlspecialchars($activeAdminGroup['label']) ?></h1>
-                    </div>
-                    <nav class="admin-group-tabs" aria-label="<?= htmlspecialchars($activeAdminGroup['label']) ?>">
-                        <?php foreach ($activeAdminGroup['tabs'] as $tabMenu => $tab): ?>
-                            <a href="<?= $tab['url'] ?>" class="admin-group-tab <?= $activeMenu === $tabMenu ? 'active' : '' ?>" <?= $activeMenu === $tabMenu ? 'aria-current="page"' : '' ?>>
-                                <span><?= $tab['icon'] ?></span> <?= htmlspecialchars($tab['label']) ?>
-                            </a>
-                        <?php endforeach; ?>
-                    </nav>
-                <?php endif; ?>
+                <?= $renderGroupTabs() ?>
                 <?= $content ?? '' ?>
             </div>
             <?php require_once __DIR__ . '/footer.php'; ?>

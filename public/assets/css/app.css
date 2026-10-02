@@ -193,6 +193,9 @@ html, body {
   flex: 1;
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
+  /* Giữ sẵn rãnh thanh cuộn: trang ngắn (không cuộn được) ↔ trang dài có
+   * thanh cuộn không còn làm nội dung nhảy ngang nữa → chuyển tab êm hơn. */
+  scrollbar-gutter: stable;
 }
 
 .admin-content {
@@ -663,7 +666,9 @@ body.overlay-open .admin-main {
 #page-preloader {
   position: fixed;
   inset: 0;
-  background: rgba(255, 255, 255, 0.85);
+  /* Nền gần đục (0.96): che content bên dưới khi khôi phục cuộn/đổi trang —
+   * nếu để mờ (0.85) sẽ thấy nội dung "nhảy" dưới lớp phủ → cảm giác giật. */
+  background: rgba(255, 255, 255, 0.96);
   backdrop-filter: blur(15px);
   -webkit-backdrop-filter: blur(15px);
   z-index: 99999;
@@ -674,19 +679,16 @@ body.overlay-open .admin-main {
   gap: 0.75rem;
   opacity: 1;
   visibility: visible;
-  transition: opacity 0.3s ease, visibility 0.3s ease;
-}
-
-@media (prefers-color-scheme: dark) {
-  #page-preloader {
-    background: rgba(28, 28, 30, 0.9);
-  }
+  /* Chỉ transition nền — opacity/visibility để app.js điều khiển,
+   * tránh transition chồng lên nhau khi ẩn. */
+  transition: background-color 0.3s ease;
 }
 
 #page-preloader.preloader-hidden {
   opacity: 0;
   visibility: hidden;
   pointer-events: none;
+  transition: opacity 0.3s ease, visibility 0.3s ease;
 }
 
 .preloader-spinner {

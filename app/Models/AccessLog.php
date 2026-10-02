@@ -33,16 +33,26 @@ class AccessLog extends BaseModel
     }
 
     /**
-     * Lấy toàn bộ nhật ký truy cập kèm thông tin tài khoản
+     * Lấy nhật ký truy cập kèm thông tin tài khoản (hỗ trợ phân trang).
      */
-    public function allWithUser(): array
+    public function allWithUser(?int $limit = null, int $offset = 0): array
     {
-        $stmt = self::$db->prepare("
+        $sql = "
             SELECT al.*, u.username, u.email
             FROM `{$this->table}` al
             LEFT JOIN `vc_users` u ON al.user_id = u.id
             ORDER BY al.id DESC
-        ");
+        ";
+        $paginated = $limit !== null && $limit > 0;
+        if ($paginated) {
+            $sql .= " LIMIT :limit OFFSET :offset";
+        }
+
+        $stmt = self::$db->prepare($sql);
+        if ($paginated) {
+            $stmt->bindValue(':limit', $limit, \PDO::PARAM_INT);
+            $stmt->bindValue(':offset', max(0, $offset), \PDO::PARAM_INT);
+        }
         $stmt->execute();
         return $stmt->fetchAll() ?: [];
     }

@@ -25,20 +25,30 @@ class PaymentController extends BaseController
             parse_str($rawInput, $payload);
         }
 
-        // 2. Ghi Log bảo mật vào storage/logs/webhook.log
-        $logFile = __DIR__ . '/../../../storage/logs/webhook.log';
-        $logDir  = dirname($logFile);
-        if (!is_dir($logDir)) {
-            @mkdir($logDir, 0777, true);
+        // 2. Ghi Log đầy đủ (SePay / MacroDroid) vào file admin xem được: storage/logs/macrodroid_debug.log
+        $this->webhookLogId = date('YmdHis') . '-' . bin2hex(random_bytes(3));
+
+        $source = 'Webhook';
+        if (isset($payload['transferType']) || isset($payload['referenceCode']) || isset($payload['gateway'])) {
+            $source = 'SePay';
+        } elseif (isset($payload['macrodroid']) || stripos($rawInput, 'macrodroid') !== false) {
+            $source = 'MacroDroid';
         }
 
-        $logData  = date('[Y-m-d H:i:s]') . " ---- INCOMING WEBHOOK ----\n";
+        $logData  = date('[Y-m-d H:i:s]') . " ---- INCOMING WEBHOOK ({$source}) #{$this->webhookLogId} ----\n";
+        $logData .= "IP: " . ($_SERVER['REMOTE_ADDR'] ?? 'unknown') . "\n";
         $logData .= "RAW INPUT: " . $rawInput . "\n";
         $logData .= "PARSED PAYLOAD: " . print_r($payload, true) . "\n";
         $logData .= "-------------------------------------------\n\n";
-        @file_put_contents($logFile, $logData, FILE_APPEND);
+        $this->appendWebhookLog($logData);
 
         $respond = function(bool $success, string $message, int $statusCode = 200) {
+            $logResult  = date('[Y-m-d H:i:s]') . " ---- WEBHOOK RESULT #{$this->webhookLogId} ----\n";
+            $logResult .= "SUCCESS: " . ($success ? 'YES' : 'NO') . " | HTTP STATUS: {$statusCode}\n";
+            $logResult .= "MESSAGE: {$message}\n";
+            $logResult .= "-------------------------------------------\n\n";
+            $this->appendWebhookLog($logResult);
+
             $this->json([
                 'success' => $success,
                 'status'  => $success,
@@ -269,5 +279,26 @@ class PaymentController extends BaseController
 
         // 5. Từ chối nếu nội dung không khớp bất kỳ đơn hàng nào
         $respond(false, 'Nội dung chuyển khoản không khớp với bất kỳ đơn hàng hoặc giao dịch nào: ' . ($content ?: $searchContent), 400);
+    }
+
+    private string $webhookLogId = '-';
+
+    /**
+     * Ghi log webhook vào file admin xem được (macrodroid_debug.log) và giữ bản sao webhook.log.
+     */
+    private function appendWebhookLog(string $logData): void
+    {
+        $files = [
+            __DIR__ . '/../../../storage/logs/macrodroid_debug.log',
+            __DIR__ . '/../../../storage/logs/webhook.log',
+        ];
+
+        foreach ($files as $logFile) {
+            $logDir = dirname($logFile);
+            if (!is_dir($logDir)) {
+                @mkdir($logDir, 0777, true);
+            }
+            @file_put_contents($logFile, $logData, FILE_APPEND);
+        }
     }
 }

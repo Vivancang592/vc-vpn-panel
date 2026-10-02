@@ -34,15 +34,25 @@ class ChatEvent extends BaseModel
         return (int) ($row['total'] ?? 0);
     }
 
-    public function allWithSessionContext(): array
+    public function allWithSessionContext(?int $limit = null, int $offset = 0): array
     {
-        $stmt = self::$db->prepare(
-            "SELECT ce.*, cs.source AS session_source, cs.visitor_token, cs.external_id, u.username, u.email
+        $sql = "
+            SELECT ce.*, cs.source AS session_source, cs.visitor_token, cs.external_id, u.username, u.email
              FROM `{$this->table}` ce
              LEFT JOIN `vc_chat_sessions` cs ON ce.session_id = cs.id
              LEFT JOIN `vc_users` u ON ce.user_id = u.id
-             ORDER BY ce.id DESC"
-        );
+             ORDER BY ce.id DESC
+        ";
+        $paginated = $limit !== null && $limit > 0;
+        if ($paginated) {
+            $sql .= " LIMIT :limit OFFSET :offset";
+        }
+
+        $stmt = self::$db->prepare($sql);
+        if ($paginated) {
+            $stmt->bindValue(':limit', $limit, \PDO::PARAM_INT);
+            $stmt->bindValue(':offset', max(0, $offset), \PDO::PARAM_INT);
+        }
         $stmt->execute();
         return $stmt->fetchAll() ?: [];
     }

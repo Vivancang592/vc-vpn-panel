@@ -119,7 +119,7 @@ require __DIR__ . '/_tab-header.php';
     </div>
     <p style="font-size: 0.78rem; color: var(--ios-text-secondary); margin-top: 0.6rem;">
         Hội thoại AI trả lời mà khách không phản hồi lại quá 5 phút sẽ <strong>tự động đóng</strong> (bộ nhớ AI được làm mới).
-        Hội thoại chuyển nhân viên chờ admin bấm <strong>✅ Đã xử lý</strong> bên dưới.
+        Hội thoại chuyển nhân viên chờ admin bấm <strong>Đã xử lý</strong> bên dưới.
     </p>
 </div>
 
@@ -131,7 +131,7 @@ require __DIR__ . '/_tab-header.php';
             <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrf_token ?? '') ?>">
             <input type="hidden" name="back" value="<?= htmlspecialchars($convBack) ?>">
             <button type="submit" title="Xóa vĩnh viễn tất cả hội thoại đã đóng" style="padding: 0.4rem 0.75rem; border-radius: var(--radius-sm); border: 1px solid var(--ios-danger); background: transparent; color: var(--ios-danger); font-size: 0.8rem; font-weight: 700; cursor: pointer;">
-                🗑️ Xóa tất cả đã đóng
+                🗑️ Xóa tất cả
             </button>
         </form>
     </div>

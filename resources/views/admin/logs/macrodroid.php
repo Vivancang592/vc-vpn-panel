@@ -32,7 +32,7 @@ ob_start();
     <?php else: ?>
         <div style="text-align: center; padding: 3rem 1rem; color: var(--ios-text-secondary);">
             <p style="font-size: 1.1rem; font-weight: 600; margin-bottom: 0.5rem;">File nhật ký hiện tại đang trống.</p>
-            <p style="font-size: 0.85rem;">Các yêu cầu Webhook mới từ MacroDroid sẽ tự động xuất hiện tại đây.</p>
+            <p style="font-size: 0.85rem;">Các yêu cầu Webhook từ SePay, MacroDroid và cổng thanh toán sẽ tự động xuất hiện tại đây.</p>
         </div>
     <?php endif; ?>
 </div>

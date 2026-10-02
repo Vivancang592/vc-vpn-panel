@@ -1,11 +1,13 @@
-/* ===== GIỮ VỊ TRÍ CUỘN QUA POST → REDIRECT CÙNG TRANG =====
+/* ===== GIỮ VỊ TRÍ CUỘN QUA POST → REDIRECT + ĐỔI FILTER =====
  * Nút không đổi tab/trang (Tạo ảnh/video/lời thoại, Xóa, Lưu lịch...)
  * đều POST rồi redirect về đúng URL → trang load lại đúng vị trí cũ,
- * không nhảy vọt lên đầu. Bỏ qua khi URL có #anchor (đã có đích cuộn riêng).
+ * không nhảy vọt lên đầu. Nút LỌC / TÌM / PHÂN TRANG (GET đổi query)
+ * cũng giữ chỗ: key chỉ theo pathname nên trang đích khác search vẫn
+ * khôi phục được. Bỏ qua khi URL có #anchor (đã có đích cuộn riêng).
  * Lưu ý: trang admin cuộn trong container `.admin-main` (html/body ẩn chữ),
  * nên phải đọc/ghi scrollTop của container chứ không phải window.scrollY. */
 (function () {
-    const scrollKey = 'vcScroll:' + location.pathname + location.search;
+    const scrollKey = 'vcScroll:' + location.pathname; // bỏ search: lọc/phân trang đổi query vẫn giữ chỗ
 
     function getScroller() {
         const main = document.querySelector('.admin-main');
@@ -21,12 +23,41 @@
         } catch (err) { /* sessionStorage lỗi → bỏ qua */ }
     });
 
+    /* Lưu vị trí khi bấm link nội bộ (Thêm/Hủy/Phân trang dạng <a>): trang đích
+     * hoặc lúc quay lại sẽ khôi phục đúng chỗ đang xem dù không có POST. */
+    document.addEventListener('click', function (e) {
+        if (e.defaultPrevented || e.button !== 0 || e.ctrlKey || e.metaKey || e.shiftKey || e.altKey) return;
+        const link = e.target && e.target.closest ? e.target.closest('a[href]') : null;
+        if (!link) return;
+        const href = link.getAttribute('href') || '';
+        if (!href || href.startsWith('#') || href.startsWith('javascript:') || href.startsWith('mailto:') || href.startsWith('tel:')) return;
+        if (link.getAttribute('target') === '_blank' || link.hasAttribute('download') || link.hasAttribute('data-no-loader')) return;
+        if (/^[a-z][a-z\d+.-]*:/i.test(href) && !/^https?:/i.test(href)) return; // scheme ngoài http(s)
+        try {
+            sessionStorage.setItem(scrollKey, JSON.stringify({ y: getScroller().scrollTop, t: Date.now() }));
+        } catch (err) { /* sessionStorage lỗi → bỏ qua */ }
+        setTimeout(function () { // handler khác hủy điều hướng → bỏ key vừa lưu
+            if (e.defaultPrevented) {
+                try { sessionStorage.removeItem(scrollKey); } catch (err) { /* bỏ qua */ }
+            }
+        }, 0);
+    });
+
     try {
         const saved = JSON.parse(sessionStorage.getItem(scrollKey) || 'null');
         sessionStorage.removeItem(scrollKey); // chỉ dùng đúng 1 lần
         if (saved && !location.hash && typeof saved.y === 'number' && saved.y > 0
-            && (Date.now() - (saved.t || 0)) < 60000) {
-            const restore = function () { getScroller().scrollTop = saved.y; };
+            && (Date.now() - (saved.t || 0)) < 1800000) { // giữ vị trí trong 30 phút
+            const applyRestore = function () { getScroller().scrollTop = saved.y; };
+            /* Khôi phục sau 2 frame — chờ lần sơn đầu + layout ổn định.
+             * Set ngay lúc DOM vừa dựng có thể trúng container chưa đủ chiều
+             * cao → mất mục tiêu rồi nhảy lô-cô khi resize sau đó. */
+            const restore = function () {
+                requestAnimationFrame(function () {
+                    requestAnimationFrame(applyRestore);
+                });
+                setTimeout(applyRestore, 250); // fallback nếu rAF bị chặn
+            };
             if (document.readyState === 'loading') {
                 document.addEventListener('DOMContentLoaded', restore);
             } else {
@@ -148,9 +179,20 @@ document.addEventListener('DOMContentLoaded', function () {
 
     // 6. Quản lý Preloader (Đang tải...)
     function hidePreloader() {
-        if (preloader) {
+        if (!preloader || preloader.classList.contains('preloader-hidden')) return;
+        let done = false;
+        const start = function () {
+            if (done) return;
+            done = true;
             preloader.classList.add('preloader-hidden');
-        }
+        };
+        /* Trì hoãn 2 frame: để lớp phủ kịp sơn kín QUA lần sơn đầu tiên rồi
+         * mới mờ dần. Nếu ẩn ngay lúc script chạy (thường trước first-paint),
+         * trang đích lóe nội dung dưới lớp mờ mới hiện dần → cảm giác giật. */
+        requestAnimationFrame(function () {
+            requestAnimationFrame(start);
+        });
+        setTimeout(start, 300); // tab ẩn / rAF không chạy → vẫn tự ẩn, không kẹt
     }
 
     function showPreloader() {
@@ -194,9 +236,19 @@ document.addEventListener('DOMContentLoaded', function () {
             !link.hasAttribute('data-no-loader') &&
             !isCustomScheme &&
             !e.ctrlKey &&
-            !e.metaKey
+            !e.metaKey &&
+            !e.shiftKey &&
+            !e.altKey
         ) {
-            showPreloader();
+            // Chờ hết pha click: nếu handler khác hủy điều hướng
+            // (confirm bấm Hủy, validate...) thì không hiện preloader
+            setTimeout(function () {
+                if (e.defaultPrevented) {
+                    hidePreloader();
+                } else {
+                    showPreloader();
+                }
+            }, 0);
         }
     });
 

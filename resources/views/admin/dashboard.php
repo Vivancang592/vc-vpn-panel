@@ -206,7 +206,7 @@ ob_start();
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-<script src="/assets/js/admin.js"></script>
+<!-- admin.js đã được footer.php nạp chung (?v=filemtime) — không tag lại ở đây để tránh chạy 2 lần -->
 
 <?php
 $content = ob_get_clean();

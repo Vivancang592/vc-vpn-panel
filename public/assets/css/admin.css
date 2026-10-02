@@ -632,6 +632,54 @@ select.glass-input option {
     border: 0;
 }
 
+/* --- Phân trang nhật ký (components/pagination.php) --- */
+.u-pagination {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: center;
+    gap: 0.4rem;
+    margin-top: 1.5rem;
+}
+.u-pagination-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 2.1rem;
+    height: 2.1rem;
+    padding: 0 0.6rem;
+    border-radius: 8px;
+    border: 1px solid var(--glass-border, rgba(255, 255, 255, 0.18));
+    background: rgba(255, 255, 255, 0.08);
+    color: var(--ios-text, #f5f5f7);
+    font-size: 0.85rem;
+    font-weight: 600;
+    text-decoration: none;
+    transition: background 0.15s ease, color 0.15s ease;
+}
+.u-pagination-btn:hover {
+    background: rgba(0, 122, 255, 0.14);
+    color: var(--ios-blue, #007aff);
+}
+.u-pagination-btn.is-active {
+    background: var(--ios-blue, #007aff);
+    border-color: var(--ios-blue, #007aff);
+    color: #fff;
+    cursor: default;
+}
+.u-pagination-ellipsis {
+    color: var(--ios-text-secondary, #8e8e93);
+    font-size: 0.85rem;
+    padding: 0 0.15rem;
+}
+.u-pagination-summary {
+    width: 100%;
+    text-align: center;
+    margin-top: 0.35rem;
+    font-size: 0.78rem;
+    color: var(--ios-text-secondary, #8e8e93);
+}
+
 .logs-id,
 .logs-user-name,
 .logs-subject {
@@ -741,3 +789,147 @@ select.glass-input option {
 .logs-empty-block span {
     font-size: 0.85rem;
 }
+
+/* =========================================================================
+ * PARTIAL-LOAD (điều hướng nội bộ trong /admin — xem admin.js)
+ * ========================================================================= */
+.vc-partial-progress {
+    position: fixed;
+    top: 0;
+    left: 0;
+    height: 2px;
+    width: 100%;
+    z-index: 10050;
+    pointer-events: none;
+    transform: scaleX(0);
+    transform-origin: left center;
+    opacity: 0;
+    background: linear-gradient(90deg, var(--ios-blue, #007aff), rgba(0, 122, 255, 0.45));
+    transition: transform 0.5s ease, opacity 0.2s ease;
+}
+.vc-partial-progress.vc-progress-run {
+    opacity: 1;
+    transform: scaleX(0.7);
+}
+.vc-partial-progress.vc-progress-done {
+    opacity: 0;
+    transform: scaleX(1);
+    transition: transform 0.2s ease, opacity 0.35s ease 0.1s;
+}
+/* Nội dung mới mờ dần vào thay vì "đập" vào mắt người dùng */
+.admin-content {
+    transition: opacity 0.14s ease;
+}
+.admin-content.vc-fading {
+    opacity: 0;
+}
+
+/* =========================================================================
+ * STYLE CHUNG CHO KHU TRUNG TÂM AI
+ * (gom từ các view ai/* — giữ nguyên rule; đừng viết <style> inline trong
+ *  view nữa, thêm vào đây để CSS đồng nhất toàn hệ thống)
+ * ========================================================================= */
+
+/* --- Trang AI Dashboard: lưới thống kê + model theo khả năng --- */
+.ai-dashboard-summary-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 1rem;
+    align-items: stretch;
+    margin-bottom: 1.25rem;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+@media (max-width: 700px) {
+    .ai-dashboard-summary-grid { grid-template-columns: 1fr; }
+}
+
+/* --- Trang AI Dashboard: bảng model — mặc định chỉ hiện model đang dùng --- */
+#ai-models-catalog tr.ai-model-idle { display: none; }
+#ai-models-catalog.show-all tr.ai-model-idle { display: table-row; }
+#ai-models-catalog.show-all tr.ai-model-idle-note { display: none; }
+
+/* --- Trang Cài đặt AI: khối "Cách Hệ Thống AI Hoạt Động" --- */
+#ai-operational-settings .ai-operational-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-areas:
+        "fanpage media"
+        "retry storage";
+    gap: 1rem;
+    font-size: 0.82rem;
+}
+#ai-operational-settings .ai-retry-row {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(7rem, 46%);
+    gap: 0.75rem;
+    align-items: start;
+    padding: 0.48rem 0;
+    border-bottom: 1px solid var(--ios-border, rgba(128,128,128,.18));
+}
+#ai-operational-settings .ai-retry-row span {
+    color: var(--ios-text-secondary);
+    line-height: 1.35;
+}
+#ai-operational-settings .ai-retry-row strong {
+    color: var(--ios-text);
+    text-align: right;
+    line-height: 1.35;
+    overflow-wrap: anywhere;
+}
+#ai-operational-settings .ai-operational-fanpage { grid-area: fanpage; }
+#ai-operational-settings .ai-operational-retry { grid-area: retry; }
+#ai-operational-settings .ai-operational-media { grid-area: media; }
+#ai-operational-settings .ai-operational-storage { grid-area: storage; }
+@media (max-width: 700px) {
+    #ai-operational-settings .ai-operational-grid {
+        grid-template-columns: 1fr;
+        grid-template-areas:
+            "fanpage"
+            "retry"
+            "media"
+            "storage";
+    }
+    #ai-operational-settings .ai-retry-row { grid-template-columns: minmax(0, 1fr) minmax(8rem, 44%); }
+}
+
+/* --- Tab Thư viện (gallery): hiện nút Xem/Xoá khi rê/chạm vào card --- */
+.ai-media-card .ai-media-actions { opacity: 0; visibility: hidden; transition: opacity 0.15s ease; }
+.ai-media-card:hover .ai-media-actions,
+.ai-media-card:focus-within .ai-media-actions,
+.ai-media-card.is-open .ai-media-actions { opacity: 1; visibility: visible; }
+/* Nút Xem/Xoá luôn ở GIỮA vùng ảnh/video (overlay), không nằm dưới card. */
+.ai-media-thumb { position: relative; }
+.ai-media-thumb .ai-media-actions {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+    background: rgba(0, 0, 0, 0.55);
+    z-index: 2;
+    /* Backdrop không chặn nút play/seek của video/audio phía dưới;
+       chỉ 2 nút bấm thật sự nhận sự kiện chuột/chạm. */
+    pointer-events: none;
+}
+.ai-media-thumb .ai-media-actions a,
+.ai-media-thumb .ai-media-actions button { pointer-events: auto; }
+.ai-media-thumb .ai-media-actions .glass-btn { backdrop-filter: none; }
+@media (hover: none) {
+    /* Điện thoại không hover được — tap tạo "pseudo-hover" nên phải loại
+       card đang mở khỏi rule ẩn, nếu không will is-open bị rule :hover đè. */
+    .ai-media-card:hover:not(.is-open) .ai-media-actions { opacity: 0; visibility: hidden; }
+    .ai-media-card.is-open .ai-media-actions,
+    .ai-media-card:focus-within .ai-media-actions { opacity: 1; visibility: visible; }
+}
+
+/* --- Tab Fanpage: chớp nháy nhãn "Đang viết…" --- */
+.fp-blink { animation: fpBlink 1.1s ease-in-out infinite; }
+@keyframes fpBlink { 0%, 100% { opacity: 1; } 50% { opacity: 0.35; } }
+
+/* --- Tab Lồng tiếng: nút nghe thử giọng phóng to khi bấm --- */
+#dubbing-voice-preview:hover { transform: scale(1.15); }
+#dubbing-voice-preview:active { transform: scale(0.92); }

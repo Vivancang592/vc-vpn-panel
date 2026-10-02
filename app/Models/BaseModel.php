@@ -47,6 +47,16 @@ abstract class BaseModel
         return $stmt->fetchAll() ?: [];
     }
 
+    /**
+     * Đếm toàn bộ bản ghi của bảng (dùng cho phân trang).
+     */
+    public function countAll(): int
+    {
+        $stmt = self::$db->query("SELECT COUNT(*) AS total FROM `{$this->table}`");
+        $row = $stmt->fetch();
+        return (int) ($row['total'] ?? 0);
+    }
+
     public function create(array $data): bool
     {
         $fields = array_keys($data);
