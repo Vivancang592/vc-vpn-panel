@@ -10,6 +10,9 @@ use App\Models\ChatEvent;
 
 class LogController extends BaseController
 {
+    /** Số bản ghi hiển thị trên mỗi trang của các tab log. */
+    private const LOGS_PER_PAGE = 10;
+
     private SystemLog $systemLogModel;
     private AccessLog $accessLogModel;
     private EmailLog $emailLogModel;
@@ -33,29 +36,41 @@ class LogController extends BaseController
 
     public function system(): void
     {
+        $pagination = $this->buildPagination($this->systemLogModel->countAll());
+
         $this->renderLogTab('system', [
-            'logs' => $this->systemLogModel->allWithUser()
+            'logs' => $this->systemLogModel->allWithUser(self::LOGS_PER_PAGE, $pagination['offset']),
+            'pagination' => $pagination
         ]);
     }
 
     public function access(): void
     {
+        $pagination = $this->buildPagination($this->accessLogModel->countAll());
+
         $this->renderLogTab('access', [
-            'logs' => $this->accessLogModel->allWithUser()
+            'logs' => $this->accessLogModel->allWithUser(self::LOGS_PER_PAGE, $pagination['offset']),
+            'pagination' => $pagination
         ]);
     }
 
     public function email(): void
     {
+        $pagination = $this->buildPagination($this->emailLogModel->countAll());
+
         $this->renderLogTab('email', [
-            'logs' => $this->emailLogModel->all()
+            'logs' => $this->emailLogModel->all(self::LOGS_PER_PAGE, $pagination['offset']),
+            'pagination' => $pagination
         ]);
     }
 
     public function chatbot(): void
     {
+        $pagination = $this->buildPagination($this->chatEventModel->countAll());
+
         $this->renderLogTab('chatbot', [
-            'logs' => $this->chatEventModel->allWithSessionContext()
+            'logs' => $this->chatEventModel->allWithSessionContext(self::LOGS_PER_PAGE, $pagination['offset']),
+            'pagination' => $pagination
         ]);
     }
 
@@ -87,10 +102,19 @@ class LogController extends BaseController
             $this->redirect('/admin/logs/macrodroid');
         }
 
-        $logFile = __DIR__ . '/../../../storage/logs/macrodroid_debug.log';
-        if (file_exists($logFile)) {
-            file_put_contents($logFile, '');
-            $_SESSION['flash_message'] = 'Đã xóa sạch nội dung nhật ký MacroDroid!';
+        $logFiles = [
+            __DIR__ . '/../../../storage/logs/macrodroid_debug.log',
+            __DIR__ . '/../../../storage/logs/webhook.log',
+        ];
+        $cleared = false;
+        foreach ($logFiles as $logFile) {
+            if (file_exists($logFile)) {
+                file_put_contents($logFile, '');
+                $cleared = true;
+            }
+        }
+        if ($cleared) {
+            $_SESSION['flash_message'] = 'Đã xóa sạch nội dung nhật ký Webhook (SePay / MacroDroid)!';
             $_SESSION['flash_type']    = 'success';
         }
         $this->redirect('/admin/logs/macrodroid');
@@ -102,6 +126,8 @@ class LogController extends BaseController
     public function delete(): void
     {
         $logType = $_POST['log_type'] ?? '';
+        $page = max(1, (int) ($_POST['page'] ?? 1));
+        $pageSuffix = $page > 1 ? '?page=' . $page : '';
         $logSources = [
             'system' => ['model' => $this->systemLogModel, 'url' => '/admin/logs/system'],
             'access' => ['model' => $this->accessLogModel, 'url' => '/admin/logs/access'],
@@ -109,7 +135,7 @@ class LogController extends BaseController
             'chatbot' => ['model' => $this->chatEventModel, 'url' => '/admin/logs/chatbot']
         ];
         $redirectUrl = isset($logSources[$logType])
-            ? $logSources[$logType]['url']
+            ? $logSources[$logType]['url'] . $pageSuffix
             : '/admin/logs';
 
         if (!$this->validateCsrfToken($_POST['csrf_token'] ?? '')) {
@@ -152,13 +178,31 @@ class LogController extends BaseController
         $this->redirect($redirectUrl);
     }
 
+    /**
+     * Tính thông số phân trang từ tổng số bản ghi.
+     * Trả về kèm 'offset' để truy vấn đúng trang hiện tại.
+     */
+    private function buildPagination(int $total): array
+    {
+        $pages = max(1, (int) ceil($total / self::LOGS_PER_PAGE));
+        $page  = min($pages, max(1, (int) ($_GET['page'] ?? 1)));
+
+        return [
+            'page'   => $page,
+            'pages'  => $pages,
+            'total'  => $total,
+            'offset' => ($page - 1) * self::LOGS_PER_PAGE,
+        ];
+    }
+
     private function renderLogTab(string $activeLogTab, array $data = []): void
     {
         $this->render('admin.logs.index', array_merge([
             'activeMenu'  => 'logs',
             'activeLogTab' => $activeLogTab,
             'logs'         => [],
-            'logContent'   => ''
+            'logContent'   => '',
+            'pagination'   => []
         ], $data));
     }
 }

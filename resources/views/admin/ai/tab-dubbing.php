@@ -53,10 +53,7 @@ require __DIR__ . '/_tab-header.php';
     </div>
 </form>
 
-<style>
-    #dubbing-voice-preview:hover { transform: scale(1.15); }
-    #dubbing-voice-preview:active { transform: scale(0.92); }
-</style>
+<!-- Nút nghe thử giọng phóng to khi bấm — CSS gom trong public/assets/css/admin.css -->
 <script>
 (function () {
     // Bản demo giọng CHÍNH THỨC của Kira (public/assets/audio/voice-samples/) —

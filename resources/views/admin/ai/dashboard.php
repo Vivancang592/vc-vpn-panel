@@ -35,22 +35,7 @@ $statusColor = static function (string $status): string {
 </div>
 <?php endif; ?>
 
-<!-- Thống kê + model theo khả năng -->
-<style>
-    .ai-dashboard-summary-grid {
-        display: grid;
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-        gap: 1rem;
-        align-items: stretch;
-        margin-bottom: 1.25rem;
-        width: 100%;
-        box-sizing: border-box;
-    }
-
-    @media (max-width: 700px) {
-        .ai-dashboard-summary-grid { grid-template-columns: 1fr; }
-    }
-</style>
+<!-- Thống kê + model theo khả năng — CSS gom trong public/assets/css/admin.css -->
 <div class="ai-dashboard-summary-grid">
 <div class="glass-card" style="padding: 1.25rem; width: 100%; box-sizing: border-box;">
     <div style="display: flex; justify-content: space-between; align-items: center; gap: 0.75rem; margin-bottom: 0.9rem;">
@@ -168,12 +153,7 @@ foreach ($models as $mItem) {
 }
 $modelIdleCount = max(0, count($models) - $modelUsedCount);
 ?>
-<style>
-    /* Mặc định chỉ hiện model đang dùng — bấm mũi tên thả xuống để xem tất cả. */
-    #ai-models-catalog tr.ai-model-idle { display: none; }
-    #ai-models-catalog.show-all tr.ai-model-idle { display: table-row; }
-    #ai-models-catalog.show-all tr.ai-model-idle-note { display: none; }
-</style>
+<!-- Danh sách model AI — CSS gom trong public/assets/css/admin.css -->
 <div id="ai-models-catalog" class="glass-card" style="padding: 1.25rem; margin-top: 1rem; width: 100%; box-sizing: border-box;">
     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem; flex-wrap: wrap; gap: 0.75rem;">
         <h2 style="font-size: 1rem; font-weight: 700;">Danh Sách Model AI</h2>

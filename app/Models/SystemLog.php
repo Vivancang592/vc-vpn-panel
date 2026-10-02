@@ -19,16 +19,26 @@ class SystemLog extends BaseModel
     }
 
     /**
-     * Lấy toàn bộ nhật ký hệ thống kèm thông tin người thực hiện
+     * Lấy nhật ký hệ thống kèm thông tin người thực hiện (hỗ trợ phân trang).
      */
-    public function allWithUser(): array
+    public function allWithUser(?int $limit = null, int $offset = 0): array
     {
-        $stmt = self::$db->prepare("
+        $sql = "
             SELECT sl.*, u.username
             FROM `{$this->table}` sl
             LEFT JOIN `vc_users` u ON sl.user_id = u.id
             ORDER BY sl.id DESC
-        ");
+        ";
+        $paginated = $limit !== null && $limit > 0;
+        if ($paginated) {
+            $sql .= " LIMIT :limit OFFSET :offset";
+        }
+
+        $stmt = self::$db->prepare($sql);
+        if ($paginated) {
+            $stmt->bindValue(':limit', $limit, \PDO::PARAM_INT);
+            $stmt->bindValue(':offset', max(0, $offset), \PDO::PARAM_INT);
+        }
         $stmt->execute();
         return $stmt->fetchAll() ?: [];
     }

@@ -506,10 +506,7 @@ require __DIR__ . '/_tab-header.php';
     }
 })();
 </script>
-<style>
-.fp-blink { animation: fpBlink 1.1s ease-in-out infinite; }
-@keyframes fpBlink { 0%, 100% { opacity: 1; } 50% { opacity: 0.35; } }
-</style>
+<!-- Chớp nháy "Đang viết…" — CSS gom trong public/assets/css/admin.css -->
 
 <!-- ===== POPUP LÊN LỊCH ĐĂNG BÀI (chuyển từ outputs.php) ===== -->
 <!-- z-index 1020 > .admin-sidebar (1010): overlay phải phủ trọn màn hình, kể cả khu vực sidebar -->
@@ -646,9 +643,15 @@ require __DIR__ . '/_tab-header.php';
         popup.addEventListener('click', function (e) {
             if (e.target === popup) closePopup();
         });
-        document.addEventListener('keydown', function (e) {
+        var closeOnEsc = function (e) {
             if (e.key === 'Escape' && popup.style.display === 'flex') closePopup();
-        });
+        };
+        document.addEventListener('keydown', closeOnEsc);
+        /* Dọn listener cấp document khi rời trang bằng partial-load: script nhúng
+           này sẽ chạy lại khi quay về → nếu không gỡ, listener sẽ bị nhân đôi. */
+        document.addEventListener('vc:partial-leave', function () {
+            document.removeEventListener('keydown', closeOnEsc);
+        }, { once: true });
     })();
 </script>
 

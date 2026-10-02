@@ -37,7 +37,7 @@ require_once __DIR__ . '/header.php';
 
 <!-- Nạp JS Động Cho Trang Auth -->
 <?php if (isset($extraJs)): ?>
-    <script src="/assets/js/<?= $extraJs ?>.js?v=<?= time() ?>"></script>
+    <script src="/assets/js/<?= $extraJs ?>.js?v=<?= vc_asset_ver('js/' . $extraJs . '.js') ?>"></script>
 <?php endif; ?>
 
 <script>

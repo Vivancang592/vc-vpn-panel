@@ -118,12 +118,12 @@ $showChatbot = $chatbotEnabled && (($extraJs ?? '') !== 'admin');
     </div>
 <?php endif; ?>
 
-<!-- Luôn tải app.js với tham số xóa cache -->
-<script src="/assets/js/app.js?v=<?= time() ?>"></script>
+<!-- Tải app.js với version theo filemtime (cache hit nếu file không đổi) -->
+<script src="/assets/js/app.js?v=<?= vc_asset_ver('js/app.js') ?>"></script>
 
 <!-- Chỉ tải extraJs nếu khác file app.js -->
 <?php if (isset($extraJs) && $extraJs !== 'app'): ?>
-    <script src="/assets/js/<?= $extraJs ?>.js?v=<?= time() ?>"></script>
+    <script src="/assets/js/<?= $extraJs ?>.js?v=<?= vc_asset_ver('js/' . $extraJs . '.js') ?>"></script>
 <?php endif; ?>
 </body>
 </html>
