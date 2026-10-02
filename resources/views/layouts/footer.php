@@ -92,7 +92,13 @@ if ($chatUserName === '') {
     </div>
 </footer>
 
-<?php if ($chatbotEnabled): ?>
+<?php
+// Bong bóng chat CHỈ hiển thị ở trang công khai + trang user.
+// Trang admin ($extraJs = 'admin') ẩn hoàn toàn — admin xem hội thoại
+// qua cab "Hội Thoại" trong Trung Tâm AI thay vì chat popup.
+$showChatbot = $chatbotEnabled && (($extraJs ?? '') !== 'admin');
+?>
+<?php if ($showChatbot): ?>
     <div id="vc-chatbot" data-enabled="1" data-site-title="<?= htmlspecialchars($chatbotTitle) ?>" data-page="<?= htmlspecialchars((string) parse_url((string) ($_SERVER['REQUEST_URI'] ?? '/'), PHP_URL_PATH)) ?>" data-logged-in="<?= $chatIsLoggedIn ? '1' : '0' ?>" data-user-name="<?= htmlspecialchars($chatUserName) ?>" style="position: relative; z-index: 2147483647;">
         <button id="vc-chatbot-toggle" type="button" aria-label="Mở trợ lý AI">💬</button>
         <div id="vc-chatbot-panel" hidden class="vc-chatbot-panel-wrapper">
@@ -102,15 +108,6 @@ if ($chatUserName === '') {
                     <span style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">Trợ lý AI - <?= htmlspecialchars($chatbotTitle) ?></span>
                 </div>
                 <button id="vc-chatbot-close" type="button" aria-label="Đóng">✕</button>
-            </div>
-            <div id="vc-chatbot-identity" style="padding: 6px 12px; font-size: 11.5px; border-bottom: 1px solid rgba(0,0,0,.06); background: <?= $chatIsLoggedIn ? 'rgba(52,199,89,.09)' : 'rgba(0,122,255,.06)' ?>; color: <?= $chatIsLoggedIn ? '#1c7c3c' : '#4a4a4f' ?>; display: flex; align-items: center; gap: 6px;">
-                <?php if ($chatIsLoggedIn): ?>
-                    <span aria-hidden="true">👤</span>
-                    <span>Xin chào <strong><?= htmlspecialchars($chatUserName !== '' ? $chatUserName : 'bạn') ?></strong> — bạn đã đăng nhập (nguồn: Website)</span>
-                <?php else: ?>
-                    <span aria-hidden="true">🌐</span>
-                    <span>Bạn đang chat với tư cách <strong>khách vãng lai</strong> (nguồn: Website). <a href="/login" style="color:#0a84ff;text-decoration:underline;">Đăng nhập</a> để được hỗ trợ theo tài khoản.</span>
-                <?php endif; ?>
             </div>
             <div id="vc-chatbot-messages"></div>
             <form id="vc-chatbot-form" data-no-loader="true">

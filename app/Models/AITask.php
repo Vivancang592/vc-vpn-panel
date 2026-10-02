@@ -15,6 +15,26 @@ class AITask extends BaseModel
     protected string $table = 'vc_ai_tasks';
 
     /**
+     * Xóa task đã kết thúc sau thời gian lưu giữ; activity tự xóa theo FK.
+     * Output vẫn được giữ, với task_id chuyển thành NULL.
+     */
+    public function pruneFinishedOlderThan(int $hours): int
+    {
+        $hours = max(1, $hours);
+        $cutoff = date('Y-m-d H:i:s', time() - ($hours * 3600));
+
+        $stmt = self::$db->prepare(
+            "DELETE FROM `{$this->table}`
+             WHERE `status` IN ('completed', 'failed', 'cancelled')
+               AND `finished_at` IS NOT NULL
+               AND `finished_at` < :cutoff"
+        );
+        $stmt->execute(['cutoff' => $cutoff]);
+
+        return $stmt->rowCount();
+    }
+
+    /**
      * @return array<string, mixed>|null
      */
     public function findByIdempotencyKey(string $key): ?array

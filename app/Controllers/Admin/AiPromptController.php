@@ -32,6 +32,16 @@ final class AiPromptController extends AiBaseController
             $this->flash('Prompt key không nằm trong danh mục hệ thống.', 'danger', '/admin/ai/settings');
         }
 
+        // Mở trang Nội Quy Hệ Thống không kèm query string: chọn key đầu tiên
+        // trước khi nạp template để dropdown và textarea luôn cùng một nội dung.
+        if ($promptKey === '') {
+            $rulesKeys = array_values(array_filter(
+                $this->registry()->defaultKeys(),
+                static fn (string $key): bool => str_starts_with($key, 'rules_')
+            ));
+            $promptKey = $rulesKeys[0] ?? '';
+        }
+
         // Nội dung THÔ hiện hành (file → mặc định) để Admin bắt đầu sửa.
         $rawTemplate = $promptKey !== ''
             ? $this->registry()->rawTemplate($promptKey)

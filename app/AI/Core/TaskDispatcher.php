@@ -227,7 +227,10 @@ final class TaskDispatcher
                 $isReclaimAttempt
                     ? 'Worker ' . $workerId . ' đã THU HỒI task (lock cũ đã stale).'
                     : 'Worker ' . $workerId . ' đã nhận task.',
-                ['extra' => ['reclaimed' => $isReclaimAttempt, 'lock_token' => $token]]
+                [
+                    'attempt_no' => (int) ($task['attempt_count'] ?? 1),
+                    'extra'      => ['reclaimed' => $isReclaimAttempt, 'lock_token' => $token],
+                ]
             );
         }
 
@@ -305,11 +308,14 @@ final class TaskDispatcher
             $status,
             (string) ($meta['message'] ?? 'Task kết thúc với trạng thái ' . $status . '.'),
             [
+                'attempt_no'  => $meta['attempt_no'] ?? null,
                 'error_code'  => $meta['error_code'] ?? null,
                 'http_status' => $meta['http_status'] ?? null,
                 'duration_ms' => $meta['duration_ms'] ?? null,
             ]
         );
+
+        (new \App\Models\AITask())->pruneFinishedOlderThan(24);
     }
 
     /**
@@ -473,6 +479,7 @@ final class TaskDispatcher
                 'error_message' => $message,
                 'message'       => 'Đã cạn số lần retry.',
                 'lock_token'    => $lockToken,
+                'attempt_no'    => $attempt,
             ]);
 
             return false;
@@ -513,6 +520,7 @@ final class TaskDispatcher
 
         $this->logActivity($taskId, 'retry_scheduled', 'retrying', $message, [
             'error_code'  => $errorType,
+            'attempt_no'  => $attempt,
             'retry_in_ms' => $delayMs,
         ]);
 

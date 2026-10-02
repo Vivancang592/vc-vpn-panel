@@ -283,7 +283,8 @@ class UserController extends BaseController
             $planModel = new VpnPlan();
             $plan = $planModel->find($planId);
         }
-        if (empty($plan)) {
+        if (empty($plan) || ($plan['status'] ?? '') !== 'active' || (isset($plan['stock_quantity']) && $plan['stock_quantity'] !== null && (int) $plan['stock_quantity'] <= 0)) {
+            $_SESSION['error'] = 'Gói dịch vụ không còn khả dụng hoặc đã hết số lượng đăng bán.';
             $this->redirect('/user/plans');
             return;
         }

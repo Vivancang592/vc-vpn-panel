@@ -134,8 +134,15 @@ class FanpageService
                 (string) ($reply['provider'] ?? ''),
                 (string) ($reply['model'] ?? '')
             );
-            if (!empty($reply['handoff'])) {
-                (new ChatSession())->update($sessionId, ['status' => 'handoff']);
+            if (!empty($reply['handoff']) && (new ChatSession())->markHandoff($sessionId)) {
+                (new ChatEvent())->track(
+                    'handoff_requested',
+                    'fanpage',
+                    $sessionId,
+                    null,
+                    null,
+                    ['reason' => 'ai_handoff', 'sender_id' => $senderId]
+                );
             }
             (new ChatEvent())->track(
                 'fanpage_inbound',

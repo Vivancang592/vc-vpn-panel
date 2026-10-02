@@ -12,22 +12,22 @@ class AITaskActivity extends BaseModel
     protected string $table = 'vc_ai_task_activities';
 
     /**
+     * Nhật ký của MỘT task — truy vấn WHERE task_id (bảng append-only có thể
+     * rất lớn; trước đây getAll() + lọc PHP gây quét toàn bảng mỗi lần xem).
+     *
      * @return array<int, array<string, mixed>>
      */
     public function byTask(int $taskId): array
     {
         try {
-            $rows = $this->getAll();
+            $stmt = self::$db->prepare(
+                'SELECT * FROM `vc_ai_task_activities` WHERE `task_id` = :task_id ORDER BY `id` ASC'
+            );
+            $stmt->execute(['task_id' => $taskId]);
+
+            return $stmt->fetchAll() ?: [];
         } catch (\Throwable $e) {
             return [];
         }
-
-        $filtered = array_values(array_filter((array) $rows, static function ($row) use ($taskId): bool {
-            return is_array($row) && (int) ($row['task_id'] ?? 0) === $taskId;
-        }));
-
-        usort($filtered, static fn(array $a, array $b): int => (int) ($a['id'] ?? 0) <=> (int) ($b['id'] ?? 0));
-
-        return $filtered;
     }
 }

@@ -396,9 +396,9 @@ use App\AI\Core\ModuleRegistry;
 use App\AI\Core\RetryPolicy;
 
 $registry = new ModuleRegistry();
-$t->check('ModuleRegistry có 7 module', count($registry->all()) === 7, 'count=' . count($registry->all()));
+$t->check('ModuleRegistry có 6 module', count($registry->all()) === 6, 'count=' . count($registry->all()));
 
-$expectedModules = ['content_article', 'image_generation', 'video_generation', 'audio_tts', 'fanpage_comment', 'support_chat', 'publish_post'];
+$expectedModules = ['content_article', 'image_generation', 'video_generation', 'audio_tts', 'fanpage_comment', 'support_chat'];
 foreach ($expectedModules as $m) {
     $t->check("Module tồn tại: {$m}", $registry->has($m));
 }
@@ -1031,18 +1031,18 @@ if (!$dbOk) {
     // -----------------------------------------------------------------
     if ($migrationApplied && $fkViable) {
         try {
-            // Fixture: module 'publish_post' ĐÚNG module_key trong ModuleRegistry
+            // Fixture: module 'content_article' ĐÚNG module_key trong ModuleRegistry
             // (để request() xác thực được) — chỉ tạo nếu chưa có, không đụng bản thật.
-            $f14Key = 'publish_post';
-            $row = $pdo->query("SELECT id FROM vc_ai_modules WHERE module_key = 'publish_post' LIMIT 1")->fetch();
+            $f14Key = 'content_article';
+            $row = $pdo->query("SELECT id FROM vc_ai_modules WHERE module_key = 'content_article' LIMIT 1")->fetch();
             if ($row) {
                 $f14ModuleId = (int) $row['id'];
             } else {
-                $pdo->prepare("INSERT INTO vc_ai_modules (module_key, module_name, capability, is_enabled) VALUES ('publish_post', 'Chuẩn bị nội dung đăng bài', 'publish', 1)")->execute();
+                $pdo->prepare("INSERT INTO vc_ai_modules (module_key, module_name, capability, is_enabled) VALUES ('content_article', 'Sinh bài viết', 'text', 1)")->execute();
                 $f14ModuleId = (int) $pdo->lastInsertId();
                 $created['vc_ai_modules'][] = $f14ModuleId;
             }
-            $t->check('F14. Có module publish_post để chạy workflow', $f14ModuleId > 0);
+            $t->check('F14. Có module content_article để chạy workflow', $f14ModuleId > 0);
 
             $modelKey = 'selftest-publish-model';
 
@@ -1476,7 +1476,7 @@ if (!$dbOk) {
     if ($migrationApplied && $fkViable) {
         try {
             // Fixture: module 'video_generation' ĐÚNG module_key trong ModuleRegistry
-            // (chỉ tạo nếu chưa có, không đụng bản thật — như F14 với publish_post).
+            // (chỉ tạo nếu chưa có, không đụng bản thật — như F14 với content_article).
             $f21Key = 'video_generation';
             $row21 = $pdo->query("SELECT id FROM vc_ai_modules WHERE module_key = 'video_generation' LIMIT 1")->fetch();
             if ($row21) {
@@ -1664,7 +1664,9 @@ if (!$dbOk) {
         //   app/Services/AIProviderService.php nay CHỈ còn là adapter tương thích
         //   ngược (thin back-compat adapter). Nó KHÔNG gọi provider trực tiếp nữa
         //   mà uỷ thác toàn bộ cho AICore. Đây là cầu nối DUY NHẤT được phép
-        //   tồn tại ở tầng Service, để CronController (legacy) không phải sửa.
+        //   tồn tại ở tầng Service — service legacy (Chatbot, Fanpage) đi qua
+        //   nó; CronController nay KHÔNG còn sinh AI khi đăng bài (luồng thống
+        //   nhất: tạo xong → lên lịch → cron chỉ đăng snapshot).
         //   Mọi file KHÁC trong tầng cũ vẫn phải sạch.
         $authorizedLegacyAdapters = ['AIProviderService.php'];
 
@@ -1736,9 +1738,10 @@ if (!$dbOk) {
         $t->check('F19. Mọi route /admin/ai* trỏ tới controller Admin\\Ai*', $badRouteTargets === [], implode(', ', $badRouteTargets));
         $t->check('F19. routes/web.php KHÔNG gọi thẳng TaskRunner/AICore trong route', !preg_match('/TaskRunner|AICore|->drain\(|->process\(/', $stripPhp($webRoutes)));
 
-        // (d) Các luồng LEGACY bất khả xâm phạm KHÔNG bị đổi sang AI Core.
+        // (d) Luồng đăng bài THỐNG NHẤT: cron chỉ đăng snapshot đã xếp lịch —
+        //     không sinh nội dung/ảnh bằng AI (bài "tạo xong rồi mới đăng").
         $cron = $stripPhp((string) file_get_contents($ROOT . '/app/Controllers/CronController.php'));
-        $t->check('F19. B1: CronController vẫn dùng AIProviderService LEGACY', str_contains($cron, 'new AIProviderService('));
+        $t->check('F19. B1: CronController KHÔNG sinh AI khi đăng (generateContent/generateImage/AIProviderService)', !preg_match('/generateContent|generateImage|AIProviderService/', $cron));
         $t->check('F19. B1: CronController KHÔNG gọi AI Core/TaskRunner', !preg_match('/TaskRunner|AICore|TaskDispatcher/', $cron));
 
         $setting = $stripPhp((string) file_get_contents($ROOT . '/app/Controllers/Admin/SettingController.php'));

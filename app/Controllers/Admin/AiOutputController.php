@@ -141,8 +141,7 @@ final class AiOutputController extends AiBaseController
             return;
         }
 
-        $body   = trim((string) ($article['body'] ?? ''));
-        $prompt = (string) ($article['image_prompt'] ?? '');
+        $body = trim((string) ($article['body'] ?? ''));
 
         if ($body === '') {
             $this->flash('Bài viết này chưa có nội dung để đăng.', 'danger', $back);
@@ -172,7 +171,9 @@ final class AiOutputController extends AiBaseController
                 'output_id'         => $outputId,
                 'topic'             => (string) ($article['title'] ?? ''),
                 'generated_content' => $body,
-                'image_prompt'      => $prompt !== '' ? $prompt : null,
+                // Không mang image_prompt vào hàng đợi: ảnh phải chọn sẵn ở thư
+                // mục tab Tạo Ảnh (không chọn → đăng chữ). Cron không tự sinh ảnh.
+                'image_prompt'      => null,
                 'image_url'         => $imageUrl,
                 'scheduled_at'      => $dt->format('Y-m-d H:i:s'),
                 'created_by'        => (int) ($_SESSION['user_id'] ?? 0),

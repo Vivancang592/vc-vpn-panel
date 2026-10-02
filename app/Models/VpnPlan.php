@@ -6,6 +6,49 @@ class VpnPlan extends BaseModel
 {
     protected string $table = 'vc_vpn_plans';
 
+    /**
+     * Giữ một suất của gói có tồn kho hữu hạn.
+     *
+     * @return array{available: bool, reserved: bool}
+     */
+    public function reserveForPurchase(int $planId): array
+    {
+        if ($planId <= 0) {
+            return ['available' => false, 'reserved' => false];
+        }
+
+        $stmt = self::$db->prepare(
+            "UPDATE `{$this->table}`
+             SET `stock_quantity` = `stock_quantity` - 1
+             WHERE `id` = :id
+               AND `status` = 'active'
+               AND `stock_quantity` IS NOT NULL
+               AND `stock_quantity` > 0"
+        );
+        $stmt->execute(['id' => $planId]);
+
+        if ($stmt->rowCount() === 1) {
+            return ['available' => true, 'reserved' => true];
+        }
+
+        $lock = self::$db->inTransaction() ? ' FOR UPDATE' : '';
+        $stmt = self::$db->prepare(
+            "SELECT `status`, `stock_quantity`
+             FROM `{$this->table}`
+             WHERE `id` = :id
+             LIMIT 1{$lock}"
+        );
+        $stmt->execute(['id' => $planId]);
+        $plan = $stmt->fetch();
+
+        return [
+            'available' => is_array($plan)
+                && ($plan['status'] ?? '') === 'active'
+                && ($plan['stock_quantity'] ?? null) === null,
+            'reserved' => false,
+        ];
+    }
+
     public function getAllActive(): array
     {
         $stmt = self::$db->query("SELECT * FROM `{$this->table}` WHERE `status` = 'active' ORDER BY `price` ASC");

@@ -83,24 +83,6 @@ final class AiDashboardController extends AiBaseController
             }
         }
 
-        // B1: đếm task theo module (vc_ai_tasks.module_id → vc_ai_modules).
-        $moduleIdToKey = [];
-        foreach ($moduleRows as $row) {
-            if (($row['id'] ?? null) !== null) {
-                $moduleIdToKey[(int) $row['id']] = (string) ($row['module_key'] ?? '');
-            }
-        }
-
-        $tasksByModule = [];
-        foreach ($tasks as $task) {
-            $moduleKey = $moduleIdToKey[(int) ($task['module_id'] ?? 0)] ?? '';
-            if ($moduleKey === '') {
-                $moduleKey = '(chưa gán module)';
-            }
-            $tasksByModule[$moduleKey] = ($tasksByModule[$moduleKey] ?? 0) + 1;
-        }
-        arsort($tasksByModule);
-
         // B1: model active theo capability (catalog thật trong vc_ai_models).
         $modelsByCapability = [];
         foreach ($models as $model) {
@@ -168,7 +150,6 @@ final class AiDashboardController extends AiBaseController
             'modelCount'        => count($models),
             'activeModelCount'  => count(array_filter($models, static fn($m): bool => (int) ($m['is_active'] ?? 0) === 1)),
             'taskCounts'        => $taskCounts,
-            'tasksByModule'     => $tasksByModule,
             'modelsByCapability' => $modelsByCapability,
             'articleCount'      => $articleCount,
             'assetCount'        => count($assets),

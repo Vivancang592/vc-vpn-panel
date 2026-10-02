@@ -37,9 +37,12 @@ final class AiSettingController extends AiBaseController
         }
 
         $settingConfigured = false;
+        $chatbotSettings = [];
         try {
-            $value = (new Setting())->getByKey($settingKey);
+            $settingModel = new Setting();
+            $value = $settingModel->getByKey($settingKey);
             $settingConfigured = is_string($value) && trim($value) !== '';
+            $chatbotSettings = $settingModel->getAllAsKeyValue();
         } catch (\Throwable $e) {
             $settingConfigured = false;
         }
@@ -80,6 +83,7 @@ final class AiSettingController extends AiBaseController
             'envKey'             => $envKey,
             'envConfigured'      => $envConfigured,
             'settingConfigured'  => $settingConfigured,
+            'chatbotSettings'    => $chatbotSettings,
             'retry'              => (array) ($this->aiConfig['retry'] ?? []),
             'task'               => (array) ($this->aiConfig['task'] ?? []),
             'assets'             => (array) ($this->aiConfig['assets'] ?? []),
@@ -131,6 +135,55 @@ final class AiSettingController extends AiBaseController
         $this->logActivity('ai_setting_save', sprintf('Cập nhật API key provider %s (độ dài %d ký tự).', $provider, strlen($apiKey)));
 
         $this->flash('Đã lưu API key cho provider "' . $provider . '".', 'success', '/admin/ai/settings');
+    }
+
+    /**
+     * Lưu giới hạn vận hành chatbot. Chỉ các khoá được whitelist mới được
+     * ghi xuống CSDL; các rào bảo vệ server vẫn được giữ nguyên.
+     */
+    public function saveChatbotSettings(): void
+    {
+        if (!$this->validateCsrfToken($_POST['csrf_token'] ?? '')) {
+            $this->flash('CSRF token không hợp lệ.', 'danger', '/admin/ai/settings#chatbot-settings');
+        }
+
+        $enabled = (string) ($_POST['ai_chatbot_enabled'] ?? '1');
+        $cooldown = filter_var($_POST['ai_cooldown_seconds'] ?? null, FILTER_VALIDATE_FLOAT);
+        $rateLimit = filter_var($_POST['ai_rate_limit_per_minute'] ?? null, FILTER_VALIDATE_INT);
+        $duplicateWindow = filter_var($_POST['ai_duplicate_window_seconds'] ?? null, FILTER_VALIDATE_INT);
+        $maxOutputTokens = filter_var($_POST['ai_max_output_tokens'] ?? null, FILTER_VALIDATE_INT);
+
+        if (!in_array($enabled, ['0', '1'], true)
+            || $cooldown === false || $cooldown < 0.5 || $cooldown > 6
+            || $rateLimit === false || $rateLimit < 3 || $rateLimit > 30
+            || $duplicateWindow === false || $duplicateWindow < 2 || $duplicateWindow > 20
+            || $maxOutputTokens === false || $maxOutputTokens < 100 || $maxOutputTokens > 2000) {
+            $this->flash('Giá trị chatbot không hợp lệ. Hãy kiểm tra phạm vi được ghi dưới mỗi ô.', 'danger', '/admin/ai/settings#chatbot-settings');
+        }
+
+        $values = [
+            'ai_chatbot_enabled' => $enabled,
+            'ai_cooldown_seconds' => rtrim(rtrim(number_format((float) $cooldown, 2, '.', ''), '0'), '.'),
+            'ai_rate_limit_per_minute' => (string) $rateLimit,
+            'ai_duplicate_window_seconds' => (string) $duplicateWindow,
+            'ai_max_output_tokens' => (string) $maxOutputTokens,
+        ];
+
+        try {
+            $settingModel = new Setting();
+            foreach ($values as $key => $value) {
+                if (!$settingModel->setByKey($key, $value)) {
+                    throw new \RuntimeException('Không thể lưu ' . $key . '.');
+                }
+            }
+        } catch (\Throwable $e) {
+            $this->logActivity('ai_chatbot_settings_save_failed', $e->getMessage());
+            $this->flash('Không lưu được giới hạn chatbot: ' . $e->getMessage(), 'danger', '/admin/ai/settings#chatbot-settings');
+            return;
+        }
+
+        $this->logActivity('ai_chatbot_settings_save', 'Cập nhật trạng thái và giới hạn vận hành chatbot.');
+        $this->flash('Đã lưu cấu hình chatbot.', 'success', '/admin/ai/settings#chatbot-settings');
     }
 
     /**

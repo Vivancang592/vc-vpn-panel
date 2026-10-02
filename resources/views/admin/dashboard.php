@@ -68,11 +68,11 @@ ob_start();
 
     <div class="glass-card stat-card">
         <div style="display: flex; justify-content: space-between; align-items: center;">
-            <span class="title">Yêu Cầu Người Thật</span>
-            <span style="font-size: 1.25rem;">🧑‍💼</span>
+            <span class="title">Chờ Nhân Viên</span>
+            <span style="font-size: 1.25rem;">🧑</span>
         </div>
-        <div class="value" style="color: #ff9500;"><?= number_format($stats['chat_handoff_today'] ?? 0) ?></div>
-        <div style="font-size: 0.8rem; color: var(--ios-text-secondary);">Số cuộc chat cần chuyển hỗ trợ</div>
+        <div class="value" style="color: #ff9500;"><?= number_format($stats['chat_handoff_pending'] ?? 0) ?></div>
+        <div style="font-size: 0.8rem; color: var(--ios-text-secondary);">Yêu cầu AI chuyển tiếp đang chờ</div>
     </div>
 
     <div class="glass-card stat-card">
@@ -151,12 +151,12 @@ ob_start();
         <div style="display: flex; flex-direction: column; gap: 0.75rem;">
             <?php if (!empty($servers)): ?>
                 <?php foreach ($servers as $server): ?>
-                    <div style="display: flex; justify-content: space-between; align-items: center; padding: 0.75rem 1rem; background: rgba(255, 255, 255, 0.2); border: 1px solid var(--glass-border); border-radius: var(--radius-md);">
-                        <div>
-                            <div style="font-weight: 600; font-size: 0.9rem;"><?= htmlspecialchars($server['name']) ?></div>
-                            <div style="font-size: 0.75rem; color: var(--ios-text-secondary);"><?= htmlspecialchars($server['ip_address']) ?> (<?= htmlspecialchars($server['location']) ?>)</div>
+                    <div style="display: flex; justify-content: space-between; align-items: center; gap: 0.75rem; padding: 0.75rem 1rem; background: rgba(255, 255, 255, 0.2); border: 1px solid var(--glass-border); border-radius: var(--radius-md);">
+                        <div style="font-weight: 600; font-size: 0.9rem; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;"><?= htmlspecialchars($server['name']) ?></div>
+                        <div style="display: flex; align-items: center; gap: 0.5rem; flex-shrink: 0;">
+                            <span style="font-size: 0.75rem; color: var(--ios-text-secondary); white-space: nowrap;"><?= htmlspecialchars($server['ip_address']) ?> (<?= htmlspecialchars($server['location']) ?>)</span>
+                            <span style="height: 10px; width: 10px; flex: 0 0 10px; border-radius: 50%; background-color: <?= $server['status'] === 'active' ? 'var(--ios-success)' : 'var(--ios-danger)' ?>; box-shadow: 0 0 8px <?= $server['status'] === 'active' ? 'var(--ios-success)' : 'var(--ios-danger)' ?>;"></span>
                         </div>
-                        <span style="height: 10px; width: 10px; border-radius: 50%; background-color: <?= $server['status'] === 'active' ? 'var(--ios-success)' : 'var(--ios-danger)' ?>; box-shadow: 0 0 8px <?= $server['status'] === 'active' ? 'var(--ios-success)' : 'var(--ios-danger)' ?>;"></span>
                     </div>
                 <?php endforeach; ?>
             <?php else: ?>

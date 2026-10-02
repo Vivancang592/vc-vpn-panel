@@ -128,7 +128,17 @@ class ChatbotController extends BaseController
                 (string) ($result['model'] ?? '')
             );
             if (!empty($result['handoff'])) {
-                (new ChatSession())->update((int) $sessionRow['id'], ['status' => 'handoff']);
+                $sessionId = (int) $sessionRow['id'];
+                if ((new ChatSession())->markHandoff($sessionId)) {
+                    (new ChatEvent())->track(
+                        'handoff_requested',
+                        'web',
+                        $sessionId,
+                        $userId,
+                        $this->getClientIp(),
+                        ['reason' => 'ai_handoff']
+                    );
+                }
             }
         }
 
@@ -165,10 +175,21 @@ class ChatbotController extends BaseController
 
     public function history(): void
     {
-        $sessionRow = $this->resolveSession('web', null, isset($_SESSION['user_id']) ? (int) $_SESSION['user_id'] : null);
         $history = [];
+        $lastRole = '';
+        $idleRemainingSeconds = 0;
+        $sessionRow = null;
 
-        if (!empty($sessionRow['id'])) {
+        // Chỉ đọc phiên đang gắn với trình duyệt này. Không gọi getOrCreate()
+        // vì tải lại trang không được phép mở lại hoặc tạo phiên mới.
+        $visitorToken = (string) ($_SESSION['chatbot_visitor_token'] ?? '');
+        if ($visitorToken !== '') {
+            $sessionModel = new ChatSession();
+            $sessionModel->sweepIdle(300);
+            $sessionRow = $sessionModel->findByVisitor($visitorToken, 'web');
+        }
+
+        if ($sessionRow && ($sessionRow['status'] ?? '') === 'open' && !empty($sessionRow['id'])) {
             $rows = (new ChatMessage())->getRecentBySession((int) $sessionRow['id'], 20);
             foreach ($rows as $row) {
                 $history[] = [
@@ -177,18 +198,44 @@ class ChatbotController extends BaseController
                     'at' => (string) ($row['created_at'] ?? '')
                 ];
             }
+
+            $lastMessage = end($rows);
+            $lastRole = (string) ($lastMessage['role'] ?? '');
+            if ($lastRole === 'assistant' && !empty($lastMessage['created_at'])) {
+                $elapsed = max(0, time() - (int) strtotime((string) $lastMessage['created_at']));
+                $idleRemainingSeconds = max(0, 300 - $elapsed);
+            }
         }
 
         $this->json([
             'success' => true,
             'data' => [
-                'history' => array_slice($history, -20)
+                'history' => array_slice($history, -20),
+                'status' => (string) ($sessionRow['status'] ?? ''),
+                'last_role' => $lastRole,
+                'idle_remaining_seconds' => $idleRemainingSeconds
             ]
         ]);
     }
 
     public function reset(): void
     {
+        // Đóng phiên hiện tại (nếu còn 'open') trước khi xoay token — hội thoại
+        // cũ không bị "treo" trạng thái mở và AI bắt đầu bộ nhớ sạch ở lần sau.
+        // Phiên 'handoff' giữ nguyên chờ nhân viên bấm "Đã xử lý" để đóng.
+        $oldToken = (string) ($_SESSION['chatbot_visitor_token'] ?? '');
+        if ($oldToken !== '') {
+            try {
+                $sessionModel = new ChatSession();
+                $oldSession = $sessionModel->findByVisitor($oldToken, 'web');
+                if ($oldSession && ($oldSession['status'] ?? '') === 'open') {
+                    $sessionModel->update((int) $oldSession['id'], ['status' => 'closed']);
+                }
+            } catch (\Throwable $e) {
+                // Không chặn reset chat nếu thao tác DB gặp lỗi.
+            }
+        }
+
         unset(
             $_SESSION['chatbot_visitor_token'],
             $_SESSION['chatbot_last_message_hash'],
@@ -263,6 +310,19 @@ class ChatbotController extends BaseController
     {
         if (empty($_SESSION['chatbot_visitor_token'])) {
             $_SESSION['chatbot_visitor_token'] = bin2hex(random_bytes(12));
+        }
+
+        // Lazy sweep: hội thoại AI trả lời mà khách không phản hồi lại quá 5
+        // phút → tự động đóng. Chạy tối đa 1 lần/60s cho mỗi phiên trình duyệt
+        // để không execute UPDATE thừa ở mỗi request.
+        $lastSweep = (int) ($_SESSION['chatbot_sweep_at'] ?? 0);
+        if ((time() - $lastSweep) >= 60) {
+            $_SESSION['chatbot_sweep_at'] = time();
+            try {
+                (new ChatSession())->sweepIdle(300);
+            } catch (\Throwable $e) {
+                // Sweep lỗi không được chặn luồng chat.
+            }
         }
 
         $visitorToken = (string) $_SESSION['chatbot_visitor_token'];

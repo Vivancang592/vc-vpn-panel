@@ -10,6 +10,7 @@ use App\Models\Subscription;
 use App\Models\Server;
 use App\Models\NodeTask;
 use App\Models\Payment;
+use App\Models\BaseModel;
 use App\Services\PaymentService;
 
 class OrderController extends BaseController
@@ -158,8 +159,23 @@ class OrderController extends BaseController
             $this->redirect('/admin/orders' . ($userId > 0 ? '?user_id=' . $userId : ''));
         }
 
-        if ($status === 'cancelled' && ($order['payment_status'] ?? '') !== 'pending') {
-            $_SESSION['flash_message'] = 'Chỉ có thể hủy đơn hàng đang chờ thanh toán.';
+        $currentStatus = (string) ($order['payment_status'] ?? '');
+        if (in_array($status, ['completed', 'failed', 'cancelled'], true) && $currentStatus !== 'pending') {
+            $_SESSION['flash_message'] = 'Chỉ có thể cập nhật đơn hàng đang chờ thanh toán.';
+            $_SESSION['flash_type'] = 'danger';
+            $this->redirect('/admin/orders' . ($userId > 0 ? '?user_id=' . $userId : ''));
+            return;
+        }
+
+        if ($status === 'pending' && $currentStatus !== 'pending') {
+            $_SESSION['flash_message'] = 'Không thể chuyển lại đơn hàng đã xử lý về trạng thái chờ.';
+            $_SESSION['flash_type'] = 'danger';
+            $this->redirect('/admin/orders' . ($userId > 0 ? '?user_id=' . $userId : ''));
+            return;
+        }
+
+        if (in_array($status, ['failed', 'cancelled'], true) && !$this->orderModel->cancelPendingAndReleaseStock($id, null, $status)) {
+            $_SESSION['flash_message'] = 'Không thể đóng đơn hàng này.';
             $_SESSION['flash_type'] = 'danger';
             $this->redirect('/admin/orders' . ($userId > 0 ? '?user_id=' . $userId : ''));
             return;
@@ -233,7 +249,7 @@ class OrderController extends BaseController
                 }
             }
 
-            if ($status === 'cancelled' && $order['payment_status'] !== 'cancelled' && class_exists('App\Models\Subscription')) {
+            if (in_array($status, ['failed', 'cancelled'], true) && $order['payment_status'] === 'pending' && class_exists('App\Models\Subscription')) {
                 (new Payment())->failPendingByOrderId($id);
                 $subModel = new Subscription();
                 $sub      = $subModel->findByOrderId($id);
@@ -285,7 +301,12 @@ class OrderController extends BaseController
             $_SESSION['flash_message'] = 'Không tìm thấy đơn hàng cần xóa!';
             $_SESSION['flash_type']    = 'danger';
         } else {
-            if ($this->orderModel->delete($id)) {
+            $canDelete = true;
+            if (($order['payment_status'] ?? '') === 'pending') {
+                $canDelete = $this->orderModel->cancelPendingAndReleaseStock($id);
+            }
+
+            if ($canDelete && $this->orderModel->delete($id)) {
                 $this->logActivity('DELETE_ORDER', 'Xóa đơn hàng #' . $id . ' (' . ($order['order_code'] ?? 'N/A') . ')');
                 $_SESSION['flash_message'] = 'Xóa đơn hàng thành công!';
                 $_SESSION['flash_type']    = 'success';
@@ -346,7 +367,28 @@ class OrderController extends BaseController
                 'created_at'     => date('Y-m-d H:i:s')
             ];
 
-            if ($this->orderModel->create($orderData)) {
+            $reserveStock = in_array($paymentStatus, ['pending', 'completed'], true);
+            BaseModel::beginTransaction();
+            try {
+                $reservation = $reserveStock
+                    ? $planModel->reserveForPurchase($planId)
+                    : ['available' => true, 'reserved' => false];
+                if (!$reservation['available']) {
+                    BaseModel::rollBack();
+                    $_SESSION['flash_message'] = 'Gói cước này đã hết số lượng đăng bán.';
+                    $_SESSION['flash_type'] = 'danger';
+                    $this->redirect('/admin/orders/create?user_id=' . $userId);
+                    return;
+                }
+                $orderData['stock_reserved'] = $reservation['reserved'] ? 1 : 0;
+                $createdOrder = $this->orderModel->create($orderData);
+                BaseModel::commit();
+            } catch (\Throwable $exception) {
+                BaseModel::rollBack();
+                throw $exception;
+            }
+
+            if ($createdOrder) {
                 $orderId = method_exists($this->orderModel, 'lastInsertId') ? (int)$this->orderModel->lastInsertId() : 0;
 
                 if ($orderId > 0) {

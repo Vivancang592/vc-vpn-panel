@@ -14,11 +14,12 @@ use App\Models\ChatSession;
  *   - BÌNH LUẬN FB  : FanpageService (module fanpage_comment + rule riêng).
  *
  * Tab này CHỈ ĐỌC + hiển thị trạng thái bật/tắt: KHÔNG form test chat, KHÔNG
- * gửi tin nhắn thử (đúng ranh giới D7). Việc xem CHI TIẾT hội thoại AI đã trả
- * lời khách nằm ở trang Hội Thoại (/admin/ai/conversations — link từ tab).
+ * gửi tin nhắn thử (đúng ranh giới D7). Cab "Danh sách hội thoại" ngay dưới
+ * cab "Hội Thoại AI Đã Trả Lời" là NƠI XEM + ĐÓNG hội thoại (đã gộp từ trang
+ * /admin/ai/conversations — route cũ redirect về đây).
  *
  * Ranh giới F19: không gọi TaskRunner/AICore/provider; chỉ đọc Setting +
- * đếm session hội thoại.
+ * đếm/tra cứu session hội thoại.
  */
 final class AiReplyController extends AiBaseController
 {
@@ -36,8 +37,15 @@ final class AiReplyController extends AiBaseController
         $chatEnabled = trim((string) ($settings['ai_chatbot_enabled'] ?? '1')) === '1';
         $commentEnabled = trim((string) ($settings['ai_comment_auto_reply'] ?? '1')) === '1';
 
+        $sessionModel = new ChatSession();
+
+        // Lazy sweep: hội thoại AI trả lời mà khách không phản hồi > 5 phút →
+        // tự đóng trước khi hiển thị danh sách (trạng thái phản ánh thực tế).
+        $sessionModel->sweepIdle(300);
+
         // Thống kê hội thoại AI đã trả lời (theo nguồn web / fanpage).
         $conversationStats = ['web' => 0, 'fanpage' => 0, 'total' => 0];
+        $statusStats = ['open' => 0, 'handoff' => 0, 'closed' => 0];
         try {
             $pdo = \App\Models\BaseModel::getPdo();
             $stmt = $pdo->query("SELECT `source`, COUNT(*) AS `total` FROM `vc_chat_sessions` GROUP BY `source`");
@@ -49,9 +57,27 @@ final class AiReplyController extends AiBaseController
                 }
                 $conversationStats['total'] += $cnt;
             }
+            $stmt = $pdo->query("SELECT `status`, COUNT(*) AS `total` FROM `vc_chat_sessions` GROUP BY `status`");
+            foreach (($stmt->fetchAll() ?: []) as $row) {
+                $st = (string) ($row['status'] ?? '');
+                if (isset($statusStats[$st])) {
+                    $statusStats[$st] = (int) ($row['total'] ?? 0);
+                }
+            }
         } catch (\Throwable $e) {
             // Bảng chưa có dữ liệu / lỗi DB — giữ 0, tab vẫn hiển thị.
         }
+
+        // Bộ lọc + phân trang cho cab "Danh sách hội thoại" (từ GET).
+        $source = strtolower(trim((string) ($_GET['source'] ?? '')));
+        if (!in_array($source, ['web', 'fanpage'], true)) {
+            $source = '';
+        }
+        $keyword = trim((string) ($_GET['q'] ?? ''));
+        $page = max(1, (int) ($_GET['page'] ?? 1));
+        $perPage = 10;
+
+        $list = $sessionModel->searchSessions($source, $keyword, $page, $perPage);
 
         $this->render('admin.ai.tab-reply', [
             'activeMenu' => 'ai-reply',
@@ -59,30 +85,20 @@ final class AiReplyController extends AiBaseController
             'chatEnabled'    => $chatEnabled,
             'commentEnabled' => $commentEnabled,
             'conversationStats' => $conversationStats,
-            'recentSessions' => $this->recentSessions(),
+            'statusStats' => $statusStats,
+            // Danh sách hội thoại đầy đủ (tìm kiếm/phân trang/đóng).
+            'convSessions'   => $list['sessions'],
+            'convTotal'      => $list['total'],
+            'convPage'       => $page,
+            'convPerPage'    => $perPage,
+            'convSource'     => $source,
+            'convKeyword'    => $keyword,
+            'sourceLabels'   => ['web' => 'Website', 'fanpage' => 'Facebook'],
+            'statusLabels'   => [
+                'open'    => 'Đang mở',
+                'handoff' => 'Chờ nhân viên',
+                'closed'  => 'Đã đóng',
+            ],
         ]);
-    }
-
-    /**
-     * 5 hội thoại mới nhất (chỉ meta — chi tiết ở /admin/ai/conversations).
-     *
-     * @return array<int, array<string, mixed>>
-     */
-    private function recentSessions(): array
-    {
-        try {
-            $pdo = \App\Models\BaseModel::getPdo();
-            $stmt = $pdo->query(
-                'SELECT `s`.`id`, `s`.`source`, `s`.`status`, `s`.`updated_at`,'
-                . ' `u`.`username`,'
-                . ' (SELECT `ml`.`content` FROM `vc_chat_messages` `ml` WHERE `ml`.`session_id` = `s`.`id` ORDER BY `ml`.`id` DESC LIMIT 1) AS `last_message`'
-                . ' FROM `vc_chat_sessions` `s`'
-                . ' LEFT JOIN `vc_users` `u` ON `u`.`id` = `s`.`user_id`'
-                . ' ORDER BY `s`.`id` DESC LIMIT 5'
-            );
-            return $stmt->fetchAll() ?: [];
-        } catch (\Throwable $e) {
-            return [];
-        }
     }
 }

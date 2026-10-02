@@ -48,7 +48,7 @@ abstract class AiBaseController extends BaseController
      *                                   LRO inline, thư mục riêng.
      *   4. Lời Thoại   (ai-dubbing)   — audio_tts, chạy trực tiếp, thư mục riêng.
      *   5. Fanpage     (ai-fanpage)   — hợp nhất content_article + image_generation
-     *                                   + publish_post + lịch đăng tự động.
+     *                                   + lên lịch đăng (cron thuần snapshot, không AI).
      *   6. Trả Lời TĐ  (ai-reply)     — auto-reply chat/bình luận (support_chat +
      *                                   fanpage_comment) — chỉ trạng thái + Nội Quy
      *                                   + hội thoại (D7: KHÔNG form test chat).
@@ -95,7 +95,7 @@ abstract class AiBaseController extends BaseController
             'title'       => 'Nội Dung Fanpage',
             'subtitle'    => 'Giao AI viết bài theo chủ đề, theo dõi tiến trình và quản lý Danh Sách Bài Viết (xem, copy prompt, lên lịch đăng).',
             'module_key'  => null,
-            'prompt_keys' => ['content_article', 'image_generation', 'publish_post', 'rules_fanpage_content'],
+            'prompt_keys' => ['content_article', 'image_generation', 'rules_fanpage_content'],
             'capability'  => 'text',
         ],
         'ai-reply' => [
@@ -440,6 +440,15 @@ abstract class AiBaseController extends BaseController
                 'failed'     => 'Thất bại',
                 'cancelled'  => 'Đã huỷ',
             ],
+            'activity_type' => [
+                'created'             => 'Tạo task',
+                'claimed'             => 'Nhận việc',
+                'finished'            => 'Kết thúc',
+                'provider_error'      => 'Lỗi provider',
+                'retry_scheduled'     => 'Lên lịch thử lại',
+                'stale_write_blocked' => 'Chặn ghi cũ (fence)',
+                'video_lro_wait'      => 'Chờ video LRO',
+            ],
             'provider' => [
                 'kira' => 'Kira AI',
             ],
@@ -484,7 +493,6 @@ abstract class AiBaseController extends BaseController
             'audio_tts'        => 'Chuyển văn bản thành giọng nói',
             'fanpage_comment'  => 'Trả lời bình luận fanpage',
             'support_chat'     => 'Hội thoại hỗ trợ khách hàng',
-            'publish_post'     => 'Chuẩn bị nội dung đăng bài',
             'rules_video'           => 'Nội quy tạo video',
             'rules_video_dubbing'   => 'Nội quy lời thoại/giọng đọc',
             'rules_image'           => 'Nội quy tạo ảnh',

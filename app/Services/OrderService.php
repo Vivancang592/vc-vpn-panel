@@ -81,11 +81,23 @@ class OrderService
         ];
 
         $orderModel = new Order();
-        $created = $orderModel->create($orderData);
+        BaseModel::beginTransaction();
 
-        if ($created) {
-            $orderId = (int)$orderModel->lastInsertId();
+        try {
+            $reservation = $planModel->reserveForPurchase($planId);
+            if (!$reservation['available']) {
+                BaseModel::rollBack();
+                return ['status' => false, 'message' => 'Gói dịch vụ này đã hết số lượng đăng bán.'];
+            }
 
+            $orderData['stock_reserved'] = $reservation['reserved'] ? 1 : 0;
+            $created = $orderModel->create($orderData);
+            if (!$created) {
+                BaseModel::rollBack();
+                return ['status' => false, 'message' => 'Không thể khởi tạo đơn hàng. Vui lòng thử lại.'];
+            }
+
+            $orderId = (int) $orderModel->lastInsertId();
             $transferContent = null;
             if ($paymentMethod !== 'balance') {
                 $settingModel = new Setting();
@@ -93,17 +105,23 @@ class OrderService
                 $transferContent = $orderSyntax . str_pad((string)$orderId, 2, '0', STR_PAD_LEFT);
             }
             $orderModel->update($orderId, ['transfer_content' => $transferContent]);
+            BaseModel::commit();
+        } catch (\Throwable $exception) {
+            BaseModel::rollBack();
+            throw $exception;
+        }
 
-            if ($paymentMethod === 'balance') {
+        if ($paymentMethod === 'balance') {
                 $userModel = new User();
 
                 if (!$userModel->debitBalance($userId, $finalPrice)) {
-                    $orderModel->delete($orderId);
+                    $orderModel->cancelPendingAndReleaseStock($orderId, $userId, 'failed');
                     return ['status' => false, 'message' => 'Số dư trong ví không đủ để thanh toán gói dịch vụ này.'];
                 }
 
                 if (!$this->activateOrder($orderId, $couponId)) {
                     $userModel->creditBalance($userId, $finalPrice);
+                    $orderModel->cancelPendingAndReleaseStock($orderId, $userId, 'failed');
                     return ['status' => false, 'message' => 'Không thể kích hoạt gói dịch vụ. Số dư đã được hoàn lại ví.'];
                 }
 
@@ -159,7 +177,7 @@ class OrderService
                 'created_at'       => date('Y-m-d H:i:s')
             ]);
 
-            $this->notifyAdministratorsAboutNewOrder(
+        $this->notifyAdministratorsAboutNewOrder(
                 $userId,
                 $orderCode,
                 $plan,
@@ -168,17 +186,14 @@ class OrderService
                 $orderId
             );
 
-            return [
+        return [
                 'status'         => true,
                 'message'        => 'Tạo đơn hàng thành công.',
                 'order_code'     => $orderCode,
                 'order_id'       => $orderId,
                 'payment_method' => $paymentMethod,
                 'amount'         => $finalPrice
-            ];
-        }
-
-        return ['status' => false, 'message' => 'Không thể khởi tạo đơn hàng. Vui lòng thử lại.'];
+        ];
     }
 
     private function notifyAdministratorsAboutNewOrder(
