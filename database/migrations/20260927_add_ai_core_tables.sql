@@ -91,6 +91,7 @@ CREATE TABLE IF NOT EXISTS `vc_ai_tasks` (
     UNIQUE KEY `uniq_ai_tasks_idem` (`idempotency_key`),
     KEY `idx_ai_tasks_queue` (`status`, `scheduled_at`),
     KEY `idx_ai_tasks_lock` (`status`, `locked_at`),
+    KEY `idx_ai_tasks_retention` (`status`, `finished_at`),
     KEY `idx_ai_tasks_module` (`module_id`, `status`),
     KEY `idx_ai_tasks_type` (`task_type`),
     CONSTRAINT `fk_ai_tasks_module` FOREIGN KEY (`module_id`) REFERENCES `vc_ai_modules`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE,
@@ -151,7 +152,7 @@ CREATE TABLE IF NOT EXISTS `vc_ai_assets` (
 -- ---------------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS `vc_ai_outputs` (
     `id` BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-    `task_id` BIGINT UNSIGNED NOT NULL,
+    `task_id` BIGINT UNSIGNED NULL,
     `module_id` BIGINT UNSIGNED NOT NULL,
     `output_type` VARCHAR(30) NOT NULL,
     `review_status` ENUM('draft','generated','awaiting_review','revision_requested','revised','approved','rejected','completed') NOT NULL DEFAULT 'draft',
@@ -167,7 +168,7 @@ CREATE TABLE IF NOT EXISTS `vc_ai_outputs` (
     KEY `idx_ai_outputs_current_version` (`current_version_id`),
     KEY `idx_ai_outputs_approved_version` (`approved_version_id`),
     KEY `idx_ai_outputs_final_version` (`final_version_id`),
-    CONSTRAINT `fk_ai_outputs_task` FOREIGN KEY (`task_id`) REFERENCES `vc_ai_tasks`(`id`) ON DELETE CASCADE ON UPDATE CASCADE,
+    CONSTRAINT `fk_ai_outputs_task` FOREIGN KEY (`task_id`) REFERENCES `vc_ai_tasks`(`id`) ON DELETE SET NULL ON UPDATE CASCADE,
     CONSTRAINT `fk_ai_outputs_module` FOREIGN KEY (`module_id`) REFERENCES `vc_ai_modules`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE,
     CONSTRAINT `fk_ai_outputs_user` FOREIGN KEY (`created_by`) REFERENCES `vc_users`(`id`) ON DELETE SET NULL ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

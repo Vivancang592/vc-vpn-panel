@@ -201,6 +201,7 @@ final class TaskRunner
         if ($moduleKey === null) {
             $this->tasks->finish($taskId, 'failed', [
                 'lock_token'    => $token,
+                'attempt_no'    => $attempt,
                 'error_code'    => AIException::CONFIG,
                 'error_message' => 'Không xác định được module hợp lệ cho task (module_id=' . $moduleId . ').',
                 'message'       => 'Task thiếu module hợp lệ trong vc_ai_modules.',
@@ -218,6 +219,8 @@ final class TaskRunner
 
         // PROCESS → PROVIDER (toàn bộ pipeline nằm trong AICore; lỗi đã được
         // ErrorHandler chuẩn hoá thành AIResult nên hiếm khi ném ra ngoài).
+        $runStarted = microtime(true);
+
         try {
             $result = $isVideoLroPoll
                 ? $this->core()->videoStatus((string) $options['kira_operation_id'], ['module' => $moduleKey])
@@ -281,6 +284,7 @@ final class TaskRunner
             if ($lro['action'] === 'timeout') {
                 $this->tasks->finish($taskId, 'failed', [
                     'lock_token'    => $token,
+                    'attempt_no'    => $attempt,
                     'error_code'    => AIException::TIMEOUT,
                     'error_message' => 'Video LRO vượt thời gian chờ tối đa ('
                         . (int) ($this->config['task']['video_lro_timeout_seconds'] ?? 1800) . 's).',
@@ -298,6 +302,7 @@ final class TaskRunner
             if ($lro['action'] === 'fail') {
                 $this->tasks->finish($taskId, 'failed', [
                     'lock_token'    => $token,
+                    'attempt_no'    => $attempt,
                     'error_code'    => AIException::CLIENT_ERROR,
                     'error_message' => 'Provider báo LRO thất bại: status="' . $lro['status'] . '"',
                     'message'       => 'Provider báo tác vụ video thất bại (không thể retry).',
@@ -353,9 +358,13 @@ final class TaskRunner
         // (vc_ai_outputs.review_status = 'generated', đã có trong ENUM) — KHÔNG
         // dùng 'awaiting_review' cho vc_ai_tasks vì ENUM của bảng này không chứa
         // giá trị đó (STRICT mode sẽ từ chối).
+        // duration_ms = thời gian chạy pipeline (provider + ghi output) — bơm vào
+        // activity 'finished' để cột "Thời Gian (ms)" của Nhật Ký Xử Lý có dữ liệu.
         $this->tasks->finish($taskId, 'completed', [
-            'lock_token' => $token,
-            'message'    => 'Sinh output thành công; output đang ở trạng thái generated chờ duyệt.',
+            'lock_token'  => $token,
+            'attempt_no'  => $attempt,
+            'duration_ms' => (int) round((microtime(true) - $runStarted) * 1000),
+            'message'     => 'Sinh output thành công; output đang ở trạng thái generated chờ duyệt.',
         ]);
 
         return $this->outcome(self::RESULT_PROCESSED, $taskId, 'Đã sinh output (output ở trạng thái generated, chờ duyệt).', [
@@ -525,8 +534,14 @@ final class TaskRunner
         $message = (string) ($result->errorMessage() ?? 'Lỗi không xác định.');
         $policy  = $this->retry->default();
 
+        // http_status/duration lấy từ context provider ném vào AIResult::error —
+        // trước đây không ai truyền meta → 2 cột "Mã HTTP"/"Thời Gian" luôn là "—".
+        $errCtx = is_array($result->error) ? $result->error : [];
         $this->tasks->logActivity($taskId, 'provider_error', null, $message, [
-            'error_code' => $type,
+            'error_code'  => $type,
+            'attempt_no'  => $attempt,
+            'http_status' => isset($errCtx['http_status']) ? (int) $errCtx['http_status'] : null,
+            'duration_ms' => isset($errCtx['duration_ms']) ? (int) $errCtx['duration_ms'] : null,
         ]);
 
         $retryable = $this->errors->isRetryable($type, $policy);
@@ -547,6 +562,8 @@ final class TaskRunner
 
         $this->tasks->finish($taskId, 'failed', [
             'lock_token'    => $token,
+            'attempt_no'    => $attempt,
+            'duration_ms'   => isset($errCtx['duration_ms']) ? (int) $errCtx['duration_ms'] : null,
             'error_code'    => $type,
             'error_message' => $message,
             'message'       => $fatal

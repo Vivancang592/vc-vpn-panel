@@ -52,6 +52,8 @@ class PlanController extends BaseController
         $durationDays     = (int)($_POST['duration_days'] ?? 0);
         $bandwidthLimitGb = (int)($_POST['bandwidth_limit_gb'] ?? 0);
         $maxDevices       = (int)($_POST['max_devices'] ?? 1);
+        $stockRaw         = trim((string) ($_POST['stock_quantity'] ?? ''));
+        $stockQuantity    = $stockRaw === '' ? null : (int) $stockRaw;
         $description      = trim($_POST['description'] ?? '');
         $status           = trim($_POST['status'] ?? 'active');
 
@@ -59,7 +61,7 @@ class PlanController extends BaseController
             $code = 'VVC' . rand(100000, 999999);
         }
 
-        if (empty($groupIds) || empty($name) || $price < 0 || $durationDays <= 0) {
+        if (empty($groupIds) || empty($name) || $price < 0 || $durationDays <= 0 || ($stockRaw !== '' && (!ctype_digit($stockRaw) || $stockQuantity < 0))) {
             $_SESSION['error'] = 'Vui lòng chọn ít nhất 1 nhóm máy chủ và nhập đầy đủ thông tin bắt buộc!';
             $this->redirect('/admin/plans/create');
             return;
@@ -73,6 +75,7 @@ class PlanController extends BaseController
             'duration_days'      => $durationDays,
             'bandwidth_limit_gb' => $bandwidthLimitGb,
             'max_devices'        => $maxDevices,
+            'stock_quantity'     => $stockQuantity,
             'description'        => $description,
             'status'             => $status
         ]);
@@ -117,10 +120,12 @@ class PlanController extends BaseController
         $durationDays     = (int)($_POST['duration_days'] ?? 0);
         $bandwidthLimitGb = (int)($_POST['bandwidth_limit_gb'] ?? 0);
         $maxDevices       = (int)($_POST['max_devices'] ?? 1);
+        $stockRaw         = trim((string) ($_POST['stock_quantity'] ?? ''));
+        $stockQuantity    = $stockRaw === '' ? null : (int) $stockRaw;
         $description      = trim($_POST['description'] ?? '');
         $status           = trim($_POST['status'] ?? 'active');
 
-        if (!$id || empty($groupIds) || empty($name) || empty($code) || $price < 0 || $durationDays <= 0) {
+        if (!$id || empty($groupIds) || empty($name) || empty($code) || $price < 0 || $durationDays <= 0 || ($stockRaw !== '' && (!ctype_digit($stockRaw) || $stockQuantity < 0))) {
             $_SESSION['error'] = 'Vui lòng chọn ít nhất 1 nhóm máy chủ và nhập đầy đủ thông tin bắt buộc!';
             $this->redirect('/admin/plans/edit?id=' . $id);
             return;
@@ -134,6 +139,7 @@ class PlanController extends BaseController
             'duration_days'      => $durationDays,
             'bandwidth_limit_gb' => $bandwidthLimitGb,
             'max_devices'        => $maxDevices,
+            'stock_quantity'     => $stockQuantity,
             'description'        => $description,
             'status'             => $status
         ]);

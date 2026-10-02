@@ -424,14 +424,6 @@ ob_start();
 
             <div class="settings-field-list">
                 <div>
-                    <label data-hint="Bật hoặc tắt trợ lý AI (chat website + trả lời bình luận Fanpage)." style="display: block; font-weight: 600; font-size: 0.85rem;">Bật Trợ Lý AI</label>
-                    <select name="settings[ai_chatbot_enabled]" class="glass-input" style="width: 100%; cursor: pointer;">
-                        <option value="1" <?= ($settings['ai_chatbot_enabled'] ?? '1') === '1' ? 'selected' : '' ?>>Bật</option>
-                        <option value="0" <?= ($settings['ai_chatbot_enabled'] ?? '1') === '0' ? 'selected' : '' ?>>Tắt</option>
-                    </select>
-                </div>
-
-                <div>
                     <label data-hint="Tự động lắng nghe webhook và phản hồi công khai các bình luận mới trên Fanpage." style="display: block; font-weight: 600; font-size: 0.85rem;">Tự Động Trả Lời Bình Luận</label>
                     <select name="settings[ai_comment_auto_reply]" class="glass-input" style="width: 100%; cursor: pointer;">
                         <option value="1" <?= ($settings['ai_comment_auto_reply'] ?? '1') === '1' ? 'selected' : '' ?>>Bật</option>
@@ -442,12 +434,6 @@ ob_start();
                 <div>
                     <label data-hint="Danh sách từ khóa cấm, spam hoặc nhạy cảm cách nhau bằng dấu phẩy (nếu comment chứa từ này bot sẽ bỏ qua không trả lời)." style="display: block; font-weight: 600; font-size: 0.85rem;">Danh Sách Từ Khóa Bỏ Qua (Blacklist)</label>
                     <input type="text" name="settings[ai_comment_keywords_blacklist]" class="glass-input" value="<?= htmlspecialchars($settings['ai_comment_keywords_blacklist'] ?? '') ?>" placeholder="lừa đảo, chửi thề, spam, vay tiền..." style="width: 100%;">
-                </div>
-
-                <div style="padding: 0.75rem 0.9rem; border-radius: 8px; background: rgba(255,149,0,0.07); border: 1px solid rgba(255,149,0,0.25); font-size: 0.82rem; line-height: 1.6;">
-                    Nội dung AI trả lời cho bình luận và cho khung chat website nay do <strong>file prompt</strong> quyết định.
-                    Sửa tại <a href="/admin/ai/settings" style="color: var(--ios-blue); font-weight: 600;">Cấu Hình AI → Nội Quy Hệ Thống</a>
-                    (dùng cho module <code>fanpage_comment</code> và <code>support_chat</code>).
                 </div>
             </div>
 

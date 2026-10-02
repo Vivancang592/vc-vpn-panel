@@ -9,6 +9,7 @@ use App\Models\Subscription;
 use App\Models\Server;
 use App\Models\NodeInbound;
 use App\Models\ChatEvent;
+use App\Models\ChatSession;
 use App\Services\NotificationService;
 
 class DashboardController extends BaseController
@@ -90,6 +91,7 @@ class DashboardController extends BaseController
         $serverModel = new Server();
         $inboundModel = new NodeInbound();
         $chatEventModel = class_exists(ChatEvent::class) ? new ChatEvent() : null;
+        $chatSessionModel = new ChatSession();
 
         $stats = [
             'total_users'          => method_exists($userModel, 'countAll') ? $userModel->countAll() : 0,
@@ -102,6 +104,7 @@ class DashboardController extends BaseController
             'total_inbounds'       => method_exists($inboundModel, 'countAll') ? $inboundModel->countAll() : 0,
             'chat_started_today'   => $chatEventModel ? $chatEventModel->countToday('chat_opened') : 0,
             'chat_handoff_today'   => $chatEventModel ? $chatEventModel->countToday('handoff_requested') : 0,
+            'chat_handoff_pending' => $chatSessionModel->countByStatus('handoff'),
             'chat_cta_clicked_today' => $chatEventModel ? $chatEventModel->countToday('cta_clicked') : 0,
             'chat_checkout_clicked_today' => $chatEventModel ? $chatEventModel->countToday('checkout_clicked') : 0,
         ];

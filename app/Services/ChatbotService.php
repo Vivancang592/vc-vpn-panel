@@ -458,7 +458,7 @@ class ChatbotService
 
     private function shouldHandoff(string $question, string $answer): bool
     {
-        $text = mb_strtolower($question . ' ' . $answer);
+        $text = $this->normalizeHandoffText($question . ' ' . $answer);
         $keywords = [
             'hoan tien',
             'khieu nai',
@@ -467,6 +467,7 @@ class ChatbotService
             'khong thanh toan duoc',
             'doi nhan vien',
             'nguoi that',
+            'nhan vien',
             'support truc tiep'
         ];
 
@@ -477,6 +478,25 @@ class ChatbotService
         }
 
         return false;
+    }
+
+    private function normalizeHandoffText(string $text): string
+    {
+        return strtr(mb_strtolower($text), [
+            'à' => 'a', 'á' => 'a', 'ả' => 'a', 'ã' => 'a', 'ạ' => 'a',
+            'ă' => 'a', 'ằ' => 'a', 'ắ' => 'a', 'ẳ' => 'a', 'ẵ' => 'a', 'ặ' => 'a',
+            'â' => 'a', 'ầ' => 'a', 'ấ' => 'a', 'ẩ' => 'a', 'ẫ' => 'a', 'ậ' => 'a',
+            'đ' => 'd',
+            'è' => 'e', 'é' => 'e', 'ẻ' => 'e', 'ẽ' => 'e', 'ẹ' => 'e',
+            'ê' => 'e', 'ề' => 'e', 'ế' => 'e', 'ể' => 'e', 'ễ' => 'e', 'ệ' => 'e',
+            'ì' => 'i', 'í' => 'i', 'ỉ' => 'i', 'ĩ' => 'i', 'ị' => 'i',
+            'ò' => 'o', 'ó' => 'o', 'ỏ' => 'o', 'õ' => 'o', 'ọ' => 'o',
+            'ô' => 'o', 'ồ' => 'o', 'ố' => 'o', 'ổ' => 'o', 'ỗ' => 'o', 'ộ' => 'o',
+            'ơ' => 'o', 'ờ' => 'o', 'ớ' => 'o', 'ở' => 'o', 'ỡ' => 'o', 'ợ' => 'o',
+            'ù' => 'u', 'ú' => 'u', 'ủ' => 'u', 'ũ' => 'u', 'ụ' => 'u',
+            'ư' => 'u', 'ừ' => 'u', 'ứ' => 'u', 'ử' => 'u', 'ữ' => 'u', 'ự' => 'u',
+            'ỳ' => 'y', 'ý' => 'y', 'ỷ' => 'y', 'ỹ' => 'y', 'ỵ' => 'y',
+        ]);
     }
 
     private function fallbackResponse(string $message): array

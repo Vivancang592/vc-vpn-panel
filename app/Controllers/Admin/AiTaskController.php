@@ -26,7 +26,7 @@ use App\Models\AITaskActivity;
  * /admin/ai/tasks/detail. Các route còn lại (detail/run/cancel/drain +
  * storeTopics/writeNext của tab Fanpage) giữ nguyên.
  *
- * KHÔNG dùng SELFTEST_MODULE, KHÔNG fixture: chỉ tạo task cho 7 module thật
+ * KHÔNG dùng SELFTEST_MODULE, KHÔNG fixture: chỉ tạo task cho 6 module thật
  * đã đăng ký trong ModuleRegistry + vc_ai_modules.
  */
 final class AiTaskController extends AiBaseController
@@ -210,10 +210,34 @@ final class AiTaskController extends AiBaseController
             );
 
             $taskId = (int) ($outcome['id'] ?? 0);
-            $run    = $this->runner()->process($taskId, $this->adminWorkerId('article-queue'));
 
-            $runStatus = (string) ($run['status'] ?? 'failed');
-            $message   = (string) ($run['message'] ?? '');
+            // Ghi task_id + đọc cờ huỷ NGAY (mở session ngắn) để cab "Tiến Trình"
+            // huỷ được bài đang viết — nếu admin vừa bấm ✕ → đóng task luôn,
+            // không chạy AI.
+            $cancelledMid = false;
+            if (session_status() !== PHP_SESSION_ACTIVE) {
+                @session_start();
+            }
+            $mid = $_SESSION['article_queue'] ?? null;
+            if (is_array($mid) && (string) ($mid['id'] ?? '') === $queueId && isset($mid['items'][$idx])) {
+                $mid['items'][$idx]['task_id'] = $taskId;
+                $cancelledMid = (string) ($mid['items'][$idx]['status'] ?? '') === 'cancelled';
+                $_SESSION['article_queue'] = $mid;
+            }
+            session_write_close();
+
+            if ($cancelledMid && $taskId > 0) {
+                // Đóng task ngay (chưa claim → claim() cũng sẽ từ chối 'cancelled').
+                $this->runner()->dispatcher()->finish($taskId, 'cancelled', [
+                    'message' => 'Admin huỷ từ cab Tiến Trình Viết Bài.',
+                ]);
+                $runStatus = 'cancelled';
+                $message    = 'Đã huỷ theo yêu cầu.';
+            } else {
+                $run    = $this->runner()->process($taskId, $this->adminWorkerId('article-queue'));
+                $runStatus = (string) ($run['status'] ?? 'failed');
+                $message   = (string) ($run['message'] ?? '');
+            }
         } catch (AIException $e) {
             $message = $e->getMessage();
             $this->logActivity('ai_task_create_failed', 'writeNext: ' . $message);
@@ -228,18 +252,25 @@ final class AiTaskController extends AiBaseController
             @session_start();
         }
 
-        $fresh   = $_SESSION['article_queue'] ?? null;
-        $okRun   = $runStatus === TaskRunner::RESULT_PROCESSED;
-        $queueOut = is_array($fresh) && (string) ($fresh['id'] ?? '') === $queueId ? $fresh : $queue;
+        $fresh      = $_SESSION['article_queue'] ?? null;
+        $okRun      = $runStatus === TaskRunner::RESULT_PROCESSED;
+        $queueOut   = is_array($fresh) && (string) ($fresh['id'] ?? '') === $queueId ? $fresh : $queue;
+        $curStatus  = null;
 
         if (is_array($fresh) && (string) ($fresh['id'] ?? '') === $queueId) {
-            $fresh['items'][$idx]['status']  = $okRun ? 'done' : 'failed';
+            $curStatus = (string) ($fresh['items'][$idx]['status'] ?? '');
             $fresh['items'][$idx]['task_id'] = $taskId;
 
-            if (!$okRun) {
-                $fresh['items'][$idx]['error'] = $message !== ''
-                    ? $message
-                    : ('Trạng thái task: ' . $runStatus);
+            // Admin huỷ giữa chừng (queue-cancel) → GIỮ 'cancelled', không ghi
+            // đè bằng done/failed.
+            if ($curStatus !== 'cancelled') {
+                $fresh['items'][$idx]['status'] = $okRun ? 'done' : 'failed';
+
+                if (!$okRun) {
+                    $fresh['items'][$idx]['error'] = $message !== ''
+                        ? $message
+                        : ('Trạng thái task: ' . $runStatus);
+                }
             }
 
             $fresh['updated_at']       = time();
@@ -247,15 +278,19 @@ final class AiTaskController extends AiBaseController
             $queueOut                  = $fresh;
         }
 
+        // Bài bị huỷ giữa chừng (queue-cancel) → log "đã huỷ", KHÔNG ghi "lỗi"
+        // dù runner trả lock-lost/do-runner từ chối ghi đè task đã đóng.
+        $cancelledMidRun = $runStatus === 'cancelled' || $curStatus === 'cancelled';
+
         $this->logActivity(
             'ai_article_write',
             sprintf(
                 'Viết bài %d "%s" → %s (task #%d%s).',
                 $idx + 1,
                 mb_substr($topic, 0, 60),
-                $okRun ? 'hoàn tất' : 'lỗi',
+                $okRun ? 'hoàn tất' : ($cancelledMidRun ? 'đã huỷ' : 'lỗi'),
                 $taskId,
-                $okRun ? '' : ': ' . mb_substr($message, 0, 120)
+                ($okRun || $cancelledMidRun) ? '' : ': ' . mb_substr($message, 0, 120)
             )
         );
 
@@ -303,12 +338,28 @@ final class AiTaskController extends AiBaseController
             $module = null;
         }
 
+        // Bài viết đầy đủ KÈM hàng đợi đăng (vc_scheduled_posts) — task chỉ
+        // phản ánh VIẾT bài; ĐĂNG bài là chuỗi trạng thái riêng (post_status).
+        $article = null;
+        if (is_array($output) && (int) ($output['id'] ?? 0) > 0) {
+            try {
+                $full = (new AIOutput())->articleById((int) $output['id']);
+                if (is_array($full)) {
+                    $article = $this->decorate($full);
+                }
+            } catch (\Throwable $e) {
+                $article = null;
+            }
+        }
+
         $this->render('admin.ai.task-detail', [
             'activeMenu' => 'ai-tasks',
             'pageTitle'  => 'Task #' . $taskId . ' - Quản Trị Hệ Thống',
             'task'       => $task,
             'activities' => $activities,
             'output'     => is_array($output) ? $output : null,
+            'article'    => $article,
+            'postStatus' => self::POST_STATUS,
             'module'     => is_array($module) ? $module : null,
             'payload'    => $this->decode($task['payload'] ?? null),
             'params'     => $this->decode($task['params'] ?? null),
@@ -409,6 +460,7 @@ final class AiTaskController extends AiBaseController
     {
         if (!$this->validateCsrfToken($_POST['csrf_token'] ?? '')) {
             $this->flash('CSRF token không hợp lệ.', 'danger', '/admin/ai');
+            return;
         }
 
         $taskId = (int) ($_POST['id'] ?? 0);
@@ -423,9 +475,12 @@ final class AiTaskController extends AiBaseController
 
         $status = (string) ($task['status'] ?? '');
 
-        if (!in_array($status, ['pending', 'queued', 'retrying'], true)) {
+        // 'processing' cũng cho huỷ: finish() không mang lock_token sẽ ghi trực tiếp
+        // (đóng task + nhả lock) — worker đang chạy dính FENCING nên không thể
+        // ghi 'completed' đè lên sau đó (TaskRunner: stale_write_blocked).
+        if (!in_array($status, ['pending', 'queued', 'retrying', 'processing'], true)) {
             $this->flash(
-                'Chỉ có thể huỷ task đang chờ (pending/queued/retrying). Trạng thái hiện tại: ' . $status,
+                'Chỉ có thể huỷ task đang chờ/đang chạy (pending/queued/retrying/processing). Trạng thái hiện tại: ' . $status,
                 'danger',
                 '/admin/ai/tasks/detail?id=' . $taskId
             );
@@ -438,7 +493,95 @@ final class AiTaskController extends AiBaseController
 
         $this->logActivity('ai_task_cancel', 'Huỷ task #' . $taskId . '.');
 
-        $this->flash('Đã huỷ task #' . $taskId . '.', 'success', '/admin/ai/tasks/detail?id=' . $taskId);
+        // Cho phép quay về trang gọi (vd. dashboard Hàng Đợi) thay vì luôn về detail.
+        $back   = (string) ($_POST['back'] ?? '');
+        $target = ($back !== '' && str_starts_with($back, '/admin/ai'))
+            ? $back
+            : ('/admin/ai/tasks/detail?id=' . $taskId);
+        $this->flash('Đã huỷ task #' . $taskId . '.', 'success', $target);
+    }
+
+    /**
+     * POST /admin/ai/articles/queue-cancel  (AJAX — nút ✕ trên cab "Tiến Trình Viết Bài")
+     *
+     * Huỷ MỘT item trong phiên soạn bài:
+     * - item đang 'writing': đóng task server đang chạy (theo task_id hoặc
+     *   idempotency_key) — FENCING bảo vệ: worker dính stillOwned() nên sẽ
+     *   bỏ qua ghi 'completed' đè lên 'cancelled'.
+     * - item 'waiting'/'failed': chỉ bỏ khỏi hàng đợi (chưa có task nào chạy).
+     *
+     * ⚠️ Giữ nguyên id + vị trí item (CHỈ đổi status → 'cancelled'): writeNext()
+     * và pump() trong JS đều thao tác theo $idx — không splice/reindex để
+     * writeNext không ghi đè done/failed lên item đã huỷ và không nhầm index.
+     */
+    public function queueCancel(): void
+    {
+        if (!$this->validateCsrfToken($_POST['csrf_token'] ?? '')) {
+            $this->json(['ok' => false, 'message' => 'Phiên đăng nhập không hợp lệ.'], 400);
+            return;
+        }
+
+        $idx     = (int) ($_POST['index'] ?? -1);
+        $queueId = (string) ($_POST['queue_id'] ?? '');
+
+        if ($idx < 0 || $queueId === '') {
+            $this->json(['ok' => false, 'message' => 'Thiếu chỉ số item hoặc phiên hàng đợi.'], 400);
+            return;
+        }
+
+        $queue = $_SESSION['article_queue'] ?? null;
+        if (!is_array($queue) || (string) ($queue['id'] ?? '') !== $queueId || !isset($queue['items'][$idx])) {
+            $this->json(['ok' => false, 'message' => 'Hàng đợi không tồn tại (đã chạy xong hoặc phiên mới).'], 404);
+            return;
+        }
+
+        $item = $queue['items'][$idx];
+        $prev = (string) ($item['status'] ?? '');
+
+        if ($prev === 'done') {
+            $this->json(['ok' => false, 'message' => 'Bài đã hoàn tất, không thể huỷ.'], 409);
+            return;
+        }
+
+        // Đánh dấu TRƯỚC (giữ nguyên index) → writeNext() đang chạy dở sẽ thấy
+        // 'cancelled' và KHÔNG ghi đè done/failed sau khi AI xong.
+        $queue['items'][$idx]['status'] = 'cancelled';
+        $queue['items'][$idx]['error']  = '';
+        $_SESSION['article_queue'] = $queue;
+
+        // Tìm task server (task_id đã ghi trong writeNext, hoặc tra theo idempotency_key).
+        $taskId = (int) ($item['task_id'] ?? 0);
+        if ($taskId <= 0 && ($item['idempotency_key'] ?? '') !== '') {
+            $found = (new AITask())->findByIdempotencyKey((string) $item['idempotency_key']);
+            if (is_array($found)) {
+                $taskId = (int) ($found['id'] ?? 0);
+            }
+        }
+
+        $closed = false;
+        if ($taskId > 0) {
+            $task = (new AITask())->find($taskId);
+            $ts   = is_array($task) ? (string) ($task['status'] ?? '') : '';
+            if (in_array($ts, ['pending', 'queued', 'retrying', 'processing'], true)) {
+                $this->runner()->dispatcher()->finish($taskId, 'cancelled', [
+                    'message' => 'Admin huỷ từ cab Tiến Trình Viết Bài.',
+                ]);
+                $closed = true;
+            }
+            // completed → tôn trọng kết quả (bài đã xong trong lúc bấm ✕).
+        }
+
+        $this->logActivity(
+            'ai_article_write',
+            sprintf(
+                'Huỷ item #%d khỏi hàng đợi soạn bài "%s"%s.',
+                $idx + 1,
+                mb_substr((string) $item['topic'], 0, 60),
+                $closed ? ' (đã đóng task #' . $taskId . ')' : ''
+            )
+        );
+
+        $this->json(['ok' => true, 'cancelled' => $closed]);
     }
 
     /**

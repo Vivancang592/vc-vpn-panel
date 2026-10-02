@@ -5,12 +5,11 @@ declare(strict_types=1);
 namespace App\Controllers\Admin;
 
 use App\Models\BaseModel;
-use App\Models\ChatEvent;
 use App\Models\ChatMessage;
 use App\Models\ChatSession;
 
 /**
- * AiConversationController — Admin ĐỌC LẠI hội thoại AI (/admin/ai/conversations).
+ * AiConversationController — Admin xem lại + ĐÓNG hội thoại AI.
  *
  * Mục đích: cho Admin xem lại CHÍNH XÁC những gì AI đã trả lời cho khách,
  * gồm 3 nguồn:
@@ -22,89 +21,20 @@ use App\Models\ChatSession;
  *   - Khách ĐÃ ĐĂNG NHẬP hay CHƯA — dựa vào `user_id` của session.
  *   - TÊN người dùng nếu đã đăng nhập (tra bảng vc_users).
  *
- * Controller này CHỈ ĐỌC (read-only): không tạo task, không gọi provider,
- * không đi qua TaskRunner — đúng ranh giới F19.
+ * Danh sách hội thoại đã TÍCH HỢP vào tab Trả Lời Tự Động (/admin/ai/reply)
+ * — route GET /admin/ai/conversations vẫn giữ (redirect) để link cũ không gãy.
+ * Trang này chỉ còn 2 việc:
+ *   - detail(): xem chi tiết một hội thoại.
+ *   - close() : POST "✅ Đã xử lý" — đóng hội thoại đã chuyển nhân viên (handoff)
+ *     hoặc đang treo open, đúng ranh giới F19 (KHÔNG gọi TaskRunner/provider).
  */
 final class AiConversationController extends AiBaseController
 {
     public function index(): void
     {
-        $source = strtolower(trim((string) ($_GET['source'] ?? '')));
-        if (!in_array($source, ['web', 'fanpage'], true)) {
-            $source = '';
-        }
-
-        $keyword = trim((string) ($_GET['q'] ?? ''));
-        $page = max(1, (int) ($_GET['page'] ?? 1));
-        $perPage = 20;
-        $offset = ($page - 1) * $perPage;
-
-        $sessions = [];
-        $total = 0;
-
-        try {
-            $pdo = BaseModel::getPdo();
-
-            $where = [];
-            $params = [];
-            if ($source !== '') {
-                $where[] = '`s`.`source` = :source';
-                $params['source'] = $source;
-            }
-            if ($keyword !== '') {
-                $where[] = '(`m`.`content` LIKE :kw OR `u`.`username` LIKE :kw2 OR `u`.`email` LIKE :kw3)';
-                $params['kw'] = '%' . $keyword . '%';
-                $params['kw2'] = '%' . $keyword . '%';
-                $params['kw3'] = '%' . $keyword . '%';
-            }
-            $whereSql = $where !== [] ? ' WHERE ' . implode(' AND ', $where) : '';
-
-            $countSql = 'SELECT COUNT(DISTINCT `s`.`id`)'
-                . ' FROM `vc_chat_sessions` `s`'
-                . ' LEFT JOIN `vc_chat_messages` `m` ON `m`.`session_id` = `s`.`id`'
-                . ' LEFT JOIN `vc_users` `u` ON `u`.`id` = `s`.`user_id`'
-                . $whereSql;
-            $stmt = $pdo->prepare($countSql);
-            $stmt->execute($params);
-            $total = (int) $stmt->fetchColumn();
-
-            $sql = 'SELECT `s`.`id`, `s`.`source`, `s`.`user_id`, `s`.`visitor_token`, `s`.`external_id`,'
-                . ' `s`.`status`, `s`.`created_at`, `s`.`updated_at`,'
-                . ' `u`.`username`, `u`.`email` AS `user_email`,'
-                . ' (SELECT COUNT(*) FROM `vc_chat_messages` `mc` WHERE `mc`.`session_id` = `s`.`id`) AS `message_count`,'
-                . ' (SELECT `ml`.`content` FROM `vc_chat_messages` `ml` WHERE `ml`.`session_id` = `s`.`id` ORDER BY `ml`.`id` DESC LIMIT 1) AS `last_message`,'
-                . ' (SELECT `ml2`.`role` FROM `vc_chat_messages` `ml2` WHERE `ml2`.`session_id` = `s`.`id` ORDER BY `ml2`.`id` DESC LIMIT 1) AS `last_role`'
-                . ' FROM `vc_chat_sessions` `s`'
-                . ' LEFT JOIN `vc_users` `u` ON `u`.`id` = `s`.`user_id`'
-                . $whereSql
-                . ' ORDER BY `s`.`id` DESC'
-                . " LIMIT {$perPage} OFFSET {$offset}";
-            $stmt = $pdo->prepare($sql);
-            $stmt->execute($params);
-            $sessions = $stmt->fetchAll() ?: [];
-        } catch (\Throwable $e) {
-            $sessions = [];
-        }
-
-        $this->render('admin.ai.conversations', [
-            'activeMenu'  => 'ai-conversations',
-            'pageTitle'   => 'Hội Thoại AI',
-            'sessions'    => $sessions,
-            'total'       => $total,
-            'page'        => $page,
-            'perPage'     => $perPage,
-            'sourceFilter' => $source,
-            'keyword'     => $keyword,
-            'sourceLabels' => [
-                'web'     => 'Website',
-                'fanpage' => 'Facebook',
-            ],
-            'statusLabels' => [
-                'open'    => 'Đang mở',
-                'handoff' => 'Chờ nhân viên',
-                'closed'  => 'Đã đóng',
-            ],
-        ]);
+        // Danh sách hội thoại đã gộp vào tab Trả Lời Tự Động — giữ route cũ
+        // (selftest F20) bằng redirect để UI gọn, không còn 2 trang trùng.
+        $this->redirect('/admin/ai/reply#cab-conversations');
     }
 
     public function detail(): void
@@ -112,14 +42,21 @@ final class AiConversationController extends AiBaseController
         $id = (int) ($_GET['id'] ?? 0);
 
         if ($id <= 0) {
-            $this->flash('Không tìm thấy hội thoại cần xem.', 'danger', '/admin/ai/conversations');
+            $this->flash('Không tìm thấy hội thoại cần xem.', 'danger', '/admin/ai/reply');
         }
 
         $sessionModel = new ChatSession();
         $session = $sessionModel->find($id);
 
         if (!is_array($session)) {
-            $this->flash('Hội thoại #' . $id . ' không tồn tại.', 'danger', '/admin/ai/conversations');
+            $this->flash('Hội thoại #' . $id . ' không tồn tại.', 'danger', '/admin/ai/reply');
+        }
+
+        // Phiên idle > 5 phút chưa được sweep (admin mở trực tiếp detail) →
+        // đồng bộ trạng thái cho khớp thực tế trước khi hiển thị.
+        if ($sessionModel->isIdleStale($session)) {
+            $sessionModel->update($id, ['status' => 'closed']);
+            $session['status'] = 'closed';
         }
 
         $messages = [];
@@ -178,5 +115,101 @@ final class AiConversationController extends AiBaseController
                 'system'    => 'Hệ thống',
             ],
         ]);
+    }
+
+    /**
+     * POST "✅ Đã xử lý" — đóng một hội thoại (trạng thái → closed).
+     *
+     * Dùng cho hội thoại đã chuyển nhân viên (handoff) hoặc đang treo open:
+     * admin bấm nút là đóng dứt điểm, không để treo vô hạn.
+     * Phiên 'closed' thì không làm gì (idempotent).
+     */
+    public function close(): void
+    {
+        $back = (string) ($_POST['back'] ?? '');
+        // Chỉ cho quay về URL nội bộ bắt đầu bằng /admin/ (chống open redirect),
+        // không chứa CRLF (chống header injection).
+        if ($back === '' || strpos($back, '/admin/') !== 0 || preg_match('/[\r\n]/', $back)) {
+            $back = '/admin/ai/reply#cab-conversations';
+        }
+
+        if (!$this->validateCsrfToken((string) ($_POST['csrf_token'] ?? ''))) {
+            $this->flash('CSRF token không hợp lệ.', 'danger', $back);
+            return;
+        }
+
+        $id = (int) ($_POST['id'] ?? 0);
+        if ($id <= 0) {
+            $this->flash('Không tìm thấy hội thoại cần đóng.', 'danger', $back);
+            return;
+        }
+
+        $sessionModel = new ChatSession();
+        $session = $sessionModel->find($id);
+
+        if (!is_array($session)) {
+            $this->flash('Hội thoại #' . $id . ' không tồn tại.', 'danger', $back);
+            return;
+        }
+
+        if ((string) ($session['status'] ?? '') === 'closed') {
+            $this->flash('Hội thoại #' . $id . ' đã đóng trước đó.', 'success', $back);
+            return;
+        }
+
+        $sessionModel->update($id, ['status' => 'closed']);
+        $this->flash('✅ Đã xử lý — hội thoại #' . $id . ' đã được đóng.', 'success', $back);
+    }
+
+    /**
+     * Xóa vĩnh viễn một hội thoại đã đóng cùng các tin nhắn của nó.
+     */
+    public function delete(): void
+    {
+        $back = $this->conversationBackUrl();
+
+        if (!$this->validateCsrfToken((string) ($_POST['csrf_token'] ?? ''))) {
+            $this->flash('CSRF token không hợp lệ.', 'danger', $back);
+            return;
+        }
+
+        $id = (int) ($_POST['id'] ?? 0);
+        if (!(new ChatSession())->deleteClosed($id)) {
+            $this->flash('Chỉ có thể xóa hội thoại đã đóng.', 'danger', $back);
+            return;
+        }
+
+        $this->flash('Đã xóa vĩnh viễn hội thoại #' . $id . '.', 'success', $back);
+    }
+
+    /**
+     * Xóa vĩnh viễn toàn bộ hội thoại đã đóng.
+     */
+    public function deleteAllClosed(): void
+    {
+        $back = $this->conversationBackUrl();
+
+        if (!$this->validateCsrfToken((string) ($_POST['csrf_token'] ?? ''))) {
+            $this->flash('CSRF token không hợp lệ.', 'danger', $back);
+            return;
+        }
+
+        $deleted = (new ChatSession())->deleteAllClosed();
+        $this->flash(
+            $deleted > 0 ? 'Đã xóa vĩnh viễn ' . $deleted . ' hội thoại đã đóng.' : 'Không có hội thoại đã đóng để xóa.',
+            'success',
+            $back
+        );
+    }
+
+    private function conversationBackUrl(): string
+    {
+        $back = (string) ($_POST['back'] ?? '');
+
+        if ($back === '' || strpos($back, '/admin/') !== 0 || preg_match('/[\r\n]/', $back)) {
+            return '/admin/ai/reply#cab-conversations';
+        }
+
+        return $back;
     }
 }

@@ -195,6 +195,23 @@ ob_start();
                     style="width: 100%;"
                 >
             </div>
+
+            <div>
+                <label style="display: block; font-weight: 600; font-size: 0.85rem; margin-bottom: 0.4rem;">
+                    Số Lượng Đăng Bán
+                </label>
+
+                <input
+                    type="number"
+                    id="stock_quantity"
+                    name="stock_quantity"
+                    class="glass-input"
+                    min="0"
+                    step="1"
+                    placeholder="Để trống = Không giới hạn"
+                    style="width: 100%;"
+                >
+            </div>
         </div>
 
         <div>

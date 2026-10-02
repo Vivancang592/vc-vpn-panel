@@ -93,10 +93,6 @@ final class PromptRegistry
                 . "Trả lời ngắn gọn, chính xác, thân thiện. Nếu khách đã đăng nhập, xưng hô đúng tên khách.",
             'user'   => '{{message}}',
         ],
-        'publish_post' => [
-            'system' => 'Bạn chuẩn bị nội dung đăng bài fanpage.',
-            'user'   => '{{content}}',
-        ],
         // ---- NỘI QUY AI (5 quy định chức năng, không module nào trỏ tới) ----
         'rules_image' => [
             'system' => "NỘI QUY TẠO ẢNH (bắt buộc tuân thủ tuyệt đối):\n"
@@ -188,7 +184,7 @@ final class PromptRegistry
         return match ($promptKey) {
             'video_generation' => self::FUNCTION_RULES['video'],
             'audio_tts' => self::FUNCTION_RULES['dubbing'],
-            'content_article', 'publish_post' => self::FUNCTION_RULES['fanpage_content'],
+            'content_article' => self::FUNCTION_RULES['fanpage_content'],
             'image_generation' => self::FUNCTION_RULES['image'],
             'support_chat', 'fanpage_comment' => self::FUNCTION_RULES['auto_reply'],
             default => null,

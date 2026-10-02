@@ -63,13 +63,8 @@ final class ModuleRegistry
             'output_kind' => 'text',
             'enabled'     => true,
         ],
-        'publish_post' => [
-            'label'       => 'Lên Lịch Đăng Bài',
-            'capability'  => AICapability::PUBLISH,
-            'prompt_key'  => 'publish_post',
-            'output_kind' => 'text',
-            'enabled'     => true,
-        ],
+        // publish_post đã GỠ (2026-10-01): cron đăng bài thuần snapshot từ task 11,
+        // không còn luồng AI "chuẩn bị đăng bài" nào — module dư thừa.
     ];
 
     /**

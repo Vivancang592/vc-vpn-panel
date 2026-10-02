@@ -1,18 +1,53 @@
 <?php
 /**
  * Tab "Trả Lời Tự Động" (/admin/ai/reply) — quyết định D7:
- * CHỈ hiển thị trạng thái 2 kênh auto-reply + Nội Quy AI + hội thoại gần nhất.
- * KHÔNG có form test chat / gửi tin nhắn thử. Chi tiết hội thoại nằm ở
- * /admin/ai/conversations.
+ * CHỈ hiển thị trạng thái 2 kênh auto-reply + Nội Quy AI + hội thoại AI đã
+ * trả lời + DANH SÁCH hội thoại (gộp từ trang /admin/ai/conversations).
+ * KHÔNG có form test chat / gửi tin nhắn thử.
  *
- * Biến: $chatEnabled, $commentEnabled, $conversationStats, $recentSessions,
+ * Biến: $chatEnabled, $commentEnabled, $conversationStats,
+ *       $convSessions, $convTotal, $convPage, $convPerPage, $convSource,
+ *       $convKeyword, $sourceLabels, $statusLabels,
  *       $csrf_token, $tabConfig, $aiLabels.
  */
 $pageTitle = 'Trả Lời Tự Động - Trung Tâm AI';
 $activeMenu = 'ai-reply';
 
-$recentSessions = is_array($recentSessions ?? null) ? $recentSessions : [];
 $convStats = is_array($conversationStats ?? null) ? $conversationStats : ['web' => 0, 'fanpage' => 0, 'total' => 0];
+
+// Danh sách hội thoại (cab mới phía dưới).
+$convSessions = is_array($convSessions ?? null) ? $convSessions : [];
+$convTotal = (int) ($convTotal ?? 0);
+$convPage = max(1, (int) ($convPage ?? 1));
+$convPerPage = max(1, (int) ($convPerPage ?? 10));
+$convSource = in_array(($convSource ?? ''), ['web', 'fanpage'], true) ? (string) $convSource : '';
+$convKeyword = trim((string) ($convKeyword ?? ''));
+$sourceLabels = $sourceLabels ?? ['web' => 'Website', 'fanpage' => 'Facebook'];
+$statusLabels = $statusLabels ?? ['open' => 'Đang mở', 'handoff' => 'Chờ nhân viên', 'closed' => 'Đã đóng'];
+
+$convTotalPages = $convPerPage > 0 ? (int) ceil($convTotal / $convPerPage) : 1;
+
+// URL phân trang / lọc nguồn / tìm kiếm trên CHÍNH tab này.
+$convQueryBase = [];
+if ($convSource !== '') {
+    $convQueryBase['source'] = $convSource;
+}
+if ($convKeyword !== '') {
+    $convQueryBase['q'] = $convKeyword;
+}
+$convBuildUrl = static function (array $extra) use ($convQueryBase): string {
+    $qs = http_build_query(array_merge($convQueryBase, $extra));
+    return '/admin/ai/reply' . ($qs !== '' ? '?' . $qs : '');
+};
+
+// URL quay lại sau khi đóng hội thoại (giữ bộ lọc + trang hiện tại).
+$convBackParams = array_intersect_key($_GET, array_flip(['source', 'q', 'page']));
+$convBackQs = http_build_query($convBackParams);
+$convBack = '/admin/ai/reply' . ($convBackQs !== '' ? '?' . $convBackQs : '');
+
+$sourceColor = static function (string $src): string {
+    return $src === 'fanpage' ? '#1877F2' : 'var(--ios-blue)';
+};
 
 ob_start();
 
@@ -59,43 +94,195 @@ require __DIR__ . '/_tab-header.php';
     </div>
 </div>
 
-<!-- Hội thoại AI đã trả lời -->
+<!-- Tổng quan hội thoại AI đã trả lời -->
 <div class="glass-card" style="padding: 1.25rem; margin-bottom: 1rem; width: 100%; box-sizing: border-box;">
     <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.75rem; margin-bottom: 0.9rem;">
         <h2 style="font-size: 1.05rem; font-weight: 700;">🗨️ Hội Thoại AI Đã Trả Lời <span style="font-size: 0.75rem; font-weight: 400; color: var(--ios-text-secondary);">— tổng <?= (int) ($convStats['total'] ?? 0) ?> phiên</span></h2>
     </div>
+    <div style="display: flex; gap: 0.5rem; flex-wrap: wrap; font-size: 0.8rem;">
+        <?php
+        $statusChips = [
+            'open'    => ['Đang mở', 'var(--ios-success)'],
+            'handoff' => ['Chờ nhân viên', 'var(--ios-warning, #ff9f0a)'],
+            'closed'  => ['Đã đóng', 'var(--ios-text-secondary)'],
+        ];
+        foreach ($statusChips as $stKey => $stMeta):
+            $stCount = (int) (($statusStats ?? [])[$stKey] ?? 0);
+        ?>
+            <span style="display: inline-flex; align-items: center; gap: 0.35rem; padding: 0.3rem 0.65rem; border-radius: 999px; border: 1px solid <?= $stMeta[1] ?>; color: <?= $stMeta[1] ?>; font-weight: 600;">
+                ● <?= htmlspecialchars($stMeta[0]) ?>: <?= $stCount ?>
+            </span>
+        <?php endforeach; ?>
+        <span style="display: inline-flex; align-items: center; gap: 0.35rem; padding: 0.3rem 0.65rem; border-radius: 999px; border: 1px solid var(--ios-border, rgba(255,255,255,0.15)); color: var(--ios-text-secondary);">
+            🌐 Web: <?= (int) ($convStats['web'] ?? 0) ?> · 📘 FB: <?= (int) ($convStats['fanpage'] ?? 0) ?>
+        </span>
+    </div>
+    <p style="font-size: 0.78rem; color: var(--ios-text-secondary); margin-top: 0.6rem;">
+        Hội thoại AI trả lời mà khách không phản hồi lại quá 5 phút sẽ <strong>tự động đóng</strong> (bộ nhớ AI được làm mới).
+        Hội thoại chuyển nhân viên chờ admin bấm <strong>✅ Đã xử lý</strong> bên dưới.
+    </p>
+</div>
 
-    <?php if ($recentSessions === []): ?>
-        <p style="font-size: 0.85rem; color: var(--ios-text-secondary); text-align: center; padding: 1rem;">Chưa có hội thoại nào.</p>
-    <?php else: ?>
-        <div class="table-responsive">
-            <table class="glass-table">
-                <thead>
-                    <tr>
-                        <th style="width: 60px;">ID</th>
-                        <th style="width: 100px;">Nguồn</th>
-                        <th>Khách & tin nhắn cuối</th>
-                        <th style="width: 120px; text-align: center;">Cập nhật</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <?php foreach ($recentSessions as $s): ?>
+<!-- CAB: Danh sách hội thoại (gộp từ trang /admin/ai/conversations) -->
+<div id="cab-conversations" class="glass-card" style="padding: 1.25rem; margin-bottom: 1rem; width: 100%; box-sizing: border-box; scroll-margin-top: 1rem;">
+    <div style="display: flex; justify-content: space-between; align-items: center; gap: 0.75rem; flex-wrap: wrap; margin-bottom: 0.9rem;">
+        <h2 style="font-size: 1.05rem; font-weight: 700; margin: 0;">📋 Danh Sách Hội Thoại</h2>
+        <form method="POST" action="/admin/ai/conversations/delete-closed" style="margin: 0;" onsubmit="return confirm('Xóa vĩnh viễn tất cả hội thoại đã đóng và toàn bộ tin nhắn trong đó? Thao tác này không thể hoàn tác.');">
+            <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrf_token ?? '') ?>">
+            <input type="hidden" name="back" value="<?= htmlspecialchars($convBack) ?>">
+            <button type="submit" title="Xóa vĩnh viễn tất cả hội thoại đã đóng" style="padding: 0.4rem 0.75rem; border-radius: var(--radius-sm); border: 1px solid var(--ios-danger); background: transparent; color: var(--ios-danger); font-size: 0.8rem; font-weight: 700; cursor: pointer;">
+                🗑️ Xóa tất cả đã đóng
+            </button>
+        </form>
+    </div>
+
+    <!-- Tìm kiếm -->
+    <form method="GET" action="/admin/ai/reply" style="display: flex; justify-content: flex-end; gap: 0.5rem; flex-wrap: wrap; align-items: center; margin-bottom: 0.75rem;">
+        <input type="text" name="q" value="<?= htmlspecialchars($convKeyword) ?>" placeholder="Tìm theo tên khách hoặc nội dung tin nhắn..." style="flex: 0 1 320px; min-width: 180px; padding: 0.45rem 0.7rem; border-radius: var(--radius-sm); border: 1px solid var(--ios-border, rgba(255,255,255,0.15)); background: transparent; color: inherit; font-size: 0.85rem;">
+        <?php if ($convSource !== ''): ?>
+            <input type="hidden" name="source" value="<?= htmlspecialchars($convSource) ?>">
+        <?php endif; ?>
+        <button type="submit" style="padding: 0.45rem 0.9rem; border-radius: var(--radius-sm); border: none; background: var(--ios-blue); color: #fff; font-weight: 600; font-size: 0.85rem; cursor: pointer;">Tìm</button>
+        <?php if ($convKeyword !== ''): ?>
+            <a href="<?= htmlspecialchars($convBuildUrl(['q' => null])) ?>" style="text-decoration: none; padding: 0.45rem 0.9rem; border-radius: var(--radius-sm); border: 1px solid var(--ios-border, rgba(255,255,255,0.15)); color: var(--ios-text-secondary); font-size: 0.85rem;">Xoá lọc</a>
+        <?php endif; ?>
+    </form>
+
+    <!-- Lọc nguồn -->
+    <div style="display: flex; gap: 0.4rem; flex-wrap: wrap; margin-bottom: 0.9rem;">
+        <?php
+        $convPills = [
+            ''         => ['Tất cả nguồn', 'var(--ios-blue)'],
+            'web'      => ['🌐 Website', 'var(--ios-blue)'],
+            'fanpage'  => ['📘 Facebook', '#1877F2'],
+        ];
+        foreach ($convPills as $pillSource => $pillMeta):
+            $isActive = $convSource === $pillSource;
+            $activeColor = $pillSource === 'fanpage' ? '#1877F2' : 'var(--ios-blue)';
+        ?>
+            <a href="<?= htmlspecialchars($convBuildUrl(['source' => $pillSource === '' ? null : $pillSource, 'page' => null])) ?>"
+               style="text-decoration: none; padding: 0.35rem 0.7rem; border-radius: var(--radius-sm); font-size: 0.8rem; font-weight: 600; border: 1px solid <?= $isActive ? $activeColor : 'var(--ios-border, rgba(255,255,255,0.15))' ?>; color: <?= $isActive ? $activeColor : 'var(--ios-text-secondary)' ?>;">
+                <?= $pillMeta[0] ?>
+            </a>
+        <?php endforeach; ?>
+    </div>
+
+    <p style="color: var(--ios-text-secondary); font-size: 0.8rem; margin: 0 0 0.6rem;">
+        Tổng số hội thoại: <strong><?= (int) $convTotal ?></strong>
+    </p>
+
+    <div class="table-responsive">
+        <table class="glass-table">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Nguồn</th>
+                    <th>Người Dùng</th>
+                    <th>Số Tin</th>
+                    <th>Tin Cuối</th>
+                    <th>Trạng Thái</th>
+                    <th>Cập Nhật</th>
+                    <th style="text-align: right;">Thao Tác</th>
+                </tr>
+            </thead>
+            <tbody>
+                <?php if (!empty($convSessions)): ?>
+                    <?php foreach ($convSessions as $s): ?>
+                        <?php
+                        $src = (string) ($s['source'] ?? 'web');
+                        $uid = (int) ($s['user_id'] ?? 0);
+                        $uname = trim((string) ($s['username'] ?? ''));
+                        $uemail = trim((string) ($s['user_email'] ?? ''));
+                        $lastMsg = trim((string) ($s['last_message'] ?? ''));
+                        if (mb_strlen($lastMsg) > 90) {
+                            $lastMsg = mb_substr($lastMsg, 0, 90) . '…';
+                        }
+                        $lastRole = (string) ($s['last_role'] ?? '');
+                        $stKey = (string) ($s['status'] ?? '');
+                        $stLabel = $statusLabels[$stKey] ?? $stKey;
+                        $stColor = $stKey === 'open' ? 'var(--ios-success)'
+                            : ($stKey === 'handoff' ? 'var(--ios-warning, #ff9f0a)' : 'var(--ios-text-secondary)');
+                        $canClose = $stKey !== 'closed';
+                        ?>
                         <tr>
-                            <td style="font-weight: 700;">#<?= (int) ($s['id'] ?? 0) ?></td>
-                            <td style="text-align: center;">
-                                <span style="font-size: 0.75rem; font-weight: 700; color: <?= (($s['source'] ?? '') === 'fanpage') ? 'var(--ios-blue)' : 'var(--ios-success)' ?>;">
-                                    <?= (($s['source'] ?? '') === 'fanpage') ? 'Facebook' : 'Website' ?>
+                            <td style="font-weight: 700;">#<?= (int) $s['id'] ?></td>
+                            <td>
+                                <span style="font-weight: 600; font-size: 0.82rem; color: <?= $sourceColor($src) ?>;">
+                                    <?= $src === 'fanpage' ? '📘' : '🌐' ?> <?= htmlspecialchars($sourceLabels[$src] ?? $src) ?>
                                 </span>
                             </td>
-                            <td>
-                                <div style="font-weight: 600; font-size: 0.85rem;"><?= htmlspecialchars((string) ($s['username'] ?? 'Khách chưa đăng nhập')) ?></div>
-                                <div style="font-size: 0.78rem; color: var(--ios-text-secondary); display: -webkit-box; -webkit-line-clamp: 1; -webkit-box-orient: vertical; overflow: hidden;"><?= htmlspecialchars((string) ($s['last_message'] ?? '')) ?></div>
+                            <td style="font-size: 0.82rem;">
+                                <?php if ($uid > 0): ?>
+                                    <span style="color: var(--ios-success); font-weight: 600;">👤 <?= htmlspecialchars($uname !== '' ? $uname : ('User #' . $uid)) ?></span>
+                                    <div style="color: var(--ios-text-secondary); font-size: 0.72rem;">Đã đăng nhập<?= $uemail !== '' ? ' · ' . htmlspecialchars($uemail) : '' ?></div>
+                                <?php else: ?>
+                                    <span style="color: var(--ios-text-secondary);">Khách vãng lai</span>
+                                    <div style="color: var(--ios-text-secondary); font-size: 0.72rem;">Chưa đăng nhập</div>
+                                <?php endif; ?>
                             </td>
-                            <td style="text-align: center; font-size: 0.78rem;"><?= htmlspecialchars(!empty($s['updated_at']) ? date('d/m H:i', strtotime((string) $s['updated_at'])) : '—') ?></td>
+                            <td style="font-size: 0.82rem;"><?= (int) ($s['message_count'] ?? 0) ?></td>
+                            <td style="font-size: 0.8rem; max-width: 300px;">
+                                <?php if ($lastMsg !== ''): ?>
+                                    <span style="color: var(--ios-text-secondary); font-size: 0.72rem;"><?= $lastRole === 'assistant' ? '🤖 AI:' : ($lastRole === 'user' ? '👤 Khách:' : '') ?></span>
+                                    <?= htmlspecialchars($lastMsg) ?>
+                                <?php else: ?>
+                                    <span style="color: var(--ios-text-secondary);">—</span>
+                                <?php endif; ?>
+                            </td>
+                            <td style="font-size: 0.8rem; font-weight: 600; color: <?= $stColor ?>;">
+                                <span style="display: inline-flex; align-items: center; gap: 0.3rem;">● <?= htmlspecialchars($stLabel) ?></span>
+                            </td>
+                            <td style="font-size: 0.78rem; color: var(--ios-text-secondary);"><?= htmlspecialchars((string) ($s['updated_at'] ?? $s['created_at'] ?? '')) ?></td>
+                            <td style="text-align: right; white-space: nowrap;">
+                                <div class="action-dropdown">
+                                    <button type="button" class="action-btn" title="Thao tác" aria-label="Thao tác hội thoại">⋮</button>
+                                    <div class="action-menu" style="min-width: 185px; white-space: nowrap;">
+                                        <a href="/admin/ai/conversations/detail?id=<?= (int) $s['id'] ?>" class="action-item">
+                                            <span>👁️</span> Xem hội thoại
+                                        </a>
+                                        <?php if ($canClose): ?>
+                                            <form method="POST" action="/admin/ai/conversations/close" style="margin: 0;">
+                                                <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrf_token ?? '') ?>">
+                                                <input type="hidden" name="id" value="<?= (int) $s['id'] ?>">
+                                                <input type="hidden" name="back" value="<?= htmlspecialchars($convBack) ?>">
+                                                <button type="submit" class="action-item" style="font-family: inherit;">
+                                                    <span>✅</span> Đã xử lý
+                                                </button>
+                                            </form>
+                                        <?php else: ?>
+                                            <form method="POST" action="/admin/ai/conversations/delete" style="margin: 0;" onsubmit="return confirm('Xóa vĩnh viễn hội thoại này và toàn bộ tin nhắn trong đó? Thao tác này không thể hoàn tác.');">
+                                                <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrf_token ?? '') ?>">
+                                                <input type="hidden" name="id" value="<?= (int) $s['id'] ?>">
+                                                <input type="hidden" name="back" value="<?= htmlspecialchars($convBack) ?>">
+                                                <button type="submit" class="action-item delete" style="font-family: inherit;">
+                                                    <span>🗑️</span> Xóa hội thoại
+                                                </button>
+                                            </form>
+                                        <?php endif; ?>
+                                    </div>
+                                </div>
+                            </td>
                         </tr>
                     <?php endforeach; ?>
-                </tbody>
-            </table>
+                <?php else: ?>
+                    <tr>
+                        <td colspan="8" style="text-align: center; padding: 2rem; color: var(--ios-text-secondary);">
+                            Chưa có hội thoại nào<?= $convKeyword !== '' || $convSource !== '' ? ' khớp bộ lọc' : '' ?>. Hội thoại xuất hiện khi khách chat trên website hoặc qua Facebook Fanpage.
+                        </td>
+                    </tr>
+                <?php endif; ?>
+            </tbody>
+        </table>
+    </div>
+
+    <?php if ($convTotalPages > 1): ?>
+        <div style="display: flex; gap: 0.35rem; justify-content: center; margin-top: 1rem; flex-wrap: wrap;">
+            <?php for ($p = 1; $p <= $convTotalPages; $p++): ?>
+                <a href="<?= htmlspecialchars($convBuildUrl(['page' => $p])) ?>"
+                   style="text-decoration: none; padding: 0.3rem 0.65rem; border-radius: var(--radius-sm); font-size: 0.8rem; font-weight: 600; border: 1px solid <?= $p === $convPage ? 'var(--ios-blue)' : 'var(--ios-border, rgba(255,255,255,0.15))' ?>; color: <?= $p === $convPage ? 'var(--ios-blue)' : 'var(--ios-text-secondary)' ?>;">
+                    <?= $p ?>
+                </a>
+            <?php endfor; ?>
         </div>
     <?php endif; ?>
 </div>

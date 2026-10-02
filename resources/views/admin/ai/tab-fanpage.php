@@ -149,6 +149,11 @@ require __DIR__ . '/_tab-header.php';
                                             <a href="/admin/ai/outputs/detail?id=<?= (int) $article['id'] ?>" class="action-item">
                                                 <span>👁️</span> Xem bài viết
                                             </a>
+                                            <?php if ((int) ($article['task_id'] ?? 0) > 0): ?>
+                                                <a href="/admin/ai/tasks/detail?id=<?= (int) $article['task_id'] ?>" class="action-item">
+                                                    <span>📋</span> Tác vụ #<?= (int) $article['task_id'] ?>
+                                                </a>
+                                            <?php endif; ?>
                                             <?php if ($hasPrompt): ?>
                                                 <button type="button" class="action-item js-copy-prompt"
                                                         data-copy-value="<?= htmlspecialchars((string) $article['image_prompt'], ENT_QUOTES) ?>"
@@ -215,7 +220,8 @@ require __DIR__ . '/_tab-header.php';
 
     /* ---------- Render hàng tiến trình ----------
      * Bài "waiting" đầu tiên hiển thị ĐANG VIẾT (khi đang chạy),
-     * các bài còn lại ĐANG CHỜ, bài done/failed biến mất khỏi hàng. */
+     * các bài còn lại ĐANG CHỜ, bài done biến mất khỏi hàng.
+     * Bài lỗi giữ lại + ✕ huỷ; bài đã huỷ hiện ❌ Đã huỷ + ✕ dọn khỏi hàng. */
     function esc(s) {
         return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
             return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
@@ -223,21 +229,32 @@ require __DIR__ . '/_tab-header.php';
     }
 
     function renderRows() {
+        // Batch hết việc (không còn bài chờ/đang viết) → dòng "❌ Đã huỷ" TỰ
+        // dọn khỏi hàng (giữ trong summary để admin vẫn thấy số đã huỷ).
+        var batchIdle = !items.some(function (it) { return it.status === 'waiting' || it.status === 'writing'; });
+        if (!running && batchIdle) {
+            items.forEach(function (it) { if (it.status === 'cancelled') { it.dismissed = true; } });
+        }
+
         var pending = items.filter(function (it) { return it.status === 'waiting' || it.status === 'writing'; });
         var failed  = items.filter(function (it) { return it.status === 'failed'; });
+        var cancelled = items.filter(function (it) { return it.status === 'cancelled'; });
         doneCount   = items.filter(function (it) { return it.status === 'done'; }).length;
         var html = '';
         var position = 0;
 
         items.forEach(function (it, idx) {
-            if (it.status === 'done') { return; } // xong → biến mất khỏi thanh tiến trình
+            if (it.status === 'done' || it.dismissed) { return; } // xong/dọn → biến mất khỏi thanh tiến trình
             position++;
 
             var isWriting = (it.status === 'writing') ||
                 (running && it.status === 'waiting' && position === 1 && items.filter(function (x) { return x.status === 'waiting'; })[0] === it);
 
             var chip, rowBg;
-            if (it.status === 'failed') {
+            if (it.status === 'cancelled') {
+                chip = '<span style="color: var(--ios-text-secondary); font-weight: 700;">❌ Đã huỷ</span>';
+                rowBg = 'rgba(142, 142, 147, 0.10);';
+            } else if (it.status === 'failed') {
                 chip = '<span style="color: var(--ios-danger); font-weight: 700;">❌ Lỗi</span>';
                 rowBg = 'rgba(255, 69, 58, 0.08);';
             } else if (isWriting) {
@@ -251,21 +268,96 @@ require __DIR__ . '/_tab-header.php';
             var err = (it.status === 'failed' && it.error)
                 ? '<div style="font-size: 0.76rem; color: var(--ios-danger); margin-top: 0.2rem;">' + esc(it.error) + '</div>' : '';
 
+            // ✕ huỷ / dọn: writing + waiting + failed → gọi server; cancelled → chỉ dọn khỏi hàng.
+            var act = '';
+            if (it.status === 'writing' || it.status === 'waiting' || it.status === 'failed') {
+                act = '<button type="button" class="fp-cancel" data-idx="' + idx + '" title="Huỷ bài này"' +
+                    ' style="border: 1px solid rgba(255,59,48,0.35); background: rgba(255,59,48,0.08); color: #ff3b30; border-radius: 8px; padding: 0.1rem 0.5rem; cursor: pointer; font-weight: 700; font-size: 0.8rem; line-height: 1.5;">✕</button>';
+            } else if (it.status === 'cancelled') {
+                act = '<button type="button" class="fp-cancel" data-idx="' + idx + '" title="Dọn khỏi hàng"' +
+                    ' style="border: 1px solid var(--ios-border, rgba(255,255,255,0.18)); background: transparent; color: var(--ios-text-secondary); border-radius: 8px; padding: 0.1rem 0.5rem; cursor: pointer; font-size: 0.8rem; line-height: 1.5;">✕</button>';
+            }
+
             html += '<div style="display: flex; align-items: flex-start; gap: 0.75rem; padding: 0.6rem 0.85rem; border-radius: 10px; background:' + rowBg + ';">' +
                 '<div style="font-weight: 700; font-size: 0.8rem; color: var(--ios-text-secondary); min-width: 2.2rem;">#' + (idx + 1) + '</div>' +
                 '<div style="flex: 1; font-size: 0.86rem; min-width: 0;">' + esc(it.topic) + err + '</div>' +
-                '<div style="font-size: 0.8rem; white-space: nowrap;">' + chip + '</div>' +
+                '<div style="font-size: 0.8rem; white-space: nowrap; display: flex; align-items: center; gap: 0.5rem;">' + chip + act + '</div>' +
                 '</div>';
         });
 
         rowsEl.innerHTML = html;
         emptyEl.style.display = items.length ? 'none' : '';
-        summaryEl.style.display = (items.length && (doneCount > 0 || failed.length)) ? '' : 'none';
+        summaryEl.style.display = (items.length && (doneCount > 0 || failed.length || cancelled.length)) ? '' : 'none';
         if (summaryEl.style.display === '') {
             summaryEl.innerHTML = '✅ <strong>' + doneCount + '</strong> bài đã hoàn tất' +
                 (failed.length ? ' · ❌ <strong style="color: var(--ios-danger);">' + failed.length + '</strong> bài lỗi' : '') +
+                (cancelled.length ? ' · ❌ <strong style="color: var(--ios-text-secondary);">' + cancelled.length + '</strong> bài đã huỷ' : '') +
                 ' · ⏳ <strong>' + pending.filter(function (x) { return x.status === 'waiting'; }).length + '</strong> bài chờ';
         }
+    }
+
+    /* ---------- ✕ Huỷ 1 bài trong hàng đợi (POST queue-cancel) ---------- */
+    function cancelItem(idx) {
+        var it = items[idx];
+        if (!it || it.dismissed) { return Promise.resolve(); }
+        if (it.status === 'cancelled') {
+            // Đã huỷ rồi → ✕ = DỌN khỏi hàng (chỉ bỏ qua khi render; GIỮ nguyên
+            // index trong mảng để writeNext/pump không bị lệch số thứ tự).
+            it.dismissed = true;
+            renderRows();
+            return Promise.resolve();
+        }
+        var label = String(it.topic || '').slice(0, 60);
+        if (!confirm('Huỷ bài "' + label + '"?')) {
+            return Promise.resolve();
+        }
+        var body = new URLSearchParams();
+        body.append('csrf_token', CSRF);
+        body.append('queue_id', String(QUEUE && QUEUE.id ? QUEUE.id : ''));
+        body.append('index', String(idx));
+        return fetch('/admin/ai/articles/queue-cancel', {
+            method: 'POST',
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest',
+                'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8'
+            },
+            body: body.toString()
+        }).then(function (r) { return r.json(); }).then(function (res) {
+            if (res && res.ok) {
+                items[idx].status = 'cancelled';
+                items[idx].error = '';
+            } else {
+                errorEl.textContent = '⚠️ ' + ((res && res.message) ? res.message : 'Không huỷ được bài này.');
+                errorEl.style.display = '';
+            }
+            renderRows();
+        }).catch(function () {
+            errorEl.textContent = '⚠️ Mất kết nối — không huỷ được bài.';
+            errorEl.style.display = '';
+        });
+    }
+
+    document.getElementById('fp-rows').addEventListener('click', function (e) {
+        var btn = e.target.closest ? e.target.closest('.fp-cancel') : null;
+        if (!btn) { return; }
+        var idx = parseInt(btn.getAttribute('data-idx'), 10);
+        if (items[idx] && items[idx].status === 'writing' && running) {
+            cancelCurrent(idx);   // đang viết → dừng pump + đóng task server
+        } else {
+            cancelItem(idx);      // chờ/lỗi/đã huỷ → bỏ khỏi hàng đợi
+        }
+    });
+
+    /* Huỷ bài ĐANG VIẾT (khi pump đang chờ write-next trả về): dừng vòng lặp
+     * + đóng task server → response write-next về sẽ thấy status 'cancelled'. */
+    function cancelCurrent(writingIdx) {
+        running = false;
+        cancelItem(writingIdx).then(function () {
+            renderRows();
+            // KHÔNG hiện "▶️ Bắt Đầu Viết" ở đây: write-next vẫn còn trong luồng —
+            // khi nó trả về, pump tự viết bài chờ kế tiếp (hoặc finished ẩn nút).
+            // Nút chỉ hiện khi pump thật sự đứng (lỗi/mất kết nối) ở dưới.
+        });
     }
 
     /* ---------- Gọi write-next: đúng 1 bài / 1 lần ---------- */
@@ -280,6 +372,31 @@ require __DIR__ . '/_tab-header.php';
             },
             body: body.toString()
         }).then(function (r) { return r.json(); });
+    }
+
+    /* ---------- Nạp lại cab Danh Sách Bài Viết (AJAX — không cần F5) ----------
+     * Lấy HTML trang hiện tại → CHỈ thay nội dung #fp-articles → bind lại menu
+     * 3 chấm / copy prompt / nút Lên lịch cho row mới (binder đã global hóa). */
+    function refreshArticles() {
+        var host = document.getElementById('fp-articles');
+        if (!host) { return; }
+
+        // Gỡ menu 3 chấm đã bị kéo ra <body> (thuộc row cũ sắp bị thay).
+        document.querySelectorAll('body > .action-menu').forEach(function (m) {
+            if (!m._triggerBtn || host.contains(m._triggerBtn)) { m.remove(); }
+        });
+
+        fetch(window.location.pathname + window.location.search, {
+            headers: { 'X-Requested-With': 'XMLHttpRequest' }
+        }).then(function (r) { return r.ok ? r.text() : null; }).then(function (html) {
+            if (!html) { return; }
+            var fresh = new DOMParser().parseFromString(html, 'text/html').getElementById('fp-articles');
+            if (!fresh) { return; }
+            host.innerHTML = fresh.innerHTML;
+            if (typeof window.fpBindScheduleOpen === 'function') { window.fpBindScheduleOpen(host); }
+            if (typeof window.vcBindActionMenus === 'function') { window.vcBindActionMenus(host); }
+            if (typeof window.vcBindCopyButtons === 'function') { window.vcBindCopyButtons(host); }
+        }).catch(function () { /* mạng lỗi → giữ list cũ, không ảnh hưởng tiến trình */ });
     }
 
     /* Vòng tuần tự: await từng bài → article xong biến mất → viết bài kế. */
@@ -297,9 +414,12 @@ require __DIR__ . '/_tab-header.php';
         }
 
         running = true;
+        startBtn.style.display = 'none';             // đang chạy → ẩn nút Bắt Đầu
         items[targetIndex].status = 'writing';       // hiện "Đang viết" ngay trên hàng
         errorEl.style.display = 'none';
         renderRows();
+        // Ghi nhớ index đang viết → ✕ trên hàng "Đang viết" huỷ được cả bài này.
+        var writingIdx = targetIndex;
 
         function markWaiting() {
             for (var j = 0; j < items.length; j++) {
@@ -309,16 +429,26 @@ require __DIR__ . '/_tab-header.php';
 
         postWriteNext().then(function (res) {
             running = false;
+            var prevDone = items.filter(function (it) { return it.status === 'done'; }).length;
 
             if (!res || !res.ok) {
                 markWaiting();
                 errorEl.textContent = '⚠️ ' + ((res && res.message) ? res.message : 'Không gọi được write-next.');
                 errorEl.style.display = '';
+                startBtn.style.display = '';   // pump đứng → cho phép bấm Bắt Đầu lại
                 renderRows();
                 return;
             }
 
-            if (res.queue && Array.isArray(res.queue.items)) { items = res.queue.items; QUEUE = res.queue; }
+            // Giữ cờ dismissed (dòng đã dọn) — queue không splice nên index ổn định.
+            if (res.queue && Array.isArray(res.queue.items)) {
+                var oldItems = items;
+                items = res.queue.items;
+                items.forEach(function (it, i) {
+                    if (oldItems[i] && oldItems[i].dismissed) it.dismissed = true;
+                });
+                QUEUE = res.queue;
+            }
 
             if (res.busy) {
                 // Có lời gọi khác đang giữ "đang viết" — chờ rồi poll tiếp.
@@ -330,9 +460,15 @@ require __DIR__ . '/_tab-header.php';
             // writeNext đã set done/failed — render lại (hàng xong biến mất).
             renderRows();
 
+            // Bài vừa hoàn tất → nạp lại cab Danh Sách Bài Viết ngay (không cần F5).
+            if (doneCount > prevDone) {
+                refreshArticles();
+            }
+
             if (res.finished) {
                 // Đã xoá banner 🎉 — khi xong chỉ cần hàng trống + summary.
                 startBtn.style.display = 'none';
+                refreshArticles();   // nạp chắc chắn 1 lần cuối (kể cả batch huỷ/ lỗi)
                 // Viết xong hàng đợi → cuộn mượt xuống Danh Sách Bài Viết xem kết quả.
                 var listEl = document.getElementById('fp-articles');
                 if (listEl) listEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -376,7 +512,8 @@ require __DIR__ . '/_tab-header.php';
 </style>
 
 <!-- ===== POPUP LÊN LỊCH ĐĂNG BÀI (chuyển từ outputs.php) ===== -->
-<div id="schedule-popup" style="display: none; position: fixed; inset: 0; z-index: 950; background: rgba(0, 0, 0, 0.55); backdrop-filter: blur(6px); align-items: center; justify-content: center; padding: 1rem;">
+<!-- z-index 1020 > .admin-sidebar (1010): overlay phải phủ trọn màn hình, kể cả khu vực sidebar -->
+<div id="schedule-popup" style="display: none; position: fixed; inset: 0; z-index: 1020; background: rgba(0, 0, 0, 0.55); backdrop-filter: blur(6px); align-items: center; justify-content: center; padding: 1rem;">
     <div class="glass-card" style="width: 100%; max-width: 380px; padding: 1.5rem;">
         <h3 style="margin: 0 0 0.35rem; font-size: 1.05rem; font-weight: 700;">Lên lịch đăng bài</h3>
         <p id="schedule-popup-title" style="margin: 0 0 1rem; font-size: 0.82rem; color: var(--ios-text-secondary); overflow: hidden; text-overflow: ellipsis; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;"></p>
@@ -399,7 +536,7 @@ require __DIR__ . '/_tab-header.php';
                 <?php $pickerItems = array_values(array_filter((array) ($imageGallery ?? []), static fn($it): bool => trim((string) ($it['_url'] ?? '')) !== '')); ?>
                 <?php if (empty($pickerItems)): ?>
                     <p style="margin: 0; font-size: 0.78rem; color: var(--ios-text-secondary);">
-                        Chưa có ảnh nào trong thư mục tab Tạo Ảnh — article sẽ tự sinh ảnh theo prompt.
+                        Chưa có ảnh nào trong thư mục tab Tạo Ảnh — bài sẽ được đăng chỉ có chữ (không ảnh).
                     </p>
                 <?php else: ?>
                     <div id="schedule-popup-images" style="display: flex; gap: 0.4rem; flex-wrap: wrap; max-height: 132px; overflow-y: auto; padding: 2px;">
@@ -422,7 +559,7 @@ require __DIR__ . '/_tab-header.php';
                             </button>
                         <?php endforeach; ?>
                     </div>
-                    <p style="margin: 0.35rem 0 0; font-size: 0.72rem; color: var(--ios-text-secondary);">Nhấn một ảnh để đính kèm (hoặc "Không ảnh"). Cron sẽ đăng kèm ảnh này thay vì tự sinh ảnh.</p>
+                    <p style="margin: 0.35rem 0 0; font-size: 0.72rem; color: var(--ios-text-secondary);">Nhấn một ảnh để đính kèm (hoặc "Không ảnh"). Cron đăng đúng nội dung + ảnh đã chọn, không tự sinh ảnh.</p>
                 <?php endif; ?>
             </div>
             <div style="display: flex; gap: 0.6rem; justify-content: flex-end;">
@@ -491,12 +628,19 @@ require __DIR__ . '/_tab-header.php';
             popup.style.display = 'none';
         }
 
-        document.querySelectorAll('.js-schedule-open').forEach(function (btn) {
-            btn.addEventListener('click', function (e) {
-                e.stopPropagation();
-                openPopup(btn.dataset.outputId || '', btn.dataset.outputTitle || '', btn.dataset.outputImage || '');
+        // Bọc thành hàm toàn cục: refreshArticles() nạp lại HTML cab Danh Sách
+        // Bài Viết sẽ gọi fpBindScheduleOpen(root) để bind nút Lên lịch mới.
+        window.fpBindScheduleOpen = function (root) {
+            (root || document).querySelectorAll('.js-schedule-open').forEach(function (btn) {
+                if (btn.dataset.schedBound === '1') { return; }
+                btn.dataset.schedBound = '1';
+                btn.addEventListener('click', function (e) {
+                    e.stopPropagation();
+                    openPopup(btn.dataset.outputId || '', btn.dataset.outputTitle || '', btn.dataset.outputImage || '');
+                });
             });
-        });
+        };
+        window.fpBindScheduleOpen(document);
 
         document.getElementById('schedule-popup-cancel').addEventListener('click', closePopup);
         popup.addEventListener('click', function (e) {

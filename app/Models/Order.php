@@ -124,9 +124,73 @@ class Order extends BaseModel
 
     public function cancelPendingForUser(int $orderId, int $userId): bool
     {
-        $stmt = self::$db->prepare("UPDATE `{$this->table}` SET `payment_status` = 'cancelled' WHERE `id` = :id AND `user_id` = :user_id AND `payment_status` = 'pending'");
-        $stmt->execute(['id' => $orderId, 'user_id' => $userId]);
-        return $stmt->rowCount() === 1;
+        return $this->cancelPendingAndReleaseStock($orderId, $userId, 'cancelled');
+    }
+
+    /**
+     * Đóng đơn chờ và hoàn lại đúng một suất tồn kho đã giữ chỗ.
+     */
+    public function cancelPendingAndReleaseStock(int $orderId, ?int $userId = null, string $status = 'cancelled'): bool
+    {
+        if ($orderId <= 0 || !in_array($status, ['cancelled', 'failed'], true)) {
+            return false;
+        }
+
+        self::beginTransaction();
+
+        try {
+            $sql = "SELECT `plan_id`, `stock_reserved`
+                    FROM `{$this->table}`
+                    WHERE `id` = :id
+                      AND `payment_status` = 'pending'";
+            $params = ['id' => $orderId];
+            if ($userId !== null) {
+                $sql .= ' AND `user_id` = :user_id';
+                $params['user_id'] = $userId;
+            }
+            $sql .= ' FOR UPDATE';
+
+            $stmt = self::$db->prepare($sql);
+            $stmt->execute($params);
+            $order = $stmt->fetch();
+            if (!is_array($order)) {
+                self::rollBack();
+                return false;
+            }
+
+            $update = self::$db->prepare(
+                "UPDATE `{$this->table}`
+                 SET `payment_status` = :status, `updated_at` = NOW()
+                 WHERE `id` = :id AND `payment_status` = 'pending'"
+            );
+            $update->execute(['status' => $status, 'id' => $orderId]);
+            if ($update->rowCount() !== 1) {
+                self::rollBack();
+                return false;
+            }
+
+            if ((int) ($order['stock_reserved'] ?? 0) === 1 && (int) ($order['plan_id'] ?? 0) > 0) {
+                $restock = self::$db->prepare(
+                    'UPDATE `vc_vpn_plans`
+                     SET `stock_quantity` = `stock_quantity` + 1
+                     WHERE `id` = :plan_id AND `stock_quantity` IS NOT NULL'
+                );
+                $restock->execute(['plan_id' => (int) $order['plan_id']]);
+
+                $clearReservation = self::$db->prepare(
+                    "UPDATE `{$this->table}`
+                     SET `stock_reserved` = 0
+                     WHERE `id` = :id AND `stock_reserved` = 1"
+                );
+                $clearReservation->execute(['id' => $orderId]);
+            }
+
+            self::commit();
+            return true;
+        } catch (\Throwable $exception) {
+            self::rollBack();
+            throw $exception;
+        }
     }
 
     public function cancelExpiredPending(int $minutes): int
@@ -136,7 +200,7 @@ class Order extends BaseModel
         self::beginTransaction();
 
         try {
-            $stmt = self::$db->prepare("SELECT o.`id`, o.`order_code`, u.`email` FROM `{$this->table}` o INNER JOIN `vc_users` u ON u.`id` = o.`user_id` WHERE o.`payment_status` = 'pending' AND o.`created_at` <= DATE_SUB(NOW(), INTERVAL {$minutes} MINUTE) FOR UPDATE");
+            $stmt = self::$db->prepare("SELECT o.`id`, o.`order_code`, o.`plan_id`, o.`stock_reserved`, u.`email` FROM `{$this->table}` o INNER JOIN `vc_users` u ON u.`id` = o.`user_id` WHERE o.`payment_status` = 'pending' AND o.`created_at` <= DATE_SUB(NOW(), INTERVAL {$minutes} MINUTE) FOR UPDATE");
             $stmt->execute();
             $expiredOrders = $stmt->fetchAll();
             $orderIds = array_column($expiredOrders, 'id');
@@ -149,6 +213,9 @@ class Order extends BaseModel
             $placeholders = implode(',', array_fill(0, count($orderIds), '?'));
             $paymentStmt = self::$db->prepare("UPDATE `vc_payments` SET `status` = 'cancelled' WHERE `order_id` IN ({$placeholders}) AND `status` = 'pending'");
             $paymentStmt->execute($orderIds);
+
+            $restockStmt = self::$db->prepare("UPDATE `{$this->table}` o INNER JOIN `vc_vpn_plans` p ON p.`id` = o.`plan_id` SET p.`stock_quantity` = p.`stock_quantity` + 1, o.`stock_reserved` = 0 WHERE o.`id` IN ({$placeholders}) AND o.`stock_reserved` = 1 AND p.`stock_quantity` IS NOT NULL");
+            $restockStmt->execute($orderIds);
 
             $orderStmt = self::$db->prepare("UPDATE `{$this->table}` SET `payment_status` = 'cancelled', `updated_at` = NOW() WHERE `id` IN ({$placeholders}) AND `payment_status` = 'pending'");
             $orderStmt->execute($orderIds);

@@ -223,37 +223,44 @@ document.addEventListener('DOMContentLoaded', function () {
         btn.innerHTML = '<span class="btn-busy-spinner" aria-hidden="true"></span> ' + (btn.dataset.busyLabel || 'Đang xử lý...');
     });
 
-    document.querySelectorAll('[data-copy-value]').forEach(function (button) {
-        button.addEventListener('click', async function (e) {
-            // Chặn bubble lên document để menu 3 chấm KHÔNG đóng ngay —
-            // người dùng còn thấy thông báo "Đã sao chép" trên chính nút.
-            e.stopPropagation();
+    // Nút copy (data-copy-value) — bọc thành hàm toàn cục vcBindCopyButtons(root)
+    // để cab Danh Sách Bài Viết nạp lại HTML bằng AJAX vẫn bind được nút mới.
+    window.vcBindCopyButtons = function (root) {
+        (root || document).querySelectorAll('[data-copy-value]').forEach(function (button) {
+            if (button.dataset.copyBound === '1') return;
+            button.dataset.copyBound = '1';
+            button.addEventListener('click', async function (e) {
+                // Chặn bubble lên document để menu 3 chấm KHÔNG đóng ngay —
+                // người dùng còn thấy thông báo "Đã sao chép" trên chính nút.
+                e.stopPropagation();
 
-            const value = button.dataset.copyValue || '';
-            if (!value) return;
+                const value = button.dataset.copyValue || '';
+                if (!value) return;
 
-            try {
-                await navigator.clipboard.writeText(value);
-            } catch (error) {
-                const textArea = document.createElement('textarea');
-                textArea.value = value;
-                textArea.style.position = 'fixed';
-                textArea.style.opacity = '0';
-                document.body.appendChild(textArea);
-                textArea.select();
-                document.execCommand('copy');
-                textArea.remove();
-            }
+                try {
+                    await navigator.clipboard.writeText(value);
+                } catch (error) {
+                    const textArea = document.createElement('textarea');
+                    textArea.value = value;
+                    textArea.style.position = 'fixed';
+                    textArea.style.opacity = '0';
+                    document.body.appendChild(textArea);
+                    textArea.select();
+                    document.execCommand('copy');
+                    textArea.remove();
+                }
 
-            // Khôi phục đúng HTML gốc (giữ nguyên icon + text đang hiển thị),
-            // tránh lệch tên nút khi data-copy-label khác nhãn thực tế.
-            const originalHTML = button.innerHTML;
-            button.textContent = 'Đã sao chép';
-            setTimeout(function () {
-                button.innerHTML = originalHTML;
-            }, 1800);
+                // Khôi phục đúng HTML gốc (giữ nguyên icon + text đang hiển thị),
+                // tránh lệch tên nút khi data-copy-label khác nhãn thực tế.
+                const originalHTML = button.innerHTML;
+                button.textContent = 'Đã sao chép';
+                setTimeout(function () {
+                    button.innerHTML = originalHTML;
+                }, 1800);
+            });
         });
-    });
+    };
+    window.vcBindCopyButtons(document);
 
     document.querySelectorAll('[data-qr-modal-open]').forEach(function (button) {
         button.addEventListener('click', function () {
@@ -442,6 +449,8 @@ if (!response.ok || !result.valid) {
     // 7. Logic tự động chạy và đồng bộ Slide Thông báo cho Dashboard
     const slider = document.getElementById('tutorialSlider');
     const dots = document.querySelectorAll('.tutorial-dot');
+    const previousNoticeButton = document.querySelector('[data-notice-slider-previous]');
+    const nextNoticeButton = document.querySelector('[data-notice-slider-next]');
 
     if (slider && dots.length > 0) {
         let currentIndex = 0;
@@ -463,6 +472,24 @@ if (!response.ok || !result.valid) {
             scrollToSlide(currentIndex);
             restartTimer();
         };
+
+        function moveSlide(offset) {
+            currentIndex = (currentIndex + offset + totalSlides) % totalSlides;
+            scrollToSlide(currentIndex);
+            restartTimer();
+        }
+
+        if (previousNoticeButton) {
+            previousNoticeButton.addEventListener('click', function () {
+                moveSlide(-1);
+            });
+        }
+
+        if (nextNoticeButton) {
+            nextNoticeButton.addEventListener('click', function () {
+                moveSlide(1);
+            });
+        }
 
         slider.addEventListener('scroll', function () {
             const slideWidth = slider.clientWidth;
@@ -548,8 +575,8 @@ if (!response.ok || !result.valid) {
     });
 
     // 10. Xử lý toggle Menu Ba Chấm (Action Dropdown)
-    const actionBtns = document.querySelectorAll('.action-btn');
-
+    //     → tách thành hàm toàn cục vcBindActionMenus(root) để cab Danh Sách
+    //       Bài Viết nạp lại HTML bằng AJAX gọi bind lại cho nút/menu mới.
     function closeAllActionMenus() {
         document.querySelectorAll('.action-menu.show').forEach(menu => {
             menu.classList.remove('show');
@@ -561,42 +588,47 @@ if (!response.ok || !result.valid) {
         });
     }
 
-    actionBtns.forEach(btn => {
-        if (btn.dataset.actionBound) return;
-        btn.dataset.actionBound = '1';
+    window.vcBindActionMenus = function (root) {
+        const actionBtns = (root || document).querySelectorAll('.action-btn');
 
-        btn.addEventListener('click', function (e) {
-            e.stopPropagation();
+        actionBtns.forEach(btn => {
+            if (btn.dataset.actionBound) return;
+            btn.dataset.actionBound = '1';
 
-            let currentMenu = this.nextElementSibling;
-            if (!currentMenu || !currentMenu.classList.contains('action-menu')) {
-                currentMenu = this._actionMenu;
-            }
+            btn.addEventListener('click', function (e) {
+                e.stopPropagation();
 
-            if (!currentMenu) return;
-
-            this._actionMenu = currentMenu;
-            currentMenu._triggerBtn = this;
-
-            const isCurrentlyShown = currentMenu.classList.contains('show');
-
-            closeAllActionMenus();
-
-            if (!isCurrentlyShown) {
-                if (currentMenu.parentNode !== document.body) {
-                    document.body.appendChild(currentMenu);
+                let currentMenu = this.nextElementSibling;
+                if (!currentMenu || !currentMenu.classList.contains('action-menu')) {
+                    currentMenu = this._actionMenu;
                 }
 
-                currentMenu.classList.add('show');
-                this.classList.add('active');
+                if (!currentMenu) return;
 
-                const rect = this.getBoundingClientRect();
-                currentMenu.style.top = (rect.bottom + 4) + 'px';
-                currentMenu.style.left = 'auto';
-                currentMenu.style.right = (window.innerWidth - rect.right) + 'px';
-            }
+                this._actionMenu = currentMenu;
+                currentMenu._triggerBtn = this;
+
+                const isCurrentlyShown = currentMenu.classList.contains('show');
+
+                closeAllActionMenus();
+
+                if (!isCurrentlyShown) {
+                    if (currentMenu.parentNode !== document.body) {
+                        document.body.appendChild(currentMenu);
+                    }
+
+                    currentMenu.classList.add('show');
+                    this.classList.add('active');
+
+                    const rect = this.getBoundingClientRect();
+                    currentMenu.style.top = (rect.bottom + 4) + 'px';
+                    currentMenu.style.left = 'auto';
+                    currentMenu.style.right = (window.innerWidth - rect.right) + 'px';
+                }
+            });
         });
-    });
+    };
+    window.vcBindActionMenus(document);
 
     if (!window._actionDropdownEventsBound) {
         window._actionDropdownEventsBound = true;
@@ -652,10 +684,10 @@ if (!response.ok || !result.valid) {
 
 .vc-chatbot-panel-wrapper {
     position: fixed;
-    right: 20px;
-    bottom: 86px;
+    right: 10px;
+    bottom: 10px;
     z-index: 2147483647 !important;
-    width: 560px;
+    width: 550px;
     max-width: calc(100vw - 32px);
     height: min(574px, calc(100vh - 120px));
     background: #ffffff;
@@ -826,6 +858,29 @@ if (!response.ok || !result.valid) {
         const chatLoggedIn = chatbotRoot.dataset.loggedIn === '1';
         const chatUserName = (chatbotRoot.dataset.userName || '').trim();
 
+        // ── Tự động làm sạch sau 5 phút AI trả lời mà khách không phản hồi ──
+        // Khi bắn timer: xóa nội dung popup + gọi /api/chat/reset — server đóng
+        // phiên đang mở và xoay visitor token → bộ nhớ AI sạch, phiên chuyển
+        // trạng thái "Đã đóng" (không còn treo open).
+        const IDLE_CLOSE_MS = 5 * 60 * 1000;
+        let idleCloseTimer = null;
+
+        const clearIdleCloseTimer = function () {
+            if (idleCloseTimer) {
+                clearTimeout(idleCloseTimer);
+                idleCloseTimer = null;
+            }
+        };
+
+        const startIdleCloseTimer = function (delayMs) {
+            clearIdleCloseTimer();
+            idleCloseTimer = setTimeout(function () {
+                idleCloseTimer = null;
+                resetConversation();
+                renderSystemNote('⏳ Bạn chưa phản hồi trong 5 phút nên hội thoại đã tự động đóng và bộ nhớ AI được làm mới. Nhắn tin bất cứ lúc nào để bắt đầu cuộc trò chuyện mới nhé!');
+            }, typeof delayMs === 'number' ? delayMs : IDLE_CLOSE_MS);
+        };
+
         const trackEvent = async function (eventName, meta) {
             try {
                 await fetch('/api/chat/event', {
@@ -871,12 +926,52 @@ if (!response.ok || !result.valid) {
             return safe;
         };
 
-        const renderMessage = function (role, text) {
+        // Ghi chú hệ thống (thông báo tự đóng phiên...) — căn giữa, không bong bóng chat.
+        const renderSystemNote = function (text) {
             if (!box) return;
             const row = document.createElement('div');
             row.style.display = 'flex';
-            row.style.justifyContent = role === 'user' ? 'flex-end' : 'flex-start';
-            row.style.marginBottom = '8px';
+            row.style.justifyContent = 'center';
+            row.style.margin = '10px 0 8px';
+
+            const note = document.createElement('div');
+            note.style.maxWidth = '90%';
+            note.style.padding = '6px 11px';
+            note.style.borderRadius = '10px';
+            note.style.background = 'rgba(0,0,0,.05)';
+            note.style.color = '#636366';
+            note.style.fontSize = '11.5px';
+            note.style.lineHeight = '1.45';
+            note.style.textAlign = 'center';
+            note.style.fontStyle = 'italic';
+            note.textContent = text;
+
+            row.appendChild(note);
+            box.appendChild(row);
+            box.scrollTop = box.scrollHeight;
+        };
+
+        const renderMessage = function (role, text) {
+            if (!box) return;
+            const isUser = role === 'user';
+
+            const row = document.createElement('div');
+            row.style.display = 'flex';
+            row.style.flexDirection = 'column';
+            row.style.alignItems = isUser ? 'flex-end' : 'flex-start';
+            row.style.marginBottom = '10px';
+
+            // Tên hiển thị theo từng dòng chat:
+            // - AI → tên website (siteTitle); - Người dùng → tên của họ,
+            //   chưa đăng nhập/chưa có tên → mặc định "Khách".
+            const nameLabel = document.createElement('div');
+            nameLabel.textContent = isUser ? (chatUserName || 'Khách') : siteTitle;
+            nameLabel.style.fontSize = '10.5px';
+            nameLabel.style.fontWeight = '600';
+            nameLabel.style.color = '#8e8e93';
+            nameLabel.style.margin = '0 3px 3px';
+            nameLabel.style.letterSpacing = '.01em';
+            row.appendChild(nameLabel);
 
             const bubble = document.createElement('div');
             bubble.style.maxWidth = '85%';
@@ -885,7 +980,7 @@ if (!response.ok || !result.valid) {
             bubble.style.fontSize = '13px';
             bubble.style.lineHeight = '1.5';
 
-            if (role === 'user') {
+            if (isUser) {
                 bubble.style.background = '#0a84ff';
                 bubble.style.color = '#fff';
                 bubble.style.whiteSpace = 'pre-wrap';
@@ -946,7 +1041,44 @@ if (!response.ok || !result.valid) {
             }
         };
 
-        const openPanel = function () {
+        let historyLoaded = false;
+        let historyRestored = false;
+
+        const renderGreeting = function () {
+            if (!box || box.childElementCount > 0) return;
+            const greeting = chatLoggedIn
+                ? 'Chào ' + (chatUserName || 'bạn') + '! Rất vui được hỗ trợ bạn trở lại. Mình có thể giúp kiểm tra gói đang dùng, hướng dẫn kết nối, nạp tiền hoặc tạo yêu cầu hỗ trợ. Hôm nay bạn cần mình xử lý việc gì?'
+                : 'Xin chào bạn! Mình là trợ lý tư vấn ' + siteTitle + '. Bạn đang chat với tư cách khách (chưa đăng nhập). Bạn cần hỗ trợ về gói dịch vụ, giá cước hay hướng dẫn cài đặt nào ạ?';
+            renderMessage('assistant', greeting);
+        };
+
+        const loadConversationHistory = async function () {
+            if (historyLoaded) return;
+            historyLoaded = true;
+
+            try {
+                const res = await fetch('/api/chat/history', { headers: { Accept: 'application/json' } });
+                const data = await res.json();
+                const chat = data && data.data ? data.data : {};
+                const history = Array.isArray(chat.history) ? chat.history : [];
+
+                if (!res.ok || !data.success || chat.status !== 'open' || history.length === 0) return;
+
+                box.innerHTML = '';
+                history.forEach(function (item) {
+                    renderMessage(item.role, item.content || '');
+                });
+                historyRestored = true;
+
+                if (chat.last_role === 'assistant' && Number(chat.idle_remaining_seconds) > 0) {
+                    startIdleCloseTimer(Number(chat.idle_remaining_seconds) * 1000);
+                }
+            } catch (_e) {
+                // Không tải được lịch sử thì dùng lời chào thông thường.
+            }
+        };
+
+        const openPanel = async function () {
             if (!panel) return;
             panel.hidden = false;
             if (toggleBtn) {
@@ -954,12 +1086,8 @@ if (!response.ok || !result.valid) {
             }
             document.body.classList.add('vc-chatbot-open');
 
-            if (box && box.childElementCount === 0) {
-                const greeting = chatLoggedIn
-                    ? 'Xin chào ' + (chatUserName || 'bạn') + '! Mình là trợ lý tư vấn ' + siteTitle + '. Bạn đã đăng nhập nên mình sẽ hỗ trợ đúng theo tài khoản của bạn. Bạn cần tư vấn gói dịch vụ, giá cước hay hướng dẫn cài đặt ạ?'
-                    : 'Xin chào bạn! Mình là trợ lý tư vấn ' + siteTitle + '. Bạn đang chat với tư cách khách (chưa đăng nhập). Bạn cần hỗ trợ về gói dịch vụ, giá cước hay hướng dẫn cài đặt nào ạ?';
-                renderMessage('assistant', greeting);
-            }
+            await loadConversationHistory();
+            if (!historyRestored) renderGreeting();
             setTimeout(function () {
                 if (input) input.focus();
             }, 100);
@@ -968,6 +1096,8 @@ if (!response.ok || !result.valid) {
         const resetConversation = async function () {
             if (box) box.innerHTML = '';
             if (input) input.value = '';
+            historyLoaded = false;
+            historyRestored = false;
             try {
                 await fetch('/api/chat/reset', {
                     method: 'POST',
@@ -978,6 +1108,9 @@ if (!response.ok || !result.valid) {
             }
         };
 
+        // Đóng panel CHỈ ẩn giao diện — KHÔNG reset hội thoại (bộ nhớ AI).
+        // Việc làm sạch do cơ chế tự đóng 5 phút (idleCloseTimer) đảm nhiệm:
+        // timer vẫn chạy tiếp cả khi panel đang ẩn → đóng vẫn tự làm mới đúng hạn.
         const closePanel = function () {
             if (!panel) return;
             panel.hidden = true;
@@ -985,7 +1118,6 @@ if (!response.ok || !result.valid) {
                 toggleBtn.style.display = 'flex';
             }
             document.body.classList.remove('vc-chatbot-open');
-            resetConversation();
         };
 
         if (toggleBtn) {
@@ -1014,6 +1146,8 @@ if (!response.ok || !result.valid) {
                 const message = input.value.trim();
                 if (!message) return;
 
+                // Khách vừa phản hồi → hủy đếm tự đóng cũ (sẽ đặt lại sau khi AI trả lời).
+                clearIdleCloseTimer();
                 renderMessage('user', message);
                 input.value = '';
                 setLoading(true);
@@ -1038,6 +1172,7 @@ if (!response.ok || !result.valid) {
                     if (!res.ok || !data.success) {
                         const errMsg = data && data.message ? data.message : 'Mình chưa nhận được phản hồi từ AI. Bạn thử lại sau vài giây nhé.';
                         renderMessage('assistant', errMsg);
+                        startIdleCloseTimer();
                         return;
                     }
 
@@ -1052,11 +1187,14 @@ if (!response.ok || !result.valid) {
 
                     if (handoff) {
                         renderMessage('assistant', 'Nếu cần người hỗ trợ trực tiếp, bạn để lại email/SĐT hoặc nhắn fanpage giúp mình.');
-                        trackEvent('handoff_requested', { page: page });
                     }
+
+                    // AI đã trả lời mà khách không phản hồi trong 5 phút → tự đóng.
+                    startIdleCloseTimer();
                 } catch (_error) {
                     hideTypingIndicator();
                     renderMessage('assistant', 'Kết nối đang gián đoạn. Bạn thử lại sau ít phút nhé.');
+                    startIdleCloseTimer();
                 } finally {
                     hideTypingIndicator();
                     setLoading(false);

@@ -55,6 +55,7 @@ ob_start();
                     <th style="text-align: center;">Thời Hạn</th>
                     <th style="text-align: center;">Dung Lượng</th>
                     <th style="text-align: center;">Thiết Bị</th>
+                    <th style="text-align: center;">Số Lượng</th>
                     <th style="text-align: center;">Trạng Thái</th>
                     <th style="text-align: right;">Thao Tác</th>
                 </tr>
@@ -79,6 +80,15 @@ ob_start();
                                 <?= ($plan['bandwidth_limit_gb'] > 0) ? htmlspecialchars($plan['bandwidth_limit_gb']) . ' GB' : '<span style="color: var(--ios-success); font-weight: 700;">Không giới hạn</span>' ?>
                             </td>
                             <td style="text-align: center; font-weight: 600; font-size: 0.85rem;"><?= htmlspecialchars($plan['max_devices']) ?> Máy</td>
+                            <td style="text-align: center; font-weight: 600; font-size: 0.85rem;">
+                                <?php if (($plan['stock_quantity'] ?? null) === null): ?>
+                                    <span style="color: var(--ios-success);">Không giới hạn</span>
+                                <?php elseif ((int) $plan['stock_quantity'] > 0): ?>
+                                    <span style="color: var(--ios-blue);">Còn <?= number_format((int) $plan['stock_quantity']) ?></span>
+                                <?php else: ?>
+                                    <span style="color: var(--ios-danger);">Hết hàng</span>
+                                <?php endif; ?>
+                            </td>
                             <td style="text-align: center;">
                                 <?php
                                 $statusBadge = [
@@ -110,7 +120,7 @@ ob_start();
                     <?php endforeach; ?>
                 <?php else: ?>
                     <tr>
-                        <td colspan="9" style="text-align: center; padding: 2rem; color: var(--ios-text-secondary);">Chưa có gói cước nào được tạo.</td>
+                        <td colspan="10" style="text-align: center; padding: 2rem; color: var(--ios-text-secondary);">Chưa có gói cước nào được tạo.</td>
                     </tr>
                 <?php endif; ?>
             </tbody>

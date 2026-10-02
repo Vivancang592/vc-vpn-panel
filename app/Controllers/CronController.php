@@ -11,7 +11,6 @@ use App\Models\Order;
 use App\Models\Payment;
 use App\Models\ScheduledPost;
 use App\Services\MailService;
-use App\Services\AIProviderService;
 use App\Services\FanpageService;
 
 class CronController extends BaseController
@@ -297,7 +296,10 @@ class CronController extends BaseController
     }
 
     /**
-     * Cronjob tự động đăng bài Fanpage và sinh nội dung/hình ảnh bằng AI
+     * Cronjob đăng bài Fanpage từ hàng đợi đã xếp lịch.
+     *
+     * LUỒNG THỐNG NHẤT: bài phải "tạo xong rồi mới đăng" — cron chỉ publish
+     * snapshot nội dung/ảnh do khâu lên lịch chuẩn bị (KHÔNG sinh AI ở đây).
      */
     public function autoPostFanpage(): void
     {
@@ -311,7 +313,6 @@ class CronController extends BaseController
         }
 
         $postModel = new ScheduledPost();
-        $aiProvider = new AIProviderService();
         $fanpageService = new FanpageService();
 
         $posts = $postModel->getPendingQueue(5);
@@ -339,32 +340,18 @@ class CronController extends BaseController
             $imageUrl = trim((string) ($post['image_url'] ?? ''));
             $metaData = !empty($post['meta_data']) ? (is_array($post['meta_data']) ? $post['meta_data'] : json_decode((string) $post['meta_data'], true)) : [];
 
-            // 1. Sinh nội dung nếu chưa có sẵn
+            // Snapshot phải đầy đủ từ khâu lên lịch — cron KHÔNG sinh nội dung/
+            // ảnh bằng AI (bài "tạo xong rồi mới đăng", không lặp việc viết).
             if ($content === '') {
-                $contentResult = $aiProvider->generateContent((string) $post['topic']);
-                if (!$contentResult['ok'] || trim((string) $contentResult['content']) === '') {
-                    $errorMsg = 'Lỗi sinh nội dung AI: ' . ($contentResult['error'] ?? 'Nội dung rỗng');
-                    $postModel->markAsFailed($postId, $errorMsg);
-                    $stats['failed']++;
-                    $stats['details'][] = ['id' => $postId, 'status' => 'failed', 'error' => $errorMsg];
-                    continue;
-                }
-                $content = trim((string) $contentResult['content']);
-                $metaData['content_provider'] = $contentResult['provider'] ?? 'ai';
-                $metaData['content_model'] = $contentResult['model'] ?? '';
+                $errorMsg = 'Hàng đợi thiếu nội dung — hãy xếp lịch lại bài viết này.';
+                $postModel->markAsFailed($postId, $errorMsg);
+                $stats['failed']++;
+                $stats['details'][] = ['id' => $postId, 'status' => 'failed', 'error' => $errorMsg];
+                continue;
             }
 
-            // 2. Sinh hình ảnh nếu có prompt ảnh nhưng chưa có link ảnh
-            if ($imageUrl === '' && !empty($post['image_prompt'])) {
-                $imageSize = (string)($settingModel->get('ai_image_size', '1024x1024'));
-                $imageResult = $aiProvider->generateImage($post['image_prompt'], $imageSize);
-                if ($imageResult['ok'] && !empty($imageResult['url'])) {
-                    $imageUrl = $imageResult['url'];
-                    $metaData['image_url'] = $imageUrl;
-                }
-            }
-
-            // 3. Đẩy lên Fanpage qua Meta Graph API
+            // Đăng lên Fanpage qua Meta Graph API — đúng ảnh đã chọn;
+            // không có ảnh → đăng bài chữ (không tự sinh ảnh).
             if ($imageUrl !== '') {
                 $publishResult = $fanpageService->publishPhoto($content, $imageUrl);
             } else {

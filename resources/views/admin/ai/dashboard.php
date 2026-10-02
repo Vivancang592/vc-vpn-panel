@@ -35,31 +35,67 @@ $statusColor = static function (string $status): string {
 </div>
 <?php endif; ?>
 
-<!-- Thống kê -->
-<div class="stats-grid" style="margin-bottom: 1.25rem;">
-    <div class="stat-card">
-        <div class="title">Phân Hệ Đã Đăng Ký</div>
-        <div class="value"><?= (int) $modulesRegistered ?><span style="font-size: 0.8rem; color: var(--ios-text-secondary); font-weight: 500;"> / <?= count($moduleRows) ?></span></div>
+<!-- Thống kê + model theo khả năng -->
+<style>
+    .ai-dashboard-summary-grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 1rem;
+        align-items: stretch;
+        margin-bottom: 1.25rem;
+        width: 100%;
+        box-sizing: border-box;
+    }
+
+    @media (max-width: 700px) {
+        .ai-dashboard-summary-grid { grid-template-columns: 1fr; }
+    }
+</style>
+<div class="ai-dashboard-summary-grid">
+<div class="glass-card" style="padding: 1.25rem; width: 100%; box-sizing: border-box;">
+    <div style="display: flex; justify-content: space-between; align-items: center; gap: 0.75rem; margin-bottom: 0.9rem;">
+        <h2 style="font-size: 1rem; font-weight: 700; margin: 0;">Thống Kê Hệ Thống AI</h2>
+        <span style="font-size: 0.82rem; color: var(--ios-text-secondary); white-space: nowrap;">
+            <strong style="color: var(--ios-text);"><?= (int) $modelCount ?></strong> model
+        </span>
     </div>
-    <div class="stat-card">
-        <div class="title">Phân Hệ Đang Bật</div>
-        <div class="value" style="color: <?= $modulesEnabled > 0 ? 'var(--ios-success)' : 'var(--ios-danger)' ?>;"><?= (int) $modulesEnabled ?></div>
+    <div style="display: flex; flex-direction: column; font-size: 0.85rem;">
+        <div style="display: flex; justify-content: space-between; align-items: center; gap: 0.75rem; padding: 0.55rem 0; border-bottom: 1px solid var(--ios-border, rgba(255,255,255,0.12));">
+            <span style="color: var(--ios-text-secondary);">Phân Hệ Đang Bật</span>
+            <strong style="color: <?= $modulesEnabled > 0 ? 'var(--ios-success)' : 'var(--ios-danger)' ?>;"><?= (int) $modulesEnabled ?></strong>
+        </div>
+        <div style="display: flex; justify-content: space-between; align-items: center; gap: 0.75rem; padding: 0.55rem 0; border-bottom: 1px solid var(--ios-border, rgba(255,255,255,0.12));">
+            <span style="color: var(--ios-text-secondary);">Tác Vụ Đang Chờ</span>
+            <strong><?= (int) $taskCounts['pending'] + (int) $taskCounts['processing'] + (int) $taskCounts['retrying'] ?></strong>
+        </div>
+        <div style="display: flex; justify-content: space-between; align-items: center; gap: 0.75rem; padding: 0.55rem 0; border-bottom: 1px solid var(--ios-border, rgba(255,255,255,0.12));">
+            <span style="color: var(--ios-text-secondary);">Tổng Bài Viết</span>
+            <strong><?= (int) $articleCount ?></strong>
+        </div>
+        <div style="display: flex; justify-content: space-between; align-items: center; gap: 0.75rem; padding: 0.55rem 0 0;">
+            <span style="color: var(--ios-text-secondary);">File Trong Thư Viện</span>
+            <strong><?= (int) $assetCount ?></strong>
+        </div>
     </div>
-    <div class="stat-card">
-        <div class="title">Mô Hình AI Khả Dụng</div>
-        <div class="value"><?= (int) $activeModelCount ?><span style="font-size: 0.8rem; color: var(--ios-text-secondary); font-weight: 500;"> / <?= (int) $modelCount ?></span></div>
-    </div>
-    <div class="stat-card">
-        <div class="title">Tác Vụ Đang Chờ</div>
-        <div class="value"><?= (int) $taskCounts['pending'] + (int) $taskCounts['processing'] + (int) $taskCounts['retrying'] ?></div>
-    </div>
-    <div class="stat-card">
-        <div class="title">Tổng Bài Viết</div>
-        <div class="value"><?= (int) $articleCount ?></div>
-    </div>
-    <div class="stat-card">
-        <div class="title">File Trong Thư Viện</div>
-        <div class="value"><?= (int) $assetCount ?></div>
+</div>
+
+    <div class="glass-card" style="padding: 1.25rem; width: 100%; box-sizing: border-box;">
+        <div style="display: flex; justify-content: space-between; align-items: center; gap: 0.5rem; margin-bottom: 0.75rem;">
+            <h2 style="font-size: 1rem; font-weight: 700;">Model Theo Khả Năng</h2>
+            <a href="#ai-models-catalog" style="font-size: 0.8rem; color: var(--ios-blue); text-decoration: none; white-space: nowrap;">Xem</a>
+        </div>
+        <div style="display: flex; flex-direction: column; gap: 0.45rem; font-size: 0.85rem;">
+            <?php if (empty($modelsByCapability)): ?>
+                <span style="color: var(--ios-text-secondary);">Chưa có model active (kiểm tra khoá Kira / danh mục).</span>
+            <?php else: ?>
+                <?php foreach ($modelsByCapability as $capability => $count): ?>
+                    <div style="display: flex; justify-content: space-between; align-items: center; gap: 0.5rem;">
+                        <span style="color: var(--ios-text-secondary);"><?= htmlspecialchars($aiLabels['map']['capability'][(string) $capability] ?? (string) $capability) ?></span>
+                        <strong><?= (int) $count ?> model</strong>
+                    </div>
+                <?php endforeach; ?>
+            <?php endif; ?>
+        </div>
     </div>
 </div>
 
@@ -67,8 +103,19 @@ $statusColor = static function (string $status): string {
 
     <!-- Hàng đợi task -->
     <div class="glass-card" style="padding: 1.25rem;">
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem;">
+        <div style="display: flex; justify-content: space-between; align-items: center; gap: 0.75rem; margin-bottom: 0.35rem;">
             <h2 style="font-size: 1rem; font-weight: 700;">Hàng Đợi Tác Vụ</h2>
+            <form method="POST" action="/admin/ai/tasks/drain" style="margin: 0;">
+                <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrf_token ?? '') ?>">
+                <input type="hidden" name="limit" value="5">
+                <button type="submit" class="glass-btn" title="Chạy tối đa 5 tác vụ đến hạn" aria-label="Chạy tiến trình nền"
+                    style="width: 2.1rem; height: 2.1rem; padding: 0; display: inline-flex; align-items: center; justify-content: center; border: none; background: transparent; box-shadow: none; color: var(--ios-blue); font-size: 0.9rem;">
+                    ▶
+                </button>
+            </form>
+        </div>
+        <div style="font-size: 0.75rem; color: var(--ios-text-secondary); margin-bottom: 0.75rem;">
+            Hàng đợi <strong>TASK AI</strong> — chủ yếu là <strong>viết bài</strong>; việc <strong>đăng bài</strong> theo lịch quản lý riêng ở <a href="/admin/ai/fanpage" style="color: var(--ios-blue); text-decoration: none;">Nội Dung Fanpage › Danh Sách Bài Viết</a>.
         </div>
         <div style="display: flex; flex-direction: column; gap: 0.5rem; font-size: 0.85rem;">
             <div style="display: flex; justify-content: space-between;"><span style="color: var(--ios-text-secondary);">Tổng tác vụ</span><strong><?= (int) $taskCounts['total'] ?></strong></div>
@@ -80,18 +127,13 @@ $statusColor = static function (string $status): string {
             <div style="display: flex; justify-content: space-between;"><span style="color: var(--ios-text-secondary);">Đã huỷ</span><strong style="color: var(--ios-text-secondary);"><?= (int) $taskCounts['cancelled'] ?></strong></div>
         </div>
 
-        <form method="POST" action="/admin/ai/tasks/drain" style="margin-top: 1rem; display: flex; gap: 0.5rem; align-items: center;">
-            <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrf_token ?? '') ?>">
-            <input type="number" name="limit" value="5" min="1" max="50" style="width: 4.5rem; padding: 0.4rem 0.5rem; border-radius: var(--radius-sm); border: 1px solid var(--ios-border, rgba(255,255,255,0.15)); background: transparent; color: inherit; font-size: 0.85rem;">
-            <button type="submit" class="glass-btn" style="font-size: 0.82rem; white-space: nowrap;">▶ Chạy Tiến Trình Nền (1 lượt)</button>
-        </form>
     </div>
 
     <!-- Trạng thái phân hệ -->
     <div class="glass-card" style="padding: 1.25rem;">
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem;">
             <h2 style="font-size: 1rem; font-weight: 700;">Trạng Thái Phân Hệ</h2>
-            <a href="/admin/ai/settings" style="font-size: 0.8rem; color: var(--ios-blue); text-decoration: none;">Quản lý →</a>
+            <a href="/admin/ai/settings" style="font-size: 0.8rem; color: var(--ios-blue); text-decoration: none;">Cài đặt</a>
         </div>
         <div style="display: flex; flex-direction: column; gap: 0.45rem; font-size: 0.85rem;">
             <?php foreach ($moduleRows as $row): ?>
@@ -109,46 +151,6 @@ $statusColor = static function (string $status): string {
         </div>
     </div>
 
-    <!-- B1: Task theo phân hệ -->
-    <div class="glass-card" style="padding: 1.25rem;">
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem;">
-            <h2 style="font-size: 1rem; font-weight: 700;">Task Theo Phân Hệ</h2>
-        </div>
-        <div style="display: flex; flex-direction: column; gap: 0.45rem; font-size: 0.85rem;">
-            <?php if (empty($tasksByModule)): ?>
-                <span style="color: var(--ios-text-secondary);">Chưa có task nào.</span>
-            <?php else: ?>
-                <?php foreach ($tasksByModule as $moduleKey => $count): ?>
-                    <div style="display: flex; justify-content: space-between; align-items: center; gap: 0.5rem;">
-                        <span style="color: var(--ios-text-secondary); overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="<?= htmlspecialchars((string) $moduleKey) ?>">
-                            <?= htmlspecialchars($aiLabels['modules'][(string) $moduleKey] ?? (string) $moduleKey) ?>
-                        </span>
-                        <strong><?= (int) $count ?></strong>
-                    </div>
-                <?php endforeach; ?>
-            <?php endif; ?>
-        </div>
-    </div>
-
-    <!-- B1: Model active theo khả năng -->
-    <div class="glass-card" style="padding: 1.25rem;">
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem;">
-            <h2 style="font-size: 1rem; font-weight: 700;">Model Theo Khả Năng</h2>
-            <a href="#ai-models-catalog" style="font-size: 0.8rem; color: var(--ios-blue); text-decoration: none;">Danh sách đầy đủ →</a>
-        </div>
-        <div style="display: flex; flex-direction: column; gap: 0.45rem; font-size: 0.85rem;">
-            <?php if (empty($modelsByCapability)): ?>
-                <span style="color: var(--ios-text-secondary);">Chưa có model active (kiểm tra khoá Kira / danh mục).</span>
-            <?php else: ?>
-                <?php foreach ($modelsByCapability as $capability => $count): ?>
-                    <div style="display: flex; justify-content: space-between; align-items: center; gap: 0.5rem;">
-                        <span style="color: var(--ios-text-secondary);"><?= htmlspecialchars($aiLabels['map']['capability'][(string) $capability] ?? (string) $capability) ?></span>
-                        <strong><?= (int) $count ?> model</strong>
-                    </div>
-                <?php endforeach; ?>
-            <?php endif; ?>
-        </div>
-    </div>
 </div>
 
 <!-- Danh sách model đầy đủ (chuyển từ trang /admin/ai/models — hiển ngay tại Tổng Quan) -->
@@ -180,19 +182,19 @@ $modelIdleCount = max(0, count($models) - $modelUsedCount);
                 <button type="button" class="glass-btn" id="ai-model-toggle" data-total="<?= (int) count($models) ?>"
                         aria-expanded="false" aria-controls="ai-models-table"
                         style="font-size: 0.82rem; white-space: nowrap;" title="Xem toàn bộ danh mục model">
-                    ▼ Hiện tất cả model
+                    ▼ Hiện tất cả
                 </button>
             <?php endif; ?>
             <form method="POST" action="/admin/ai/models/sync" style="margin: 0;">
                 <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrf_token ?? '') ?>">
-                <button type="submit" class="glass-btn" style="font-size: 0.82rem; white-space: nowrap;">⟳ Đồng Bộ Model</button>
+                <button type="submit" class="glass-btn" style="font-size: 0.82rem; white-space: nowrap;">⟳ Đồng Bộ</button>
             </form>
         </div>
     </div>
     <?php if ($modelIdleCount > 0): ?>
     <p style="font-size: 0.78rem; color: var(--ios-text-secondary); margin: 0 0 0.75rem;">
         Đang dùng <strong style="color: var(--ios-success);"><?= (int) $modelUsedCount ?> model </strong>
-        - Tổng cộng <strong><?= (int) $modelIdleCount ?> model</strong> trong hệ thống.
+        - <strong><?= (int) $modelIdleCount ?> model</strong> chưa dùng.
     </p>
     <?php endif; ?>
     <?php if (!$kiraConfigured): ?>
@@ -310,6 +312,7 @@ $modelIdleCount = max(0, count($models) - $modelUsedCount);
                     <th>Ưu Tiên</th>
                     <th>Thử Lại</th>
                     <th>Tạo Lúc</th>
+                    <th style="text-align: center;">Thao Tác</th>
                 </tr>
             </thead>
             <tbody>
@@ -325,11 +328,25 @@ $modelIdleCount = max(0, count($models) - $modelUsedCount);
                             <td style="font-size: 0.85rem;"><?= (int) ($task['priority'] ?? 0) ?></td>
                             <td style="font-size: 0.85rem;"><?= (int) ($task['retry_count'] ?? 0) ?> / <?= (int) ($task['max_retries'] ?? 0) ?></td>
                             <td style="font-size: 0.82rem; color: var(--ios-text-secondary);"><?= htmlspecialchars((string) ($task['created_at'] ?? '')) ?></td>
+                            <td style="text-align: center;">
+                                <?php if (in_array($status, ['pending', 'queued', 'retrying', 'processing'], true)): ?>
+                                    <form method="post" action="/admin/ai/tasks/cancel" style="display: inline;"
+                                          onsubmit="return confirm('Huỷ tác vụ #<?= (int) $task['id'] ?>?');">
+                                        <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrf_token ?? '') ?>">
+                                        <input type="hidden" name="id" value="<?= (int) $task['id'] ?>">
+                                        <input type="hidden" name="back" value="/admin/ai">
+                                        <button type="submit" title="Huỷ tác vụ"
+                                                style="border: 1px solid rgba(255,59,48,0.35); background: rgba(255,59,48,0.08); color: #ff3b30; border-radius: 8px; padding: 0.15rem 0.55rem; cursor: pointer; font-weight: 700; line-height: 1.4;">✕</button>
+                                    </form>
+                                <?php else: ?>
+                                    <span style="color: var(--ios-text-secondary); opacity: 0.35; font-size: 0.78rem;" title="Task đã kết thúc, không thể huỷ">—</span>
+                                <?php endif; ?>
+                            </td>
                         </tr>
                     <?php endforeach; ?>
                 <?php else: ?>
                     <tr>
-                        <td colspan="6" style="text-align: center; padding: 2rem; color: var(--ios-text-secondary);">
+                        <td colspan="7" style="text-align: center; padding: 2rem; color: var(--ios-text-secondary);">
                             Chưa có tác vụ nào. Tác vụ được tạo tự động khi bạn nhập chủ đề ở tab <a href="/admin/ai/fanpage" style="color: var(--ios-blue);">Nội Dung Fanpage</a>.
                         </td>
                     </tr>
@@ -347,7 +364,7 @@ $modelIdleCount = max(0, count($models) - $modelUsedCount);
             <div style="display: flex; gap: 0.75rem; align-items: baseline; border-bottom: 1px solid var(--ios-border, rgba(255,255,255,0.06)); padding-bottom: 0.35rem;">
                 <span style="color: var(--ios-text-secondary); white-space: nowrap; font-size: 0.78rem;"><?= htmlspecialchars((string) ($activity['created_at'] ?? '')) ?></span>
                 <strong style="font-size: 0.8rem; white-space: nowrap;">#<?= (int) ($activity['_task_id'] ?? 0) ?></strong>
-                <span style="color: var(--ios-blue); font-size: 0.78rem; white-space: nowrap;"><?= htmlspecialchars((string) ($activity['activity_type'] ?? '')) ?></span>
+                <span style="color: var(--ios-blue); font-size: 0.78rem; white-space: nowrap;"><?= htmlspecialchars($aiLabels['map']['activity_type'][(string) ($activity['activity_type'] ?? '')] ?? (string) ($activity['activity_type'] ?? '')) ?></span>
                 <span style="color: var(--ios-text-secondary); overflow: hidden; text-overflow: ellipsis;"><?= htmlspecialchars((string) ($activity['message'] ?? '')) ?></span>
             </div>
         <?php endforeach; ?>

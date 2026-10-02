@@ -262,8 +262,13 @@ return [
     'POST /admin/ai/prompts/save-file'  => ['Admin\AiPromptController', 'saveFile'],
 
     // Hội thoại AI (đọc lại bình luận / tin nhắn / chat mà AI đã trả lời)
+    // Danh sách hội thoại đã TÍCH HỢP vào tab Trả Lời Tự Động (/admin/ai/reply);
+    // route GET /admin/ai/conversations giữ chỗ (redirect) + chi tiết + đóng.
     'GET /admin/ai/conversations'        => ['Admin\AiConversationController', 'index'],
     'GET /admin/ai/conversations/detail' => ['Admin\AiConversationController', 'detail'],
+    'POST /admin/ai/conversations/close' => ['Admin\AiConversationController', 'close'],
+    'POST /admin/ai/conversations/delete' => ['Admin\AiConversationController', 'delete'],
+    'POST /admin/ai/conversations/delete-closed' => ['Admin\AiConversationController', 'deleteAllClosed'],
 
     // Task AI (producer chính thức → TaskRunner::request)
     // Trang DANH SÁCH GET /admin/ai/tasks + POST /admin/ai/tasks/store đã GỠ
@@ -274,6 +279,8 @@ return [
     // Viết TUẦN TỰ 1 bài/lần (tab Fanpage → tab "Tiến Trình"): JS gọi liên tục
     // tới khi hàng đợi trong session hết — đảm bảo KHÔNG viết cùng lúc.
     'POST /admin/ai/articles/write-next' => ['Admin\AiTaskController', 'writeNext'],
+    // Nút ✕ trên cab "Tiến Trình Viết Bài": huỷ 1 item (waiting/failed/writing).
+    'POST /admin/ai/articles/queue-cancel' => ['Admin\AiTaskController', 'queueCancel'],
     'GET /admin/ai/tasks/detail'        => ['Admin\AiTaskController', 'detail'],
     'POST /admin/ai/tasks/run'          => ['Admin\AiTaskController', 'run'],
     'POST /admin/ai/tasks/drain'        => ['Admin\AiTaskController', 'drain'],
@@ -289,5 +296,6 @@ return [
     // Cấu hình AI (API key provider + kiểm tra kết nối thật)
     'GET /admin/ai/settings'            => ['Admin\AiSettingController', 'index'],
     'POST /admin/ai/settings/save'      => ['Admin\AiSettingController', 'save'],
+    'POST /admin/ai/settings/chatbot'   => ['Admin\AiSettingController', 'saveChatbotSettings'],
     'POST /admin/ai/settings/test'      => ['Admin\AiSettingController', 'test'],
 ];

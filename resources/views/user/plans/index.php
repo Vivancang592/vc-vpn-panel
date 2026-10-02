@@ -21,8 +21,7 @@ ob_start();
 <section class="user-plans-page" style="width: 100% !important; max-width: 100% !important; box-sizing: border-box;">
 	<header class="user-plans-header">
 		<h2 class="u-plans-title">CHỌN GÓI DỊCH VỤ PHÙ HỢP VỚI BẠN</h2>
-		<p>Kết nối ổn định, bảo mật và linh hoạt trên mọi thiết bị.</p>
-		<p class="u-section-note" style="margin: 0.35rem 0 0;">Giá hiển thị đã bao gồm thuế VAT (nếu có).</p>
+		<p>Kết nối ổn định, bảo mật và linh hoạt trên mọi thiết bị, Giá hiển thị đã bao gồm thuế VAT (nếu có).</p>
 	</header>
 
 	<?php if (!empty($_SESSION['error'])): ?>
@@ -45,6 +44,8 @@ ob_start();
 				$bandwidth = (int) ($plan['bandwidth_limit_gb'] ?? 0);
 				$duration = max(1, (int) ($plan['duration_days'] ?? 30));
 				$devices = max(1, (int) ($plan['max_devices'] ?? 1));
+				$stockQuantity = $plan['stock_quantity'] ?? null;
+				$isSoldOut = $stockQuantity !== null && (int) $stockQuantity <= 0;
 				$groupIds = isset($plan['group_ids']) && is_array($plan['group_ids']) ? array_map('intval', $plan['group_ids']) : [];
 				?>
 				<article class="glass-card user-plan-card" data-plan-group-ids="<?= htmlspecialchars(implode(',', $groupIds)) ?>" style="display: flex; flex-direction: column; justify-content: space-between; height: 100%; box-sizing: border-box; width: 100%;">
@@ -53,13 +54,18 @@ ob_start();
 						<div class="user-plan-card-heading" style="width: 100%; display: flex; justify-content: space-between; align-items: center; padding-bottom: 0.75rem; margin-bottom: 0.75rem; border-bottom: 1px solid var(--glass-border, rgba(255, 255, 255, 0.15));">
 							<div class="user-plan-name" style="margin: 0; display: flex; align-items: center; gap: 0.5rem;">
 								<span class="user-plan-title-icon" aria-hidden="true">&#128722;</span>
-								<h2 style="margin: 0; font-size: 1.1rem; font-weight: 600;"><?= htmlspecialchars($plan['name'] ?? 'Gói VPN') ?></h2>
+								<div>
+									<h2 style="margin: 0; font-size: 1.1rem; font-weight: 600;"><?= htmlspecialchars($plan['name'] ?? 'Gói VPN') ?></h2>
+									<div style="margin-top: 0.25rem; color: <?= $isSoldOut ? 'var(--ios-danger)' : ($stockQuantity !== null ? 'var(--ios-success)' : 'var(--ios-text-secondary, #636366)') ?>; font-size: 0.82rem;">
+										<?= $stockQuantity === null ? 'Không giới hạn số lượng' : ($isSoldOut ? 'Đã hết hàng' : 'Còn ' . number_format((int) $stockQuantity) . ' suất') ?>
+									</div>
+								</div>
 							</div>
-							<div class="user-plan-price-duration"><strong><?= $formatPrice($plan['price'] ?? 0) ?></strong><span>/</span><span><?= $duration ?> ngày</span></div>
+							<div class="user-plan-price-duration" style="display: flex; flex-direction: column; align-items: flex-end; gap: 0.1rem;"><strong><?= $formatPrice($plan['price'] ?? 0) ?></strong><span><?= $duration ?> ngày</span></div>
 						</div>
 
 						<!-- Danh sách Content mô tả -->
-						<ul class="info-list" style="list-style: none; padding: 0; margin: 0 0 1rem 0; display: flex; flex-direction: column; gap: 0.65rem; text-align: left !important; width: 100%;">
+						<ul class="info-list" style="list-style: none; padding: 0; margin: 0 0 0.75rem 0; display: flex; flex-direction: column; gap: 0.4rem; text-align: left !important; width: 100%;">
 							<?php if (!empty($plan['description'])): ?>
 								<?php 
 								$lines = explode("\n", trim($plan['description'])); 
@@ -115,15 +121,15 @@ ob_start();
 					<div>
 						<!-- Khối Thiết bị và Lưu lượng nằm CÙNG 1 HÀNG (2 cột) -->
 						<div style="display: flex; justify-content: space-between; align-items: center; gap: 0.5rem; margin-top: 0.75rem; padding-top: 0.75rem; border-top: 1px solid var(--glass-border, rgba(255, 255, 255, 0.15)); font-size: 0.85rem;">
-							<div style="display: flex; align-items: center; gap: 0.4rem; justify-content: flex-start;">
-								<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#34c759" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="u-noshrink"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect><line x1="8" y1="21" x2="16" y2="21"></line><line x1="12" y1="17" x2="12" y2="21"></line></svg>
+							<div style="display: flex; align-items: flex-start; gap: 0.4rem; justify-content: flex-start;">
+								<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#34c759" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="u-noshrink" style="margin-top: 0.1rem;"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect><line x1="8" y1="21" x2="16" y2="21"></line><line x1="12" y1="17" x2="12" y2="21"></line></svg>
 								<div style="text-align: left;">
 									<span style="display: block; font-size: 0.75rem; color: var(--ios-text-secondary, #636366); font-weight: 600;">Thiết bị</span>
 									<strong style="color: #34c759; font-size: 0.9rem;"><?= $devices ?> thiết bị</strong>
 								</div>
 							</div>
-							<div style="display: flex; align-items: center; gap: 0.4rem; justify-content: flex-end;">
-								<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#007aff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="u-noshrink"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path></svg>
+							<div style="display: flex; align-items: flex-start; gap: 0.4rem; justify-content: flex-end;">
+								<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#007aff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="u-noshrink" style="margin-top: 0.1rem;"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path></svg>
 								<div style="text-align: right;">
 									<span style="display: block; font-size: 0.75rem; color: var(--ios-text-secondary, #636366); font-weight: 600;">Lưu lượng</span>
 									<strong style="color: #007aff; font-size: 0.9rem;"><?= $bandwidth > 0 ? number_format($bandwidth) . ' GB' : 'Không giới hạn' ?></strong>
@@ -139,7 +145,11 @@ ob_start();
 							<span title="Linux"><svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2c-3.1 0-5.5 2.2-5.5 5 0 1.3.4 2.5 1.2 3.4-2.1 1.1-3.7 3.2-3.7 5.6 0 2.2 1.1 4.1 2.8 5.3-.7 1.5-1.9 2.9-3.8 3.8-.3.1-.4.4-.3.7.1.3.4.4.7.3 3.3-1.6 5.3-3.7 6.2-5.7.8.2 1.7.4 2.6.4s1.8-.1 2.6-.4c.9 2 2.9 4.1 6.2 5.7.1.1.2.1.3.1.2 0 .4-.1.5-.3.1-.3 0-.6-.3-.7-1.9-.9-3.1-2.3-3.8-3.8 1.7-1.2 2.8-3.1 2.8-5.3 0-2.4-1.6-4.5-3.7-5.6.8-.9 1.2-2.1 1.2-3.4 0-2.8-2.4-5-5.5-5z"/></svg></span>
 						</div>
 
-						<a href="/checkout?id=<?= (int)($plan['id'] ?? 0) ?>" class="glass-btn" style="width: 100%; text-align: center; text-decoration: none; margin-top: 0.5rem; display: block;">Chọn gói này</a>
+						<?php if ($isSoldOut): ?>
+							<span class="glass-btn" aria-disabled="true" style="width: 100%; text-align: center; margin-top: 0.5rem; display: block; opacity: 0.55; cursor: not-allowed;">Đã hết hàng</span>
+						<?php else: ?>
+							<a href="/checkout?id=<?= (int)($plan['id'] ?? 0) ?>" class="glass-btn" style="width: 100%; text-align: center; text-decoration: none; margin-top: 0.5rem; display: block;">Chọn gói này</a>
+						<?php endif; ?>
 					</div>
 				</article>
 			<?php endforeach; ?>

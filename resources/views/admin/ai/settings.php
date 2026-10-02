@@ -9,17 +9,17 @@ require __DIR__ . '/_flash.php';
 /** Nhãn tiếng Việt cho các khoá cấu hình kỹ thuật (không hiển thị key thô). */
 $cfgLabels = [
     // Cơ chế thử lại
-    'enabled'              => 'Bật cơ chế thử lại',
-    'max_attempts'         => 'Số lần thử tối đa',
-    'base_delay_ms'        => 'Chờ lần đầu (mili giây)',
-    'max_delay_ms'         => 'Chờ tối đa (mili giây)',
-    'multiplier'           => 'Hệ số tăng dần',
+    'enabled'              => 'Tự thử lại khi lỗi',
+    'max_attempts'         => 'Thử lại tối đa',
+    'base_delay_ms'        => 'Chờ trước lần thử lại đầu',
+    'max_delay_ms'         => 'Chờ tối đa giữa các lần thử',
+    'multiplier'           => 'Mức tăng thời gian chờ',
     'retryable_errors'     => 'Lỗi được thử lại',
     'non_retryable_errors' => 'Lỗi không thử lại',
     // Hàng đợi tác vụ
-    'default_max_retries'  => 'Số lần thử lại tối đa',
-    'lock_stale_seconds'   => 'Thu hồi khoá treo sau (giây)',
-    'default_priority'     => 'Ưu tiên mặc định',
+    'default_max_retries'  => 'Làm lại bài khi lỗi tạm thời',
+    'lock_stale_seconds'   => 'Xử lý lại bài bị kẹt sau (giây)',
+    'default_priority'     => 'Mức ưu tiên xử lý',
     // Thư viện file
     'disk'                 => 'Nơi lưu trữ',
     'base_path'            => 'Đường dẫn gốc',
@@ -70,11 +70,14 @@ $cfgValue = static function ($value, string $key = '') use ($errLabels, $aiLabel
 };
 ?>
 
-<div style="margin-bottom: 1rem; width: 100%; box-sizing: border-box;">
-    <h1 style="font-size: 1.5rem; font-weight: 700; word-break: break-word;">Cấu Hình AI</h1>
-    <p style="color: var(--ios-text-secondary); font-size: 0.85rem;">
-        Cấu hình nhà cung cấp AI, phân hệ và nội quy cho toàn bộ luồng AI. Thông số kỹ thuật do hệ thống quy định, quản trị viên chỉ xem.
-    </p>
+<div style="margin-bottom: 1rem; width: 100%; box-sizing: border-box; display: flex; justify-content: space-between; align-items: flex-start; gap: 0.75rem; flex-wrap: wrap;">
+    <div>
+        <h1 style="font-size: 1.5rem; font-weight: 700; word-break: break-word;">Cấu Hình AI</h1>
+        <p style="color: var(--ios-text-secondary); font-size: 0.85rem;">
+            Cấu hình nhà cung cấp AI, phân hệ và giới hạn chatbot. Các thông số hạ tầng còn lại do hệ thống quy định và chỉ xem.
+        </p>
+    </div>
+    <a href="/admin/ai/prompts/create" class="glass-btn" style="text-decoration: none; white-space: nowrap;">Nội Quy Hệ Thống</a>
 </div>
 
 <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 1rem; width: 100%; box-sizing: border-box;">
@@ -157,6 +160,49 @@ $cfgValue = static function ($value, string $key = '') use ($errLabels, $aiLabel
             <button type="submit" class="glass-btn" style="white-space: nowrap;">🔌 Kiểm Tra Kết Nối</button>
         </form>
     </div>
+</div>
+
+<!-- Cấu hình chatbot -->
+<div id="chatbot-settings" class="glass-card" style="padding: 1.25rem; margin-top: 1rem; width: 100%; box-sizing: border-box;">
+    <div style="margin-bottom: 1rem;">
+        <h2 style="font-size: 1rem; font-weight: 700; margin: 0 0 0.35rem;">Cấu Hình Chatbot</h2>
+        <p style="color: var(--ios-text-secondary); font-size: 0.8rem; margin: 0;">Điều chỉnh tốc độ và giới hạn trả lời cho chat Website. Hệ thống vẫn kiểm tra lại các phạm vi an toàn khi lưu.</p>
+    </div>
+    <form method="POST" action="/admin/ai/settings/chatbot">
+        <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrf_token ?? '') ?>">
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 0.9rem;">
+            <div>
+                <label style="display: block; font-size: 0.82rem; font-weight: 600; margin-bottom: 0.35rem;">Trạng Thái Chatbot</label>
+                <select name="ai_chatbot_enabled" class="glass-input" style="width: 100%;">
+                    <option value="1" <?= ($chatbotSettings['ai_chatbot_enabled'] ?? '1') === '1' ? 'selected' : '' ?>>Đang bật</option>
+                    <option value="0" <?= ($chatbotSettings['ai_chatbot_enabled'] ?? '1') === '0' ? 'selected' : '' ?>>Tạm tắt</option>
+                </select>
+            </div>
+            <div>
+                <label style="display: block; font-size: 0.82rem; font-weight: 600; margin-bottom: 0.35rem;">Chờ Giữa Hai Tin (giây)</label>
+                <input type="number" name="ai_cooldown_seconds" class="glass-input" value="<?= htmlspecialchars($chatbotSettings['ai_cooldown_seconds'] ?? '1.5') ?>" min="0.5" max="6" step="0.1" required style="width: 100%;">
+                <small style="color: var(--ios-text-secondary);">Từ 0,5 đến 6 giây.</small>
+            </div>
+            <div>
+                <label style="display: block; font-size: 0.82rem; font-weight: 600; margin-bottom: 0.35rem;">Tối Đa Mỗi Phút</label>
+                <input type="number" name="ai_rate_limit_per_minute" class="glass-input" value="<?= htmlspecialchars($chatbotSettings['ai_rate_limit_per_minute'] ?? '8') ?>" min="3" max="30" step="1" required style="width: 100%;">
+                <small style="color: var(--ios-text-secondary);">Từ 3 đến 30 tin/phút.</small>
+            </div>
+            <div>
+                <label style="display: block; font-size: 0.82rem; font-weight: 600; margin-bottom: 0.35rem;">Chống Gửi Trùng (giây)</label>
+                <input type="number" name="ai_duplicate_window_seconds" class="glass-input" value="<?= htmlspecialchars($chatbotSettings['ai_duplicate_window_seconds'] ?? '4') ?>" min="2" max="20" step="1" required style="width: 100%;">
+                <small style="color: var(--ios-text-secondary);">Từ 2 đến 20 giây.</small>
+            </div>
+            <div>
+                <label style="display: block; font-size: 0.82rem; font-weight: 600; margin-bottom: 0.35rem;">Độ Dài Phản Hồi AI (tokens)</label>
+                <input type="number" name="ai_max_output_tokens" class="glass-input" value="<?= htmlspecialchars($chatbotSettings['ai_max_output_tokens'] ?? '700') ?>" min="100" max="2000" step="50" required style="width: 100%;">
+                <small style="color: var(--ios-text-secondary);">Từ 100 đến 2.000 tokens.</small>
+            </div>
+        </div>
+        <div style="display: flex; justify-content: flex-end; margin-top: 1rem;">
+            <button type="submit" class="glass-btn" style="background: var(--ios-blue); color: #fff; border: 0; font-weight: 600;">Lưu Cấu Hình Chatbot</button>
+        </div>
+    </form>
 </div>
 
 <!-- Phân hệ AI (gộp từ trang riêng /admin/ai/modules) -->
@@ -261,52 +307,106 @@ $cfgValue = static function ($value, string $key = '') use ($errLabels, $aiLabel
 </div>
 <?php endif; ?>
 
-<!-- Quick access to edit system rules -->
-<div class="glass-card" style="padding: 1.25rem; margin-top: 1rem; width: 100%; box-sizing: border-box;">
-    <h2 style="font-size: 1rem; font-weight: 700; margin-bottom: 0.75rem;">Nội Quy Hệ Thống</h2>
+<!-- Thông số vận hành thực tế -->
+<style>
+    #ai-operational-settings .ai-operational-grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        grid-template-areas:
+            "fanpage media"
+            "retry storage";
+        gap: 1rem;
+        font-size: 0.82rem;
+    }
+    #ai-operational-settings .ai-retry-row {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) minmax(7rem, 46%);
+        gap: 0.75rem;
+        align-items: start;
+        padding: 0.48rem 0;
+        border-bottom: 1px solid var(--ios-border, rgba(128,128,128,.18));
+    }
+    #ai-operational-settings .ai-retry-row span {
+        color: var(--ios-text-secondary);
+        line-height: 1.35;
+    }
+    #ai-operational-settings .ai-retry-row strong {
+        color: var(--ios-text);
+        text-align: right;
+        line-height: 1.35;
+        overflow-wrap: anywhere;
+    }
+    #ai-operational-settings .ai-operational-fanpage { grid-area: fanpage; }
+    #ai-operational-settings .ai-operational-retry { grid-area: retry; }
+    #ai-operational-settings .ai-operational-media { grid-area: media; }
+    #ai-operational-settings .ai-operational-storage { grid-area: storage; }
+    @media (max-width: 700px) {
+        #ai-operational-settings .ai-operational-grid {
+            grid-template-columns: 1fr;
+            grid-template-areas:
+                "fanpage"
+                "retry"
+                "media"
+                "storage";
+        }
+        #ai-operational-settings .ai-retry-row { grid-template-columns: minmax(0, 1fr) minmax(8rem, 44%); }
+    }
+</style>
+<div id="ai-operational-settings" class="glass-card" style="padding: 1.25rem; margin-top: 1rem; width: 100%; box-sizing: border-box;">
+    <h2 style="font-size: 1rem; font-weight: 700; margin-bottom: 0.35rem;">Cách Hệ Thống AI Hoạt Động</h2>
     <p style="font-size: 0.78rem; color: var(--ios-text-secondary); margin-bottom: 0.75rem;">
-        Quản trị nhanh các nội quy AI (không phải nội dung sinh). Nhấn vào để chỉnh sửa trực tiếp.
+        Đây là các thiết lập hệ thống đang được dùng. Chúng chỉ để xem; giới hạn chatbot được chỉnh ở phần phía trên.
     </p>
-    <div style="display: flex; flex-wrap: wrap; gap: 0.5rem;">
-        <?php $ruleKeys = ['rules_image','rules_video','rules_video_dubbing','rules_fanpage_content','rules_auto_reply']; ?>
-        <?php foreach ($ruleKeys as $rk): ?>
-            <a href="/admin/ai/prompts/create?prompt_key=<?= urlencode($rk) ?>" class="glass-btn" style="text-decoration: none; font-size: 0.82rem;">
-                <?= htmlspecialchars($aiLabels['prompts'][$rk] ?? $rk) ?>
-            </a>
-        <?php endforeach; ?>
-    </div>
-</div>
+    <div class="ai-operational-grid">
 
-<!-- Thông số kỹ thuật -->
-<div class="glass-card" style="padding: 1.25rem; margin-top: 1rem; width: 100%; box-sizing: border-box;">
-    <h2 style="font-size: 1rem; font-weight: 700; margin-bottom: 0.75rem;">Thông Số Kỹ Thuật (chỉ xem)</h2>
-    <p style="font-size: 0.78rem; color: var(--ios-text-secondary); margin-bottom: 0.75rem;">
-        Các thông số này do hệ thống quy định trong cấu hình máy chủ — quản trị viên không cần thay đổi.
-    </p>
-    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; font-size: 0.82rem;">
-
-        <div>
-            <div style="font-weight: 700; margin-bottom: 0.35rem;">Cơ Chế Thử Lại</div>
+        <div class="ai-operational-retry">
+            <div style="font-weight: 700; margin-bottom: 0.25rem;">Khi AI Gặp Lỗi Tạm Thời</div>
+            <p style="font-size: 0.76rem; color: var(--ios-text-secondary); margin: 0 0 0.55rem;">Hệ thống sẽ chờ rồi tự thử lại khi nhà cung cấp AI bị lỗi tạm thời.</p>
+            <div style="border-top: 1px solid var(--ios-border, rgba(128,128,128,.18));">
             <?php foreach ($retry as $key => $value): ?>
-                <div style="display: flex; justify-content: space-between; gap: 0.5rem; color: var(--ios-text-secondary);">
+                <div class="ai-retry-row">
                     <span><?= htmlspecialchars($cfgLabel((string) $key)) ?></span>
-                    <span style="color: var(--ios-text); font-weight: 600; text-align: right; word-break: break-word;"><?= htmlspecialchars($cfgValue($value, (string) $key)) ?></span>
+                    <strong><?= htmlspecialchars($cfgValue($value, (string) $key)) ?></strong>
                 </div>
             <?php endforeach; ?>
+            </div>
         </div>
 
-        <div>
-            <div style="font-weight: 700; margin-bottom: 0.35rem;">Hàng Đợi Tác Vụ</div>
-            <?php foreach ($task as $key => $value): ?>
-                <div style="display: flex; justify-content: space-between; gap: 0.5rem; color: var(--ios-text-secondary);">
-                    <span><?= htmlspecialchars($cfgLabel((string) $key)) ?></span>
-                    <span style="color: var(--ios-text); font-weight: 600;"><?= htmlspecialchars($cfgValue($value, (string) $key)) ?></span>
+        <div class="ai-operational-media" style="min-width: 0;">
+            <div style="font-weight: 700; margin-bottom: 0.25rem;">Tạo Ảnh, Video & Lời Thoại</div>
+            <p style="font-size: 0.76rem; color: var(--ios-text-secondary); margin: 0 0 0.55rem;">Ba chức năng này chạy ngay khi bấm nút, không phải chờ trong danh sách viết bài.</p>
+            <div style="border-top: 1px solid var(--ios-border, rgba(128,128,128,.18));">
+                <div style="display: flex; justify-content: space-between; align-items: baseline; gap: 0.75rem; padding: 0.48rem 0; border-bottom: 1px solid var(--ios-border, rgba(128,128,128,.18));">
+                    <span style="color: var(--ios-text-secondary);">Tạo Ảnh & Lời Thoại</span>
+                    <strong style="color: var(--ios-text); text-align: right;">Có kết quả ngay</strong>
                 </div>
-            <?php endforeach; ?>
+                <div style="display: flex; justify-content: space-between; align-items: baseline; gap: 0.75rem; padding: 0.48rem 0; border-bottom: 1px solid var(--ios-border, rgba(128,128,128,.18));">
+                    <span style="color: var(--ios-text-secondary);">Tạo Video</span>
+                    <strong style="color: var(--ios-text); text-align: right;">Tự kiểm tra kết quả mỗi 5 giây</strong>
+                </div>
+            </div>
         </div>
 
-        <div>
-            <div style="font-weight: 700; margin-bottom: 0.35rem;">Thư Viện File</div>
+        <div class="ai-operational-fanpage" style="min-width: 0;">
+            <div style="font-weight: 700; margin-bottom: 0.25rem;">Danh Sách Viết Bài Fanpage</div>
+            <p style="font-size: 0.76rem; color: var(--ios-text-secondary); margin: 0 0 0.55rem;">Chỉ dùng khi viết bài Fanpage: AI hoàn thành từng bài rồi mới chuyển sang bài tiếp theo. Ảnh, video và lời thoại không vào danh sách này.</p>
+            <div style="border-top: 1px solid var(--ios-border, rgba(128,128,128,.18));">
+                <?php foreach (['default_max_retries', 'lock_stale_seconds', 'default_priority'] as $key): ?>
+                    <?php if (!array_key_exists($key, $task)) continue; ?>
+                    <?php $value = $task[$key]; ?>
+                    <div style="display: flex; justify-content: space-between; align-items: baseline; gap: 0.75rem; padding: 0.48rem 0; border-bottom: 1px solid var(--ios-border, rgba(128,128,128,.18));">
+                        <span style="color: var(--ios-text-secondary); line-height: 1.35;">
+                            <?= htmlspecialchars($cfgLabel($key)) ?>
+                        </span>
+                        <strong style="color: var(--ios-text); text-align: right; white-space: nowrap;"><?= htmlspecialchars($cfgValue($value, $key)) ?></strong>
+                    </div>
+                <?php endforeach; ?>
+            </div>
+        </div>
+
+        <div class="ai-operational-storage">
+            <div style="font-weight: 700; margin-bottom: 0.25rem;">Nơi Lưu Ảnh, Video & Lời Thoại</div>
+            <p style="font-size: 0.76rem; color: var(--ios-text-secondary); margin: 0 0 0.55rem;">File được lưu trên máy chủ; cơ sở dữ liệu chỉ lưu thông tin để tìm lại file.</p>
             <?php foreach ($assets as $key => $value): ?>
                 <div style="display: flex; justify-content: space-between; gap: 0.5rem; color: var(--ios-text-secondary);">
                     <span><?= htmlspecialchars($cfgLabel((string) $key)) ?></span>
