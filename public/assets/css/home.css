@@ -410,7 +410,7 @@ body.vpn-theme.home-festival .nav-public-link { color: #9aa7bd; font-size: .78re
 body.vpn-theme.home-festival .nav-public-link::after { height: 1px; border-radius: 0; background: #007aff; }
 body.vpn-theme.home-festival .nav-public-link:hover { color: #007aff; }
 body.vpn-theme.home-festival .guest-action { color: #cbd5e1; border-radius: 3px; font-size: .8rem; letter-spacing: .04em; }
-body.vpn-theme.home-festival .guest-action-secondary { border: 1px solid #007aff; background: transparent; color: #007aff; box-shadow: none; }
+body.vpn-theme.home-festival .guest-action-secondary { background: transparent; color: #007aff; box-shadow: none; }
 body.vpn-theme.home-festival .guest-action-secondary:hover { background: rgba(0, 122, 255, .12); color: #0a84ff; box-shadow: 0 0 0 4px rgba(0, 122, 255, .12); transform: translateY(-1px); }
 
 .public-page.home-page { width: min(100%, 1280px); padding: clamp(1.25rem, 3vw, 3rem) clamp(1rem, 3vw, 2rem) 5rem; background-color: #0a0e17; background-image: linear-gradient(rgba(255, 255, 255, .025) 1px, transparent 1px), linear-gradient(90deg, rgba(255, 255, 255, .025) 1px, transparent 1px); background-size: 48px 48px; }

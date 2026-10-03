@@ -107,6 +107,14 @@ document.addEventListener('DOMContentLoaded', function () {
             const password = form.querySelector('input[name="password"]');
             const confirmPassword = form.querySelector('input[name="password_confirm"], input[name="confirm_password"]');
             const submitBtn = form.querySelector('button[type="submit"]');
+            const agreeTerms = form.querySelector('input[name="agree_terms"]');
+
+            if (agreeTerms && !agreeTerms.checked) {
+                e.preventDefault();
+                agreeTerms.focus();
+                alert('Bạn cần đồng ý với Điều khoản dịch vụ và Chính sách riêng tư trước khi đăng ký!');
+                return false;
+            }
 
             if (password && confirmPassword && password.value !== confirmPassword.value) {
                 e.preventDefault();
@@ -138,4 +146,17 @@ document.addEventListener('DOMContentLoaded', function () {
             }
         });
     });
+
+    // Nút ĐĂNG KÝ chỉ sáng khi đã tích đồng ý điều khoản
+    const agreeBox = document.getElementById('agree_terms');
+    const registerBtn = document.getElementById('btnRegister');
+    if (agreeBox && registerBtn) {
+        const syncRegisterGate = function () {
+            const unlocked = agreeBox.checked;
+            registerBtn.disabled = !unlocked;
+            registerBtn.classList.toggle('is-gated', !unlocked);
+        };
+        agreeBox.addEventListener('change', syncRegisterGate);
+        syncRegisterGate();
+    }
 });

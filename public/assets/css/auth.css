@@ -35,6 +35,15 @@ body.vpn-theme { background: var(--color-bg); }
 .auth-form, .form-group { display: flex; flex-direction: column; }
 .form-group { gap: .35rem; margin-bottom: var(--space-4); }
 .form-group label { margin-left: 2px; color: var(--color-text); font-size: .75rem; font-weight: 700; }
+
+/* Đồng ý điều khoản (trang đăng ký) */
+.agree-group { margin-top: -2px; }
+.agree-group .agree-label { display: flex; align-items: flex-start; gap: 8px; color: var(--color-text); font-size: .75rem; font-weight: 600; line-height: 1.55; cursor: pointer; }
+.agree-input { flex: 0 0 auto; width: 16px; height: 16px; margin: 2px 0 0; accent-color: var(--color-primary); cursor: pointer; }
+.agree-label a { color: var(--color-primary); font-weight: 700; text-decoration: underline; text-underline-offset: 2px; }
+.agree-label a:hover { opacity: .85; }
+.btn-login.is-gated { opacity: .45; filter: grayscale(.4); box-shadow: none; cursor: not-allowed; }
+.btn-login.is-gated:hover { transform: none; background: var(--color-primary); box-shadow: none; }
 .input-group-custom { position: relative; z-index: 5; display: flex; align-items: center; width: 100%; overflow: hidden; border: 1px solid var(--color-border-strong); border-radius: var(--radius-md); background: var(--color-surface); transition: border-color var(--transition), box-shadow var(--transition); }
 .input-group-custom:focus-within { border-color: var(--color-primary); box-shadow: var(--focus-ring); }
 .input-group-text-custom, .btn-toggle-pw { display: flex; align-items: center; flex-shrink: 0; color: var(--color-text-muted); }
@@ -142,6 +151,8 @@ body.vpn-theme .auth-subtitle { color: #9aa3b5; letter-spacing: .08em; text-tran
 
 /* Ô nhập liệu tối */
 body.vpn-theme .form-group label { color: #c8cedb; letter-spacing: .04em; text-transform: uppercase; }
+body.vpn-theme .agree-group .agree-label { color: #c8cedb; letter-spacing: normal; text-transform: none; font-weight: 500; }
+body.vpn-theme .agree-label a { color: #f5c518; }
 body.vpn-theme .input-group-custom { background: rgba(9, 11, 16, .85); border-color: rgba(245, 197, 24, .18); }
 body.vpn-theme .input-group-custom:focus-within { border-color: #f5c518; box-shadow: 0 0 0 3px rgba(245, 197, 24, .22), 0 0 18px rgba(245, 197, 24, .16); }
 body.vpn-theme .btn-toggle-pw:hover { color: #f5c518; }
