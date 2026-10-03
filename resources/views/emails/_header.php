@@ -16,9 +16,9 @@ $esc        = static fn($value): string => htmlspecialchars((string)$value, ENT_
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <style>
-        body { margin: 0; padding: 24px 12px; background: #f4f7fb; color: #1f2937; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; }
-        .mail-card { max-width: 560px; margin: 0 auto; background: #ffffff; border: 1px solid #e3e8f0; border-radius: 14px; overflow: hidden; }
-        .mail-top { background: <?= $accent ?>; padding: 24px; text-align: center; }
+        body { margin: 0; padding: 5px; background: #f4f7fb; color: #1f2937; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; }
+        .mail-card { width: 100%; margin: 0; background: transparent; border: none; border-radius: 0; }
+        .mail-top { background: <?= $accent ?>; padding: 24px 20px; text-align: center; border-radius: 10px; }
         .mail-brand { margin: 0 0 6px; font-size: 11.5px; letter-spacing: .14em; text-transform: uppercase; color: rgba(255, 255, 255, .85); }
         .mail-top h1 { margin: 0; font-size: 21px; color: #ffffff; line-height: 1.35; }
         .mail-body { padding: 26px 24px; font-size: 14.5px; line-height: 1.65; }
@@ -37,7 +37,7 @@ $esc        = static fn($value): string => htmlspecialchars((string)$value, ENT_
         .mail-otp { margin: 18px 0 6px; text-align: center; }
         .mail-otp .code { display: inline-block; padding: 14px 30px; background: #f1f5f9; border: 2px dashed <?= $accent ?>; border-radius: 12px; font-size: 32px; font-weight: 800; letter-spacing: 8px; color: <?= $accent ?>; }
         .mail-otp .hint { margin-top: 8px; font-size: 12.5px; color: #6b7280; }
-        .mail-footer { padding: 18px 24px; background: #f8fafc; border-top: 1px solid #e8edf4; color: #6b7280; font-size: 12px; line-height: 1.75; text-align: center; }
+        .mail-footer { padding: 18px 20px; margin-top: 16px; background: #f8fafc; border-top: 1px solid #e8edf4; border-radius: 10px; color: #6b7280; font-size: 12px; line-height: 1.75; text-align: center; }
         .mail-footer a { color: #0b5cab; text-decoration: none; }
     </style>
 </head>
