@@ -67,8 +67,16 @@ ob_start();
         </div>
     </div>
 
+    <!-- Đồng ý điều khoản (bắt buộc) -->
+    <div class="form-group agree-group">
+        <label class="agree-label" for="agree_terms">
+            <input type="checkbox" id="agree_terms" name="agree_terms" class="agree-input" required>
+            <span>Tôi đồng ý với <a href="/terms" target="_blank" rel="noopener">Điều khoản dịch vụ</a> và <a href="/privacy" target="_blank" rel="noopener">Chính sách riêng tư</a></span>
+        </label>
+    </div>
+
     <div class="assemble-bottom-1">
-        <button type="submit" class="btn-login">ĐĂNG KÝ</button>
+        <button type="submit" class="btn-login is-gated" id="btnRegister" disabled>ĐĂNG KÝ</button>
     </div>
 </form>
 

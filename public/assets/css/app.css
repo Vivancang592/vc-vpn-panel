@@ -772,7 +772,8 @@ body.overlay-open .admin-main {
 /* Dòng mô tả dưới tên web — bổ sung từ khóa SEO trong footer */
 .vc-footer-desc {
     max-width: 40rem;
-    margin: 0.45rem 0 0;
+    margin: 0.45rem auto 0;
+    text-align: center;
     font-size: 0.85rem;
     line-height: 1.55;
     color: inherit;
@@ -1233,7 +1234,7 @@ body.vpn-theme.home-festival .vc-footer { width: calc(100% + clamp(2rem, 8vw, 8r
 body.vpn-theme.home-festival .vc-footer-container { max-width: 1200px; margin: 0 auto; gap: 0.5rem; }
 body.vpn-theme.home-festival .vc-footer-title-wrap { padding-bottom: 1.5rem; border-bottom: 1px solid rgba(200, 215, 234, .18); text-align: left; }
 body.vpn-theme.home-festival .vc-footer-title { color: #fff; font-size: 1.5rem; letter-spacing: .02em; }
-body.vpn-theme.home-festival .vc-footer-intro, body.vpn-theme.home-festival .vc-footer-desc { max-width: 34rem; margin: .6rem 0 0; color: #a9bdd6; font-size: .95rem; line-height: 1.6; }
+body.vpn-theme.home-festival .vc-footer-intro, body.vpn-theme.home-festival .vc-footer-desc { max-width: 34rem; margin: .6rem auto 0; color: #a9bdd6; font-size: .95rem; line-height: 1.6; }
 body.vpn-theme.home-festival .vc-footer-links-grid { gap: 0.5rem; }
 body.vpn-theme.home-festival .vc-footer-col h4 { margin-bottom: .8rem; color: #8eddf0; font-size: .75rem; letter-spacing: .08em; }
 body.vpn-theme.home-festival .vc-footer-col a, body.vpn-theme.home-festival .vc-footer-col span { color: #d8e5f5 !important; }

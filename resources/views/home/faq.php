@@ -1,5 +1,5 @@
 <?php
-$pageTitle = "Hướng Dẫn & Câu Hỏi Thường Gặp - " . ($settings['site_title'] ?? 'VC VPN PANEL');
+$pageTitle = "Hướng Dẫn Sử Dụng ịch Vụ VPN - " . ($settings['site_title'] ?? 'VC VPN PANEL');
 $metaDescription = 'Tổng hợp hướng dẫn cài đặt, cách kết nối và giải đáp câu hỏi thường gặp khi sử dụng dịch vụ VPN: cài app, nhập key, xử lý lỗi kết nối, thanh toán và hoàn tiền.';
 $metaKeywords = 'câu hỏi thường gặp, hướng dẫn vpn, cài đặt vpn, cách kết nối vpn, xử lý lỗi vpn, faq vpn, hướng dẫn nhập key';
 $extraCss = 'home';
@@ -44,7 +44,7 @@ ob_start();
 
 <section class="public-page home-page home-subpage home-faq-page">
 <div class="home-subpage-header" style="text-align: center; margin-bottom: 2.5rem;">
-    <h1 style="font-size: 2rem; font-weight: 700;">Hướng Dẫn & Câu Hỏi Thường Gặp</h1>
+    <h1 style="font-size: 2rem; font-weight: 700;">Hướng Dẫn Sử Dụng Dịch Vụ</h1>
     <p style="color: var(--ios-text-secondary); margin-top: 0.5rem;">Giải đáp các thắc mắc và hướng dẫn chi tiết cách sử dụng dịch vụ VPN</p>
     <form class="home-subpage-search" action="/faq" method="get" style="max-width: 560px; margin: 1.25rem auto 0; display: flex; gap: .5rem;">
         <input type="search" name="q" value="<?= htmlspecialchars($search) ?>" placeholder="Tìm hướng dẫn..." style="flex: 1; padding: .7rem .9rem; border: 1px solid var(--glass-border); border-radius: 10px; background: var(--glass-bg); color: var(--ios-text);">
@@ -96,7 +96,6 @@ ob_start();
                                 </div>
                                 <div style="display: flex; gap: 1rem; font-size: 0.78rem; color: var(--ios-text-secondary); border-top: 1px solid var(--glass-border); padding-top: 0.75rem; margin-top: 0.5rem; flex-wrap: wrap;">
                                     <span>📅 Cập nhật: <?= date('d/m/Y', strtotime($post['created_at'])) ?></span>
-                                    <span>🏷️ Chuyên mục: <?= htmlspecialchars($typeGroup) ?></span>
                                 </div>
                                 <div style="display: flex; justify-content: flex-end; margin-top: 0.5rem;">
                                     <a href="/post-detail?slug=<?= urlencode($post['slug']) ?>" class="glass-btn" style="font-size: 0.85rem; padding: 0.5rem 1rem; text-decoration: none; box-sizing: border-box;">

@@ -383,6 +383,11 @@ class AuthController extends BaseController
             $this->redirect('/register');
         }
 
+        if (empty($_POST['agree_terms'])) {
+            $_SESSION['error'] = 'Bạn cần đồng ý với Điều khoản dịch vụ và Chính sách riêng tư trước khi đăng ký.';
+            $this->redirect('/register');
+        }
+
         $sessionOtp = $_SESSION['register_otp'] ?? null;
         if (!$sessionOtp || 
             !hash_equals($sessionOtp['email'], $email) || 
