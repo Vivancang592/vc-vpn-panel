@@ -791,40 +791,6 @@ select.glass-input option {
 }
 
 /* =========================================================================
- * PARTIAL-LOAD (điều hướng nội bộ trong /admin — xem admin.js)
- * ========================================================================= */
-.vc-partial-progress {
-    position: fixed;
-    top: 0;
-    left: 0;
-    height: 2px;
-    width: 100%;
-    z-index: 10050;
-    pointer-events: none;
-    transform: scaleX(0);
-    transform-origin: left center;
-    opacity: 0;
-    background: linear-gradient(90deg, var(--ios-blue, #007aff), rgba(0, 122, 255, 0.45));
-    transition: transform 0.5s ease, opacity 0.2s ease;
-}
-.vc-partial-progress.vc-progress-run {
-    opacity: 1;
-    transform: scaleX(0.7);
-}
-.vc-partial-progress.vc-progress-done {
-    opacity: 0;
-    transform: scaleX(1);
-    transition: transform 0.2s ease, opacity 0.35s ease 0.1s;
-}
-/* Nội dung mới mờ dần vào thay vì "đập" vào mắt người dùng */
-.admin-content {
-    transition: opacity 0.14s ease;
-}
-.admin-content.vc-fading {
-    opacity: 0;
-}
-
-/* =========================================================================
  * STYLE CHUNG CHO KHU TRUNG TÂM AI
  * (gom từ các view ai/* — giữ nguyên rule; đừng viết <style> inline trong
  *  view nữa, thêm vào đây để CSS đồng nhất toàn hệ thống)
