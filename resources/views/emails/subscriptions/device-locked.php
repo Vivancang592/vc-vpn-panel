@@ -18,6 +18,6 @@ require __DIR__ . '/../_header.php';
     <li>Không chia sẻ tài khoản ngoài gói đăng ký — đây là vi phạm Điều Khoản Sử Dụng.</li>
     <li>Nếu bạn cần sử dụng nhiều thiết bị hơn, hãy nâng cấp gói có số thiết bị phù hợp.</li>
 </ul>
-<a href="<?= htmlspecialchars(rtrim((string)$siteUrl, '/') . '/subscriptions', ENT_QUOTES, 'UTF-8') ?>" class="mail-btn">Kiểm Tra Thiết Bị Đang Kết Nối</a>
+<div style="text-align:center;"><a href="<?= htmlspecialchars(rtrim((string)$siteUrl, '/') . '/subscriptions', ENT_QUOTES, 'UTF-8') ?>" class="mail-btn">Kiểm Tra Thiết Bị Đang Kết Nối</a></div>
 <p class="mail-note">Thông báo này được gửi tối đa 1 lần mỗi 30 phút. Nếu số thiết bị đã trở lại hạn mức, bạn không cần thực hiện thêm thao tác nào.</p>
 <?php require __DIR__ . '/../_footer.php'; ?>
