@@ -2,36 +2,19 @@
 $planDisplay      = $plan_name ?? $planName ?? '';
 $rawEndDate       = $end_date ?? $endDate ?? null;
 $formattedEndDate = $rawEndDate ? date('d/m/Y H:i', strtotime($rawEndDate)) : '';
-$titleDisplay     = $siteTitle ?? '';
-$urlDisplay       = $siteUrl ?? '#';
+$mailTitle        = 'Gói cước đã hết hạn sử dụng';
+$accent           = '#64748b';
+$mailBadge        = 'Hết hạn';
+require __DIR__ . '/../_header.php';
 ?>
-<!DOCTYPE html>
-<html lang="vi">
-<head>
-    <meta charset="UTF-8">
-    <style>
-        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: #0f172a; color: #f8fafc; margin: 0; padding: 40px 10px; }
-        .container { max-width: 550px; margin: 0 auto; background: #1e293b; border-radius: 16px; border: 1px solid #334155; overflow: hidden; }
-        .header { background: linear-gradient(135deg, #475569, #334155); padding: 32px 24px; text-align: center; }
-        .header h1 { margin: 0; font-size: 22px; color: #ffffff; }
-        .body { padding: 32px 24px; text-align: center; }
-        .btn { display: inline-block; padding: 12px 28px; background: #3b82f6; color: #ffffff; text-decoration: none; border-radius: 8px; font-weight: 600; margin-top: 20px; }
-        .footer { background: #0f172a; padding: 20px 24px; text-align: center; font-size: 12px; color: #64748b; border-top: 1px solid #334155; }
-    </style>
-</head>
-<body>
-    <div class="container">
-        <div class="header">
-            <h1>Gói Cước Đã Hết Hạn</h1>
-        </div>
-        <div class="body">
-            <p style="font-size: 15px; color: #cbd5e1;">Gói cước <strong><?= htmlspecialchars($planDisplay) ?></strong> của bạn đã hết hạn sử dụng vào ngày <strong><?= htmlspecialchars($formattedEndDate) ?></strong>.</p>
-            <p style="font-size: 13px; color: #94a3b8;">Các kết nối qua Node VPN thuộc gói cước này đã tạm dừng hoạt động.</p>
-            <a href="<?= htmlspecialchars($urlDisplay) ?>/plans" class="btn">Đăng Ký Gói Mới</a>
-        </div>
-        <div class="footer">
-            &copy; <?= date('Y') ?> <?= htmlspecialchars($titleDisplay) ?>.
-        </div>
-    </div>
-</body>
-</html>
+<p class="mail-greet">Kính chào<?= !empty($username) ? ' ' . htmlspecialchars((string)$username, ENT_QUOTES, 'UTF-8') : '' ?>,</p>
+<p class="mail-lead">Gói cước <strong><?= htmlspecialchars((string)$planDisplay, ENT_QUOTES, 'UTF-8') ?></strong> của bạn trên hệ thống <strong><?= htmlspecialchars((string)$siteTitle, ENT_QUOTES, 'UTF-8') ?></strong> đã hết hạn sử dụng<?= $formattedEndDate !== '' ? ' vào lúc <strong>' . htmlspecialchars($formattedEndDate, ENT_QUOTES, 'UTF-8') . '</strong>' : '' ?>. Dịch vụ đã tạm ngừng và kết nối VPN bị khóa cho đến khi bạn gia hạn.</p>
+<table class="mail-info">
+    <tr><td class="k">Gói cước</td><td class="v"><?= htmlspecialchars((string)$planDisplay, ENT_QUOTES, 'UTF-8') ?></td></tr>
+    <tr><td class="k">Thời điểm hết hạn</td><td class="v"><?= $formattedEndDate !== '' ? htmlspecialchars($formattedEndDate, ENT_QUOTES, 'UTF-8') : '—' ?></td></tr>
+    <tr><td class="k">Trạng thái</td><td class="v">Đã ngừng hoạt động</td></tr>
+</table>
+<p class="mail-lead">Bạn có thể đăng ký gói mới hoặc gia hạn để tiếp tục sử dụng dịch vụ ngay lập tức.</p>
+<a href="<?= htmlspecialchars(rtrim((string)$siteUrl, '/') . '/plans', ENT_QUOTES, 'UTF-8') ?>" class="mail-btn">Đăng Ký / Gia Hạn Ngay</a>
+<p class="mail-note">Nếu bạn cho rằng email này là lỗi, vui lòng liên hệ bộ phận hỗ trợ kèm mã đơn hàng để được kiểm tra.</p>
+<?php require __DIR__ . '/../_footer.php'; ?>

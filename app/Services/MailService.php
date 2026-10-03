@@ -24,6 +24,8 @@ class MailService
     {
         $data['siteTitle'] = $data['siteTitle'] ?? ($this->settings['site_title'] ?? 'VC VPN PANEL');
         $data['siteSubtitle'] = $data['siteSubtitle'] ?? ($this->settings['site_subtitle'] ?? $this->settings['site_description'] ?? 'An Toàn - Bảo Mật - Uy Tín');
+        $data['siteUrl'] = rtrim((string)($data['siteUrl'] ?? ($this->settings['site_url'] ?? (getenv('APP_URL') ?: ''))), '/');
+        $data['contactEmail'] = $data['contactEmail'] ?? (string)($this->settings['contact_email'] ?? '');
         
         extract($data);
         $fullPath = BASE_PATH . '/resources/views/emails/' . str_replace('.', '/', $templatePath) . '.php';

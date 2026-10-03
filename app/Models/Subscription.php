@@ -238,7 +238,8 @@ class Subscription extends BaseModel
      *
      * - Sub active + ip_count > max_devices + chưa trong cửa sổ khóa:
      *   chốt network_locked_until = NOW()+60s, online_devices = 0,
-     *   sinh task disable_user (reason=device_limit, lock_seconds=60) → VPS tự mở lại sau 60s.
+     *   sinh task disable_user (reason=device_limit, lock_seconds=60) → VPS tự mở lại sau 60s,
+     *   và gửi email thông báo cho người dùng (chống spam 30 phút qua vc_email_logs).
      * - Sub không active nhưng VPS vẫn báo có thiết bị/lưu lượng:
      *   gửi lại disable (re-sync chống mất task) — throttle 60s qua cùng mốc khóa.
      *
@@ -252,9 +253,11 @@ class Subscription extends BaseModel
         }
 
         $sql = "
-            SELECT s.id, s.status, s.max_devices, s.network_locked_until, p.group_id
+            SELECT s.id, s.status, s.max_devices, s.network_locked_until,
+                   p.group_id, p.name AS plan_name, u.email, u.username AS user_name
             FROM `{$this->table}` s
             INNER JOIN `vc_vpn_plans` p ON s.plan_id = p.id
+            LEFT JOIN `vc_users` u ON s.user_id = u.id
             WHERE s.id = :id
             LIMIT 1
         ";
@@ -309,6 +312,54 @@ class Subscription extends BaseModel
 
         if (class_exists('App\Services\NodeTaskService')) {
             (new \App\Services\NodeTaskService())->disableUser($groupIds, 'sub_' . $id, $reason, $lockSeconds);
+        }
+
+        // Thông báo qua email cho người dùng khi khóa do vượt số thiết bị cho phép
+        if ($reason === 'device_limit') {
+            $this->sendDeviceLockEmail($sub, $ipCount, $lockSeconds ?? 60);
+        }
+    }
+
+    /**
+     * Gửi email thông báo khóa mạng do vượt số thiết bị (chống spam 30 phút).
+     * Mọi lỗi email đều nuốt trong try/catch — không được làm gián đoạn luồng khóa.
+     */
+    private function sendDeviceLockEmail(array $sub, int $ipCount, int $lockSeconds): void
+    {
+        try {
+            $email = trim((string)($sub['email'] ?? ''));
+            if ($email === '' || !class_exists('App\Services\MailService')) {
+                return;
+            }
+
+            $stmt = self::$db->prepare("
+                SELECT COUNT(*) FROM `vc_email_logs`
+                WHERE `recipient` = :recipient
+                  AND `subject` LIKE :subject
+                  AND `created_at` >= DATE_SUB(NOW(), INTERVAL 30 MINUTE)
+            ");
+            $stmt->execute([
+                'recipient' => $email,
+                'subject'   => '%vượt số thiết bị%',
+            ]);
+            if ((int)$stmt->fetchColumn() > 0) {
+                return; // Đã gửi thông báo trong 30 phút gần nhất → không lặp
+            }
+
+            (new \App\Services\MailService())->send(
+                $email,
+                'Thông báo: Kết nối tạm ngưng do vượt số thiết bị cho phép',
+                'subscriptions.device-locked',
+                [
+                    'username'     => (string)($sub['user_name'] ?? ''),
+                    'plan_name'    => (string)($sub['plan_name'] ?? ''),
+                    'max_devices'  => max(1, (int)($sub['max_devices'] ?? 1)),
+                    'ip_count'     => $ipCount,
+                    'lock_seconds' => $lockSeconds,
+                ]
+            );
+        } catch (\Throwable $e) {
+            // Email thất bại không được ảnh hưởng tới việc gửi task khóa
         }
     }
 
