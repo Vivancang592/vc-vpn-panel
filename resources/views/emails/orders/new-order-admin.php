@@ -1,40 +1,22 @@
-<!DOCTYPE html>
-<html lang="vi">
-<head>
-    <meta charset="UTF-8">
-    <style>
-        body { font-family: Arial, sans-serif; background: #f4f7fb; color: #172033; margin: 0; padding: 24px; }
-        .container { max-width: 560px; margin: 0 auto; background: #ffffff; border: 1px solid #dbe3ee; }
-        .header { background: #0b5cab; color: #ffffff; padding: 24px; text-align: center; }
-        .header h1 { margin: 0; font-size: 22px; }
-        .body { padding: 24px; }
-        .info-table { width: 100%; border-collapse: collapse; margin: 18px 0; }
-        .info-table td { padding: 10px; border-bottom: 1px solid #e5eaf1; font-size: 14px; }
-        .info-table td:first-child { color: #5b6678; width: 40%; }
-        .button { display: inline-block; margin-top: 8px; padding: 11px 16px; background: #0b5cab; color: #ffffff; text-decoration: none; }
-        .footer { padding: 16px 24px; background: #f8fafc; color: #6b7280; font-size: 12px; text-align: center; }
-    </style>
-</head>
-<body>
-    <div class="container">
-        <div class="header">
-            <h1>Có đơn hàng mới</h1>
-        </div>
-        <div class="body">
-            <p>Hệ thống <strong><?= htmlspecialchars($siteTitle) ?></strong> vừa nhận một đơn hàng chờ thanh toán.</p>
-            <table class="info-table">
-                <tr><td>Mã đơn hàng</td><td><strong><?= htmlspecialchars($orderCode) ?></strong></td></tr>
-                <tr><td>Khách hàng</td><td><?= htmlspecialchars($customerName) ?></td></tr>
-                <tr><td>Email khách hàng</td><td><?= htmlspecialchars($customerEmail) ?></td></tr>
-                <tr><td>Gói dịch vụ</td><td><?= htmlspecialchars($planName) ?></td></tr>
-                <tr><td>Phương thức</td><td><?= htmlspecialchars($paymentMethod) ?></td></tr>
-                <tr><td>Số tiền</td><td><strong><?= htmlspecialchars($amount) ?></strong></td></tr>
-            </table>
-            <?php if ($siteUrl !== ''): ?>
-                <a class="button" href="<?= htmlspecialchars(rtrim($siteUrl, '/')) ?>/admin/orders/detail?id=<?= (int) $orderId ?>">Xem đơn hàng</a>
-            <?php endif; ?>
-        </div>
-        <div class="footer">&copy; <?= date('Y') ?> <?= htmlspecialchars($siteTitle) ?></div>
-    </div>
-</body>
-</html>
+<?php
+$mailTitle     = 'Có đơn hàng mới cần xử lý';
+$accent        = '#0b5cab';
+$mailBadge     = 'Đơn hàng mới';
+$mailFooterNote = 'Bạn nhận được email này vì bạn là quản trị viên của hệ thống ' . (string)($siteTitle ?? '') . '.';
+require __DIR__ . '/../_header.php';
+?>
+<p class="mail-greet">Xin chào Quản trị viên,</p>
+<p class="mail-lead">Hệ thống vừa nhận một đơn hàng chờ thanh toán cần được theo dõi và đối soát.</p>
+<table class="mail-info">
+    <tr><td class="k">Mã đơn hàng</td><td class="v"><?= htmlspecialchars((string)($orderCode ?? ''), ENT_QUOTES, 'UTF-8') ?></td></tr>
+    <tr><td class="k">Khách hàng</td><td class="v"><?= htmlspecialchars((string)($customerName ?? ''), ENT_QUOTES, 'UTF-8') ?></td></tr>
+    <tr><td class="k">Email khách hàng</td><td class="v"><?= htmlspecialchars((string)($customerEmail ?? ''), ENT_QUOTES, 'UTF-8') ?></td></tr>
+    <tr><td class="k">Gói dịch vụ</td><td class="v"><?= htmlspecialchars((string)($planName ?? ''), ENT_QUOTES, 'UTF-8') ?></td></tr>
+    <tr><td class="k">Phương thức thanh toán</td><td class="v"><?= htmlspecialchars((string)($paymentMethod ?? ''), ENT_QUOTES, 'UTF-8') ?></td></tr>
+    <tr><td class="k">Số tiền</td><td class="v"><?= htmlspecialchars((string)($amount ?? ''), ENT_QUOTES, 'UTF-8') ?></td></tr>
+</table>
+<?php if (!empty($siteUrl)): ?>
+<a href="<?= htmlspecialchars(rtrim((string)$siteUrl, '/') . '/admin/orders/detail?id=' . (int)($orderId ?? 0), ENT_QUOTES, 'UTF-8') ?>" class="mail-btn">Xem Đơn Hàng</a>
+<?php endif; ?>
+<p class="mail-note">Đơn hàng sẽ tự động bị hủy nếu quá thời gian chờ thanh toán mà chưa được đối soát.</p>
+<?php require __DIR__ . '/../_footer.php'; ?>

@@ -661,3 +661,10 @@ body.home-festival .admin-content > .public-page.home-page.home-subpage.home-pol
 .home-policy-page .policy-note { margin-top: 1.75rem; border-left-color: #007aff; background: rgba(0, 122, 255, .1); color: #cbd5e1; }
 .home-policy-page .policy-contact-link { color: #007aff; }
 .home-policy-page .policy-contact-link:hover { color: #5eb2ff; }
+
+/* Song ngữ — dark override */
+.home-policy-page .policy-title-en { color: #93a3b8 !important; }
+.home-policy-page .policy-en { border-top-color: rgba(148, 163, 184, .22); }
+.home-policy-page .policy-en h3 { color: #d7e1ef !important; }
+.home-policy-page .policy-en p,
+.home-policy-page .policy-en li { color: #aab6c6; line-height: 1.7; }

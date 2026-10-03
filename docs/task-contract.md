@@ -94,6 +94,7 @@ THÌ:
 ```
 
 - Chống spam: trong cửa sổ 60s kể từ lần khóa gần nhất **không sinh thêm** task (kiểm tra `network_locked_until`).
+- **Email thông báo**: khi sinh task khóa do `device_limit`, panel gửi email cho user (template `subscriptions.device-locked`, subject *"Thông báo: Kết nối tạm ngưng do vượt số thiết bị cho phép"*); dedup 30 phút qua `vc_email_logs`, mọi lỗi email đều được nuốt trong try/catch → **không bao giờ chặn luồng khóa**.
 - Re-sync: sub không `active` nhưng vẫn nhận traffic → sinh `disable_user` (reason theo status) → nếu dữ liệu `ip_count` trên báo cáo không tự về 0 nên cần đồng bộ lại trạng thái.
 
 ### 3.2 Xử lý phía Script (P4)
