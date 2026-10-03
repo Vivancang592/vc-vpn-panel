@@ -1,5 +1,5 @@
 <?php
-$pageTitle = 'Tạo yêu cầu hỗ trợ - ' . ($settings['site_title'] ?? 'VC VPN 2027');
+$pageTitle = 'Tạo yêu cầu hỗ trợ - ' . ($settings['site_title'] ?? 'VC VPN PANEL');
 ob_start();
 ?>
 <section class="user-record-page" style="width: 100%;">

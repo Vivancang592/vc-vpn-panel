@@ -1,5 +1,5 @@
 <?php
-$pageTitle = 'Gói Đã Mua - ' . ($settings['site_title'] ?? 'VC VPN 2027');
+$pageTitle = 'Gói Đã Mua - ' . ($settings['site_title'] ?? 'VC VPN PANEL');
 $userSubscriptions = isset($subscriptions) && is_array($subscriptions) ? $subscriptions : [];
 $statusLabels = ['active' => 'Đang hoạt động', 'expired' => 'Hết hạn', 'suspended' => 'Tạm dừng', 'cancelled' => 'Đã hủy'];
 $activeCount = count(array_filter($userSubscriptions, static fn($subscription) => ($subscription['status'] ?? '') === 'active' && strtotime($subscription['end_date'] ?? '') >= time()));

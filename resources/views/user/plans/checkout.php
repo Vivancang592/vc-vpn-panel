@@ -1,5 +1,5 @@
 <?php
-$pageTitle = 'Thanh Toán - ' . ($settings['site_title'] ?? 'VC VPN 2027');
+$pageTitle = 'Thanh Toán - ' . ($settings['site_title'] ?? 'VC VPN PANEL');
 
 $checkoutType = (string) ($checkoutType ?? 'plan');
 

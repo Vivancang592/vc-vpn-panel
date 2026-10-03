@@ -1,5 +1,5 @@
 <?php
-$pageTitle = 'Hỗ trợ - ' . ($settings['site_title'] ?? 'VC VPN 2027');
+$pageTitle = 'Hỗ trợ - ' . ($settings['site_title'] ?? 'VC VPN PANEL');
 $items = is_array($tickets ?? null) ? $tickets : [];
 $labels = ['open' => 'Đang chờ', 'in_progress' => 'Đang xử lý', 'resolved' => 'Đã giải quyết', 'closed' => 'Đã đóng'];
 ob_start();

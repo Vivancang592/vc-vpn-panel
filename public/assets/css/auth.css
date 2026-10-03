@@ -123,8 +123,9 @@ body.vpn-theme {
 .fog-container { display: none !important; }
 
 /* Logo góc: dơi vàng */
-body.vpn-theme .auth-brand-corner { color: #f5c518; letter-spacing: .06em; text-transform: uppercase; text-shadow: 0 0 18px rgba(245, 197, 24, .45); }
-body.vpn-theme .auth-brand-corner::before { content: ''; width: 34px; height: 15px; margin-right: 10px; background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 40'%3E%3Cpath d='M50 8C46 2 38 2 34 6 28 2 20 4 16 10 10 8 4 12 2 20 8 18 14 20 18 24 14 26 12 30 14 34 20 30 26 30 32 32 34 36 40 38 50 34 60 38 66 36 68 32 74 30 80 30 86 34 88 30 86 26 82 24 86 20 92 18 98 20 96 12 90 8 84 10 80 4 72 2 66 6 62 2 54 2 50 8Z' fill='%23f5c518'/%3E%3C/svg%3E") center/contain no-repeat; filter: drop-shadow(0 0 8px rgba(245, 197, 24, .55)); }
+body.vpn-theme .auth-brand-corner { color: #f5c518; letter-spacing: .06em; text-transform: uppercase; text-shadow: 0 0 18px rgba(245, 197, 24, .45); display: inline-flex; align-items: center; gap: 8px; }
+body.vpn-theme .auth-brand-corner::before { content: none; }
+body.vpn-theme .auth-brand-corner img { width: 24px; height: 24px; border-radius: 5px; filter: drop-shadow(0 0 8px rgba(0, 122, 255, .5)); }
 
 /* Thẻ đăng nhập: phiến kim loại tối, viền vàng */
 body.vpn-theme .auth-card { position: relative; border: 1px solid rgba(245, 197, 24, .26); background: linear-gradient(160deg, rgba(18, 22, 30, .96), rgba(9, 12, 17, .98)); box-shadow: 0 24px 60px rgba(0, 0, 0, .7), 0 0 40px rgba(245, 197, 24, .06), inset 0 1px 0 rgba(255, 255, 255, .05); }

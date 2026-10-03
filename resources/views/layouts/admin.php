@@ -94,7 +94,7 @@ if (($_SERVER['HTTP_X_VC_PARTIAL'] ?? '') === '1') {
     header('Cache-Control: no-store');
     echo json_encode([
         'ok' => true,
-        'title' => $pageTitle ?? 'VC VPN 2027',
+        'title' => $pageTitle ?? 'VC VPN PANEL',
         'activeMenu' => $activeMenu,
         'html' => $fragmentMain,
         'sidebar' => $fragmentSidebar,

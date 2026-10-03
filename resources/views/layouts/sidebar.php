@@ -3,7 +3,7 @@ $currentUri = $_SERVER['REQUEST_URI'] ?? '';
 $currentPath = parse_url($currentUri, PHP_URL_PATH) ?: '';
 $isAdminRoute = (strncmp($currentUri, '/admin', 6) === 0);
 $userRole = $_SESSION['role'] ?? 'user';
-$siteTitle = $settings['site_title'] ?? 'VC VPN 2027';
+$siteTitle = $settings['site_title'] ?? 'VC VPN PANEL';
 
 $logoHref = '/';
 if (isset($_SESSION['user_id'])) {
@@ -17,11 +17,7 @@ if (isset($_SESSION['user_id'])) {
 <aside class="admin-sidebar">
     <div class="sidebar-brand">
         <a href="<?= $logoHref ?>" title="<?= $userRole === 'admin' ? ($isAdminRoute ? 'Chuyển sang Trang User' : 'Chuyển sang Trang Admin') : 'Trang Chủ' ?>">
-            <?php if ($userRole !== 'admin'): ?>
-                <svg class="sidebar-brand-mark" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
-                </svg>
-            <?php endif; ?>
+            <img src="/assets/images/icon.svg" alt="" width="24" height="24" class="sidebar-brand-mark" aria-hidden="true">
             <span><?= htmlspecialchars($siteTitle) ?></span>
         </a>
     </div>

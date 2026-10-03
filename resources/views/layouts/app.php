@@ -34,13 +34,31 @@ if (($_SERVER['HTTP_X_VC_PARTIAL'] ?? '') === '1') {
         $fragmentHtml .= '<script src="/assets/js/' . rawurlencode($extraJs) . '.js?v=' . $vcExtraJsVer . '"></script>';
     }
 
+    // Fragment KHÔNG kèm <head> → link CSS cũng phải tự đi theo (link qua
+    // innerHTML vẫn được browser load + apply; app.js chuyển vào <head>).
+    // Thiếu home.css → trang chính sách/public vào từ khu user mất dark
+    // theme: title căn trái, font/thẻ mặc định admin.
+    $vcFragmentCss = [];
+    if (!empty($extraCss) && $extraCss !== 'app') $vcFragmentCss[] = $extraCss;
+    if (($pageArea ?? '') === 'user') $vcFragmentCss[] = 'user';
+    foreach (array_unique($vcFragmentCss) as $vcCssFile) {
+        $vcCssPath = BASE_PATH . '/public/assets/css/' . $vcCssFile . '.css';
+        $vcCssVer = @filemtime($vcCssPath) ?: 1;
+        $fragmentHtml = '<link rel="stylesheet" href="/assets/css/' . rawurlencode($vcCssFile) . '.css?v=' . $vcCssVer . '">' . $fragmentHtml;
+    }
+
     header('Content-Type: application/json; charset=utf-8');
     header('Cache-Control: no-store');
     echo json_encode([
         'ok' => true,
-        'title' => $pageTitle ?? 'VC VPN 2027',
+        'title' => $pageTitle ?? 'VC VPN PANEL',
         'html' => $fragmentHtml,
         'sidebar' => $fragmentSidebar,
+        // Theme <body> theo trang đích — app.js sync class sau khi swap
+        'body_classes' => [
+            'home' => (($extraCss ?? '') === 'home'),
+            'user' => (($pageArea ?? '') === 'user'),
+        ],
     ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
     exit;
 }

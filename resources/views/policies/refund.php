@@ -1,13 +1,16 @@
 <?php
-$siteTitle = $settings['site_title'] ?? 'VC VPN 2027';
+$siteTitle = $settings['site_title'] ?? 'VC VPN PANEL';
 $contactEmail = $settings['contact_email'] ?? '';
 $pageTitle = 'Chính Sách Hoàn Tiền - ' . $siteTitle;
+$metaDescription = 'Chính sách hoàn tiền dịch vụ VPN: điều kiện, thời gian xử lý và các trường hợp được hoàn tiền khi mua gói VPN tại ' . $siteTitle . '.';
+$metaKeywords = 'chính sách hoàn tiền, hoàn tiền vpn, refund policy, trả lại tiền, chính sách thanh toán vpn';
+$extraCss = 'home';
+$extraJs = 'home'; // fragment partial-nav cần home.js (reveal .home-reveal)
 ob_start();
 ?>
 
-<div class="policy-page">
-    <header class="glass-card policy-hero">
-        <span class="policy-eyebrow">Thanh toán</span>
+<section class="public-page home-page home-subpage home-policy-page">
+    <header class="home-subpage-header">
         <h1 class="policy-title">Chính Sách Hoàn Tiền</h1>
         <p class="policy-summary">Quy định tiếp nhận và xử lý yêu cầu hoàn tiền cho các dịch vụ của <?= htmlspecialchars($siteTitle) ?>.</p>
         <p class="policy-meta">Cập nhật lần cuối: 14/09/2026</p>
@@ -62,7 +65,7 @@ ob_start();
             <?php endif; ?>
         </aside>
     </article>
-</div>
+</section>
 
 <?php
 $content = ob_get_clean();

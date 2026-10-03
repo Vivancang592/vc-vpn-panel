@@ -1,5 +1,5 @@
 <?php
-$pageTitle = 'Gói Dịch Vụ - ' . ($settings['site_title'] ?? 'VC VPN 2027');
+$pageTitle = 'Gói Dịch Vụ - ' . ($settings['site_title'] ?? 'VC VPN PANEL');
 $availablePlans = isset($plans) && is_array($plans) ? $plans : [];
 $activeServerGroups = isset($serverGroups) && is_array($serverGroups) ? $serverGroups : [];
 

@@ -1,5 +1,5 @@
 <?php
-$pageTitle = 'Đơn Hàng - ' . ($settings['site_title'] ?? 'VC VPN 2027');
+$pageTitle = 'Đơn Hàng - ' . ($settings['site_title'] ?? 'VC VPN PANEL');
 $statusLabels = [
 	'pending' => 'Chờ thanh toán',
 	'completed' => 'Hoàn tất',

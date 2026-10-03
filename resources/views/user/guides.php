@@ -1,5 +1,5 @@
 <?php
-$pageTitle = 'Hướng dẫn sử dụng - ' . ($settings['site_title'] ?? 'VC VPN 2027');
+$pageTitle = 'Hướng dẫn sử dụng - ' . ($settings['site_title'] ?? 'VC VPN PANEL');
 $extraCss = 'admin';
 $extraJs = 'app';
 

@@ -1,5 +1,5 @@
 <?php
-$pageTitle = 'Giới thiệu - ' . ($settings['site_title'] ?? 'VC VPN 2027');
+$pageTitle = 'Giới thiệu - ' . ($settings['site_title'] ?? 'VC VPN PANEL');
 $items = isset($commissions) && is_array($commissions) ? $commissions : [];
 $refCode = (string) ($user['ref_code'] ?? '');
 $minWithdrawal = (float) ($minWithdrawal ?? ($settings['min_withdrawal'] ?? 0));

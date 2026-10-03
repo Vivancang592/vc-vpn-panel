@@ -1,5 +1,5 @@
 <?php
-$pageTitle = 'Chi Tiết Gói Dịch Vụ - ' . ($settings['site_title'] ?? 'VC VPN 2027');
+$pageTitle = 'Chi Tiết Gói Dịch Vụ - ' . ($settings['site_title'] ?? 'VC VPN PANEL');
 $status = $subscription['status'] ?? 'expired';
 $statusLabels = ['active' => 'Đang hoạt động', 'expired' => 'Hết hạn', 'suspended' => 'Tạm dừng', 'cancelled' => 'Đã hủy'];
 $usedBytes = (float) ($subscription['upload'] ?? 0) + (float) ($subscription['download'] ?? 0);

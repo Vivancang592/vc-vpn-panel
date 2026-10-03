@@ -1,13 +1,16 @@
 <?php
-$siteTitle = $settings['site_title'] ?? 'VC VPN 2027';
+$siteTitle = $settings['site_title'] ?? 'VC VPN PANEL';
 $contactEmail = $settings['contact_email'] ?? '';
 $pageTitle = 'Điều Khoản Sử Dụng - ' . $siteTitle;
+$metaDescription = 'Điều khoản sử dụng dịch vụ VPN: quy định tài khoản, thanh toán, hoàn tiền, trách nhiệm người dùng và nghĩa vụ của ' . $siteTitle . '.';
+$metaKeywords = 'điều khoản sử dụng, điều khoản dịch vụ, terms of service, chính sách vpn, quy định sử dụng vpn';
+$extraCss = 'home';
+$extraJs = 'home'; // fragment partial-nav cần home.js (reveal .home-reveal)
 ob_start();
 ?>
 
-<div class="policy-page">
-    <header class="glass-card policy-hero">
-        <span class="policy-eyebrow">Pháp lý</span>
+<section class="public-page home-page home-subpage home-policy-page">
+    <header class="home-subpage-header">
         <h1 class="policy-title">Điều Khoản Sử Dụng</h1>
         <p class="policy-summary">Các điều kiện áp dụng khi bạn truy cập hoặc sử dụng dịch vụ của <?= htmlspecialchars($siteTitle) ?>.</p>
         <p class="policy-meta">Cập nhật lần cuối: 14/09/2026</p>
@@ -68,7 +71,7 @@ ob_start();
             <?php endif; ?>
         </aside>
     </article>
-</div>
+</section>
 
 <?php
 $content = ob_get_clean();

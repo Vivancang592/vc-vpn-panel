@@ -1,6 +1,12 @@
 <?php
 $settings = isset($settings) && is_array($settings) ? $settings : [];
-$siteTitle = (string)($settings['site_title'] ?? 'VC VPN 2027');
+$siteTitle = (string)($settings['site_title'] ?? 'VC VPN PANEL');
+// Mô tả dưới tên web trong footer — ưu tiên site_description admin set,
+// fallback đúng câu meta description SEO (từ khóa ẩn IP/mã hóa/VPN uy tín).
+$footerDesc = trim((string)($settings['site_description'] ?? ''));
+if ($footerDesc === '') {
+    $footerDesc = 'Dịch vụ VPN uy tín giúp ẩn IP, mã hóa kết nối và bảo vệ quyền riêng tư trên mọi thiết bị. Bảng giá minh bạch, hướng dẫn cài đặt chi tiết, hỗ trợ 24/7.';
+}
 
 $fanpageUrl = trim((string)($settings['fanpage_url'] ?? ''));
 $zaloUrl = trim((string)($settings['zalo_url'] ?? ''));
@@ -47,10 +53,11 @@ if ($chatUserName === '') {
             <h3 class="vc-footer-title">
                 <?= htmlspecialchars($siteTitle) ?>
             </h3>
+            <p class="vc-footer-desc"><?= htmlspecialchars($footerDesc) ?></p>
         </div>
 
         <?php if ($hasContactLinks): ?>
-            <nav class="vc-footer-contact-links" aria-label="Nền tảng hỗ trợ" style="display: flex; align-items: center; justify-content: center; flex-wrap: wrap; gap: .55rem; margin-top: .65rem;">
+            <nav class="vc-footer-contact-links" aria-label="Nền tảng hỗ trợ" style="display: flex; align-items: center; justify-content: center; flex-wrap: wrap; gap: .5rem; margin-top: .65rem;">
                 <?php if ($fanpageHref !== ''): ?>
                     <a href="<?= htmlspecialchars($fanpageHref) ?>" target="_blank" rel="noopener noreferrer" title="Facebook Fanpage" aria-label="Facebook Fanpage" style="display: inline-grid; place-items: center; width: 34px; height: 34px; border: 1px solid rgba(24,119,242,.45); border-radius: 6px; color: #1877F2; text-decoration: none;">
                         <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" fill="currentColor"><path d="M24 12.073C24 5.446 18.627.073 12 .073S0 5.446 0 12.073c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073Z"/></svg>

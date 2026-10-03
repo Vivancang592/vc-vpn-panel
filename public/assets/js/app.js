@@ -277,6 +277,26 @@ window.vcInitPageContent = function (root) {
         content.innerHTML = json.html || '';
         if (json.title) document.title = json.title;
 
+        // Link CSS(fragment) → chuyển vào <head>: để trong .admin-content sẽ
+        // bị xóa ở lần swap sau → style rớt giữa chừng; trùng href (trang
+        // public luôn kèm home.css) thì giữ bản <head>, gỏ bản fragment.
+        content.querySelectorAll('link[rel="stylesheet"]').forEach((l) => {
+            const key = (l.getAttribute('href') || '').split('?')[0];
+            const dup = Array.prototype.some.call(
+                document.head.querySelectorAll('link[rel="stylesheet"]'),
+                (h) => ((h.getAttribute('href') || '').split('?')[0]) === key
+            );
+            if (dup) l.remove(); else document.head.appendChild(l);
+        });
+
+        // Đồng bộ theme <body> theo trang đích — swap .admin-content không tự
+        // đổi class; thiếu home-festival / thừa user-area làm nền + cascade
+        // lệch so với tải đầy đủ (title trang chính sách căn trái, sai font).
+        if (json.body_classes) {
+            document.body.classList.toggle('home-festival', !!json.body_classes.home);
+            document.body.classList.toggle('user-area', !!json.body_classes.user);
+        }
+
         // Giữ #anchor trên URL (trang chủ #bang-gia / #cau-hoi-thuong-gap)
         const urlWithHash = newKey + (u.hash || '');
         if (push) history.pushState({ vcKey: newKey }, '', urlWithHash);

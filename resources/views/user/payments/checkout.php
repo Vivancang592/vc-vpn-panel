@@ -13,7 +13,7 @@ $pageTitlePrefix = match ($checkoutType) {
 };
 
 $pageTitle = $pageTitlePrefix
-    . ($settings['site_title'] ?? 'VC VPN 2027');
+    . ($settings['site_title'] ?? 'VC VPN PANEL');
 
 $paymentInfo = isset($paymentInstructions) && is_array($paymentInstructions)
     ? $paymentInstructions
