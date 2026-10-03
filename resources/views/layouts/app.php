@@ -25,6 +25,15 @@ if (($_SERVER['HTTP_X_VC_PARTIAL'] ?? '') === '1') {
         $fragmentSidebar = ob_get_clean();
     }
 
+    // Fragment KHÔNG kèm footer.php → script extraJs (vd home.js) phải tự
+    // đi theo để runScripts nạp sau swap; nếu thiếu, trang home trống vì
+    // .home-reveal không được gắn is-visible (không có ai chạy reveal).
+    if (!empty($extraJs) && $extraJs !== 'app') {
+        $vcExtraJsPath = BASE_PATH . '/public/assets/js/' . $extraJs . '.js';
+        $vcExtraJsVer = @filemtime($vcExtraJsPath) ?: 1;
+        $fragmentHtml .= '<script src="/assets/js/' . rawurlencode($extraJs) . '.js?v=' . $vcExtraJsVer . '"></script>';
+    }
+
     header('Content-Type: application/json; charset=utf-8');
     header('Cache-Control: no-store');
     echo json_encode([

@@ -1,6 +1,6 @@
 <?php
-$pageTitle = ($settings['site_name'] ?? 'VC VPN PANEL') . " - VPN bảo mật cho kết nối riêng tư";
-$metaDescription = 'Dịch vụ VPN premium giúp bảo vệ kết nối Internet, tăng quyền riêng tư và quản lý dịch vụ trên nhiều thiết bị. Xem gói VPN phù hợp với nhu cầu của bạn.';
+$pageTitle = ($settings['site_name'] ?? 'VC VPN PANEL') . ' - Dịch vụ VPN uy tín, bảo mật & riêng tư';
+$metaDescription = 'Dịch vụ VPN uy tín giúp ẩn IP, mã hóa kết nối và bảo vệ quyền riêng tư trên mọi thiết bị. Xem bảng giá VPN, hướng dẫn cài đặt và hỗ trợ 24/7.';
 $extraCss = 'home';
 $extraJs = 'home';
 ob_start();
@@ -42,8 +42,8 @@ $loggedIn = !empty($_SESSION['user_id']);
         <div class="home-scroll">
             <div class="home-scroll-content">
                 <span class="home-eyebrow"><span class="home-dot"></span>SECURE CONNECTION PROTOCOL</span>
-                <h1 id="home-title" class="home-title">VPN bảo mật.<br><strong>Riêng tư trong mọi kết nối.</strong></h1>
-                <p class="home-lead">Dịch vụ VPN premium giúp bảo vệ kết nối Internet, tăng quyền riêng tư và quản lý dịch vụ dễ dàng trên các thiết bị của bạn.</p>
+                <h1 id="home-title" class="home-title">Dịch vụ VPN bảo mật.<br><strong>Riêng tư trong mọi kết nối.</strong></h1>
+                <p class="home-lead">Dịch vụ VPN cao cấp giúp bảo vệ kết nối Internet, ẩn IP và tăng quyền riêng tư — quản lý dễ dàng trên máy tính, điện thoại và nhiều thiết bị cùng lúc.</p>
                 <div class="home-actions">
                     <a class="home-button home-button-primary" href="#bang-gia">Bảo vệ kết nối ngay</a>
                     <a class="home-button home-button-secondary" href="<?= $loggedIn ? '/dashboard' : '/register' ?>"><?= $loggedIn ? 'Mở bảng điều khiển' : 'Bắt đầu ngay' ?></a>
@@ -63,9 +63,9 @@ $loggedIn = !empty($_SESSION['user_id']);
 <!-- Tính Năng Nổi Bật (Cam Kết Chất Lượng) -->
 <section class="home-features-section home-reveal">
     <div class="home-section-heading">
-        <span class="home-kicker">Built for privacy</span>
-        <h2>Một lớp bảo vệ gọn gàng cho kết nối hằng ngày</h2>
-        <p>Thiết kế cho nhu cầu truy cập Internet riêng tư, linh hoạt và dễ quản lý.</p>
+        <span class="home-kicker">Tính năng nổi bật</span>
+        <h2>Tính năng nổi bật của dịch vụ VPN</h2>
+        <p>Những lợi ích chính giúp dịch vụ VPN bảo vệ kết nối và quyền riêng tư của bạn mỗi ngày.</p>
     </div>
     <div class="home-features-grid">
         <article class="feature-box">
@@ -101,9 +101,9 @@ $loggedIn = !empty($_SESSION['user_id']);
 
 <section class="home-journey home-reveal" aria-labelledby="home-journey-title">
     <div class="home-journey-intro">
-        <span class="home-kicker">Connection protocol</span>
-        <h2 id="home-journey-title">Kích hoạt lớp bảo vệ trong ba bước</h2>
-        <p>Quy trình đăng ký được giữ đơn giản để bạn nhanh chóng quản lý dịch vụ từ tài khoản của mình.</p>
+        <span class="home-kicker">Quy trình đăng ký</span>
+        <h2 id="home-journey-title">Hướng dẫn đăng ký &amp; sử dụng VPN trong 3 bước</h2>
+        <p>Quy trình đăng ký gọn gọn trong 3 bước để bạn nhanh chóng kích hoạt và quản lý dịch vụ VPN từ tài khoản của mình.</p>
     </div>
     <ol class="home-steps">
         <li><span>01</span><div><h3>Chọn gói</h3><p>So sánh thời hạn và quyền lợi hiển thị trong bảng giá.</p></div></li>
@@ -116,9 +116,9 @@ $loggedIn = !empty($_SESSION['user_id']);
 <section id="bang-gia" class="home-pricing home-reveal">
     <div class="home-pricing-header">
         <div>
-            <span class="home-kicker">Service plans</span>
-            <h2>Chọn gói VPN phù hợp với kết nối của bạn</h2>
-            <p>Xem thời hạn, số thiết bị và thông tin đi kèm của mỗi gói trước khi đăng ký.</p>
+            <span class="home-kicker">Bảng giá dịch vụ</span>
+            <h2>Bảng giá dịch vụ VPN — chọn gói phù hợp</h2>
+            <p>So sánh thời hạn, số thiết bị và thông tin đi kèm của từng gói VPN trước khi đăng ký.</p>
         </div>
         <?php if ($groups): ?>
             <div class="home-tabs" role="tablist">
@@ -271,9 +271,9 @@ $loggedIn = !empty($_SESSION['user_id']);
 
 <section class="home-security home-reveal" aria-labelledby="home-security-title">
     <div>
-        <span class="home-kicker">Security briefing</span>
-        <h2 id="home-security-title">Kết nối của bạn. Quyền riêng tư của bạn. Quyền kiểm soát của bạn.</h2>
-        <p>VPN phù hợp khi bạn muốn tăng quyền riêng tư cho hoạt động trực tuyến. Hãy luôn dùng mật khẩu mạnh và kiểm tra thiết bị để bảo vệ tài khoản tốt hơn.</p>
+        <span class="home-kicker">Bảo mật &amp; quyền riêng tư</span>
+        <h2 id="home-security-title">Bảo vệ kết nối Internet và quyền riêng tư của bạn</h2>
+        <p>Dịch vụ VPN phù hợp khi bạn muốn tăng quyền riêng tư khi truy cập Internet. Hãy luôn dùng mật khẩu mạnh và kiểm tra thiết bị để bảo vệ tài khoản tốt hơn.</p>
     </div>
     <div class="home-security-notes">
         <div><strong>Kết nối công cộng</strong><span>Thận trọng hơn khi truy cập Wi-Fi bên ngoài.</span></div>
@@ -284,9 +284,9 @@ $loggedIn = !empty($_SESSION['user_id']);
 <!-- Câu Hỏi Thường Gặp (Accordion Mượt) -->
 <section id="cau-hoi-thuong-gap" class="home-faq home-reveal" aria-labelledby="home-faq-title">
     <div class="home-faq-heading">
-        <span class="home-kicker">Security database</span>
+        <span class="home-kicker">Câu hỏi thường gặp</span>
         <h2 id="home-faq-title">Câu hỏi thường gặp về dịch vụ VPN</h2>
-        <p>Những thông tin cơ bản trước khi bạn lựa chọn gói dịch vụ.</p>
+        <p>Những thông tin cơ bản trước khi bạn lựa chọn gói dịch vụ VPN. Xem thêm câu hỏi chi tiết tại trang <a href="/faq" style="color: #007aff; text-decoration: underline; text-underline-offset: 3px;">Câu hỏi thường gặp</a>.</p>
     </div>
     <div class="home-faq-list">
         <details class="home-faq-item" open>
@@ -327,8 +327,9 @@ $loggedIn = !empty($_SESSION['user_id']);
 <section class="home-final-cta home-reveal" aria-labelledby="home-final-title">
     <div>
         <span class="home-eyebrow"><span class="home-dot"></span>SẴN SÀNG KẾT NỐI</span>
-        <h2 id="home-final-title">Bảo vệ kết nối của bạn ngay hôm nay</h2>
-        <p>Chọn một gói VPN phù hợp hoặc tạo tài khoản để bắt đầu quản lý dịch vụ.</p>
+        <h2 id="home-final-title">Đăng ký VPN và bảo vệ kết nối ngay hôm nay</h2>
+        <p>Chọn một gói dịch vụ VPN phù hợp hoặc tạo tài khoản để bắt đầu quản lý dịch vụ.</p>
+        <p class="home-final-sub"><a href="/download">Tải ứng dụng VPN</a> · <a href="/faq">Hướng dẫn cài đặt</a></p>
     </div>
     <div class="home-actions">
         <a class="home-button home-button-primary" href="#bang-gia">Xem gói VPN</a>
@@ -338,5 +339,35 @@ $loggedIn = !empty($_SESSION['user_id']);
 
 <?php
 $content = '<div class="public-page home-page">' . ob_get_clean() . '</div>';
+
+// Structured data FAQPage (SEO) — đồng bộ với các câu hỏi hiển thị phía trên
+$faqJson = json_encode([
+    '@context' => 'https://schema.org',
+    '@type' => 'FAQPage',
+    'mainEntity' => [
+        [
+            '@type' => 'Question',
+            'name' => 'VPN là gì và hoạt động như thế nào?',
+            'acceptedAnswer' => ['@type' => 'Answer', 'text' => 'VPN (Virtual Private Network) tạo một kết nối riêng giữa thiết bị của bạn và dịch vụ VPN. Đây là một lớp hỗ trợ quyền riêng tư khi truy cập Internet, đặc biệt trên mạng công cộng.'],
+        ],
+        [
+            '@type' => 'Question',
+            'name' => 'Tôi có thể sử dụng 1 tài khoản trên bao nhiêu thiết bị?',
+            'acceptedAnswer' => ['@type' => 'Answer', 'text' => 'Số thiết bị được hiển thị riêng trên từng gói trong bảng giá. Bạn có thể xem thông tin này trước khi đăng ký và quản lý dịch vụ từ tài khoản của mình.'],
+        ],
+        [
+            '@type' => 'Question',
+            'name' => 'Sau khi thanh toán thành công, tôi nhận cấu hình ở đâu?',
+            'acceptedAnswer' => ['@type' => 'Answer', 'text' => 'Sau khi thanh toán thành công, bạn có thể kiểm tra trạng thái đơn hàng và thông tin dịch vụ trong khu vực tài khoản của mình.'],
+        ],
+        [
+            '@type' => 'Question',
+            'name' => 'Tôi cần hỗ trợ kỹ thuật khi không thể kết nối VPN?',
+            'acceptedAnswer' => ['@type' => 'Answer', 'text' => 'Bạn có thể gửi yêu cầu trong mục hỗ trợ của trang cá nhân để đội ngũ kiểm tra và hướng dẫn.'],
+        ],
+    ],
+], JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
+$content .= '<script type="application/ld+json">' . $faqJson . '</script>';
+
 require_once __DIR__ . '/../layouts/app.php';
 ?>
