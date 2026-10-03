@@ -58,13 +58,13 @@ class OrderController extends BaseController
     }
 
     /**
-     * Hàm phụ trợ: Tạo task delete_user gửi xuống VPS khi hủy đơn hàng
+     * Hàm phụ trợ: Tạo task disable_user (giữ user, cắt mạng — contract §2.2)
      */
-    private function dispatchDelUserTask(int $subId, array $groupIds, string $reason = 'cancelled'): void
+    private function dispatchDisableUserTask(int $subId, array $groupIds, string $reason = 'cancelled'): void
     {
         if (empty($groupIds)) return;
 
-        (new \App\Services\NodeTaskService())->deleteUser($groupIds, 'sub_' . $subId, $reason);
+        (new \App\Services\NodeTaskService())->disableUser($groupIds, 'sub_' . $subId, $reason);
     }
 
     public function index(): void
@@ -218,7 +218,8 @@ class OrderController extends BaseController
                         $groupIds  = $this->parseGroupIds($plan['group_id'] ?? []);
 
                         if (!empty($groupIds)) {
-                            $this->dispatchDelUserTask((int)$sub['id'], $groupIds);
+                            // Đơn failed/cancelled → cắt mạng, giữ user trên VPS (contract §2.2)
+                            $this->dispatchDisableUserTask((int)$sub['id'], $groupIds);
                         }
                     }
                 }

@@ -196,7 +196,8 @@ class ServerController extends BaseController
                     $sub['uuid'],
                     (int)$sub['transfer_enable'],
                     $sub['end_date'],
-                    'active'
+                    'active',
+                    (int)($sub['max_devices'] ?? 1)
                 );
                 $count++;
             }

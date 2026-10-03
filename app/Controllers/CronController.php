@@ -99,7 +99,8 @@ class CronController extends BaseController
 
             $groupIds = $this->parseGroupIds($subscription['group_id'] ?? []);
             if (!empty($groupIds)) {
-                $taskService->deleteUser($groupIds, 'sub_' . $subscription['id'], 'cancelled');
+                // Quá hạn lưu trữ → cắt mạng, không xóa user (contract §2.2)
+                $taskService->disableUser($groupIds, 'sub_' . $subscription['id'], 'cancelled');
             }
             $stats['cancelled_subscriptions']++;
         }
