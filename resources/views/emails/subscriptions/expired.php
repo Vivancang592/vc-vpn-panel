@@ -15,6 +15,6 @@ require __DIR__ . '/../_header.php';
     <tr><td class="k">Trạng thái</td><td class="v">Đã ngừng hoạt động</td></tr>
 </table>
 <p class="mail-lead">Bạn có thể đăng ký gói mới hoặc gia hạn để tiếp tục sử dụng dịch vụ ngay lập tức.</p>
-<a href="<?= htmlspecialchars(rtrim((string)$siteUrl, '/') . '/plans', ENT_QUOTES, 'UTF-8') ?>" class="mail-btn">Đăng Ký / Gia Hạn Ngay</a>
+<div style="text-align:center;"><a href="<?= htmlspecialchars(rtrim((string)$siteUrl, '/') . '/plans', ENT_QUOTES, 'UTF-8') ?>" class="mail-btn">Đăng Ký / Gia Hạn Ngay</a></div>
 <p class="mail-note">Nếu bạn cho rằng email này là lỗi, vui lòng liên hệ bộ phận hỗ trợ kèm mã đơn hàng để được kiểm tra.</p>
 <?php require __DIR__ . '/../_footer.php'; ?>
