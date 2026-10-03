@@ -254,8 +254,7 @@ vc-vpn-2027/
 │       ├── MailService.php
 │       ├── VpnService.php
 │       ├── OrderService.php
-│       ├── PaymentService.php
-│       └── ServerService.php
+│       └── PaymentService.php
 │
 ├── resources/
 │   └── views/

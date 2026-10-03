@@ -95,6 +95,7 @@ CREATE TABLE `vc_node_tasks` (
     `payload` JSON NOT NULL,
     `status` ENUM('pending', 'completed', 'failed') NOT NULL DEFAULT 'pending',
     `attempts` INT NOT NULL DEFAULT 0,
+    `error_msg` TEXT NULL,
     `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     `updated_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     FOREIGN KEY (`server_id`) REFERENCES `vc_servers`(`id`) ON DELETE CASCADE
