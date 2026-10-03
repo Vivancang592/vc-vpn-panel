@@ -282,7 +282,8 @@ vc-vpn-2027/
 │       │   │   ├── register-otp.php
 │       │   │   └── reset-password.php
 │       │   ├── orders/
-│       │   │   └── activated.php
+│       │   │   ├── payment-completed.php
+│       │   │   └── cancelled.php
 │       │   └── subscriptions/
 │       │       ├── expiring-soon.php
 │       │       ├── expired.php
