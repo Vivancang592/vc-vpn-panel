@@ -220,7 +220,8 @@ class CronController extends BaseController
             if (!empty($sub['email']) && !$this->hasRecentEmailLog($sub['email'], 'hết dung lượng', 24)) {
                 $mailService->send($sub['email'], 'Tài khoản VPN của bạn đã hết dung lượng', 'subscriptions.data-exceeded', [
                     'username'  => $sub['user_name'],
-                    'plan_name' => $sub['plan_name']
+                    'plan_name' => $sub['plan_name'],
+                    'transfer_enable' => $sub['transfer_enable']
                 ]);
             }
 

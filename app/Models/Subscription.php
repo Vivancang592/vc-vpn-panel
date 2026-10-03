@@ -225,7 +225,8 @@ class Subscription extends BaseModel
                     $mailService = new \App\Services\MailService();
                     $mailService->send($sub['email'], 'Tài khoản VPN của bạn đã hết dung lượng', 'subscriptions.data-exceeded', [
                         'username'  => $sub['user_name'],
-                        'plan_name' => $sub['plan_name']
+                        'plan_name' => $sub['plan_name'],
+                        'transfer_enable' => $sub['transfer_enable']
                     ]);
                 }
             }
