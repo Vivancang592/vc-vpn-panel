@@ -123,7 +123,7 @@ class ServerController extends BaseController
         if (!empty($taskId)) {
             $taskModel = new NodeTask();
             $mappedStatus = ($status === 'done' || $status === 'completed') ? 'completed' : 'failed';
-            $taskModel->updateStatus((int)$taskId, $mappedStatus, $errorMsg);
+            $taskModel->updateStatus((int)$taskId, $serverId, $mappedStatus, $errorMsg);
         }
 
         $this->json([

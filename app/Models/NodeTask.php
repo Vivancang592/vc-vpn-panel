@@ -24,20 +24,24 @@ class NodeTask extends BaseModel
 
     /**
      * Cập nhật trạng thái của Task sau khi VPS xử lý xong
+     * Điều kiện WHERE kèm server_id để chỉ server sở hữu task mới được báo cáo (contract §4)
      */
-    public function updateStatus(int $taskId, string $status, ?string $errorMsg = null): bool
+    public function updateStatus(int $taskId, int $serverId, string $status, ?string $errorMsg = null): bool
     {
         $sql = "
             UPDATE `{$this->table}` 
             SET `status` = :status, 
                 `attempts` = `attempts` + 1, 
+                `error_msg` = :error_msg,
                 `updated_at` = NOW() 
-            WHERE `id` = :id
+            WHERE `id` = :id AND `server_id` = :server_id
         ";
         $stmt = self::$db->prepare($sql);
         return $stmt->execute([
-            'status' => $status,
-            'id'     => (int)$taskId
+            'status'    => $status,
+            'error_msg' => $errorMsg,
+            'id'        => (int)$taskId,
+            'server_id' => (int)$serverId
         ]);
     }
 
