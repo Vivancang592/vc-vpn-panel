@@ -14,6 +14,6 @@ require __DIR__ . '/../_header.php';
     <tr><td class="k">Trạng thái</td><td class="v">Tạm ngừng do hết dung lượng</td></tr>
 </table>
 <p class="mail-lead">Bạn có thể nâng cấp lên gói lớn hơn hoặc chờ chu kỳ làm mới dữ liệu (nếu gói có hỗ trợ) để tiếp tục sử dụng.</p>
-<a href="<?= htmlspecialchars(rtrim((string)$siteUrl, '/') . '/plans', ENT_QUOTES, 'UTF-8') ?>" class="mail-btn">Nâng Cấp / Gia Hạn Ngay</a>
+<div style="text-align:center;"><a href="<?= htmlspecialchars(rtrim((string)$siteUrl, '/') . '/plans', ENT_QUOTES, 'UTF-8') ?>" class="mail-btn">Nâng Cấp / Gia Hạn Ngay</a></div>
 <p class="mail-note">Cần hỗ trợ thêm? Liên hệ bộ phận hỗ trợ kèm mã đơn hàng để được kiểm tra gói cước nhanh chóng.</p>
 <?php require __DIR__ . '/../_footer.php'; ?>
