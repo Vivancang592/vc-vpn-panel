@@ -177,6 +177,7 @@ Lý do: script cũ nhận `disable_user`/`enable_user` sẽ báo `done` giả m�
 - **Kết nối đang mở:** `GET http://127.0.0.1:9090/connections` (Clash API — đã bật sẵn trong `config.base.json`).
   - `connections[].metadata.type` = `<loại>/<inbound_tag>` (vd `vless/vision`), `.metadata.sourceIP`, `.network`.
   - Timeout 2s, `net/http` native (không fork curl).
+  - Poll mỗi 5s + snapshot mỗi chu kỳ → tích lũy **cửa sổ quan sát 60s**: kết nối sống ngắn (Shadowrocket ngắt nhanh) không bị lọt.
 - **Gán user:** parser log sing-box (`[user] inbound connection to` + **`inbound packet connection to`** — UDP trước đây bị miss) ghép với kết nối Clash theo cặp `(sourceIP, destination)`; fallback theo `sourceIP`.
 - **Cổng đang mở (inbound_status):** parse `/proc/net/{tcp,tcp6,udp,udp6}` native (không subprocess) — fix hysteria/tuic đoán mò.
 
@@ -187,7 +188,7 @@ Lý do: script cũ nhận `disable_user`/`enable_user` sẽ báo `done` giả m�
 ```json
 {"action":"report_inbounds","inbounds":[{ ...field link giữ nguyên...,
    "inbound_status":"online|offline",        // CỔNG đang mở (giữ semantics cũ)
-   "connected_devices": 3                    // MỚI: số IP đang kết nối (Clash API)
+   "connected_devices": 3                    // MỚI: số IP kết nối trong cửa sổ 60s (Clash poll 5s + log)
 }]}
 ```
 
@@ -196,7 +197,7 @@ Lý do: script cũ nhận `disable_user`/`enable_user` sẽ báo `done` giả m�
 
 ### 10.2 `report_traffic` — `ip_count` theo kết nối thật
 
-- `ip_count(user)` = số IP khác nhau **đang có kết nối mở** của user.
+- `ip_count(user)` = số IP khác nhau **có kết nối trong cửa sổ 60s gần nhất** của user (poll Clash 5s ∪ log attribution — kết nối sống ngắn không bị lọt, fix app như Shadowrocket báo ip_count=0 dù có traffic).
 - Report user có kết nối nhưng không traffic (ip_count>0, upload/download=0) + user vừa rời (ip_count=0 → **zero-once**, hết chuỗi thì ngừng gửi — state map trong Go, persist file).
 - grpcurl fail → vẫn gửi report (traffic=0, ip_count từ kết nối thật) thay vì bỏ cả kỳ.
 
@@ -206,6 +207,7 @@ Lý do: script cũ nhận `disable_user`/`enable_user` sẽ báo `done` giả m�
 - [x] Clash API client + map tag → kết nối (srcIP, dst, network).
 - [x] Parser log: khớp `packet connection` (UDP), ghép user↔KQ theo `(srcIP,dst)` fallback `srcIP`.
 - [x] `ip_count` theo kết nối thật + zero-once report (state persist).
+- [x] Cửa sổ quan sát 60s: poll Clash 5s + log attribution — bắt kết nối sống ngắn (fix ip_count=0 dù có traffic).
 - [x] `report_inbounds` tự động mỗi phút: field link giữ nguyên + `inbound_status` (cổng thật qua /proc) + `connected_devices`.
 
 ### P3 — Panel
