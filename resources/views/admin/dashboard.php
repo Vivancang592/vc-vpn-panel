@@ -53,8 +53,8 @@ ob_start();
             <span class="title">Cổng Inbound Active</span>
             <span style="font-size: 1.25rem;">🌐</span>
         </div>
-        <div class="value" style="color: #5856D6;"><?= ($stats['active_inbounds'] ?? 0) ?> / <?= ($stats['total_inbounds'] ?? 0) ?></div>
-        <div style="font-size: 0.8rem; color: var(--ios-text-secondary);">Giao thức khả dụng</div>
+        <div class="value" style="color: #5856D6;"><?= (int)($stats['connected_inbounds'] ?? 0) ?> / <?= (int)($stats['active_inbounds'] ?? 0) ?></div>
+        <div style="font-size: 0.8rem; color: var(--ios-text-secondary);">Đang có người kết nối</div>
     </div>
 
     <div class="glass-card stat-card">
