@@ -608,10 +608,10 @@ $_SESSION['success'] = 'Đã tạo đơn hàng ' . $orderCode . ' thành công. 
 
         $email = trim((string) ($order['email'] ?? ''));
         if ($email !== '' && class_exists('App\Services\MailService')) {
-            (new \App\Services\MailService())->send($email, 'Đơn hàng đã bị hủy', 'orders.cancelled', [
-                'orderCode' => (string) ($order['order_code'] ?? ''),
-                'reason' => 'Đơn hàng đã được hủy theo yêu cầu của bạn.'
-            ]);
+            $vars = Order::invoiceMailVars($order ?? []);
+            $vars['orderCode'] = (string) ($order['order_code'] ?? '');
+            $vars['reason'] = 'Đơn hàng đã được hủy theo yêu cầu của bạn.';
+            (new \App\Services\MailService())->send($email, 'Đơn hàng đã bị hủy', 'orders.cancelled', $vars);
         }
 
         $_SESSION['success'] = 'Đã hủy đơn hàng chờ thanh toán. Bạn có thể tạo đơn mới.';

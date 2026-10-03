@@ -627,7 +627,7 @@ class PaymentService
 
         (new MailService())->send($email, 'Thanh toán thành công', 'orders.payment-completed', [
             'orderCode'     => (string) ($order['order_code'] ?? $payment['transaction_id'] ?? ''),
-            'totalAmount'   => $hasBreakdown ? number_format($orderTotal, 0, '.', ',') . ' đ' : '',
+            'totalAmount'   => $hasBreakdown ? number_format($planPrice, 0, '.', ',') . ' đ' : '',
             'discountAmount' => $discountAmt > 0 ? number_format($discountAmt, 0, '.', ',') . ' đ' : '',
             'couponCode'    => $discountAmt > 0 ? (string) ($order['coupon_code'] ?? '') : '',
             'paidAmount'    => number_format($paidAmount, 0, '.', ',') . ' đ',
