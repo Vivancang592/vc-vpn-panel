@@ -16,6 +16,6 @@ require __DIR__ . '/../_header.php';
     <tr><td class="k">Thời điểm hết hạn</td><td class="v"><?= $formattedEndDate !== '' ? htmlspecialchars($formattedEndDate, ENT_QUOTES, 'UTF-8') : '—' ?></td></tr>
 </table>
 <p class="mail-lead">Sau khi hết hạn, dịch vụ sẽ tạm ngừng và kết nối VPN của bạn sẽ bị khóa cho đến khi gói được gia hạn.</p>
-<a href="<?= htmlspecialchars(rtrim((string)$siteUrl, '/') . '/subscriptions', ENT_QUOTES, 'UTF-8') ?>" class="mail-btn">Gia Hạn Ngay</a>
+<div style="text-align:center;"><a href="<?= htmlspecialchars(rtrim((string)$siteUrl, '/') . '/subscriptions', ENT_QUOTES, 'UTF-8') ?>" class="mail-btn">Gia Hạn Ngay</a></div>
 <p class="mail-note">Gói cước sẽ được tự động duy trì trạng thái đến thời điểm hết hạn hiển thị ở trên.</p>
 <?php require __DIR__ . '/../_footer.php'; ?>
