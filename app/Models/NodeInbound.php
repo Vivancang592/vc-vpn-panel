@@ -27,6 +27,18 @@ class NodeInbound extends BaseModel
     }
 
     /**
+     * Đếm số Inbound đang có thiết bị kết nối (connected_devices > 0)
+     */
+    public function countConnected(): int
+    {
+        $stmt = self::$db->prepare(
+            "SELECT COUNT(*) FROM `{$this->table}` WHERE `status` = 'active' AND `connected_devices` > 0"
+        );
+        $stmt->execute();
+        return (int)$stmt->fetchColumn();
+    }
+
+    /**
      * Lấy danh sách tất cả Node Inbound đang hoạt động kèm thông tin Máy chủ (Server), hỗ trợ truyền 1 ID hoặc mảng group_ids
      */
     public function getAllActiveWithServer(int|array|null $groupId = null): array

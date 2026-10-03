@@ -102,6 +102,7 @@ class DashboardController extends BaseController
             'total_servers'        => method_exists($serverModel, 'countAll') ? $serverModel->countAll() : 0,
             'active_inbounds'      => method_exists($inboundModel, 'countActive') ? $inboundModel->countActive() : 0,
             'total_inbounds'       => method_exists($inboundModel, 'countAll') ? $inboundModel->countAll() : 0,
+            'connected_inbounds'   => method_exists($inboundModel, 'countConnected') ? $inboundModel->countConnected() : 0,
             'chat_started_today'   => $chatEventModel ? $chatEventModel->countToday('chat_opened') : 0,
             'chat_handoff_today'   => $chatEventModel ? $chatEventModel->countToday('handoff_requested') : 0,
             'chat_handoff_pending' => $chatSessionModel->countByStatus('handoff'),
