@@ -506,6 +506,7 @@ vc-vpn-2027/
 │   │   ├── image_generation.txt
 │   │   ├── rules_auto_reply.txt
 │   │   ├── rules_fanpage_content.txt
+│   │   ├── rules_image.txt
 │   │   ├── rules_video.txt
 │   │   ├── rules_video_dubbing.txt
 │   │   ├── support_chat.txt
