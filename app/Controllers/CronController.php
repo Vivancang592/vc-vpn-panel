@@ -5,13 +5,13 @@ namespace App\Controllers;
 use App\Models\Subscription;
 use App\Models\VpnPlan;
 use App\Models\User;
-use App\Models\NodeTask;
 use App\Models\Setting;
 use App\Models\Order;
 use App\Models\Payment;
 use App\Models\ScheduledPost;
 use App\Services\MailService;
 use App\Services\FanpageService;
+use App\Services\NodeTaskService;
 
 class CronController extends BaseController
 {
@@ -59,7 +59,7 @@ class CronController extends BaseController
 
         $db                = $this->getPdo();
         $subscriptionModel = new Subscription();
-        $nodeTaskModel     = new NodeTask();
+        $taskService       = new NodeTaskService();
         $mailService       = new MailService();
         $orderModel        = new Order();
 
@@ -99,9 +99,7 @@ class CronController extends BaseController
 
             $groupIds = $this->parseGroupIds($subscription['group_id'] ?? []);
             if (!empty($groupIds)) {
-                $nodeTaskModel->createTasksForGroup($groupIds, 'delete_user', [
-                    'username' => 'sub_' . $subscription['id']
-                ]);
+                $taskService->deleteUser($groupIds, 'sub_' . $subscription['id'], 'cancelled');
             }
             $stats['cancelled_subscriptions']++;
         }
@@ -127,19 +125,17 @@ class CronController extends BaseController
             foreach ($suspendedSubs as $sub) {
                 // Cập nhật trạng thái lại thành active và reset lưu lượng
                 $subscriptionModel->update($sub['id'], [
-                    'status'     => 'active',
-                    'upload'     => 0,
-                    'download'   => 0,
-                    'updated_at' => $now
+                    'status'              => 'active',
+                    'upload'              => 0,
+                    'download'            => 0,
+                    'network_locked_until'=> null,
+                    'updated_at'          => $now
                 ]);
 
                 // Gửi Task mở lại kết nối trên VPS
                 $groupIds = $this->parseGroupIds($sub['group_id'] ?? []);
                 if (!empty($groupIds)) {
-                    $nodeTaskModel->createTasksForGroup($groupIds, 'toggle_user', [
-                        'username' => 'sub_' . $sub['id'],
-                        'status'   => 'active'
-                    ]);
+                    $taskService->enableUser($groupIds, 'sub_' . $sub['id'], 'monthly_reset');
                 }
             }
 
@@ -179,10 +175,7 @@ class CronController extends BaseController
 
             $groupIds = $this->parseGroupIds($sub['group_id'] ?? []);
             if (!empty($groupIds)) {
-                $nodeTaskModel->createTasksForGroup($groupIds, 'toggle_user', [
-                    'username' => 'sub_' . $sub['id'],
-                    'status'   => 'disabled'
-                ]);
+                $taskService->disableUser($groupIds, 'sub_' . $sub['id'], 'expired');
             }
 
             if (!empty($sub['email']) && !$this->hasRecentEmailLog($sub['email'], 'hết hạn', 24)) {
@@ -220,10 +213,7 @@ class CronController extends BaseController
 
             $groupIds = $this->parseGroupIds($sub['group_id'] ?? []);
             if (!empty($groupIds)) {
-                $nodeTaskModel->createTasksForGroup($groupIds, 'toggle_user', [
-                    'username' => 'sub_' . $sub['id'],
-                    'status'   => 'disabled'
-                ]);
+                $taskService->disableUser($groupIds, 'sub_' . $sub['id'], 'data_exceeded');
             }
 
             if (!empty($sub['email']) && !$this->hasRecentEmailLog($sub['email'], 'hết dung lượng', 24)) {

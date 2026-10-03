@@ -6,7 +6,6 @@ use App\Models\User;
 use App\Models\Setting;
 use App\Models\VpnPlan;
 use App\Models\Subscription;
-use App\Models\NodeTask;
 use App\Models\AccessLog;
 use App\Services\MailService;
 
@@ -649,18 +648,29 @@ class AuthController extends BaseController
         ]);
 
         // Đẩy Task tự động xuống các máy chủ thuộc group_id của gói cước với payload chuẩn
-        if ($created && class_exists('App\Models\NodeTask') && !empty($plan['group_id'])) {
+        if ($created && class_exists('App\Services\NodeTaskService') && !empty($plan['group_id'])) {
             $sub = $subscriptionModel->findByUuid($uuid);
             $subId = $sub['id'] ?? 0;
 
             if ($subId > 0) {
-                $nodeTaskModel = new NodeTask();
-                $nodeTaskModel->createTasksForGroup((int)$plan['group_id'], 'add_user', [
-                    'uuid'            => $uuid,
-                    'end_date'        => $endDate,
-                    'username'        => 'sub_' . $subId,
-                    'transfer_enable' => $transferEnable
-                ]);
+                // group_id lưu dạng JSON array ("[1,2]") — decode đúng, không ép (int)
+                $groupIds = json_decode((string)$plan['group_id'], true);
+                if (!is_array($groupIds)) {
+                    $groupIds = [(int)$plan['group_id']];
+                }
+                $groupIds = array_values(array_filter(array_map('intval', $groupIds), fn($id) => $id > 0));
+
+                if (!empty($groupIds)) {
+                    (new \App\Services\NodeTaskService())->addUser(
+                        $groupIds,
+                        'sub_' . $subId,
+                        $uuid,
+                        $transferEnable,
+                        $endDate,
+                        'active',
+                        $maxDevices
+                    );
+                }
             }
         }
     }

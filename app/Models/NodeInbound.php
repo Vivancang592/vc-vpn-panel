@@ -112,6 +112,10 @@ class NodeInbound extends BaseModel
             $serviceName = $item['grpc_service'] ?? null;
             $password    = $item['password'] ?? null;
             $status      = ($item['inbound_status'] ?? 'online') === 'offline' ? 'inactive' : 'active';
+            // connected_devices: vắng field (shell cũ/report lỗi) -> NULL = GIỮ giá trị cũ
+            $connectedDevices = array_key_exists('connected_devices', $item)
+                ? max(0, (int)$item['connected_devices'])
+                : null;
 
             // Kiểm tra Inbound theo server_id và port đã tồn tại chưa
             $checkStmt = self::$db->prepare("SELECT id FROM `{$this->table}` WHERE `server_id` = :server_id AND `port` = :port LIMIT 1");
@@ -130,45 +134,48 @@ class NodeInbound extends BaseModel
                             `short_id` = :short_id,
                             `service_name` = :service_name,
                             `password` = :password,
-                            `status` = :status
+                            `status` = :status,
+                            `connected_devices` = COALESCE(:connected_devices, `connected_devices`)
                         WHERE `id` = :id";
 
                 $stmt = self::$db->prepare($sql);
                 $stmt->execute([
-                    'tag'          => $tag,
-                    'protocol'     => $protocol,
-                    'network'      => $network,
-                    'sni'          => $sni,
-                    'host'         => $host,
-                    'path'         => $path,
-                    'public_key'   => $publicKey,
-                    'short_id'     => $shortId,
-                    'service_name' => $serviceName,
-                    'password'     => $password,
-                    'status'       => $status,
-                    'id'           => $existing['id']
+                    'tag'               => $tag,
+                    'protocol'          => $protocol,
+                    'network'           => $network,
+                    'sni'               => $sni,
+                    'host'              => $host,
+                    'path'              => $path,
+                    'public_key'        => $publicKey,
+                    'short_id'          => $shortId,
+                    'service_name'      => $serviceName,
+                    'password'          => $password,
+                    'status'            => $status,
+                    'connected_devices' => $connectedDevices,
+                    'id'                => $existing['id']
                 ]);
             } else {
                 $sql = "INSERT INTO `{$this->table}` 
-                            (`server_id`, `tag`, `port`, `protocol`, `network`, `sni`, `host`, `path`, `public_key`, `short_id`, `service_name`, `password`, `status`)
+                            (`server_id`, `tag`, `port`, `protocol`, `network`, `sni`, `host`, `path`, `public_key`, `short_id`, `service_name`, `password`, `status`, `connected_devices`)
                         VALUES 
-                            (:server_id, :tag, :port, :protocol, :network, :sni, :host, :path, :public_key, :short_id, :service_name, :password, :status)";
+                            (:server_id, :tag, :port, :protocol, :network, :sni, :host, :path, :public_key, :short_id, :service_name, :password, :status, :connected_devices)";
 
                 $stmt = self::$db->prepare($sql);
                 $stmt->execute([
-                    'server_id'    => $serverId,
-                    'tag'          => $tag,
-                    'port'         => $port,
-                    'protocol'     => $protocol,
-                    'network'      => $network,
-                    'sni'          => $sni,
-                    'host'         => $host,
-                    'path'         => $path,
-                    'public_key'   => $publicKey,
-                    'short_id'     => $shortId,
-                    'service_name' => $serviceName,
-                    'password'     => $password,
-                    'status'       => $status
+                    'server_id'         => $serverId,
+                    'tag'               => $tag,
+                    'port'              => $port,
+                    'protocol'          => $protocol,
+                    'network'           => $network,
+                    'sni'               => $sni,
+                    'host'              => $host,
+                    'path'              => $path,
+                    'public_key'        => $publicKey,
+                    'short_id'          => $shortId,
+                    'service_name'      => $serviceName,
+                    'password'          => $password,
+                    'status'            => $status,
+                    'connected_devices' => $connectedDevices ?? 0
                 ]);
             }
         }

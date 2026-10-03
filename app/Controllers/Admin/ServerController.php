@@ -182,24 +182,22 @@ class ServerController extends BaseController
             return;
         }
 
-        if (class_exists('App\Models\NodeTask') && class_exists('App\Models\Subscription')) {
+        if (class_exists('App\Services\NodeTaskService') && class_exists('App\Models\Subscription')) {
             $subModel  = new \App\Models\Subscription();
-            $taskModel = new \App\Models\NodeTask();
+            $taskService = new \App\Services\NodeTaskService();
 
             $activeSubs = $subModel->getActiveByGroupId($groupId);
 
             $count = 0;
             foreach ($activeSubs as $sub) {
-                $taskModel->create([
-                    'server_id' => $id,
-                    'action'    => 'add_user',
-                    'payload'   => [
-                        'username'        => 'sub_' . $sub['id'],
-                        'uuid'            => $sub['uuid'],
-                        'transfer_enable' => (int)$sub['transfer_enable'],
-                        'end_date'        => $sub['end_date']
-                    ]
-                ]);
+                $taskService->addUserToServer(
+                    $id,
+                    'sub_' . $sub['id'],
+                    $sub['uuid'],
+                    (int)$sub['transfer_enable'],
+                    $sub['end_date'],
+                    'active'
+                );
                 $count++;
             }
 

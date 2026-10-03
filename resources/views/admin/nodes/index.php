@@ -98,6 +98,9 @@ ob_start();
                                     <span style="padding: 0.2rem 0.5rem; border-radius: var(--radius-sm); font-size: 0.75rem; font-weight: 700; <?= $statusBadge[$node['status'] ?? 'active'] ?? '' ?>">
                                         <?= strtoupper($node['status'] ?? 'active') ?>
                                     </span>
+                                    <div style="margin-top: 0.3rem; font-size: 0.75rem; color: var(--ios-blue); font-weight: 700;">
+                                        Đang kết nối: <?= (int)($node['connected_devices'] ?? 0) ?> IP
+                                    </div>
                                 </td>
                                 <td style="text-align: right;">
                                     <div class="action-dropdown">
