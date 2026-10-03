@@ -1,5 +1,5 @@
 <?php
-$siteTitle = $settings['site_title'] ?? 'VC VPN 2027';
+$siteTitle = $settings['site_title'] ?? 'VC VPN PANEL';
 $homeAnchorPrefix = '/'; // luôn tuyệt đối: href tĩnh giống nhau MỌI trang → partial-nav không giữ nhầm href "#..." của trang khác (vd đang ở /faq bấm "Sản phẩm" thành /faq#bang-gia)
 ?>
 <nav class="glass-card navbar-container">
@@ -11,6 +11,7 @@ $homeAnchorPrefix = '/'; // luôn tuyệt đối: href tĩnh giống nhau MỌI 
             </button>
         <?php else: ?>
             <a href="/" class="nav-brand">
+                <img src="/assets/images/icon.svg" alt="" width="26" height="26" class="nav-brand-mark" aria-hidden="true">
                 <strong><?= htmlspecialchars($siteTitle) ?></strong>
             </a>
         <?php endif; ?>

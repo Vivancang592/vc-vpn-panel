@@ -32,7 +32,7 @@ class AuthController extends BaseController
 
     private function getSiteTitle(): string
     {
-        $siteTitle = "VC VPN 2027";
+        $siteTitle = "VC VPN PANEL";
         if (class_exists('App\Models\Setting')) {
             $settingModel = new Setting();
             $siteTitle = $settingModel->get('site_title', $siteTitle) ?? $siteTitle;

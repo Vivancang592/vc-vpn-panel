@@ -1,5 +1,5 @@
 <?php
-$pageTitle = 'Tạo yêu cầu rút tiền - ' . ($settings['site_title'] ?? 'VC VPN 2027');
+$pageTitle = 'Tạo yêu cầu rút tiền - ' . ($settings['site_title'] ?? 'VC VPN PANEL');
 $user = is_array($user ?? null) ? $user : [];
 ob_start();
 ?>

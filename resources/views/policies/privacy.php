@@ -1,13 +1,16 @@
 <?php
-$siteTitle = $settings['site_title'] ?? 'VC VPN 2027';
+$siteTitle = $settings['site_title'] ?? 'VC VPN PANEL';
 $contactEmail = $settings['contact_email'] ?? '';
 $pageTitle = 'Chính Sách Quyền Riêng Tư - ' . $siteTitle;
+$metaDescription = 'Chính sách quyền riêng tư: cách ' . $siteTitle . ' thu thập, sử dụng và bảo vệ dữ liệu cá nhân, cookie và thông tin thanh toán của bạn.';
+$metaKeywords = 'chính sách quyền riêng tư, privacy policy, bảo mật dữ liệu, bảo vệ thông tin cá nhân, chính sách cookie';
+$extraCss = 'home';
+$extraJs = 'home'; // fragment partial-nav cần home.js (reveal .home-reveal)
 ob_start();
 ?>
 
-<div class="policy-page">
-    <header class="glass-card policy-hero">
-        <span class="policy-eyebrow">Pháp lý</span>
+<section class="public-page home-page home-subpage home-policy-page">
+    <header class="home-subpage-header">
         <h1 class="policy-title">Chính Sách Quyền Riêng Tư</h1>
         <p class="policy-summary">Cách <?= htmlspecialchars($siteTitle) ?> thu thập, sử dụng và bảo vệ thông tin của bạn.</p>
         <p class="policy-meta">Cập nhật lần cuối: 14/09/2026</p>
@@ -68,7 +71,7 @@ ob_start();
             <?php endif; ?>
         </aside>
     </article>
-</div>
+</section>
 
 <?php
 $content = ob_get_clean();

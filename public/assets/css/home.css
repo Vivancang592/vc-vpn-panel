@@ -243,7 +243,6 @@
 .home-status { border-radius: 0; border: 1px solid #d8b567; background: rgba(64, 15, 12, .82); box-shadow: 8px 8px 0 rgba(42, 8, 6, .32); }
 .home-status::before { content: ''; position: absolute; top: 9px; right: 9px; bottom: 9px; left: 9px; border: 1px solid rgba(216, 181, 103, .35); pointer-events: none; }
 .home-section-heading, .home-pricing-header, .home-faq-heading { position: relative; padding: 0 1rem 1.5rem; }
-.home-section-heading::after, .home-pricing-header::after, .home-faq-heading::after { content: ''; display: block; width: 104px; height: 12px; margin: 1.25rem auto 0; border-top: 1px solid #9e3024; border-bottom: 1px solid #9e3024; background: linear-gradient(90deg, transparent 0 22%, #b28a44 22% 30%, transparent 30% 70%, #b28a44 70% 78%, transparent 78%); }
 .home-journey { position: relative; border-top-width: 2px; border-bottom-width: 2px; }
 .home-journey::before { content: ''; position: absolute; top: -9px; left: 50%; width: 18px; height: 18px; border: 1px solid #9e3024; background: #f4ead5; transform: translateX(-50%) rotate(45deg); }
 .home-pricing { position: relative; padding-top: clamp(4rem, 7vw, 6rem); }
@@ -460,20 +459,20 @@ body.vpn-theme.home-festival .vc-footer { width: 100%; margin: 0; padding: 2.25r
 @media (prefers-reduced-motion: reduce) { .home-signal-beam { animation: none; } }
 
 /* ============================================================
-   ĐỒNG B�?HIỆU ỨNG VỚI TRANG AUTH (viền sáng chạy, lưới d�?liệu, tia quét)
-   Ch�?áp dụng trong phạm vi trang ch�?
+   ĐỒNG BỘ HIỆU ỨNG VỚI TRANG AUTH (viền sáng chạy, lưới dữ liệu, tia quét)
+   Chỉ áp dụng trong phạm vi trang chủ
    ============================================================ */
 @property --home-border-angle { syntax: '<angle>'; initial-value: -40deg; inherits: false; }
 
-/* Lưới d�?liệu + tia quét trong khối ngh�?thuật hero */
+/* Lưới dữ liệu + tia quét trong khối nghệ thuật hero */
 .home-hero-art .home-tech-grid { position: absolute; inset: 0; background-image: linear-gradient(rgba(0, 122, 255, .07) 1px, transparent 1px), linear-gradient(90deg, rgba(0, 122, 255, .07) 1px, transparent 1px); background-size: 34px 34px; -webkit-mask-image: radial-gradient(circle at 62% 44%, #000 24%, transparent 78%); mask-image: radial-gradient(circle at 62% 44%, #000 24%, transparent 78%); animation: home-grid-drift 26s linear infinite; }
 .home-hero-art .home-scan-line { position: absolute; left: 0; width: 100%; height: 120px; background: linear-gradient(180deg, transparent, rgba(0, 122, 255, .12), transparent); animation: home-scan 7s ease-in-out infinite; }
 
-/* Viền sáng chạy quanh khối hero, giống th�?đăng nhập */
+/* Viền sáng chạy quanh khối hero, giống thẻ đăng nhập */
 .home-hero { position: relative; border: 1px solid rgba(0, 122, 255, .26); }
 .home-hero::after { content: ''; display: block; position: absolute; top: -1px; right: -1px; bottom: -1px; left: -1px; z-index: 2; width: auto; height: auto; border: 0; border-radius: inherit; padding: 2px; pointer-events: none; opacity: .65; transform: none; filter: none; background: conic-gradient(from var(--home-border-angle), transparent 0 68%, rgba(0, 122, 255, .15) 74%, #409cff 81%, #007aff 86%, transparent 92% 100%); -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0); -webkit-mask-composite: xor; mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0); mask-composite: exclude; animation: home-border-spin 5s linear infinite; }
 
-/* Quầng sáng nền trang ch�?cho đồng b�?tông tối + vàng */
+/* Quầng sáng nền trang chủ cho đồng bộ tông tối + vàng */
 body.vpn-theme.home-festival { color: #e6ecf5; background: radial-gradient(circle at 50% -6%, rgba(0, 122, 255, .1), transparent 46%), radial-gradient(circle at 12% 88%, rgba(50, 215, 75, .06), transparent 52%), #0a0e17; }
 
 /* Nút chính: thêm vệt sáng quét khi hover */
@@ -481,12 +480,12 @@ body.vpn-theme.home-festival { color: #e6ecf5; background: radial-gradient(circl
 .home-button-primary::after { content: ''; position: absolute; top: 0; left: -120%; width: 60%; height: 100%; background: linear-gradient(100deg, transparent, rgba(255, 255, 255, .65), transparent); transform: skewX(-18deg); transition: left .55s ease; }
 .home-button-primary:hover::after { left: 130%; }
 
-/* Th�?gói: viền sáng chạy khi hover */
+/* Thẻ gói: viền sáng chạy khi hover */
 .plan-card-vip { position: relative; }
 .plan-card-vip::after { content: ''; position: absolute; inset: 0; border: 1px solid transparent; border-radius: inherit; pointer-events: none; opacity: 0; transition: opacity var(--transition); }
 .plan-card-vip:hover::after { opacity: 1; box-shadow: inset 0 0 0 1px rgba(0, 122, 255, .55), 0 0 24px rgba(0, 122, 255, .12); }
 
-/* Tiêu đ�?hero: nhịp sáng nh�?như trang auth */
+/* Tiêu đề hero: nhịp sáng nhẹ như trang auth */
 .home-scroll .home-title strong { animation: home-title-glow 4s ease-in-out infinite; }
 .home-status .home-dot { animation: home-dot-pulse 2.4s ease-in-out infinite; }
 
@@ -511,9 +510,9 @@ body.vpn-theme.home-festival { color: #e6ecf5; background: radial-gradient(circl
 
 /* Compact footer controls. */
 body.vpn-theme.home-festival .vc-footer-title-wrap { padding-bottom: 1rem; text-align: center; }
-body.vpn-theme.home-festival .vc-footer-intro { margin: .35rem auto 0; text-align: center; }
+body.vpn-theme.home-festival .vc-footer-intro, body.vpn-theme.home-festival .vc-footer-desc { margin: .35rem auto 0; text-align: center; }
 .vc-footer-contact-links,
-.vc-footer-policy-links { display: flex; align-items: center; justify-content: center; flex-wrap: wrap; gap: .6rem; }
+.vc-footer-policy-links { display: flex; align-items: center; justify-content: center; flex-wrap: wrap; gap: .5rem; }
 .vc-footer-contact-links a { display: inline-grid; width: 32px; height: 32px; place-items: center; border: 1px solid rgba(148, 163, 184, .2); border-radius: 3px; color: #007aff !important; font-size: .9rem; text-decoration: none; }
 .vc-footer-contact-links a:hover { border-color: #007aff; background: rgba(0, 122, 255, .1); }
 .footer-platform-icon { display: block; width: 17px; height: 17px; fill: currentColor; stroke: currentColor; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
@@ -536,11 +535,11 @@ body.vpn-theme.home-festival .vc-footer-intro { margin: .35rem auto 0; text-alig
 	.plan-spec-grid .spec-item:last-child > div { min-width: 0; }
 
 	body.vpn-theme.home-festival .vc-footer { padding: 1.5rem 1rem .85rem; }
-	body.vpn-theme.home-festival .vc-footer-container { gap: .9rem; }
+	body.vpn-theme.home-festival .vc-footer-container { gap: .5rem; }
 	body.vpn-theme.home-festival .vc-footer-title-wrap { padding-bottom: .75rem; text-align: center; }
 	body.vpn-theme.home-festival .vc-footer-title { font-size: 1rem; }
-	body.vpn-theme.home-festival .vc-footer-intro { display: block; margin: .3rem auto 0; font-size: .75rem; text-align: center; }
-	.vc-footer-contact-links { gap: .55rem; }
+	body.vpn-theme.home-festival .vc-footer-intro, body.vpn-theme.home-festival .vc-footer-desc { display: block; margin: .3rem auto 0; font-size: .75rem; text-align: center; }
+	.vc-footer-contact-links { gap: .5rem; }
 	.vc-footer-contact-links a { width: 30px; height: 30px; font-size: .85rem; }
 	.vc-footer-policy-links { gap: .35rem; }
 	.vc-footer-policy-links a { padding: .35rem .5rem; font-size: .66rem; }
@@ -548,6 +547,54 @@ body.vpn-theme.home-festival .vc-footer-intro { margin: .35rem auto 0; text-alig
 	body.vpn-theme.home-festival .guest-mobile-menu .glass-btn.guest-auth-link { border: 1px solid #007aff; background: transparent; color: #007aff; box-shadow: none; }
 	body.vpn-theme.home-festival .guest-mobile-menu .glass-btn.guest-auth-link:hover { background: rgba(0, 122, 255, .12); color: #0a84ff; }
 }
+
+/* ==========================================================================
+   FINAL LANDING TUNING: pricing đồng bộ /user/plans + spacing gọn + brand mark
+   ========================================================================== */
+/* Bảng giá đồng nhất /user/plans: border-top accent, identity/stock trái, giá + thời hạn cột phải */
+.plan-card-vip { border-top: 4px solid #007aff; }
+.plan-header { padding: 1.15rem; }
+.plan-header-row { align-items: flex-start; gap: .75rem; }
+.plan-identity { min-width: 0; }
+.plan-identity .plan-title { margin: 0; font-size: 1.02rem; }
+.plan-stock-label { display: block; margin-top: .25rem; font-size: .8rem; font-weight: 600; }
+.plan-stock-label.is-available { color: #4cd964; }
+.plan-stock-label.is-soldout { color: #ff6b6b; }
+.plan-stock-label:not(.is-available):not(.is-soldout) { color: #9aa7bd; }
+.plan-price-col { display: flex; flex-direction: column; align-items: flex-end; gap: .1rem; flex-shrink: 0; text-align: right; }
+.plan-price-col .price-val { font-size: 1.35rem !important; }
+.plan-price-col .plan-duration-label { margin-top: 0; color: #9aa7bd; font-size: .82rem; font-weight: 600; }
+.feature-list { padding: 1.15rem 1.15rem .35rem; }
+.plan-feature-items { gap: .4rem; margin-bottom: .9rem; }
+.plan-feature-items li { gap: .5rem; font-size: .88rem; }
+.plan-feature-items li svg { width: 16px; height: 16px; }
+.btn-buy { margin: 0 1.15rem 1.15rem !important; min-height: 46px; padding: 12px !important; }
+
+/* Tabs gọn theo user-plan-group-tab */
+.home-tabs { padding: .3rem; gap: .4rem; }
+.home-tab { padding: .5rem 1rem; font-size: .8rem; }
+
+/* Grid + spacing các hàng/cột/thẻ: giảm khoảng cách cao */
+.home-plan-grid { grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1.25rem; }
+.home-features-section { margin: clamp(2.4rem, 5vw, 4.5rem) 0; }
+.home-journey { gap: clamp(1.5rem, 4vw, 4rem); margin: clamp(2.4rem, 5vw, 4.5rem) 0; padding: clamp(1.6rem, 3.5vw, 3rem); }
+.home-steps { gap: 1.1rem; }
+.home-pricing { padding: clamp(2rem, 4vw, 3.25rem) 0; }
+.home-security { gap: clamp(1.5rem, 4vw, 3.5rem); margin: clamp(1.5rem, 4vw, 3rem) 0 clamp(2.4rem, 5vw, 4.5rem); padding: clamp(1.6rem, 3.5vw, 3rem); }
+.feature-box { padding: 1.7rem 1.4rem; }
+.home-section-heading { margin-bottom: 1.5rem; }
+.home-pricing-header { gap: .75rem; margin-bottom: 1.5rem; }
+.feature-icon-wrapper { width: 52px; height: 52px; margin-bottom: 1.1rem; }
+.home-faq { padding-top: clamp(1.5rem, 3vw, 2.5rem); padding-bottom: clamp(2rem, 4vw, 3.5rem); }
+
+/* Icon Superman trên nav-brand (đồng bộ sidebar/auth) */
+.nav-brand-mark { flex-shrink: 0; border-radius: 5px; }
+
+/* Menu mobile guest đồng bộ tông navy của navbar */
+body.vpn-theme.home-festival .guest-mobile-menu { background: rgba(10, 14, 23, .97); border: 1px solid rgba(255, 255, 255, .1); border-top: 1px solid rgba(255, 255, 255, .06); box-shadow: 0 24px 48px rgba(0, 0, 0, .5); }
+body.vpn-theme.home-festival .guest-mobile-menu .guest-nav-link { color: #9aa7bd; background: rgba(255, 255, 255, .04); border: 1px solid rgba(148, 163, 184, .18); font-size: .8rem; letter-spacing: .02em; text-transform: uppercase; }
+body.vpn-theme.home-festival .guest-mobile-menu .guest-nav-link:hover { background: rgba(0, 122, 255, .14); border-color: #007aff; color: #ffffff; }
+body.vpn-theme.home-festival .guest-mobile-menu .guest-auth-group { border-top-color: rgba(148, 163, 184, .18); }
 
 /* Public subpages share the landing-page security operations system. */
 .home-subpage { width: min(100%, 1280px); margin: 0 auto; padding: clamp(1.5rem, 4vw, 3.5rem) clamp(1rem, 3vw, 2rem) 4rem; color: #e6ecf5; }
@@ -569,14 +616,14 @@ body.vpn-theme.home-festival .vc-footer-intro { margin: .35rem auto 0; text-alig
 @media (max-width: 920px) { .home-post-page .u-content-detail { grid-template-columns: 1fr; gap: 1.5rem; }.home-post-page .u-content-aside { position: static; border-left: 0; border-top: 1px solid rgba(148, 163, 184, .16); padding: 1.25rem 0 0; } }
 
 @media (max-width: 700px) { .home-subpage { padding-right: 1rem; padding-left: 1rem; }.home-subpage-search { flex-direction: column; }.home-subpage-search .glass-btn { min-height: 44px; }.home-faq-page .faq-card { grid-template-columns: 1fr; }.home-faq-page .faq-card-thumbnail { max-height: 190px; min-height: 0; }.home-post-page .u-content-detail { grid-template-columns: 1fr !important; }.home-post-page .u-content-aside { position: static; border-left: 0; border-top: 1px solid rgba(148, 163, 184, .16); padding: 1.25rem 0 0; }.home-download-shell { padding: 1.25rem !important; }.home-download-grid { grid-template-columns: 1fr !important; } }
-/* ===== ĐỒNG B�?NỀN & BỀ RỘNG CHO CÁC TRANG PUBLIC (home) ===== */
-/* Loại b�?nền sáng của <html> (app.css) đ�?ch�?còn 1 màu nền tối duy nhất */
+/* ===== ĐỒNG BỘ NỀN & BỀ RỘNG CHO CÁC TRANG PUBLIC (home) ===== */
+/* Loại bỏ nền sáng của <html> (app.css) đã chỉ còn 1 màu nền tối duy nhất */
 html:has(body.home-festival) {
     background-color: #0a0e17;
     background-image: none;
 }
 
-/* Trang public dùng trọn chiều rộng khung nội dung, không b�?thu hẹp */
+/* Trang public dùng trọn chiều rộng khung nội dung, không bị thu hẹp */
 body.home-festival .admin-content > .public-page.home-page,
 body.home-festival .admin-content > .public-page.home-page.home-subpage {
     width: 100%;
@@ -599,3 +646,18 @@ body.home-festival .admin-content > .public-page.home-page.home-subpage {
 .home-final-sub { margin-top: .75rem !important; font-size: .9rem; }
 .home-final-sub a { color: #7fbfff !important; font-weight: 600; text-decoration: underline; text-underline-offset: 3px; }
 .home-final-sub a:hover { color: #ffffff !important; }
+
+/* ===== Đồng bộ trang chính sách (/terms, /privacy, /refund) với nền navy trang public ===== */
+/* Section full-width như các trang public khác — tránh cạnh dọc lệch nền bên trái/phải */
+body.home-festival .admin-content > .public-page.home-page.home-subpage.home-policy-page { width: 100%; max-width: 100%; margin-inline: 0; }
+.home-policy-page .policy-eyebrow { display: inline-block; margin-bottom: .65rem; color: #007aff; font-size: .78rem; font-weight: 800; letter-spacing: .12em; text-transform: uppercase; }
+.home-policy-page .policy-title { margin-bottom: .65rem; }
+.home-policy-page .home-subpage-header .policy-meta { margin-top: .9rem; font-size: .84rem; color: #7f8da6 !important; }
+.home-policy-page .policy-content { max-width: 960px; margin-inline: auto; border: 1px solid rgba(148, 163, 184, .16); border-radius: 12px; background: #101828 !important; box-shadow: inset 0 1px rgba(255, 255, 255, .04) !important; padding: clamp(1.4rem, 3vw, 2.2rem); color: #cbd5e1; }
+.home-policy-page .policy-section + .policy-section { border-top-color: rgba(148, 163, 184, .16); }
+.home-policy-page .policy-section h2 { color: #e6ecf5 !important; font-size: 1.15rem; font-weight: 800; }
+.home-policy-page .policy-section p { color: #cbd5e1; line-height: 1.75; }
+.home-policy-page .policy-list li { color: #cbd5e1; line-height: 1.65; }
+.home-policy-page .policy-note { margin-top: 1.75rem; border-left-color: #007aff; background: rgba(0, 122, 255, .1); color: #cbd5e1; }
+.home-policy-page .policy-contact-link { color: #007aff; }
+.home-policy-page .policy-contact-link:hover { color: #5eb2ff; }

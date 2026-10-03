@@ -9,8 +9,9 @@ require_once __DIR__ . '/header.php';
     <div class="bg-overlay"></div>
 
     <a href="/" class="auth-brand-corner">
+        <img src="/assets/images/icon.svg" alt="" width="22" height="22" aria-hidden="true">
         <span>
-            <?= htmlspecialchars($siteTitle ?? 'VC VPN 2027', ENT_QUOTES, 'UTF-8') ?>
+            <?= htmlspecialchars($siteTitle ?? 'VC VPN PANEL', ENT_QUOTES, 'UTF-8') ?>
         </span>
     </a>
 

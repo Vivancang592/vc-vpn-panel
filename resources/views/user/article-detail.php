@@ -1,5 +1,5 @@
 <?php
-$pageTitle = htmlspecialchars($post['title'] ?? 'Bài viết') . ' - ' . ($settings['site_title'] ?? 'VC VPN 2027');
+$pageTitle = htmlspecialchars($post['title'] ?? 'Bài viết') . ' - ' . ($settings['site_title'] ?? 'VC VPN PANEL');
 $extraCss = 'admin';
 $extraJs = 'app';
 $relatedPosts = isset($relatedPosts) && is_array($relatedPosts) ? $relatedPosts : [];

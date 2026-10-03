@@ -1,5 +1,5 @@
 <?php
-$pageTitle = 'Thông báo - ' . ($settings['site_title'] ?? 'VC VPN 2027');
+$pageTitle = 'Thông báo - ' . ($settings['site_title'] ?? 'VC VPN PANEL');
 $items = isset($notifications) && is_array($notifications) ? $notifications : [];
 $unreadCount = (int)($unreadCount ?? 0);
 ob_start();

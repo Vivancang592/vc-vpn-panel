@@ -483,6 +483,7 @@ body.overlay-open .admin-main {
 .nav-cluster { display: flex; align-items: center; gap: var(--space-3); min-width: 0; }
 .nav-brand { display: inline-flex; align-items: center; gap: var(--space-2); color: var(--color-text); font-size: 1.05rem; font-weight: 750; text-decoration: none; }
 .nav-brand strong { color: var(--color-primary); }
+.nav-brand-mark { flex-shrink: 0; width: 26px; height: 26px; border-radius: 6px; }
 .nav-icon-button, .profile-trigger, .notification-link { display: inline-flex; align-items: center; justify-content: center; border: 1px solid var(--color-border); background: var(--color-surface); color: var(--color-text); cursor: pointer; text-decoration: none; transition: border-color var(--transition-fast), background var(--transition-fast), color var(--transition-fast); }
 .nav-icon-button { min-width: 34px; min-height: 34px; padding: var(--space-1) var(--space-2); border-radius: var(--radius-md); font-size: 1.1rem; }
 .notification-link { position: relative; width: 34px; height: 34px; border-radius: 50%; font-size: 1rem; }
@@ -508,7 +509,7 @@ body.overlay-open .admin-main {
 .sidebar-brand a { display: flex; align-items: center; gap: var(--space-3); color: var(--color-text); font-size: 1.1rem; font-weight: 700; text-decoration: none; }
 .sidebar-section-title { padding: var(--space-1) var(--space-2); color: var(--color-text-muted); font-size: .75rem; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; }
 .sidebar-divider { margin: 0 0 var(--space-2); border: 0; border-top: 1px solid var(--color-border); }
-.sidebar-brand-mark { color: var(--color-primary); }
+.sidebar-brand-mark { color: var(--color-primary); flex-shrink: 0; width: 24px; height: 24px; border-radius: 6px; }
 .auth-brand-corner { position: fixed; top: 20px; left: 25px; z-index: 9999; display: inline-flex; align-items: center; color: var(--color-text-inverse); font-size: 1.35rem; font-weight: 800; letter-spacing: 0; text-decoration: none; text-shadow: 0 2px 12px rgba(15, 23, 42, .4); }
 .auth-subtitle { margin: 0; color: var(--color-secondary); }
 
@@ -751,7 +752,7 @@ body.overlay-open .admin-main {
     margin: 0;
     display: flex;
     flex-direction: column;
-    gap: 0.85rem;
+    gap: 0.5rem;
 }
 
 /* Tiêu đề Website */
@@ -768,11 +769,21 @@ body.overlay-open .admin-main {
     overflow-wrap: anywhere;
 }
 
+/* Dòng mô tả dưới tên web — bổ sung từ khóa SEO trong footer */
+.vc-footer-desc {
+    max-width: 40rem;
+    margin: 0.45rem 0 0;
+    font-size: 0.85rem;
+    line-height: 1.55;
+    color: inherit;
+    overflow-wrap: anywhere;
+}
+
 /* Các cột tự co giãn và xuống hàng theo chiều rộng khả dụng */
 .vc-footer-links-grid {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-    gap: 0.85rem;
+    gap: 0.5rem;
     width: 100%;
 }
     
@@ -842,7 +853,7 @@ body.overlay-open .admin-main {
     }
 
     .vc-footer-container {
-        gap: 1.75rem;
+        gap: 0.5rem;
     }
 }
 
@@ -1219,11 +1230,11 @@ body.vpn-theme.home-festival .guest-action { padding: .65rem 1rem; border-radius
 body.vpn-theme.home-festival .guest-action-secondary { background: #102a4d; color: #fff; box-shadow: 0 9px 18px rgba(16, 42, 77, .18); }
 body.vpn-theme.home-festival .guest-action-secondary:hover { background: var(--color-primary); color: #fff; transform: translateY(-1px); }
 body.vpn-theme.home-festival .vc-footer { width: calc(100% + clamp(2rem, 8vw, 8rem)); margin: 4rem calc(clamp(1rem, 4vw, 4rem) * -1) -2rem; padding: 3.5rem clamp(1rem, 4vw, 4rem) 1.25rem; border: 0; background: #102a4d; color: #c8d7ea; }
-body.vpn-theme.home-festival .vc-footer-container { max-width: 1200px; margin: 0 auto; gap: 2.5rem; }
+body.vpn-theme.home-festival .vc-footer-container { max-width: 1200px; margin: 0 auto; gap: 0.5rem; }
 body.vpn-theme.home-festival .vc-footer-title-wrap { padding-bottom: 1.5rem; border-bottom: 1px solid rgba(200, 215, 234, .18); text-align: left; }
 body.vpn-theme.home-festival .vc-footer-title { color: #fff; font-size: 1.5rem; letter-spacing: .02em; }
-body.vpn-theme.home-festival .vc-footer-intro { max-width: 34rem; margin: .6rem 0 0; color: #a9bdd6; font-size: .95rem; line-height: 1.6; }
-body.vpn-theme.home-festival .vc-footer-links-grid { gap: 2rem; }
+body.vpn-theme.home-festival .vc-footer-intro, body.vpn-theme.home-festival .vc-footer-desc { max-width: 34rem; margin: .6rem 0 0; color: #a9bdd6; font-size: .95rem; line-height: 1.6; }
+body.vpn-theme.home-festival .vc-footer-links-grid { gap: 0.5rem; }
 body.vpn-theme.home-festival .vc-footer-col h4 { margin-bottom: .8rem; color: #8eddf0; font-size: .75rem; letter-spacing: .08em; }
 body.vpn-theme.home-festival .vc-footer-col a, body.vpn-theme.home-festival .vc-footer-col span { color: #d8e5f5 !important; }
 body.vpn-theme.home-festival .vc-footer-col a:hover { color: #8eddf0 !important; opacity: 1; }
@@ -1247,7 +1258,7 @@ body.vpn-theme.home-festival .guest-action-secondary:hover { background: #e66f49
 body.vpn-theme.home-festival .vc-footer { width: 100%; margin: 0; padding: 3.5rem clamp(1.25rem, 5vw, 5rem) 1.25rem; border: 0; border-top: 1px solid #143d32; background: #123c31; color: #d7e7dc; }
 body.vpn-theme.home-festival .vc-footer-container { max-width: 1200px; }
 body.vpn-theme.home-festival .vc-footer-title { color: #d9ff4c; }
-body.vpn-theme.home-festival .vc-footer-intro { color: #c5d7cd; }
+body.vpn-theme.home-festival .vc-footer-intro, body.vpn-theme.home-festival .vc-footer-desc { color: #c5d7cd; }
 body.vpn-theme.home-festival .vc-footer-col h4 { color: #d9ff4c; }
 body.vpn-theme.home-festival .vc-footer-col a, body.vpn-theme.home-festival .vc-footer-col span { color: #e9f3ec !important; }
 body.vpn-theme.home-festival .vc-footer-col a:hover { color: #d9ff4c !important; }
@@ -1267,7 +1278,7 @@ body.vpn-theme.home-festival .guest-action-secondary { background: #7c211d; box-
 body.vpn-theme.home-festival .guest-action-secondary:hover { background: #9e3024; box-shadow: 4px 4px 0 #b28a44; }
 body.vpn-theme.home-festival .vc-footer { border-top-color: #b28a44; background: #5c1b18; color: #ead9b8; }
 body.vpn-theme.home-festival .vc-footer-title, body.vpn-theme.home-festival .vc-footer-col h4 { color: #f5d992; font-family: Georgia, serif; }
-body.vpn-theme.home-festival .vc-footer-intro { color: #dec7a1; }
+body.vpn-theme.home-festival .vc-footer-intro, body.vpn-theme.home-festival .vc-footer-desc { color: #dec7a1; }
 body.vpn-theme.home-festival .vc-footer-col a, body.vpn-theme.home-festival .vc-footer-col span { color: #f4e6cf !important; }
 body.vpn-theme.home-festival .vc-footer-col a:hover { color: #f5d992 !important; }
 body.vpn-theme.home-festival .vc-footer-copyright-wrap { border-top-color: rgba(216, 181, 103, .3); }
@@ -1285,7 +1296,7 @@ body.vpn-theme.home-festival .guest-action-secondary { background: #f5c518; colo
 body.vpn-theme.home-festival .guest-action-secondary:hover { background: #ffd84d; color: #0a0a0a; box-shadow: 0 0 0 4px rgba(245, 197, 24, .14); }
 body.vpn-theme.home-festival .vc-footer { border-top-color: #303030; background: #080808; color: #a8a8a8; }
 body.vpn-theme.home-festival .vc-footer-title, body.vpn-theme.home-festival .vc-footer-col h4 { color: #f5c518; font-family: inherit; }
-body.vpn-theme.home-festival .vc-footer-intro, body.vpn-theme.home-festival .vc-footer-copyright-text { color: #858585; }
+body.vpn-theme.home-festival .vc-footer-intro, body.vpn-theme.home-festival .vc-footer-desc, body.vpn-theme.home-festival .vc-footer-copyright-text { color: #858585; }
 body.vpn-theme.home-festival .vc-footer-col a, body.vpn-theme.home-festival .vc-footer-col span { color: #c9c9c9 !important; }
 body.vpn-theme.home-festival .vc-footer-col a:hover { color: #f5c518 !important; }
 body.vpn-theme.home-festival .vc-footer-copyright-wrap { border-top-color: #303030; }

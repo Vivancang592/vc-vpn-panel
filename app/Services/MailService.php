@@ -22,7 +22,7 @@ class MailService
      */
     public function renderTemplate(string $templatePath, array $data = []): string
     {
-        $data['siteTitle'] = $data['siteTitle'] ?? ($this->settings['site_title'] ?? 'VC VPN 2027');
+        $data['siteTitle'] = $data['siteTitle'] ?? ($this->settings['site_title'] ?? 'VC VPN PANEL');
         $data['siteSubtitle'] = $data['siteSubtitle'] ?? ($this->settings['site_subtitle'] ?? $this->settings['site_description'] ?? 'An Toàn - Bảo Mật - Uy Tín');
         
         extract($data);

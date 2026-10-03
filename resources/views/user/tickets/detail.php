@@ -1,5 +1,5 @@
 <?php
-$pageTitle = 'Chi tiết hỗ trợ - ' . ($settings['site_title'] ?? 'VC VPN 2027');
+$pageTitle = 'Chi tiết hỗ trợ - ' . ($settings['site_title'] ?? 'VC VPN PANEL');
 $ticket = isset($ticket) && is_array($ticket) ? $ticket : [];
 $items = isset($messages) && is_array($messages) ? $messages : [];
 $status = $ticket['status'] ?? 'open';

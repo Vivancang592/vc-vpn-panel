@@ -1,5 +1,5 @@
 <?php
-$pageTitle = 'Rút hoa hồng - ' . ($settings['site_title'] ?? 'VC VPN 2027');
+$pageTitle = 'Rút hoa hồng - ' . ($settings['site_title'] ?? 'VC VPN PANEL');
 $items = is_array($withdrawals ?? null) ? $withdrawals : [];
 $labels = ['pending' => 'Chờ duyệt', 'approved' => 'Đã duyệt', 'rejected' => 'Từ chối'];
 ob_start();

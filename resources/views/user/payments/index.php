@@ -1,5 +1,5 @@
 <?php
-$pageTitle = 'Giao dịch - ' . ($settings['site_title'] ?? 'VC VPN 2027');
+$pageTitle = 'Giao dịch - ' . ($settings['site_title'] ?? 'VC VPN PANEL');
 $items = is_array($payments ?? null) ? $payments : [];
 $labels = ['pending' => 'Chờ xử lý', 'success' => 'Thành công', 'failed' => 'Thất bại'];
 ob_start();

@@ -1,5 +1,11 @@
 <?php
-$pageTitle = htmlspecialchars($post['title'] ?? 'Chi Tiết Bài Viết') . " - " . ($settings['site_title'] ?? 'VC VPN 2027');
+$pageTitle = htmlspecialchars($post['title'] ?? 'Chi Tiết Bài Viết') . " - " . ($settings['site_title'] ?? 'VC VPN PANEL');
+$postPlainText = trim(preg_replace('/\s+/', ' ', strip_tags((string)($post['excerpt'] ?? '') ?: (string)($post['content'] ?? ''))));
+$metaDescription = $postPlainText !== '' ? mb_substr($postPlainText, 0, 158) . (mb_strlen($postPlainText) > 158 ? '…' : '') : 'Đọc chi tiết bài viết, tin tức và kiến thức về dịch vụ VPN bảo mật tại ' . ($settings['site_title'] ?? 'VC VPN PANEL') . '.';
+$metaKeywords = implode(', ', array_filter([
+    $post['type'] ?? '',
+    'hướng dẫn vpn', 'vpn bảo mật', 'tin tức vpn', 'kiến thức vpn'
+]));
 $extraCss = 'home';
 $extraJs = 'home'; // fragment partial-nav cần home.js (reveal .home-reveal)
 $relatedPosts = isset($relatedPosts) && is_array($relatedPosts) ? $relatedPosts : [];

@@ -1,4 +1,4 @@
-# 🛡️ VC VPN 2027 - System Management & Commerce
+# 🛡️ VC VPN PANEL - System Management & Commerce
 
 Hệ thống quản lý dịch vụ VPN, tự động hóa cấp phát tài khoản, quản lý gói cước, đồng bộ lưu lượng và tích hợp thanh toán.
 

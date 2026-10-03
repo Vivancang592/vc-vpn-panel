@@ -2,7 +2,7 @@
 $currentUri = $_SERVER['REQUEST_URI'] ?? '';
 $isAdminRoute = (strncmp($currentUri, '/admin', 6) === 0);
 $userRole = $_SESSION['role'] ?? 'user';
-$siteTitle = $settings['site_title'] ?? 'VC VPN 2027';
+$siteTitle = $settings['site_title'] ?? 'VC VPN PANEL';
 $activeMenu = $activeMenu ?? '';
 $infrastructureMenus = ['server-groups', 'servers', 'nodes', 'plans'];
 $businessMenus = ['coupons', 'orders', 'payments', 'subscriptions', 'referrals', 'withdrawals'];
@@ -24,6 +24,7 @@ if (isset($_SESSION['user_id'])) {
     <!-- Tên Web đặt trong Sidebar -->
     <div class="sidebar-brand">
         <a href="<?= $logoHref ?>">
+            <img src="/assets/images/icon.svg" alt="" width="24" height="24" class="sidebar-brand-mark" aria-hidden="true">
             <span><?= htmlspecialchars($siteTitle) ?></span>
         </a>
     </div>

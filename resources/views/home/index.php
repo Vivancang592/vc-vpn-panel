@@ -63,7 +63,6 @@ $loggedIn = !empty($_SESSION['user_id']);
 <!-- Tính Năng Nổi Bật (Cam Kết Chất Lượng) -->
 <section class="home-features-section home-reveal">
     <div class="home-section-heading">
-        <span class="home-kicker">Tính năng nổi bật</span>
         <h2>Tính năng nổi bật của dịch vụ VPN</h2>
         <p>Những lợi ích chính giúp dịch vụ VPN bảo vệ kết nối và quyền riêng tư của bạn mỗi ngày.</p>
     </div>
@@ -116,8 +115,7 @@ $loggedIn = !empty($_SESSION['user_id']);
 <section id="bang-gia" class="home-pricing home-reveal">
     <div class="home-pricing-header">
         <div>
-            <span class="home-kicker">Bảng giá dịch vụ</span>
-            <h2>Bảng giá dịch vụ VPN — chọn gói phù hợp</h2>
+            <h2>Bảng giá dịch vụ VPN - chọn gói phù hợp</h2>
             <p>So sánh thời hạn, số thiết bị và thông tin đi kèm của từng gói VPN trước khi đăng ký.</p>
         </div>
         <?php if ($groups): ?>
@@ -138,20 +136,26 @@ $loggedIn = !empty($_SESSION['user_id']);
                         <article class="plan-card-vip">
                             <header class="plan-header">
                                 <div class="plan-header-row">
-                                    <h3 class="plan-title">
-                                        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#007aff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-                                            <circle cx="9" cy="21" r="1"></circle>
-                                            <circle cx="20" cy="21" r="1"></circle>
-                                            <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path>
-                                        </svg>
-                                        <span><?= htmlspecialchars($plan['name']) ?></span>
-                                    </h3>
-                                    <div class="price-val">
-                                        <?= isset($formatMoney) ? $formatMoney($plan['price']) : number_format($plan['price'], 0, ',', '.') . ' đ' ?>
+                                    <div class="plan-identity">
+                                        <h3 class="plan-title">
+                                            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#007aff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                                                <circle cx="9" cy="21" r="1"></circle>
+                                                <circle cx="20" cy="21" r="1"></circle>
+                                                <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path>
+                                            </svg>
+                                            <span><?= htmlspecialchars($plan['name']) ?></span>
+                                        </h3>
+                                        <?php $stockQty = $plan['stock_quantity'] ?? null; $isSoldOut = $stockQty !== null && (int) $stockQty <= 0; ?>
+                                        <span class="plan-stock-label<?= $stockQty === null ? '' : ($isSoldOut ? ' is-soldout' : ' is-available') ?>">
+                                            <?= $stockQty === null ? 'Không giới hạn số lượng' : ($isSoldOut ? 'Đã hết hàng' : 'Còn ' . number_format((int) $stockQty) . ' suất') ?>
+                                        </span>
                                     </div>
-                                </div>
-                                <div class="plan-duration-label">
-                                    Thời hạn: <?= (int) $plan['duration_days'] ?> Ngày
+                                    <div class="plan-price-col">
+                                        <div class="price-val">
+                                            <?= isset($formatMoney) ? $formatMoney($plan['price']) : number_format($plan['price'], 0, ',', '.') . ' đ' ?>
+                                        </div>
+                                        <span class="plan-duration-label"><?= (int) $plan['duration_days'] ?> ngày</span>
+                                    </div>
                                 </div>
                             </header>
 
@@ -284,9 +288,8 @@ $loggedIn = !empty($_SESSION['user_id']);
 <!-- Câu Hỏi Thường Gặp (Accordion Mượt) -->
 <section id="cau-hoi-thuong-gap" class="home-faq home-reveal" aria-labelledby="home-faq-title">
     <div class="home-faq-heading">
-        <span class="home-kicker">Câu hỏi thường gặp</span>
         <h2 id="home-faq-title">Câu hỏi thường gặp về dịch vụ VPN</h2>
-        <p>Những thông tin cơ bản trước khi bạn lựa chọn gói dịch vụ VPN. Xem thêm câu hỏi chi tiết tại trang <a href="/faq" style="color: #007aff; text-decoration: underline; text-underline-offset: 3px;">Câu hỏi thường gặp</a>.</p>
+        <p>Những thông tin cơ bản trước khi bạn lựa chọn gói dịch vụ VPN. Xem bài viết chi tiết tại trang <a href="/faq" style="color: #007aff; text-decoration: underline; text-underline-offset: 3px;">Blog</a>.</p>
     </div>
     <div class="home-faq-list">
         <details class="home-faq-item" open>
