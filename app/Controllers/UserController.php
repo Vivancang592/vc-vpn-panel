@@ -168,6 +168,7 @@ class UserController extends BaseController
                     $allPublished,
                     static fn(array $item): bool =>
                         ($item['status'] ?? '') === 'published'
+                        && ($item['type'] ?? '') === ($post['type'] ?? '')
                         && ($item['slug'] ?? '') !== ($post['slug'] ?? '')
                 ));
                 $relatedPosts = array_slice($relatedPosts, 0, 6);
