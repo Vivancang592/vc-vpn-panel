@@ -5,6 +5,38 @@ $extraJs = $extraJs ?? 'app';
 // nhận body class "user-area" để nạp user.css & scope CSS riêng, không ảnh
 // hưởng admin / home / policies / auth.
 $pageArea = !empty($showSidebar) ? 'user' : ($pageArea ?? '');
+
+// ==== PARTIAL-LOAD (xem public/assets/js/app.js) =========================
+// Nhận header X-VC-Partial: trả JSON fragment (khung trang) thay vì HTML
+// đầy đủ — điều hướng nội bộ mượt mà, không reload trang.
+// Layout chung của MỌI trang public/user (home, policies, guides, orders...).
+if (($_SERVER['HTTP_X_VC_PARTIAL'] ?? '') === '1') {
+    ob_start();
+    if (($pageArea ?? '') === 'user') {
+        require_once BASE_PATH . '/resources/views/components/icons.php';
+    }
+    echo $content ?? '';
+    $fragmentHtml = ob_get_clean();
+
+    $fragmentSidebar = '';
+    if (!empty($showSidebar)) {
+        ob_start();
+        require_once __DIR__ . '/sidebar.php';
+        $fragmentSidebar = ob_get_clean();
+    }
+
+    header('Content-Type: application/json; charset=utf-8');
+    header('Cache-Control: no-store');
+    echo json_encode([
+        'ok' => true,
+        'title' => $pageTitle ?? 'VC VPN 2027',
+        'html' => $fragmentHtml,
+        'sidebar' => $fragmentSidebar,
+    ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+    exit;
+}
+// ==========================================================================
+
 require_once __DIR__ . '/header.php'; 
 ?>
 

@@ -425,6 +425,7 @@ window.vcPageInits.push(function vcInitDashboardChart(root) {
     function applyFragment(json, url, push) {
         const u = new URL(url);
         const prevPathname = location.pathname;
+        const prevKey = vcKey; // key trang CŨ — vcKey đổi sang newKey trước phần cuộn
         const newKey = u.pathname + u.search;
         const content = document.querySelector('.admin-content');
         if (!content) { location.href = url; return; }
@@ -444,23 +445,45 @@ window.vcPageInits.push(function vcInitDashboardChart(root) {
         // Thay sidebar + vùng nội dung (navbar/footer giữ nguyên → listener
         // profile dropdown / chatbot không bị mất)
         const sidebar = document.querySelector('.admin-sidebar');
-        if (sidebar && typeof json.sidebar === 'string') sidebar.innerHTML = json.sidebar;
+        const sidebarY = sidebar ? sidebar.scrollTop : 0; // vị trí menu sidebar trước khi thay
+        if (sidebar && typeof json.sidebar === 'string' && json.sidebar.trim() !== '') {
+            // Fragment (admin-sidebar.php) mang nguyên <aside class="admin-sidebar">
+            // đầy đủ → unwrap phần bên trong, tránh lồng aside vào aside
+            // (aside ngoài mất khả năng cuộn → mất luôn vị trí menu).
+            const tmp = document.createElement('div');
+            tmp.innerHTML = json.sidebar;
+            const first = tmp.firstElementChild;
+            const sbInner = (first && first.tagName === 'ASIDE' && first.classList.contains('admin-sidebar'))
+                ? first.innerHTML : tmp.innerHTML;
+            sidebar.innerHTML = sbInner;
+            sidebar.scrollTop = sidebarY; // GIỮ vị trí sidebar — không nhảy về đầu
+        }
         content.classList.add('vc-fading'); // opacity 0 cùng frame với nội dung mới
         content.innerHTML = json.html || '';
         if (json.title) document.title = json.title;
 
-        if (push) history.pushState({ vcKey: newKey }, '', newKey);
-        else history.replaceState({ vcKey: newKey }, '', newKey);
+        const urlWithHash = newKey + (u.hash || ''); // giữ #anchor trên URL
+        if (push) history.pushState({ vcKey: newKey }, '', urlWithHash);
+        else history.replaceState({ vcKey: newKey }, '', urlWithHash);
         vcKey = newKey;
 
-        // Cuộn: cùng pathname hoặc cùng nhóm section (vd /admin/logs ↔
-        // /admin/logs/system — tab con) → GIỮ nguyên; khác nhóm → khôi phục
-        // vị trí đã nhớ hoặc về đầu.
+        // Cuộn: URL có #anchor → nhắm đúng section; cùng pathname hoặc cùng
+        // nhóm section (vd /admin/logs ↔ /admin/logs/system — tab con) → GIỮ
+        // vị trí ĐÃ LƯU (không đọc scrollTop sau khi DOM vừa thay — nội dung
+        // ngắn hơn bị kẹp về 0/đầu trang); khác nhóm → khôi phục hoặc về đầu.
         const scroller = getScroller();
         const sectionOf = (p) => '/' + (p.split('/').filter(Boolean).slice(0, 2).join('/') || '');
         let y = 0;
-        if (sectionOf(u.pathname) === sectionOf(prevPathname)) y = scroller.scrollTop;
-        else if (typeof scrollMem[newKey] === 'number') y = scrollMem[newKey];
+        let hashTarget = null;
+        if (u.hash) {
+            try { hashTarget = document.getElementById(decodeURIComponent(u.hash.slice(1))); } catch (e) { hashTarget = null; }
+        }
+        if (hashTarget) {
+            hashTarget.scrollIntoView();
+            y = scroller.scrollTop;
+        } else if (sectionOf(u.pathname) === sectionOf(prevPathname)) {
+            y = (typeof scrollMem[prevKey] === 'number') ? scrollMem[prevKey] : scroller.scrollTop;
+        } else if (typeof scrollMem[newKey] === 'number') y = scrollMem[newKey];
         scroller.scrollTop = y;
         scrollMem[newKey] = y;
 
@@ -565,4 +588,11 @@ window.vcInitPageContent = function (root) {
     try { if (window.vcBindCopyButtons) window.vcBindCopyButtons(root); } catch (e) { /* noop */ }
 };
 
-document.addEventListener('DOMContentLoaded', () => window.vcInitPageContent(document));
+document.addEventListener('DOMContentLoaded', () => {
+    // Guard: app.js cũng gọi vcInitPageContent ở cuối handler của nó — chỉ
+    // gọi 1 lần (init của app.js đã được push trước khi DCL chạy).
+    if (!window.__vcInitAtDom) {
+        window.__vcInitAtDom = true;
+        window.vcInitPageContent(document);
+    }
+});

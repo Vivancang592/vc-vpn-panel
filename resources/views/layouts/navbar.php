@@ -1,6 +1,6 @@
 <?php
 $siteTitle = $settings['site_title'] ?? 'VC VPN 2027';
-$homeAnchorPrefix = ($activeMenu ?? '') === 'home' ? '' : '/';
+$homeAnchorPrefix = '/'; // luôn tuyệt đối: href tĩnh giống nhau MỌI trang → partial-nav không giữ nhầm href "#..." của trang khác (vd đang ở /faq bấm "Sản phẩm" thành /faq#bang-gia)
 ?>
 <nav class="glass-card navbar-container">
     <!-- Bên trái: Toggle Sidebar Mobile (khi đã đăng nhập) OR Tên Web (khi chưa đăng nhập) -->

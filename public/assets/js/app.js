@@ -19,7 +19,8 @@
         const form = e.target;
         if (!form || form.tagName !== 'FORM') return;
         try {
-            sessionStorage.setItem(scrollKey, JSON.stringify({ y: getScroller().scrollTop, t: Date.now() }));
+            const sb = document.querySelector('.admin-sidebar');
+            sessionStorage.setItem(scrollKey, JSON.stringify({ y: getScroller().scrollTop, s: sb ? sb.scrollTop : 0, t: Date.now() }));
         } catch (err) { /* sessionStorage lỗi → bỏ qua */ }
     });
 
@@ -34,7 +35,8 @@
         if (link.getAttribute('target') === '_blank' || link.hasAttribute('download') || link.hasAttribute('data-no-loader')) return;
         if (/^[a-z][a-z\d+.-]*:/i.test(href) && !/^https?:/i.test(href)) return; // scheme ngoài http(s)
         try {
-            sessionStorage.setItem(scrollKey, JSON.stringify({ y: getScroller().scrollTop, t: Date.now() }));
+            const sb = document.querySelector('.admin-sidebar');
+            sessionStorage.setItem(scrollKey, JSON.stringify({ y: getScroller().scrollTop, s: sb ? sb.scrollTop : 0, t: Date.now() }));
         } catch (err) { /* sessionStorage lỗi → bỏ qua */ }
         setTimeout(function () { // handler khác hủy điều hướng → bỏ key vừa lưu
             if (e.defaultPrevented) {
@@ -46,9 +48,15 @@
     try {
         const saved = JSON.parse(sessionStorage.getItem(scrollKey) || 'null');
         sessionStorage.removeItem(scrollKey); // chỉ dùng đúng 1 lần
-        if (saved && !location.hash && typeof saved.y === 'number' && saved.y > 0
+        if (saved && !location.hash && (saved.y > 0 || saved.s > 0)
             && (Date.now() - (saved.t || 0)) < 1800000) { // giữ vị trí trong 30 phút
-            const applyRestore = function () { getScroller().scrollTop = saved.y; };
+            const applyRestore = function () {
+                getScroller().scrollTop = saved.y;
+                if (typeof saved.s === 'number' && saved.s >= 0) { // giữ vị trí menu sidebar
+                    const sb = document.querySelector('.admin-sidebar');
+                    if (sb) sb.scrollTop = saved.s;
+                }
+            };
             /* Khôi phục sau 2 frame — chờ lần sơn đầu + layout ổn định.
              * Set ngay lúc DOM vừa dựng có thể trúng container chưa đủ chiều
              * cao → mất mục tiêu rồi nhảy lô-cô khi resize sau đó. */
@@ -65,6 +73,357 @@
             }
         }
     } catch (err) { /* bỏ qua */ }
+})();
+
+/* =========================================================================
+ * PARTIAL-LOAD — điều hướng nội bộ (trang public + khu user) KHÔNG reload.
+ *   • Chạy NGAY lúc parse (trước DOMContentLoaded) để e.preventDefault set
+ *     đồng bộ → handler preloader của app.js thấy defaultPrevented → không
+ *     hiện màn hình chờ, không nháy màn hình.
+ *   • Server (layouts/app.php) trả JSON fragment {title, html, sidebar} khi
+ *     có header X-VC-Partial; client chỉ thay .admin-content + sidebar.
+ *   • Khu /admin do admin.js đảm nhiệm (module bên trong tự nhường).
+ *   • Cùng trang (lọc/phân trang GET) → GIỮ vị trí cuộn; khác trang →
+ *     khôi phục theo bộ nhớ nội bộ / về đầu trang.
+ * ========================================================================= */
+window.vcPageInits = window.vcPageInits || [];
+
+/* Gọi toàn bộ hàm khởi tạo trang — chạy lúc trang tải đầy đủ và sau MỖI
+   lần partial-load (root = .admin-content vừa được thay). admin.js (trang
+   admin) sẽ ghi đè bản này — logic tương đương. */
+window.vcInitPageContent = function (root) {
+    root = root || document;
+    (window.vcPageInits || []).forEach((fn) => {
+        try { fn(root); } catch (e) { console.error('[vc] vcInitPageContent:', e); }
+    });
+    // Binder từ app.js (idempotent qua dataset guard)
+    try { if (window.vcBindActionMenus) window.vcBindActionMenus(root); } catch (e) { /* noop */ }
+    try { if (window.vcBindCopyButtons) window.vcBindCopyButtons(root); } catch (e) { /* noop */ }
+};
+
+(function () {
+    'use strict';
+    if (!window.fetch || !window.URL) return;
+    const startsWithAdmin = (p) => p === '/admin' || p.indexOf('/admin/') === 0;
+    if (startsWithAdmin(location.pathname)) return; // khu admin → admin.js lo
+
+    /* Partial thất bại → đã nạp lại đầy đủ → GIỮ vị trí trang cũ. */
+    try {
+        if (sessionStorage.getItem('vcPartialFallback') === '1') {
+            sessionStorage.removeItem('vcPartialFallback');
+            const y = Number(sessionStorage.getItem('vcFallbackY') || 0);
+            sessionStorage.removeItem('vcFallbackY');
+            if (y > 0) {
+                const applyY = function () {
+                    const main = document.querySelector('.admin-main');
+                    const el = (main && main.scrollHeight > main.clientHeight + 4)
+                        ? main : (document.scrollingElement || document.documentElement);
+                    el.scrollTop = y;
+                };
+                if (document.readyState === 'loading') {
+                    document.addEventListener('DOMContentLoaded', function () {
+                        requestAnimationFrame(function () { requestAnimationFrame(applyY); });
+                    });
+                } else {
+                    applyY();
+                }
+            }
+        }
+    } catch (e) { /* noop */ }
+
+    let vcKey = location.pathname + location.search;
+    let controller = null;
+    let navGen = 0;
+    let progressEl = null;
+    const scrollMem = Object.create(null);
+
+    // Thư viện đã nạp qua <script src> — KHÔNG tái-evaluate khi quay lại
+    // trang: re-run Chart.js/TinyMCE thay constructor trên window làm mất
+    // instance đang gắn với canvas/DOM.
+    const loadedSrcs = new Set();
+    const recordLoadedSrcs = () => {
+        Array.prototype.forEach.call(document.querySelectorAll('script[src]'), (s) => {
+            if (s.src) loadedSrcs.add(s.src);
+        });
+    };
+    recordLoadedSrcs();
+
+    const getScroller = () =>
+        document.querySelector('.admin-main') || document.scrollingElement || document.documentElement;
+    const saveScroll = () => { scrollMem[vcKey] = getScroller().scrollTop; };
+
+    // Vị trí cuộn hiện tại — ghi cả khi idle để navigate luôn có điểm chụp.
+    saveScroll();
+    window.addEventListener('scroll', saveScroll, { passive: true, capture: true });
+
+    /* Thanh tiến trình mảnh phía trên + fade nội dung: phản hồi cảm giác
+       "đang tải" mà không cần preloader che cả màn hình. */
+    const progress = {
+        start() {
+            if (!progressEl) {
+                progressEl = document.createElement('div');
+                progressEl.className = 'vc-partial-progress';
+                document.body.appendChild(progressEl);
+            }
+            progressEl.classList.remove('vc-progress-done');
+            void progressEl.offsetWidth; // restart animation
+            progressEl.classList.add('vc-progress-run');
+        },
+        done() {
+            if (progressEl) progressEl.classList.add('vc-progress-done');
+        }
+    };
+
+    /* Chỉ nhận URL cùng origin, KHÔNG thuộc các nhánh phải nạp lại đầy đủ:
+     * khu /admin (admin.js), trang auth (layouts/auth.php khác khung),
+     * /client (redirect 302 ra ngoài), JSON endpoint (/orders/status...). */
+    function eligibleUrl(href) {
+        if (!href || /^(#|javascript:|mailto:|tel:)/i.test(href)) return null;
+        let u;
+        try { u = new URL(href, location.href); } catch (e) { return null; }
+        if (u.protocol !== 'http:' && u.protocol !== 'https:') return null;
+        if (u.origin !== location.origin) return null;
+        const p = u.pathname;
+        if (startsWithAdmin(p)) return null;
+        if (u.pathname === location.pathname && u.search === location.search && u.hash) return null; // anchor cùng trang
+        if (/^\/(login|register|forgot-password|logout|client)(\/|$)/.test(p)) return null;
+        if (p.indexOf('/auth/') === 0) return null;
+        if (p === '/orders/status' || p === '/payments/status') return null; // JSON endpoint GET
+        return u;
+    }
+
+    // Chạy lại <script> trong fragment theo đúng thứ tự (src chờ load xong
+    // mới chạy script kế tiếp) — script trong template server KHÔNG tự chạy
+    // khi gán qua innerHTML.
+    function runScripts(root) {
+        return new Promise((resolve) => {
+            const nodes = Array.prototype.slice.call(root.querySelectorAll('script'));
+            let idx = 0;
+            const step = () => {
+                while (idx < nodes.length) {
+                    const old = nodes[idx++];
+                    if (!old.parentNode) continue;
+                    const s = document.createElement('script');
+                    for (let i = 0; i < old.attributes.length; i++) {
+                        const a = old.attributes[i];
+                        if (a.name !== 'src') s.setAttribute(a.name, a.value); // src gán riêng bên dưới
+                    }
+                    if (old.src) {
+                        if (loadedSrcs.has(old.src)) continue; // lib đã chạy → giữ nguyên instance
+                        s.async = false; // đặt TRƯỚC src để giữ đúng thứ tự thực thi
+                        s.onload = () => { loadedSrcs.add(old.src); step(); };
+                        s.onerror = step; // CDN lỗi → vẫn chạy tiếp các script sau
+                        s.src = old.src;
+                        old.parentNode.replaceChild(s, old);
+                        return; // step tiếp tục từ onload/onerror
+                    }
+                    s.textContent = old.textContent; // inline script → giữ nguyên code
+                    try { old.parentNode.replaceChild(s, old); } catch (e) { /* script lỗi → bỏ qua */ }
+                }
+                resolve();
+            };
+            try { step(); } catch (e) { resolve(); }
+        });
+    }
+
+    function applyFragment(json, url, push) {
+        const u = new URL(url);
+        const prevPathname = location.pathname;
+        const prevKey = vcKey; // key trang CŨ — vcKey đổi sang newKey trước phần cuộn
+        const newKey = u.pathname + u.search;
+        const content = document.querySelector('.admin-content');
+        if (!content) { location.href = url; return; }
+
+        // Trang cũ ↔ trang mới không cùng khung (vd guest home không sidebar
+        // ↔ khu user có sidebar) → không thể vá bằng innerHTML → nạp đầy đủ.
+        const hadSidebar = !!document.querySelector('.admin-sidebar');
+        const hasSidebar = typeof json.sidebar === 'string' && json.sidebar.trim() !== '';
+        if (hadSidebar !== hasSidebar) { location.href = url; return; }
+
+        saveScroll(); // vị trí trang CŨ trước khi thay DOM
+        recordLoadedSrcs(); // nhớ script src đang có trong trang cũ (trước khi bị gỡ)
+
+        // Dọn phần tử tạm của trang cũ (menu 3 chấm đã đẩy ra body)
+        document.querySelectorAll('body > .action-menu').forEach((m) => m.remove());
+        // Báo view cũ dọn listener cấp document (vd phím Escape của popup)
+        try { document.dispatchEvent(new CustomEvent('vc:partial-leave')); } catch (e) { /* noop */ }
+        try { if (window.tinymce) window.tinymce.remove(); } catch (e) { /* noop */ }
+
+        // Sprite icon nằm NGOÀI .admin-content → sống qua swap. Fragment trang
+        // user có kèm sprite mới → gỡ sprite cũ trước, tránh trùng ID <symbol>.
+        if (json.html && json.html.indexOf('data-vc-sprite') !== -1) {
+            document.querySelectorAll('svg[data-vc-sprite]').forEach((s) => {
+                if (!content.contains(s)) s.remove();
+            });
+        }
+
+        // Thay sidebar + vùng nội dung (navbar/footer giữ nguyên → listener
+        // profile dropdown / chatbot không bị mất)
+        const sidebar = document.querySelector('.admin-sidebar');
+        const sidebarY = sidebar ? sidebar.scrollTop : 0; // vị trí menu sidebar trước khi thay
+        if (sidebar && typeof json.sidebar === 'string' && json.sidebar.trim() !== '') {
+            // Fragment (sidebar.php) mang nguyên <aside class="admin-sidebar">
+            // đầy đủ → unwrap phần bên trong, tránh lồng aside vào aside
+            // (aside ngoài mất khả năng cuộn → mất luôn vị trí menu).
+            const tmp = document.createElement('div');
+            tmp.innerHTML = json.sidebar;
+            const first = tmp.firstElementChild;
+            const sbInner = (first && first.tagName === 'ASIDE' && first.classList.contains('admin-sidebar'))
+                ? first.innerHTML : tmp.innerHTML;
+            sidebar.innerHTML = sbInner;
+            sidebar.scrollTop = sidebarY; // GIỮ vị trí sidebar — không nhảy về đầu
+        }
+        content.classList.add('vc-fading'); // opacity 0 cùng frame với nội dung mới
+        content.innerHTML = json.html || '';
+        if (json.title) document.title = json.title;
+
+        // Giữ #anchor trên URL (trang chủ #bang-gia / #cau-hoi-thuong-gap)
+        const urlWithHash = newKey + (u.hash || '');
+        if (push) history.pushState({ vcKey: newKey }, '', urlWithHash);
+        else history.replaceState({ vcKey: newKey }, '', urlWithHash);
+        vcKey = newKey;
+
+        // Cuộn: URL có #anchor → nhắm đúng section; cùng pathname hoặc cùng
+        // nhóm section (vd /user/guides ↔ /user/guides/detail) → GIỮ vị trí
+        // ĐÃ LƯU (không đọc scrollTop sau khi DOM vừa thay — nội dung ngắn hơn
+        // bị kẹp về 0/đầu trang); khác nhóm → khôi phục theo bộ nhớ hoặc về đầu.
+        const scroller = getScroller();
+        const sectionOf = (p) => '/' + (p.split('/').filter(Boolean).slice(0, 2).join('/') || '');
+        let y = 0;
+        let hashTarget = null;
+        if (u.hash) {
+            try { hashTarget = document.getElementById(decodeURIComponent(u.hash.slice(1))); } catch (e) { hashTarget = null; }
+        }
+        if (hashTarget) {
+            hashTarget.scrollIntoView();
+            y = scroller.scrollTop;
+        } else if (sectionOf(u.pathname) === sectionOf(prevPathname)) {
+            y = (typeof scrollMem[prevKey] === 'number') ? scrollMem[prevKey] : scroller.scrollTop;
+        } else if (typeof scrollMem[newKey] === 'number') y = scrollMem[newKey];
+        scroller.scrollTop = y;
+        scrollMem[newKey] = y;
+
+        // Anchor trang chủ: căn lại sau khi ảnh/font sảnh — trì hoãn 1 frame
+        // + 300ms (bỏ qua nếu người dùng đã điều hướng tiếp).
+        if (hashTarget) {
+            const realign = () => {
+                if (location.pathname + location.search !== newKey) return;
+                const t = document.getElementById(hashTarget.id);
+                if (t) t.scrollIntoView();
+            };
+            requestAnimationFrame(() => requestAnimationFrame(realign));
+            setTimeout(realign, 300);
+        }
+
+        // Preloader (phòng thủ) + dọn key sessionStorage của app.js để
+        // lần nạp đầy đủ tới không ghi đè vị trí vừa khôi phục.
+        const pre = document.getElementById('page-preloader');
+        if (pre) pre.classList.add('preloader-hidden');
+        try {
+            sessionStorage.removeItem('vcScroll:' + prevPathname);
+            sessionStorage.removeItem('vcScroll:' + u.pathname);
+        } catch (e) { /* noop */ }
+
+        // Fade-in nội dung mới (2 frame để browser sơn trạng thái opacity 0 trước)
+        requestAnimationFrame(() => {
+            requestAnimationFrame(() => content.classList.remove('vc-fading'));
+        });
+
+        runScripts(content).then(() => {
+            try { window.vcInitPageContent(content); } catch (e) { console.error('[vc] init sau partial:', e); }
+        });
+    }
+
+    function navigate(url, push) {
+        if (controller) controller.abort();
+        const myGen = ++navGen;
+        controller = (typeof AbortController !== 'undefined') ? new AbortController() : null;
+        progress.start();
+        fetch(url, {
+            headers: { 'X-VC-Partial': '1', 'X-Requested-With': 'XMLHttpRequest' },
+            credentials: 'same-origin',
+            redirect: 'follow',
+            signal: controller ? controller.signal : undefined
+        }).then((resp) => {
+            if (myGen !== navGen) return null;
+            if (resp.redirected) { location.href = resp.url; return null; } // hết quyền / đăng nhập
+            const ct = resp.headers.get('content-type') || '';
+            if (ct.indexOf('application/json') === -1) { location.href = url; return null; }
+            return resp.json();
+        }).then((json) => {
+            if (myGen !== navGen || !json) return;
+            if (!json.ok || typeof json.html !== 'string') { location.href = url; return; }
+            applyFragment(json, url, push);
+            progress.done();
+        }).catch(() => {
+            if (myGen !== navGen) return; // bị abort bởi lần điều hướng mới hơn
+            // Lỗi mạng / parse → nạp lại đầy đủ nhưng GIỮ vị trí trang cũ
+            try {
+                sessionStorage.setItem('vcPartialFallback', '1');
+                sessionStorage.setItem('vcFallbackY', String(getScroller().scrollTop));
+            } catch (e) { /* noop */ }
+            location.href = url;
+        });
+    }
+
+    // --- Bắt click link (trang public + khu user) ---
+    document.addEventListener('click', (e) => {
+        if (e.defaultPrevented || e.button !== 0 || e.ctrlKey || e.metaKey || e.shiftKey || e.altKey) return;
+        const link = e.target && e.target.closest ? e.target.closest('a[href]') : null;
+        if (!link) return;
+        if (link.target === '_blank' || link.hasAttribute('download')) return;
+        if (link.hasAttribute('data-no-partial') || link.hasAttribute('data-no-loader')) return;
+        const hrefAttr = link.getAttribute('href');
+        // Anchor cùng trang dạng "/#bang-gia" (navbar luôn render "/#..." ở mọi
+        // trang) → cuộn mượt tại chỗ + giữ #hash, thay vì nhảy giật (native).
+        if (hrefAttr && hrefAttr.charAt(0) !== '#') {
+            try {
+                const au = new URL(hrefAttr, location.href);
+                if (au.origin === location.origin && au.hash &&
+                    au.pathname === location.pathname && au.search === location.search) {
+                    const el = document.getElementById(decodeURIComponent(au.hash.slice(1)));
+                    if (el) {
+                        e.preventDefault();
+                        el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                        history.replaceState({ vcKey }, '', location.pathname + location.search + au.hash);
+                        return;
+                    }
+                }
+            } catch (err) { /* bỏ qua → rơi xuống eligibleUrl */ }
+        }
+        const u = eligibleUrl(link.getAttribute('href'));
+        if (!u) return;
+        e.preventDefault(); // đồng bộ → app.js thấy defaultPrevented, không hiện preloader
+        navigate(u.href, true);
+    });
+
+    // --- Bắt submit form GET (bộ lọc / tìm / phân trang) ---
+    document.addEventListener('submit', (e) => {
+        if (e.defaultPrevented) return;
+        const form = e.target;
+        if (!form || form.tagName !== 'FORM') return;
+        if ((form.getAttribute('method') || 'get').toUpperCase() !== 'GET') return;
+        if (form.hasAttribute('data-no-partial') || form.hasAttribute('data-no-loader')) return;
+        if (form.target && form.target !== '_self') return;
+        const action = form.getAttribute('action') || location.pathname;
+        let u;
+        try { u = new URL(action, location.href); } catch (err) { return; }
+        u = eligibleUrl(u.href);
+        if (!u) return;
+        let qs = '';
+        try { qs = new URLSearchParams(new FormData(form)).toString(); } catch (err) { return; }
+        e.preventDefault();
+        navigate(location.origin + u.pathname + (qs ? '?' + qs : ''), true);
+    });
+
+    // --- Back/Forward: tải fragment cho URL history vừa quay lại ---
+    window.addEventListener('popstate', (e) => {
+        const key = (e.state && e.state.vcKey) || (location.pathname + location.search);
+        if (key === vcKey) return;
+        navigate(location.href, false);
+    });
+
+    history.replaceState({ vcKey }, '', location.href);
 })();
 
 document.addEventListener('DOMContentLoaded', function () {
@@ -245,9 +604,16 @@ document.addEventListener('DOMContentLoaded', function () {
             setTimeout(function () {
                 if (e.defaultPrevented) {
                     hidePreloader();
-                } else {
-                    showPreloader();
+                    return;
                 }
+                // Cùng URL (vd link anchor /#bang-gia trên trang chủ) → nhảy
+                // cục bộ, KHÔNG nạp trang → không hiện preloader. Nếu vẫn hiện
+                // sẽ kẹt màn "Đang tải..." vì không có lần reload nào tự ẩn.
+                if (link.pathname === location.pathname && link.search === location.search) {
+                    hidePreloader();
+                    return;
+                }
+                showPreloader();
             }, 0);
         }
     });
@@ -314,23 +680,26 @@ document.addEventListener('DOMContentLoaded', function () {
     };
     window.vcBindCopyButtons(document);
 
-    document.querySelectorAll('[data-qr-modal-open]').forEach(function (button) {
-        button.addEventListener('click', function () {
-            const modal = document.getElementById(button.dataset.qrModalOpen || '');
-            if (modal) modal.hidden = false;
+    // QR modal (gói cước / thanh toán) — chạy lại sau partial-load
+    window.vcPageInits.push(function (root) {
+        root.querySelectorAll('[data-qr-modal-open]').forEach(function (button) {
+            button.addEventListener('click', function () {
+                const modal = document.getElementById(button.dataset.qrModalOpen || '');
+                if (modal) modal.hidden = false;
+            });
         });
-    });
 
-    document.querySelectorAll('[data-qr-modal-close]').forEach(function (button) {
-        button.addEventListener('click', function () {
-            const modal = button.closest('.subscription-qr-modal');
-            if (modal) modal.hidden = true;
+        root.querySelectorAll('[data-qr-modal-close]').forEach(function (button) {
+            button.addEventListener('click', function () {
+                const modal = button.closest('.subscription-qr-modal');
+                if (modal) modal.hidden = true;
+            });
         });
-    });
 
-    document.querySelectorAll('.subscription-qr-modal').forEach(function (modal) {
-        modal.addEventListener('click', function (event) {
-            if (event.target === modal) modal.hidden = true;
+        root.querySelectorAll('.subscription-qr-modal').forEach(function (modal) {
+            modal.addEventListener('click', function (event) {
+                if (event.target === modal) modal.hidden = true;
+            });
         });
     });
 
@@ -342,9 +711,11 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     });
 
-    const planGroupTabs = document.querySelectorAll('[data-plan-group-filter]');
-    const planCards = document.querySelectorAll('[data-plan-group-ids]');
-    const planEmptyBlock = document.querySelector('[data-plan-empty]');
+    // Bộ lọc nhóm gói cước — chạy lại sau partial-load
+    window.vcPageInits.push(function (root) {
+    const planGroupTabs = root.querySelectorAll('[data-plan-group-filter]');
+    const planCards = root.querySelectorAll('[data-plan-group-ids]');
+    const planEmptyBlock = root.querySelector('[data-plan-empty]');
     if (planGroupTabs.length && planCards.length) {
         planGroupTabs.forEach(function (tab) {
             tab.addEventListener('click', function () {
@@ -371,8 +742,11 @@ document.addEventListener('DOMContentLoaded', function () {
             });
         });
     }
+    });
 
-    const checkoutForm = document.querySelector('[data-checkout-form]');
+    // Trang checkout (mã giảm giá / số tiền) — chạy lại sau partial-load
+    window.vcPageInits.push(function (root) {
+    const checkoutForm = root.querySelector('[data-checkout-form]');
     if (checkoutForm) {
         const couponInput = checkoutForm.querySelector('#coupon_code');
         const applyCouponButton = checkoutForm.querySelector('[data-coupon-apply]');
@@ -497,12 +871,19 @@ if (!response.ok || !result.valid) {
             });
         }
     }
+    });
 
     // 7. Logic tự động chạy và đồng bộ Slide Thông báo cho Dashboard
-    const slider = document.getElementById('tutorialSlider');
-    const dots = document.querySelectorAll('.tutorial-dot');
-    const previousNoticeButton = document.querySelector('[data-notice-slider-previous]');
-    const nextNoticeButton = document.querySelector('[data-notice-slider-next]');
+    // (chạy lại sau partial-load; dọn timer cũ tránh rò rỉ bộ đếm)
+    window.vcPageInits.push(function (root) {
+    if (window.__vcTutorialTimer) {
+        clearInterval(window.__vcTutorialTimer);
+        window.__vcTutorialTimer = null;
+    }
+    const slider = root.querySelector('#tutorialSlider');
+    const dots = root.querySelectorAll('.tutorial-dot');
+    const previousNoticeButton = root.querySelector('[data-notice-slider-previous]');
+    const nextNoticeButton = root.querySelector('[data-notice-slider-next]');
 
     if (slider && dots.length > 0) {
         let currentIndex = 0;
@@ -560,6 +941,7 @@ if (!response.ok || !result.valid) {
                 currentIndex = (currentIndex + 1) % totalSlides;
                 scrollToSlide(currentIndex);
             }, 4000);
+            window.__vcTutorialTimer = autoTimer;
         }
 
         function restartTimer() {
@@ -569,11 +951,14 @@ if (!response.ok || !result.valid) {
 
         startTimer();
     }
+    });
 
     // 8. Chọn nhanh số tiền nạp (trang Ví tiền & trang thanh toán nạp tiền)
-    const depositAmountInput = document.getElementById('deposit-amount');
-    const quickAmountButtons = document.querySelectorAll('.wallet-quick-amount');
-    const quickAmountGroups = document.querySelectorAll('[data-quick-amount-group]');
+    // (chạy lại sau partial-load)
+    window.vcPageInits.push(function (root) {
+    const depositAmountInput = root.querySelector('#deposit-amount');
+    const quickAmountButtons = root.querySelectorAll('.wallet-quick-amount');
+    const quickAmountGroups = root.querySelectorAll('[data-quick-amount-group]');
 
     function bindQuickAmounts(buttons, input) {
         if (!input || buttons.length === 0) return;
@@ -601,29 +986,35 @@ if (!response.ok || !result.valid) {
 
     quickAmountGroups.forEach(function (group) {
         const target = group.dataset.quickAmountTarget
-            ? document.querySelector(group.dataset.quickAmountTarget)
+            ? root.querySelector(group.dataset.quickAmountTarget)
             : null;
         bindQuickAmounts(Array.from(group.querySelectorAll('.wallet-quick-amount')), target);
     });
+    });
 
-    document.querySelectorAll('[data-confirm-submit]').forEach(function (form) {
-        form.addEventListener('submit', function (event) {
-            if (!window.confirm(form.dataset.confirmSubmit || 'Bạn có chắc muốn tiếp tục?')) {
-                event.preventDefault();
-            }
+    // Form xác nhận trước khi gửi — chạy lại sau partial-load
+    window.vcPageInits.push(function (root) {
+        root.querySelectorAll('[data-confirm-submit]').forEach(function (form) {
+            form.addEventListener('submit', function (event) {
+                if (!window.confirm(form.dataset.confirmSubmit || 'Bạn có chắc muốn tiếp tục?')) {
+                    event.preventDefault();
+                }
+            });
         });
     });
 
-    // 9. Tự động ẩn thông báo sau 4 giây
-    document.querySelectorAll('.user-record-alert').forEach(function (alert) {
-        setTimeout(function () {
-            alert.style.transition = 'opacity 0.4s ease, transform 0.4s ease';
-            alert.style.opacity = '0';
-            alert.style.transform = 'translateY(-15px)';
+    // 9. Tự động ẩn thông báo sau 4 giây — chạy lại sau partial-load
+    window.vcPageInits.push(function (root) {
+        root.querySelectorAll('.user-record-alert').forEach(function (alert) {
             setTimeout(function () {
-                alert.remove();
-            }, 400);
-        }, 4000);
+                alert.style.transition = 'opacity 0.4s ease, transform 0.4s ease';
+                alert.style.opacity = '0';
+                alert.style.transform = 'translateY(-15px)';
+                setTimeout(function () {
+                    alert.remove();
+                }, 400);
+            }, 4000);
+        });
     });
 
     // 10. Xử lý toggle Menu Ba Chấm (Action Dropdown)
@@ -1254,5 +1645,13 @@ if (!response.ok || !result.valid) {
                 }
             });
         }
+    }
+
+    // Chạy toàn bộ init trang (lần đầu). Trang admin: admin.js đăng ký thêm
+    // init lúc parse → app.js gọi sau cùng nên chạy đủ; guard chống gọi đôi
+    // khi cả 2 file cùng thêm listener DOMContentLoaded.
+    if (!window.__vcInitAtDom) {
+        window.__vcInitAtDom = true;
+        window.vcInitPageContent(document);
     }
 });

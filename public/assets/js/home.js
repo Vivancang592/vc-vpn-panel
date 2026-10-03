@@ -1,5 +1,5 @@
-const initializeHomePage = () => {
-    document.querySelectorAll('a[href^="#"]').forEach((anchor) => {
+const initializeHomePage = (root = document) => {
+    root.querySelectorAll('a[href^="#"]').forEach((anchor) => {
         anchor.addEventListener('click', (event) => {
             const target = document.querySelector(anchor.getAttribute('href'));
             if (!target) {
@@ -12,7 +12,7 @@ const initializeHomePage = () => {
         });
     });
 
-    const revealItems = document.querySelectorAll('.home-reveal');
+    const revealItems = root.querySelectorAll('.home-reveal');
 
     if ('IntersectionObserver' in window) {
         const observer = new IntersectionObserver((entries, currentObserver) => {
@@ -29,8 +29,8 @@ const initializeHomePage = () => {
         revealItems.forEach((item) => item.classList.add('is-visible'));
     }
 
-    const tabs = [...document.querySelectorAll('.home-tab')];
-    const panels = [...document.querySelectorAll('.home-tab-panel')];
+    const tabs = [...root.querySelectorAll('.home-tab')];
+    const panels = [...root.querySelectorAll('.home-tab-panel')];
 
     const activateTab = (tab) => {
         tabs.forEach((item) => {
@@ -63,8 +63,9 @@ const initializeHomePage = () => {
     });
 };
 
-if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', initializeHomePage, { once: true });
-} else {
-    initializeHomePage();
-}
+// Đăng ký qua registry vcPageInits (app.js) để init chạy lại sau MỖI lần
+// partial-load — fragment mới cần gắn lại smooth-scroll / tabs / reveal.
+window.vcPageInits = window.vcPageInits || [];
+window.vcPageInits.push(function (root) {
+    initializeHomePage(root || document);
+});

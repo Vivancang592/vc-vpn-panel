@@ -1727,3 +1727,38 @@ body.vpn-theme .user-subscription-card-status-cancelled { border-top-color: #8e8
 .user-ticket-message header { display: flex; justify-content: space-between; gap: 1rem; margin-bottom: .5rem; }
 .user-ticket-message p { white-space: pre-wrap; }
 @media (max-width: 680px) { .user-record-header { align-items: flex-start; flex-direction: column; } .user-record-header .glass-btn { width: 100%; text-align: center; text-decoration: none; } .user-record-table { min-width: 0; } .user-record-table thead { display: none; } .user-record-table, .user-record-table tbody, .user-record-table tr, .user-record-table td { display: block; width: 100%; } .user-record-table tr { padding: .7rem 0; border-bottom: 1px solid var(--glass-border); } .user-record-table td { display: flex; justify-content: space-between; gap: 1rem; padding: .35rem .8rem; border: 0; text-align: right; } .user-record-table td::before { content: attr(data-label); color: var(--ios-text-secondary); text-align: left; } .user-record-table .user-record-action { justify-content: flex-end; } .user-record-table .user-record-action::before { content: ''; } .user-record-stats { grid-template-columns: 1fr; } .user-referral-code { align-items: flex-start; flex-wrap: wrap; } .user-referral-code strong { width: 100%; } .user-notification-item { flex-direction: column; } }
+
+/* =========================================================================
+ * PARTIAL-LOAD (điều hướng nội bộ không reload — xem admin.js + app.js)
+ * Ở app.css vì trang home/policies KHÔNG nạp admin.css.
+ * ========================================================================= */
+.vc-partial-progress {
+    position: fixed;
+    top: 0;
+    left: 0;
+    height: 2px;
+    width: 100%;
+    z-index: 10050;
+    pointer-events: none;
+    transform: scaleX(0);
+    transform-origin: left center;
+    opacity: 0;
+    background: linear-gradient(90deg, var(--ios-blue, #007aff), rgba(0, 122, 255, 0.45));
+    transition: transform 0.5s ease, opacity 0.2s ease;
+}
+.vc-partial-progress.vc-progress-run {
+    opacity: 1;
+    transform: scaleX(0.7);
+}
+.vc-partial-progress.vc-progress-done {
+    opacity: 0;
+    transform: scaleX(1);
+    transition: transform 0.2s ease, opacity 0.35s ease 0.1s;
+}
+/* Nội dung mới mờ dần vào thay vì "đập" vào mắt người dùng */
+.admin-content {
+    transition: opacity 0.14s ease;
+}
+.admin-content.vc-fading {
+    opacity: 0;
+}
