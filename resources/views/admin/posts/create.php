@@ -57,6 +57,7 @@ ob_start();
                 <select name="type" class="glass-input" style="width: 100%; cursor: pointer;">
                     <option value="tutorial" selected>Hướng dẫn (Tutorial)</option>
                     <option value="faq">Thông báo (Notice)</option>
+                    <option value="popup">Thông báo Popup (Popup)</option>
                 </select>
             </div>
 

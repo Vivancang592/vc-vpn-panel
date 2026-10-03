@@ -60,7 +60,8 @@ ob_start();
                                 $typeBadge = [
                                     'news'     => ['label' => 'TIN TỨC', 'style' => 'background: rgba(0, 122, 255, 0.15); color: var(--ios-blue);'],
                                     'tutorial' => ['label' => 'HƯỚNG DẪN', 'style' => 'background: rgba(255, 149, 0, 0.15); color: var(--ios-warning);'],
-                                    'faq'      => ['label' => 'FAQ', 'style' => 'background: rgba(175, 82, 222, 0.15); color: #af52de;']
+                                    'faq'      => ['label' => 'FAQ', 'style' => 'background: rgba(175, 82, 222, 0.15); color: #af52de;'],
+                                    'popup'    => ['label' => 'POPUP', 'style' => 'background: rgba(255, 59, 48, 0.15); color: var(--ios-danger, #ff3b30);']
                                 ];
                                 $t = $typeBadge[$post['type'] ?? 'news'] ?? $typeBadge['news'];
                                 ?>

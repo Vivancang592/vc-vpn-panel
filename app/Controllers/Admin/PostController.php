@@ -44,6 +44,10 @@ class PostController extends BaseController
         $status  = $_POST['status'] ?? 'published';
         $content = $_POST['content'] ?? '';
 
+        if (!in_array($type, ['news', 'tutorial', 'faq', 'popup'], true)) {
+            $type = 'tutorial';
+        }
+
         if (empty($title) || empty($content)) {
             $_SESSION['error'] = 'Vui lòng nhập đầy đủ tiêu đề và nội dung bài viết!';
             $this->redirect('/admin/posts/create');
@@ -116,6 +120,10 @@ class PostController extends BaseController
         $type    = $_POST['type'] ?? 'tutorial';
         $status  = $_POST['status'] ?? 'published';
         $content = $_POST['content'] ?? '';
+
+        if (!in_array($type, ['news', 'tutorial', 'faq', 'popup'], true)) {
+            $type = 'tutorial';
+        }
 
         if (empty($title) || empty($content)) {
             $_SESSION['error'] = 'Vui lòng nhập đầy đủ tiêu đề và nội dung bài viết!';
