@@ -2,6 +2,7 @@
 
 $pageTitle = 'Tải Ứng Dụng - ' . ($settings['site_title'] ?? 'VC VPN 2027');
 $extraCss = 'home';
+$extraJs = 'home'; // fragment partial-nav cần home.js (reveal .home-reveal)
 
 ob_start();
 ?>
@@ -33,10 +34,10 @@ ob_start();
             line-height: 1.7;
             font-size: .95rem;
         ">
-            Tải ứng dụng Karing phù hợp với thiết b�?của bạn.
-            Các ứng dụng kết nối là phần mềm của bên th�?ba và được phát triển
-            bởi nhà phát triển tương ứng. Vui lòng tải đúng phiên bản cho h�?điều hành
-            đang s�?dụng và tham khảo hướng dẫn của nhà phát triển khi cài đặt.
+            Tải ứng dụng Karing phù hợp với thiết b�?của bạn.
+            Các ứng dụng kết nối là phần mềm của bên th�?ba và được phát triển
+            bởi nhà phát triển tương ứng. Vui lòng tải đúng phiên bản cho h�?điều hành
+            đang s�?dụng và tham khảo hướng dẫn của nhà phát triển khi cài đặt.
         </p>
     </div>
 
@@ -223,7 +224,7 @@ ob_start();
         <strong style="color: #fb923c;">
             Lưu ý:
         </strong>
-        Hãy chọn đúng h�?điều hành của thiết b�?đ�?tải phiên bản tương ứng.
+        Hãy chọn đúng h�?điều hành của thiết b�?đ�?tải phiên bản tương ứng.
     </div>
 
 </div>
@@ -270,7 +271,7 @@ ob_start();
             'transition:transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.3s ease'
         ].join(';');
 
-        /* Tiêu đ�?*/
+        /* Tiêu đ�?*/
         const title = document.createElement('div');
         title.style.cssText = [
             'font-size:16px',
@@ -291,9 +292,9 @@ ob_start();
 
         function updateMessageText() {
             if (youtubeUrl !== '') {
-                message.innerHTML = 'Trong khi ch�? chúng tôi s�?chuyển bạn đến video hướng dẫn cấu hình sau <strong style="color:#60a5fa;font-size:15px;">' + secondsLeft + 's</strong>...';
+                message.innerHTML = 'Trong khi ch�? chúng tôi s�?chuyển bạn đến video hướng dẫn cấu hình sau <strong style="color:#60a5fa;font-size:15px;">' + secondsLeft + 's</strong>...';
             } else {
-                message.textContent = 'Vui lòng kiểm tra danh sách tệp đã tải xuống trên thiết b�?';
+                message.textContent = 'Vui lòng kiểm tra danh sách tệp đã tải xuống trên thiết b�?';
             }
         }
 
@@ -382,8 +383,8 @@ ob_start();
     function startDownload(downloadUrl) {
 
         /*
-         * Dùng iframe ẩn đ�?kích hoạt /client.
-         * Trang hiện tại không b�?chuyển đi.
+         * Dùng iframe ẩn đ�?kích hoạt /client.
+         * Trang hiện tại không b�?chuyển đi.
          */
         const iframe = document.createElement('iframe');
 
@@ -447,7 +448,7 @@ ob_start();
                 }
 
                 /*
-                 * Kiểm tra thiết b�?iOS / iPadOS hoặc nút dành cho iOS.
+                 * Kiểm tra thiết b�?iOS / iPadOS hoặc nút dành cho iOS.
                  */
                 const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) ||
                     (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1) ||
@@ -455,14 +456,14 @@ ob_start();
 
                 if (isIOS) {
                     /*
-                     * Thiết b�?iOS: Cho phép m�?liên kết t�?nhiên sang trang ứng dụng,
-                     * không hiện thông báo và không m�?link YouTube.
+                     * Thiết b�?iOS: Cho phép m�?liên kết t�?nhiên sang trang ứng dụng,
+                     * không hiện thông báo và không m�?link YouTube.
                      */
                     return;
                 }
 
                 /*
-                 * Các h�?điều hành khác (Android, Windows, macOS, Linux):
+                 * Các h�?điều hành khác (Android, Windows, macOS, Linux):
                  */
                 event.preventDefault();
                 event.stopPropagation();
