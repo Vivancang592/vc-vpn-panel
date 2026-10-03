@@ -1762,3 +1762,154 @@ body.vpn-theme .user-subscription-card-status-cancelled { border-top-color: #8e8
 .admin-content.vc-fading {
     opacity: 0;
 }
+
+/* ==== Popup thông báo (bài type=popup) — layouts/app.php ============ */
+#vc-notice-popups[hidden] {
+    display: none !important;
+}
+.vc-notice-popup {
+    position: fixed;
+    inset: 0;
+    z-index: 120000; /* > preloader (99999), < tinymce aux (999999) */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 1.25rem;
+    animation: vc-notice-fade 0.28s ease;
+}
+.vc-notice-backdrop {
+    position: absolute;
+    inset: 0;
+    background: rgba(15, 23, 42, 0.45);
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
+}
+.vc-notice-card {
+    position: relative;
+    width: min(520px, 100%);
+    max-height: min(78vh, 640px);
+    display: flex;
+    flex-direction: column;
+    background: var(--glass-bg, rgba(255, 255, 255, 0.82));
+    backdrop-filter: var(--glass-blur, blur(16px) saturate(140%));
+    -webkit-backdrop-filter: var(--glass-blur, blur(16px) saturate(140%));
+    border: 1px solid var(--glass-border, rgba(217, 226, 239, 0.9));
+    border-radius: var(--radius-lg, 12px);
+    box-shadow: var(--glass-shadow, 0 10px 28px rgba(15, 23, 42, 0.1)), 0 24px 64px rgba(0, 0, 0, 0.2);
+    overflow: hidden;
+    animation: vc-notice-pop 0.3s cubic-bezier(0.22, 1, 0.36, 1);
+}
+/* Card có thumbnail admin tải lên → ảnh làm nền (overlay tối để chữ đủ tương phản) */
+.vc-notice-card--bg {
+    background-color: #0f172a;
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+    border-color: rgba(255, 255, 255, 0.16);
+}
+/* Khu user: body.user-area remap --glass-bg thành lớp film mờ trong suốt →
+   card gần như biến mất. Dùng đúng surface tối của trang user (giống profile-menu). */
+body.user-area .vc-notice-card:not(.vc-notice-card--bg) {
+    background: rgba(14, 20, 32, 0.96);
+    border-color: var(--u-border, rgba(148, 163, 184, 0.16));
+    box-shadow: 0 18px 44px rgba(0, 0, 0, 0.55);
+}
+body.user-area .vc-notice-card {
+    border-radius: var(--u-r-md, 14px);
+}
+body.user-area .vc-notice-card:not(.vc-notice-card--bg) .vc-notice-head {
+    background: var(--u-accent-soft, rgba(0, 122, 255, 0.16));
+    border-bottom-color: var(--u-border, rgba(148, 163, 184, 0.16));
+}
+body.user-area .vc-notice-card:not(.vc-notice-card--bg) .vc-notice-x {
+    background: var(--u-surface-2, rgba(255, 255, 255, 0.075));
+    color: var(--u-text, #e6ecf5);
+}
+.vc-notice-card--bg .vc-notice-head {
+    background: rgba(6, 18, 39, 0.4);
+    border-bottom-color: rgba(255, 255, 255, 0.14);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+}
+.vc-notice-card--bg .vc-notice-badge { color: #fff; }
+.vc-notice-card--bg .vc-notice-x {
+    background: rgba(255, 255, 255, 0.18);
+    color: #fff;
+}
+.vc-notice-card--bg .vc-notice-title { color: #fff; }
+.vc-notice-card--bg .vc-notice-body { color: rgba(255, 255, 255, 0.88); }
+.vc-notice-card--bg .vc-notice-date { color: rgba(255, 255, 255, 0.62); }
+.vc-notice-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    padding: 0.9rem 1.1rem;
+    border-bottom: 1px solid var(--glass-border, rgba(217, 226, 239, 0.9));
+    background: var(--color-primary-soft, rgba(22, 119, 255, 0.12));
+}
+.vc-notice-badge {
+    font-size: 0.78rem;
+    font-weight: 800;
+    letter-spacing: 0.06em;
+    color: var(--ios-blue, #007aff);
+}
+.vc-notice-x {
+    width: 30px;
+    height: 30px;
+    border: 0;
+    border-radius: 50%;
+    background: rgba(0, 0, 0, 0.06);
+    color: var(--ios-text, #1c1c1e);
+    font-size: 0.9rem;
+    cursor: pointer;
+    transition: background 0.15s ease;
+}
+.vc-notice-x:hover {
+    background: rgba(255, 59, 48, 0.15);
+    color: #ff3b30;
+}
+.vc-notice-scroll {
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+    padding: 1.1rem 1.25rem;
+}
+.vc-notice-title {
+    margin: 0 0 0.75rem;
+    font-size: 1.12rem;
+    font-weight: 800;
+    line-height: 1.35;
+    color: var(--ios-text, #1c1c1e);
+}
+.vc-notice-body {
+    font-size: 0.94rem;
+    line-height: 1.65;
+    color: var(--ios-text-secondary, #6b7280);
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+}
+.vc-notice-body img {
+    max-width: 100%;
+    height: auto;
+    border-radius: 10px;
+}
+.vc-notice-body p {
+    margin: 0 0 0.6rem;
+}
+.vc-notice-date {
+    margin-top: 0.9rem;
+    font-size: 0.76rem;
+    color: var(--ios-text-tertiary, var(--ios-text-secondary, #9ca3af));
+}
+@keyframes vc-notice-fade {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+@keyframes vc-notice-pop {
+    from { opacity: 0; transform: translateY(16px) scale(0.96); }
+    to { opacity: 1; transform: translateY(0) scale(1); }
+}
+@media (max-width: 560px) {
+    .vc-notice-card { max-height: 84vh; border-radius: 16px; }
+}

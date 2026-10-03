@@ -564,6 +564,42 @@ document.addEventListener('DOMContentLoaded', function () {
     window.addEventListener('load', hidePreloader);
     setTimeout(hidePreloader, 1500);
 
+    // Popup thông báo (bài type=popup) — markup nằm NGOÀI .admin-content nên
+    // chỉ render khi nạp trang đầy đủ (login/tải lại); partial-nav không
+    // đụng tới → không re-trigger. Hiện lần lượt từng bài sau preloader ẩn.
+    (function initNoticePopups() {
+        const wrap = document.getElementById('vc-notice-popups');
+        if (!wrap || wrap.dataset.vcBound === '1') return;
+        const list = Array.prototype.slice.call(wrap.querySelectorAll('.vc-notice-popup'));
+        if (!list.length) return;
+        wrap.dataset.vcBound = '1';
+        let idx = 0;
+
+        const showCurrent = () => {
+            list.forEach((p, i) => { p.style.display = (i === idx) ? 'flex' : 'none'; });
+            wrap.hidden = false;
+            document.body.style.overflow = 'hidden';
+        };
+        const closeCurrent = () => {
+            idx++;
+            if (idx < list.length) { showCurrent(); return; }
+            wrap.hidden = true;
+            document.body.style.overflow = '';
+        };
+
+        wrap.addEventListener('click', (e) => {
+            if (e.target && e.target.closest && e.target.closest('[data-vc-notice-close]')) closeCurrent();
+        });
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape' && !wrap.hidden) closeCurrent();
+        });
+
+        // Hiện sau khi preloader mờ (2 frame + 300ms) để không chồng lớp
+        const reveal = () => { if (wrap.hidden && idx === 0) showCurrent(); };
+        requestAnimationFrame(() => requestAnimationFrame(reveal));
+        setTimeout(reveal, 600);
+    })();
+
     window.addEventListener('pageshow', function (event) {
         if (event.persisted) {
             hidePreloader();

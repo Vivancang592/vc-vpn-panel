@@ -2,7 +2,7 @@
 $pageTitle = "Hướng Dẫn & Câu Hỏi Thường Gặp - " . ($settings['site_title'] ?? 'VC VPN 2027');
 $extraCss = 'home';
 
-// Nhóm các bài viết theo Thể Loại (type)
+// Nhóm các bài viết theo Th�?Loại (type)
 $groupedPosts = [];
 $search = trim($_GET['q'] ?? '');
 if (!empty($posts) && is_array($posts)) {
@@ -18,11 +18,11 @@ if (!empty($posts) && is_array($posts)) {
 function getTutorialFallbackThumbnail($postId): string
 {
     $colorPairs = [
-        ['#1677ff', '#0b4c8c'],
+        ['#0a84ff', '#0b4c8c'],
         ['#22a66f', '#087f9a'],
         ['#e59a21', '#d1495b'],
         ['#7a5af8', '#c24186'],
-        ['#0f766e', '#1677ff']
+        ['#0f766e', '#0a84ff']
     ];
     $pair = $colorPairs[(int) $postId % count($colorPairs)];
     $svg = '<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="500" viewBox="0 0 1200 500" preserveAspectRatio="xMidYMid slice">'
@@ -42,14 +42,14 @@ ob_start();
 <section class="public-page home-page home-subpage home-faq-page">
 <div class="home-subpage-header" style="text-align: center; margin-bottom: 2.5rem;">
     <h1 style="font-size: 2rem; font-weight: 700;">Hướng Dẫn & Câu Hỏi Thường Gặp</h1>
-    <p style="color: var(--ios-text-secondary); margin-top: 0.5rem;">Giải đáp các thắc mắc và hướng dẫn chi tiết cách sử dụng dịch vụ VPN</p>
+    <p style="color: var(--ios-text-secondary); margin-top: 0.5rem;">Giải đáp các thắc mắc và hướng dẫn chi tiết cách s�?dụng dịch v�?VPN</p>
     <form class="home-subpage-search" action="/faq" method="get" style="max-width: 560px; margin: 1.25rem auto 0; display: flex; gap: .5rem;">
         <input type="search" name="q" value="<?= htmlspecialchars($search) ?>" placeholder="Tìm hướng dẫn..." style="flex: 1; padding: .7rem .9rem; border: 1px solid var(--glass-border); border-radius: 10px; background: var(--glass-bg); color: var(--ios-text);">
         <button type="submit" class="glass-btn" style="padding: .7rem 1rem; white-space: nowrap; flex-shrink: 0;">Tìm kiếm</button>
     </form>
 </div>
 
-<!-- Đã bỏ max-width: 900px, chuyển sang rộng linh hoạt toàn màn hình (width: 100%) -->
+<!-- Đã b�?max-width: 900px, chuyển sang rộng linh hoạt toàn màn hình (width: 100%) -->
 <div class="home-subpage-list" style="width: 100%; margin: 0 auto;">
     <?php if (!empty($groupedPosts)): ?>
         <?php 
@@ -93,7 +93,7 @@ ob_start();
                                 </div>
                                 <div style="display: flex; gap: 1rem; font-size: 0.78rem; color: var(--ios-text-secondary); border-top: 1px solid var(--glass-border); padding-top: 0.75rem; margin-top: 0.5rem; flex-wrap: wrap;">
                                     <span>📅 Cập nhật: <?= date('d/m/Y', strtotime($post['created_at'])) ?></span>
-                                    <span>🏷️ Chuyên mục: <?= htmlspecialchars($typeGroup) ?></span>
+                                    <span>🏷�?Chuyên mục: <?= htmlspecialchars($typeGroup) ?></span>
                                 </div>
                                 <div style="display: flex; justify-content: flex-end; margin-top: 0.5rem;">
                                     <a href="/post-detail?slug=<?= urlencode($post['slug']) ?>" class="glass-btn" style="font-size: 0.85rem; padding: 0.5rem 1rem; text-decoration: none; box-sizing: border-box;">

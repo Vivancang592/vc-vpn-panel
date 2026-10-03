@@ -74,6 +74,7 @@ ob_start();
                 <select name="type" class="glass-input" style="width: 100%; cursor: pointer;">
                     <option value="tutorial" <?= ($post['type'] ?? '') === 'tutorial' ? 'selected' : '' ?>>Hướng dẫn (Tutorial)</option>
                     <option value="faq" <?= ($post['type'] ?? '') === 'faq' ? 'selected' : '' ?>>Thông báo (Notice)</option>
+                    <option value="popup" <?= ($post['type'] ?? '') === 'popup' ? 'selected' : '' ?>>Thông báo Popup (Popup)</option>
                 </select>
             </div>
 

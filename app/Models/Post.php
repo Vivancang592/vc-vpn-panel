@@ -62,6 +62,16 @@ class Post extends BaseModel
     }
 
     /**
+     * Lấy các bài viết thông báo popup đã xuất bản — hiện khi user tải trang
+     */
+    public function getPublishedPopups(): array
+    {
+        $stmt = self::$db->prepare("SELECT p.* FROM `{$this->table}` p WHERE p.status = 'published' AND p.type = 'popup' ORDER BY p.id DESC LIMIT 5");
+        $stmt->execute();
+        return $stmt->fetchAll() ?: [];
+    }
+
+    /**
      * Lấy chi tiết bài viết theo slug
      */
     public function getBySlug(string $slug): ?array
