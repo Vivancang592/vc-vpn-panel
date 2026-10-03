@@ -139,9 +139,14 @@ class OrderService
                 $email = trim((string) ($userModel->findById($userId)['email'] ?? ''));
                 if ($email !== '') {
                     (new MailService())->send($email, 'Thanh toán thành công', 'orders.payment-completed', [
-                        'orderCode' => $orderCode,
-                        'amount' => number_format($finalPrice, 0, '.', ',') . ' đ',
-                        'description' => 'Đơn hàng của bạn đã được thanh toán bằng số dư và kích hoạt thành công.'
+                        'orderCode'     => $orderCode,
+                        'totalAmount'   => number_format($originalPrice, 0, '.', ',') . ' đ',
+                        'discountAmount' => $discountAmount > 0 ? number_format($discountAmount, 0, '.', ',') . ' đ' : '',
+                        'couponCode'    => $discountAmount > 0 ? (string) $couponCode : '',
+                        'paidAmount'    => number_format($finalPrice, 0, '.', ',') . ' đ',
+                        'paymentMethod' => 'Số dư tài khoản',
+                        'amount'        => number_format($finalPrice, 0, '.', ',') . ' đ',
+                        'description'   => 'Đơn hàng của bạn đã được thanh toán bằng số dư và kích hoạt thành công.'
                     ]);
                 }
 

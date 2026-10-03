@@ -606,7 +606,7 @@ class PaymentService
         }
 
         $order = !empty($payment['order_id'])
-            ? (new Order())->find((int) $payment['order_id'])
+            ? (new Order())->findWithDetails((int) $payment['order_id'])
             : null;
         $paymentType = (string) ($payment['type'] ?? 'payment');
         $description = $paymentType === 'deposit'
@@ -615,10 +615,25 @@ class PaymentService
                 ? 'Thanh toán gia hạn gói dịch vụ đã được xác nhận.'
                 : 'Đơn hàng của bạn đã được thanh toán và kích hoạt thành công.');
 
+        // Hóa đơn: tổng tiền (giá niêm yết) → khấu trừ mã giảm giá → số tiền trả.
+        // Mirror logic tại resources/views/user/orders/detail.php (không hiển thị breakdown cho đơn nạp tiền).
+        $paidAmount    = (float) ($payment['amount'] ?? $order['total_amount'] ?? 0);
+        $orderTotal    = (float) ($order['total_amount'] ?? 0);
+        $planPrice     = (float) ($order['plan_price'] ?? 0);
+        $hasBreakdown  = !empty($order['plan_id']) && $planPrice >= $orderTotal && $planPrice > 0;
+        $discountAmt   = $hasBreakdown ? round($planPrice - $orderTotal) : 0.0;
+        $methodKey     = strtolower((string) ($payment['payment_method'] ?? ($order['payment_method'] ?? '')));
+        $methodLabels  = ['vietqr' => 'VietQR (Chuyển khoản)', 'balance' => 'Số dư tài khoản'];
+
         (new MailService())->send($email, 'Thanh toán thành công', 'orders.payment-completed', [
-            'orderCode' => (string) ($order['order_code'] ?? $payment['transaction_id'] ?? ''),
-            'amount' => number_format((float) ($payment['amount'] ?? 0), 0, '.', ',') . ' đ',
-            'description' => $description
+            'orderCode'     => (string) ($order['order_code'] ?? $payment['transaction_id'] ?? ''),
+            'totalAmount'   => $hasBreakdown ? number_format($orderTotal, 0, '.', ',') . ' đ' : '',
+            'discountAmount' => $discountAmt > 0 ? number_format($discountAmt, 0, '.', ',') . ' đ' : '',
+            'couponCode'    => $discountAmt > 0 ? (string) ($order['coupon_code'] ?? '') : '',
+            'paidAmount'    => number_format($paidAmount, 0, '.', ',') . ' đ',
+            'paymentMethod' => $methodKey !== '' ? ($methodLabels[$methodKey] ?? strtoupper($methodKey)) : '',
+            'amount'        => number_format($paidAmount, 0, '.', ',') . ' đ',
+            'description'   => $description
         ]);
     }
 }
