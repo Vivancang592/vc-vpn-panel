@@ -161,248 +161,371 @@ crontab -e
 * ##cấu trúc dự án:
 ```
 vc-vpn-2027/
-├── vc_install.sh
-├── vc_update.sh
-├── .env.example
-├── .htaccess
-├── composer.json
-├── README.md
-│
-├── public/
-│   ├── .htaccess
-│   ├── index.php
-│   ├── favicon.ico
-│   └── assets/
-│       ├── css/
-│       │   ├── app.css
-│       │   ├── admin.css
-│       │   └── auth.css
-│       │
-│       ├── js/
-│       │   ├── app.js
-│       │   ├── admin.js
-│       │   └── auth.js
-│       │
-│       └── images/
-│           ├── logo.png
-│           └── favicon.png
-│
-├── config/
-│   ├── app.php
-│   └── database.php
-│
-├── routes/
-│   ├── web.php
-│   └── api.php
-│
 ├── app/
+│   ├── AI/
+│   │   ├── Assets/
+│   │   │   └── AssetManager.php
+│   │   ├── Contracts/
+│   │   │   ├── AICapability.php
+│   │   │   ├── AIException.php
+│   │   │   ├── AIProviderInterface.php
+│   │   │   └── AIResult.php
+│   │   ├── Core/
+│   │   │   ├── AICore.php
+│   │   │   ├── AILogger.php
+│   │   │   ├── DirectMediaService.php
+│   │   │   ├── ErrorHandler.php
+│   │   │   ├── InputHandler.php
+│   │   │   ├── ModelResolver.php
+│   │   │   ├── ModuleRegistry.php
+│   │   │   ├── ModuleSynchronizer.php
+│   │   │   ├── OutputHandler.php
+│   │   │   ├── PromptFileStore.php
+│   │   │   ├── PromptRegistry.php
+│   │   │   ├── RequestBuilder.php
+│   │   │   ├── ResponseParser.php
+│   │   │   ├── RetryPolicy.php
+│   │   │   ├── TaskDispatcher.php
+│   │   │   └── TaskRunner.php
+│   │   └── Providers/
+│   │       └── KiraProvider.php
 │   ├── Controllers/
-│   │   ├── BaseController.php
-│   │   ├── HomeController.php
-│   │   ├── AuthController.php
-│   │   ├── UserController.php
-│   │   ├── CronController.php
-│   │   │
 │   │   ├── Admin/
-│   │   │   ├── DashboardController.php
-│   │   │   ├── UserController.php
-│   │   │   ├── ServerGroupController.php
-│   │   │   ├── ServerController.php
-│   │   │   ├── NodeController.php
-│   │   │   ├── PlanController.php
+│   │   │   ├── AiBaseController.php
+│   │   │   ├── AiConversationController.php
+│   │   │   ├── AiDashboardController.php
+│   │   │   ├── AiDubbingController.php
+│   │   │   ├── AiFanpageController.php
+│   │   │   ├── AiImageController.php
+│   │   │   ├── AiModelController.php
+│   │   │   ├── AiModuleController.php
+│   │   │   ├── AiOutputController.php
+│   │   │   ├── AiPromptController.php
+│   │   │   ├── AiReplyController.php
+│   │   │   ├── AiSettingController.php
+│   │   │   ├── AiTaskController.php
+│   │   │   ├── AiVideoController.php
 │   │   │   ├── CouponController.php
+│   │   │   ├── DashboardController.php
+│   │   │   ├── ExpenseController.php
+│   │   │   ├── LogController.php
+│   │   │   ├── NodeController.php
 │   │   │   ├── OrderController.php
 │   │   │   ├── PaymentController.php
-│   │   │   ├── SubscriptionController.php
-│   │   │   ├── ReferralController.php
-│   │   │   ├── WithdrawalController.php
+│   │   │   ├── PlanController.php
 │   │   │   ├── PostController.php
-│   │   │   ├── TicketController.php
-│   │   │   ├── ExpenseController.php
+│   │   │   ├── ReferralController.php
+│   │   │   ├── ServerController.php
+│   │   │   ├── ServerGroupController.php
 │   │   │   ├── SettingController.php
-│   │   │   └── LogController.php
-│   │   │
-│   │   └── Api/
-│   │       ├── ClientController.php
-│   │       ├── ServerController.php
-│   │       └── PaymentController.php
-│   │
+│   │   │   ├── SubscriptionController.php
+│   │   │   ├── TicketController.php
+│   │   │   ├── UserController.php
+│   │   │   └── WithdrawalController.php
+│   │   ├── Api/
+│   │   │   ├── ChatbotController.php
+│   │   │   ├── ClientController.php
+│   │   │   ├── FanpageWebhookController.php
+│   │   │   ├── PaymentController.php
+│   │   │   └── ServerController.php
+│   │   ├── AuthController.php
+│   │   ├── BaseController.php
+│   │   ├── CronController.php
+│   │   ├── HomeController.php
+│   │   └── UserController.php
 │   ├── Models/
-│   │   ├── BaseModel.php
-│   │   ├── Setting.php
-│   │   ├── User.php
 │   │   ├── AccessLog.php
-│   │   ├── ServerGroup.php
-│   │   ├── Server.php
+│   │   ├── AIAsset.php
+│   │   ├── AIModel.php
+│   │   ├── AIModule.php
+│   │   ├── AIOutput.php
+│   │   ├── AIOutputVersion.php
+│   │   ├── AITask.php
+│   │   ├── AITaskActivity.php
+│   │   ├── BaseModel.php
+│   │   ├── ChatAiCache.php
+│   │   ├── ChatEvent.php
+│   │   ├── ChatMessage.php
+│   │   ├── ChatSession.php
+│   │   ├── Coupon.php
+│   │   ├── EmailLog.php
+│   │   ├── Expense.php
 │   │   ├── NodeInbound.php
 │   │   ├── NodeTask.php
-│   │   ├── VpnPlan.php
-│   │   ├── Coupon.php
 │   │   ├── Order.php
 │   │   ├── Payment.php
-│   │   ├── Subscription.php
-│   │   ├── ReferralCommission.php
-│   │   ├── Withdrawal.php
 │   │   ├── Post.php
+│   │   ├── ReferralCommission.php
+│   │   ├── ScheduledPost.php
+│   │   ├── Server.php
+│   │   ├── ServerGroup.php
+│   │   ├── Setting.php
+│   │   ├── Subscription.php
+│   │   ├── SubscriptionAccessLog.php
 │   │   ├── SupportTicket.php
-│   │   ├── TicketMessage.php
 │   │   ├── SystemLog.php
-│   │   ├── EmailLog.php
-│   │   └── Expense.php
-│   │
+│   │   ├── TicketMessage.php
+│   │   ├── User.php
+│   │   ├── VpnPlan.php
+│   │   └── Withdrawal.php
 │   └── Services/
+│       ├── AIProviderService.php
+│       ├── ChatbotService.php
+│       ├── FanpageService.php
 │       ├── MailService.php
-│       ├── VpnService.php
+│       ├── NodeTaskService.php
+│       ├── NotificationService.php
 │       ├── OrderService.php
-│       └── PaymentService.php
-│
+│       ├── PaymentService.php
+│       └── VpnService.php
+├── config/
+│   ├── ai.php
+│   ├── app.php
+│   └── database.php
+├── database/
+│   ├── migrations/
+│   │   ├── 20260927_add_ai_core_tables.sql
+│   │   ├── 20260928_drop_prompt_tables.sql
+│   │   ├── 20260928_drop_unused_ai_tables.sql
+│   │   ├── 20260929_p12_drop_content_prompt.sql
+│   │   ├── 20260930_add_output_id_scheduled_posts.sql
+│   │   ├── 20261002_add_vpn_plan_stock.sql
+│   │   ├── 20261002_retain_outputs_when_pruning_ai_tasks.sql
+│   │   ├── 20261005_add_network_locked_until.sql
+│   │   ├── 20261006_add_connected_devices.sql
+│   │   └── 20261006_add_task_error_msg.sql
+│   └── vpn_service.sql
+├── docs/
+│   └── task-contract.md
+├── public/
+│   ├── assets/
+│   │   ├── audio/
+│   │   │   └── voice-samples/
+│   │   │       ├── Aoede.wav
+│   │   │       ├── Charon.wav
+│   │   │       ├── Fenrir.wav
+│   │   │       ├── Kore.wav
+│   │   │       └── Puck.wav
+│   │   ├── css/
+│   │   │   ├── admin.css
+│   │   │   ├── app.css
+│   │   │   ├── auth.css
+│   │   │   ├── home.css
+│   │   │   └── user.css
+│   │   ├── images/
+│   │   │   ├── apple-touch-icon.png
+│   │   │   ├── favicon.png
+│   │   │   ├── favicon-48.png
+│   │   │   ├── icon.svg
+│   │   │   ├── icon-192.png
+│   │   │   ├── icon-512.png
+│   │   │   └── logo.png
+│   │   └── js/
+│   │       ├── admin.js
+│   │       ├── app.js
+│   │       ├── auth.js
+│   │       └── home.js
+│   ├── uploads/
+│   ├── .htaccess
+│   ├── favicon.ico
+│   ├── index.php
+│   └── site.webmanifest
 ├── resources/
 │   └── views/
-│       ├── layouts/
-│       │   ├── app.php
-│       │   ├── admin.php
-│       │   ├── auth.php
-│       │   ├── header.php
-│       │   ├── navbar.php
-│       │   ├── sidebar.php
-│       │   ├── admin-sidebar.php
-│       │   └── footer.php
-│       │
+│       ├── admin/
+│       │   ├── ai/
+│       │   │   ├── _flash.php
+│       │   │   ├── _media-gallery.php
+│       │   │   ├── _tab-header.php
+│       │   │   ├── conversation-detail.php
+│       │   │   ├── conversations.php
+│       │   │   ├── dashboard.php
+│       │   │   ├── output-detail.php
+│       │   │   ├── prompt-edit.php
+│       │   │   ├── settings.php
+│       │   │   ├── tab-dubbing.php
+│       │   │   ├── tab-fanpage.php
+│       │   │   ├── tab-image.php
+│       │   │   ├── tab-reply.php
+│       │   │   ├── tab-video.php
+│       │   │   └── task-detail.php
+│       │   ├── coupons/
+│       │   │   ├── create.php
+│       │   │   ├── edit.php
+│       │   │   └── index.php
+│       │   ├── expenses/
+│       │   │   ├── create.php
+│       │   │   ├── edit.php
+│       │   │   └── index.php
+│       │   ├── logs/
+│       │   │   ├── access.php
+│       │   │   ├── email.php
+│       │   │   ├── index.php
+│       │   │   ├── macrodroid.php
+│       │   │   └── system.php
+│       │   ├── nodes/
+│       │   │   ├── detail.php
+│       │   │   └── index.php
+│       │   ├── notifications/
+│       │   │   └── index.php
+│       │   ├── orders/
+│       │   │   ├── create.php
+│       │   │   ├── detail.php
+│       │   │   └── index.php
+│       │   ├── payments/
+│       │   │   ├── detail.php
+│       │   │   └── index.php
+│       │   ├── plans/
+│       │   │   ├── create.php
+│       │   │   ├── edit.php
+│       │   │   └── index.php
+│       │   ├── posts/
+│       │   │   ├── create.php
+│       │   │   ├── detail.php
+│       │   │   ├── edit.php
+│       │   │   └── index.php
+│       │   ├── referrals/
+│       │   │   └── index.php
+│       │   ├── server-groups/
+│       │   │   ├── create.php
+│       │   │   ├── edit.php
+│       │   │   └── index.php
+│       │   ├── servers/
+│       │   │   ├── create.php
+│       │   │   ├── detail.php
+│       │   │   ├── edit.php
+│       │   │   └── index.php
+│       │   ├── settings/
+│       │   │   └── index.php
+│       │   ├── subscriptions/
+│       │   │   ├── detail.php
+│       │   │   └── index.php
+│       │   ├── tickets/
+│       │   │   ├── detail.php
+│       │   │   └── index.php
+│       │   ├── users/
+│       │   │   ├── create.php
+│       │   │   ├── detail.php
+│       │   │   ├── edit.php
+│       │   │   └── index.php
+│       │   ├── withdrawals/
+│       │   │   ├── detail.php
+│       │   │   └── index.php
+│       │   └── dashboard.php
+│       ├── auth/
+│       │   ├── forgot-password.php
+│       │   ├── login.php
+│       │   └── register.php
 │       ├── components/
 │       │   ├── alert.php
+│       │   ├── icons.php
 │       │   ├── modal.php
 │       │   ├── pagination.php
-│       │   ├── status-badge.php
 │       │   ├── plan-card.php
 │       │   ├── server-status.php
+│       │   ├── status-badge.php
 │       │   └── subscription-card.php
-│       │
 │       ├── emails/
 │       │   ├── auth/
 │       │   │   ├── register-otp.php
 │       │   │   └── reset-password.php
 │       │   ├── orders/
-│       │   │   ├── payment-completed.php
-│       │   │   └── cancelled.php
-│       │   └── subscriptions/
-│       │       ├── expiring-soon.php
-│       │       ├── expired.php
-│       │       └── data-exceeded.php
-│       │
-│       ├── auth/
-│       │   ├── login.php
-│       │   ├── register.php
-│       │   ├── forgot-password.php
-│       │   └── reset-password.php
-│       │
-│       ├── home/
-│       │   ├── index.php
-│       │   ├── plans.php
-│       │   ├── faq.php
-│       │   └── contact.php
-│       │
-│       ├── policies/
-│       │   ├── terms.php
-│       │   ├── privacy.php
-│       │   └── refund.php
-│       │
-│       ├── user/
-│       │   ├── dashboard.php
-│       │   ├── profile/
-│       │   │   └── index.php
-│       │   ├── plans/
-│       │   │   ├── index.php
-│       │   │   └── checkout.php
-│       │   ├── orders/
-│       │   │   ├── index.php
-│       │   │   └── detail.php
+│       │   │   ├── cancelled.php
+│       │   │   ├── new-order-admin.php
+│       │   │   └── payment-completed.php
 │       │   ├── subscriptions/
-│       │   │   ├── index.php
-│       │   │   ├── detail.php
-│       │   │   └── connect.php
-│       │   ├── payments/
-│       │   │   ├── index.php
-│       │   │   └── checkout.php
-│       │   ├── wallet/
-│       │   │   └── index.php
-│       │   ├── referrals/
-│       │   │   └── index.php
-│       │   ├── withdrawals/
-│       │   │   ├── index.php
-│       │   │   └── create.php
-│       │   ├── tickets/
-│       │   │   ├── index.php
-│       │   │   ├── create.php
-│       │   │   └── detail.php
-│       │   └── notifications/
-│       │       └── index.php
-│       │
-│       └── admin/
-│           ├── dashboard.php
-│           ├── users/
-│           │   ├── index.php
-│           │   ├── create.php
-│           │   ├── edit.php
-│           │   └── detail.php
-│           ├── server-groups/
-│           │   ├── index.php
-│           │   ├── create.php
-│           │   └── edit.php
-│           ├── servers/
-│           │   ├── index.php
-│           │   ├── create.php
-│           │   ├── edit.php
-│           │   └── detail.php
-│           ├── nodes/
-│           │   ├── index.php
-│           │   └── detail.php
-│           ├── plans/
-│           │   ├── index.php
-│           │   ├── create.php
-│           │   └── edit.php
-│           ├── coupons/
-│           │   ├── index.php
-│           │   ├── create.php
-│           │   └── edit.php
+│       │   │   ├── data-exceeded.php
+│       │   │   ├── device-locked.php
+│       │   │   ├── expired.php
+│       │   │   └── expiring-soon.php
+│       │   ├── _footer.php
+│       │   └── _header.php
+│       ├── home/
+│       │   ├── download.php
+│       │   ├── faq.php
+│       │   ├── index.php
+│       │   └── post-detail.php
+│       ├── layouts/
+│       │   ├── admin.php
+│       │   ├── admin-sidebar.php
+│       │   ├── app.php
+│       │   ├── auth.php
+│       │   ├── footer.php
+│       │   ├── header.php
+│       │   ├── navbar.php
+│       │   └── sidebar.php
+│       ├── policies/
+│       │   ├── privacy.php
+│       │   ├── refund.php
+│       │   └── terms.php
+│       └── user/
+│           ├── notifications/
+│           │   └── index.php
 │           ├── orders/
-│           │   ├── index.php
-│           │   ├── create.php
-│           │   └── detail.php
+│           │   ├── detail.php
+│           │   └── index.php
 │           ├── payments/
-│           │   ├── index.php
-│           │   └── detail.php
-│           ├── subscriptions/
-│           │   ├── index.php
-│           │   └── detail.php
+│           │   ├── checkout.php
+│           │   └── index.php
+│           ├── plans/
+│           │   ├── checkout.php
+│           │   └── index.php
+│           ├── profile/
+│           │   └── index.php
 │           ├── referrals/
 │           │   └── index.php
-│           ├── withdrawals/
-│           │   ├── index.php
-│           │   └── detail.php
-│           ├── posts/
-│           │   ├── index.php
-│           │   ├── create.php
-│           │   ├── edit.php
-│           │   └── detail.php
-│           ├── tickets/
-│           │   ├── index.php
-│           │   └── detail.php
-│           ├── expenses/
-│           │   ├── index.php
-│           │   ├── create.php
-│           │   └── edit.php
-│           ├── settings/
+│           ├── subscriptions/
+│           │   ├── detail.php
 │           │   └── index.php
-│           └── logs/
-│               ├── system.php
-│               ├── access.php
-│               ├── macrodroid.php
-│               └── email.php
-│
-├── database/
-│   └── vpn_service.sql
-│
-└── storage/
-    └── logs/
-        └── .gitkeep
+│           ├── tickets/
+│           │   ├── create.php
+│           │   ├── detail.php
+│           │   └── index.php
+│           ├── wallet/
+│           │   └── index.php
+│           ├── withdrawals/
+│           │   ├── create.php
+│           │   └── index.php
+│           ├── article-detail.php
+│           ├── dashboard.php
+│           ├── downloads.php
+│           ├── guides.php
+│           └── guides-detail.php
+├── routes/
+│   ├── api.php
+│   └── web.php
+├── storage/
+│   ├── _legacy_backup/
+│   ├── backups/
+│   ├── logs/
+│   │   └── .gitkeep
+│   ├── prompts/
+│   │   ├── audio_tts.txt
+│   │   ├── content_article.txt
+│   │   ├── fanpage_comment.txt
+│   │   ├── image_generation.txt
+│   │   ├── publish_post.txt
+│   │   ├── rules_auto_reply.txt
+│   │   ├── rules_fanpage_content.txt
+│   │   ├── rules_video.txt
+│   │   ├── rules_video_dubbing.txt
+│   │   ├── support_chat.txt
+│   │   └── video_generation.txt
+│   └── tmp/
+├── tools/
+│   ├── _p3_probe.php
+│   ├── ai_core_selftest.php
+│   ├── ai_worker.php
+│   ├── kira_probe.php
+│   ├── seed_prompts.php
+│   └── verify_phase2_ai_flow.php
+├── .env.example
+├── .gitignore
+├── .htaccess
+├── composer.json
+├── composer.lock
+├── README.md
+├── SKILL.md
+├── vc_install.sh
+└── vc_update.sh
 ```
