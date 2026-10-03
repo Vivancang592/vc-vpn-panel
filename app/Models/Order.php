@@ -114,6 +114,28 @@ class Order extends BaseModel
         return $stmt->fetchAll() ?: [];
     }
 
+    /**
+     * Biến hóa đơn cho email: tổng tiền (giá niêm yết) → khấu trừ mã giảm giá → số tiền trả → cổng thanh toán.
+     * Mirror logic tại resources/views/user/orders/detail.php. Chuỗi rỗng = template ẩn dòng tương ứng.
+     */
+    public static function invoiceMailVars(array $order): array
+    {
+        $orderTotal   = (float) ($order['total_amount'] ?? 0);
+        $planPrice    = (float) ($order['plan_price'] ?? 0);
+        $hasBreakdown = !empty($order['plan_id']) && $planPrice >= $orderTotal && $planPrice > 0;
+        $discountAmt  = $hasBreakdown ? round($planPrice - $orderTotal) : 0.0;
+        $methodKey    = strtolower((string) ($order['payment_method'] ?? ''));
+        $methodLabels = ['vietqr' => 'VietQR (Chuyển khoản)', 'balance' => 'Số dư tài khoản'];
+
+        return [
+            'totalAmount'    => $hasBreakdown ? number_format($planPrice, 0, '.', ',') . ' đ' : '',
+            'discountAmount' => $discountAmt > 0 ? number_format($discountAmt, 0, '.', ',') . ' đ' : '',
+            'couponCode'     => $discountAmt > 0 ? (string) ($order['coupon_code'] ?? '') : '',
+            'paidAmount'     => $orderTotal > 0 ? number_format($orderTotal, 0, '.', ',') . ' đ' : '',
+            'paymentMethod'  => $methodKey !== '' ? ($methodLabels[$methodKey] ?? strtoupper($methodKey)) : '',
+        ];
+    }
+
     public function findPendingByUserId(int $userId): ?array
     {
         $stmt = self::$db->prepare("SELECT * FROM `{$this->table}` WHERE `user_id` = :user_id AND `payment_status` = 'pending' ORDER BY `id` DESC LIMIT 1");
@@ -226,12 +248,14 @@ class Order extends BaseModel
             if ($cancelledOrders > 0 && class_exists('App\Services\MailService')) {
                 $mailService = new \App\Services\MailService();
                 foreach ($expiredOrders as $order) {
-                    $email = trim((string) ($order['email'] ?? ''));
+                    // Lấy đủ chi tiết hóa đơn sau khi đã commit — không thêm join vào transaction FOR UPDATE.
+                    $detail = $this->findWithDetails((int) ($order['id'] ?? 0)) ?: $order;
+                    $email = trim((string) ($detail['email'] ?? ''));
                     if ($email !== '') {
-                        $mailService->send($email, 'Đơn hàng đã bị hủy', 'orders.cancelled', [
-                            'orderCode' => (string) ($order['order_code'] ?? ''),
-                            'reason' => 'Đơn hàng đã quá thời gian chờ thanh toán.'
-                        ]);
+                        $vars = self::invoiceMailVars($detail);
+                        $vars['orderCode'] = (string) ($detail['order_code'] ?? '');
+                        $vars['reason'] = 'Đơn hàng đã quá thời gian chờ thanh toán.';
+                        $mailService->send($email, 'Đơn hàng đã bị hủy', 'orders.cancelled', $vars);
                     }
                 }
             }
