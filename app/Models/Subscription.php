@@ -129,6 +129,10 @@ class Subscription extends BaseModel
 
         if ($executed) {
             $this->checkAndSuspendRealtimeById($id);
+            // Chỉ kích hoạt cơ chế khóa mạng khi reporter có số liệu thiết bị (ip_count)
+            if ($ipCount !== null) {
+                $this->enforceDeviceLimit($id, $ipCount, $u, $d);
+            }
         }
 
         return $executed;
@@ -172,9 +176,12 @@ class Subscription extends BaseModel
             $sub = $this->findByUuid($uuid);
             if ($sub && isset($sub['id'])) {
                 $this->checkAndSuspendRealtimeById((int)$sub['id']);
+                // Chỉ kích hoạt cơ chế khóa mạng khi reporter có số liệu thiết bị (ip_count)
+                if ($ipCount !== null) {
+                    $this->enforceDeviceLimit((int)$sub['id'], $ipCount, $u, $d);
+                }
             }
         }
-
         return $executed;
     }
 
@@ -204,17 +211,13 @@ class Subscription extends BaseModel
                     'updated_at' => date('Y-m-d H:i:s')
                 ]);
 
-                // 2. Gửi Task toggle_user khóa kết nối tức thì xuống VPS thuộc group_id
-                if (!empty($sub['group_id']) && class_exists('App\Models\NodeTask')) {
+                // 2. Gửi Task disable_user khóa kết nối tức thì xuống VPS thuộc group_id
+                if (!empty($sub['group_id']) && class_exists('App\Services\NodeTaskService')) {
                     $groupIds = json_decode($sub['group_id'] ?? '[]', true);
                     if (!is_array($groupIds)) {
                         $groupIds = !empty($sub['group_id']) ? [(int)$sub['group_id']] : [];
                     }
-                    $nodeTaskModel = new \App\Models\NodeTask();
-                    $nodeTaskModel->createTasksForGroup($groupIds, 'toggle_user', [
-                        'username' => 'sub_' . $sub['id'],
-                        'status'   => 'disabled'
-                    ]);
+                    (new \App\Services\NodeTaskService())->disableUser($groupIds, 'sub_' . $sub['id'], 'data_exceeded');
                 }
 
                 // 3. Gửi Email thông báo hết dung lượng nếu MailService có sẵn
@@ -226,6 +229,86 @@ class Subscription extends BaseModel
                     ]);
                 }
             }
+        }
+    }
+
+    /**
+     * Cơ chế khóa mạng 1 phút khi số thiết bị kết nối vượt max_devices của gói
+     * (hợp đồng docs/task-contract.md mục 3):
+     *
+     * - Sub active + ip_count > max_devices + chưa trong cửa sổ khóa:
+     *   chốt network_locked_until = NOW()+60s, online_devices = 0,
+     *   sinh task disable_user (reason=device_limit, lock_seconds=60) → VPS tự mở lại sau 60s.
+     * - Sub không active nhưng VPS vẫn báo có thiết bị/lưu lượng:
+     *   gửi lại disable (re-sync chống mất task) — throttle 60s qua cùng mốc khóa.
+     *
+     * Gọi từ addTrafficById/addTrafficByUuid khi reporter truyền ip_count (report_traffic).
+     */
+    public function enforceDeviceLimit(int $id, int $ipCount, int $upload = 0, int $download = 0): void
+    {
+        // Không có thiết bị đang kết nối cũng không có lưu lượng → không cần xử lý
+        if ($ipCount <= 0 && $upload <= 0 && $download <= 0) {
+            return;
+        }
+
+        $sql = "
+            SELECT s.id, s.status, s.max_devices, s.network_locked_until, p.group_id
+            FROM `{$this->table}` s
+            INNER JOIN `vc_vpn_plans` p ON s.plan_id = p.id
+            WHERE s.id = :id
+            LIMIT 1
+        ";
+        $stmt = self::$db->prepare($sql);
+        $stmt->execute(['id' => $id]);
+        $sub = $stmt->fetch(\PDO::FETCH_ASSOC);
+        if (!$sub) {
+            return;
+        }
+
+        $groupIds = json_decode((string)($sub['group_id'] ?? '[]'), true);
+        if (!is_array($groupIds)) {
+            $groupIds = !empty($sub['group_id']) ? [(int)$sub['group_id']] : [];
+        }
+        $groupIds = array_values(array_filter(array_map('intval', $groupIds), static fn(int $gid): bool => $gid > 0));
+        if (empty($groupIds)) {
+            return;
+        }
+
+        $lockedUntil = $sub['network_locked_until'] ?? null;
+        $inLockWindow = $lockedUntil !== null && strtotime($lockedUntil) > time();
+
+        if ($sub['status'] === 'active') {
+            $maxDevices = max(1, (int)$sub['max_devices']);
+            if ($ipCount <= $maxDevices || $inLockWindow) {
+                return; // Trong hạn mức hoặc vẫn đang trong cửa sổ khóa 60s → không gửi lặp
+            }
+            $reason      = 'device_limit';
+            $lockSeconds = 60;
+        } else {
+            if ($inLockWindow) {
+                return; // Đã gửi disable trong 60s gần nhất (chống spam / chống retry liên tục)
+            }
+            $reason = match ((string)$sub['status']) {
+                'expired'   => 'expired',
+                'suspended' => 'data_exceeded',
+                'cancelled' => 'cancelled',
+                default     => 'admin',
+            };
+            $lockSeconds = null;
+        }
+
+        // Chốt mốc khóa (throttle 60s) + reset bộ đếm thiết bị online
+        $update = self::$db->prepare("
+            UPDATE `{$this->table}`
+            SET `network_locked_until` = DATE_ADD(NOW(), INTERVAL 60 SECOND),
+                `online_devices` = 0,
+                `updated_at` = NOW()
+            WHERE `id` = :id
+        ");
+        $update->execute(['id' => $id]);
+
+        if (class_exists('App\Services\NodeTaskService')) {
+            (new \App\Services\NodeTaskService())->disableUser($groupIds, 'sub_' . $id, $reason, $lockSeconds);
         }
     }
 

@@ -7,8 +7,6 @@ use App\Models\Order;
 use App\Models\User;
 use App\Models\VpnPlan;
 use App\Models\Subscription;
-use App\Models\Server;
-use App\Models\NodeTask;
 use App\Models\Payment;
 use App\Models\BaseModel;
 use App\Services\PaymentService;
@@ -42,74 +40,31 @@ class OrderController extends BaseController
     }
 
     /**
-     * Hàm phụ trợ: Tự động tạo task 'add_user' cho các VPS thuộc đúng các Nhóm Máy Chủ (group_ids) của gói cước
+     * Hàm phụ trợ: Tạo task add_user qua NodeTaskService (hợp đồng docs/task-contract.md)
      */
-    private function dispatchAddUserTask(int $subId, string $uuid, int $bytesTotal, string $endDate, array $groupIds): void
+    private function dispatchAddUserTask(int $subId, string $uuid, int $bytesTotal, string $endDate, array $groupIds, ?int $maxDevices = null): void
     {
         if (empty($groupIds)) return;
 
-        $serverModel = new Server();
-        $servers = $serverModel->getAll();
-
-        if (empty($servers)) {
-            return;
-        }
-
-        $taskModel = new NodeTask();
-        $payload = [
-            'username'        => 'sub_' . $subId,
-            'uuid'            => $uuid,
-            'transfer_enable' => $bytesTotal,
-            'end_date'        => $endDate
-        ];
-
-        foreach ($servers as $server) {
-            $serverId = (int)($server['id'] ?? 0);
-            $serverGroupId = (int)($server['group_id'] ?? 0);
-            $status = $server['status'] ?? 'active';
-
-            if ($status === 'active' && in_array($serverGroupId, $groupIds, true)) {
-                $taskModel->create([
-                    'server_id' => $serverId,
-                    'action'    => 'add_user',
-                    'payload'   => $payload
-                ]);
-            }
-        }
+        (new \App\Services\NodeTaskService())->addUser(
+            $groupIds,
+            'sub_' . $subId,
+            $uuid,
+            $bytesTotal,
+            $endDate,
+            'active',
+            $maxDevices
+        );
     }
 
     /**
-     * Hàm phụ trợ: Tự động tạo task 'delete_user' gửi xuống VPS khi hủy đơn hàng
+     * Hàm phụ trợ: Tạo task delete_user gửi xuống VPS khi hủy đơn hàng
      */
-    private function dispatchDelUserTask(int $subId, array $groupIds): void
+    private function dispatchDelUserTask(int $subId, array $groupIds, string $reason = 'cancelled'): void
     {
         if (empty($groupIds)) return;
 
-        $serverModel = new Server();
-        $servers = $serverModel->getAll();
-
-        if (empty($servers)) {
-            return;
-        }
-
-        $taskModel = new NodeTask();
-        $payload = [
-            'username' => 'sub_' . $subId
-        ];
-
-        foreach ($servers as $server) {
-            $serverId = (int)($server['id'] ?? 0);
-            $serverGroupId = (int)($server['group_id'] ?? 0);
-            $status = $server['status'] ?? 'active';
-
-            if ($status === 'active' && in_array($serverGroupId, $groupIds, true)) {
-                $taskModel->create([
-                    'server_id' => $serverId,
-                    'action'    => 'delete_user',
-                    'payload'   => $payload
-                ]);
-            }
-        }
+        (new \App\Services\NodeTaskService())->deleteUser($groupIds, 'sub_' . $subId, $reason);
     }
 
     public function index(): void
@@ -450,7 +405,7 @@ class OrderController extends BaseController
                     if ($created) {
                         $subId = method_exists($subModel, 'lastInsertId') ? (int)$subModel->lastInsertId() : 0;
                         if ($subId > 0 && !empty($groupIds)) {
-                            $this->dispatchAddUserTask($subId, $uuid, $bytesTotal, $endDate, $groupIds);
+                            $this->dispatchAddUserTask($subId, $uuid, $bytesTotal, $endDate, $groupIds, $maxDevices);
                         }
                     }
                 }

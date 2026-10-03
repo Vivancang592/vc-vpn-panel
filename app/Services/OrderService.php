@@ -8,7 +8,6 @@ use App\Models\VpnPlan;
 use App\Models\Coupon;
 use App\Models\Subscription;
 use App\Models\Payment;
-use App\Models\NodeTask;
 use App\Models\User;
 use App\Models\Setting;
 use App\Models\ReferralCommission;
@@ -334,25 +333,22 @@ class OrderService
             $subId = (int)$subModel->lastInsertId();
 
             // 4. Đẩy Task tự động xuống tất cả các máy chủ VPS thuộc các group_id được chọn trong gói cước
-            if (class_exists('App\Models\NodeTask') && !empty($plan['group_id'])) {
+            if ($subId > 0 && !empty($plan['group_id'])) {
                 $groupIds = json_decode($plan['group_id'] ?? '[]', true);
                 if (!is_array($groupIds)) {
                     $groupIds = !empty($plan['group_id']) ? [(int)$plan['group_id']] : [];
                 }
 
-                if ($subId > 0 && !empty($groupIds)) {
-                    $nodeTaskModel = new NodeTask();
-                    foreach ($groupIds as $gId) {
-                        $gId = (int)$gId;
-                        if ($gId > 0) {
-                            $nodeTaskModel->createTasksForGroup($gId, 'add_user', [
-                                'uuid'            => $uuid,
-                                'end_date'        => $endDate,
-                                'username'        => 'sub_' . $subId,
-                                'transfer_enable' => $transferEnable
-                            ]);
-                        }
-                    }
+                if (!empty($groupIds)) {
+                    (new NodeTaskService())->addUser(
+                        $groupIds,
+                        'sub_' . $subId,
+                        $uuid,
+                        $transferEnable,
+                        $endDate,
+                        'active',
+                        $maxDevices
+                    );
                 }
             }
 

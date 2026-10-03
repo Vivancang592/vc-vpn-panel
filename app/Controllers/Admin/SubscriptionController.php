@@ -6,8 +6,6 @@ use App\Controllers\BaseController;
 use App\Models\Subscription;
 use App\Models\User;
 use App\Models\VpnPlan;
-use App\Models\Server;
-use App\Models\NodeTask;
 use App\Models\Order;
 
 class SubscriptionController extends BaseController
@@ -39,109 +37,41 @@ class SubscriptionController extends BaseController
     }
 
     /**
-     * Hàm phụ trợ: Tự động tạo task 'add_user' cho các VPS thuộc đúng Nhóm Máy Chủ (group_ids)
+     * Hàm phụ trợ: Tạo task add_user qua NodeTaskService (hợp đồng docs/task-contract.md)
      */
-    private function dispatchAddUserTask(int $subId, string $uuid, int $bytesTotal, string $endDate, array $groupIds): void
+    private function dispatchAddUserTask(int $subId, string $uuid, int $bytesTotal, string $endDate, array $groupIds, ?int $maxDevices = null): void
     {
         if (empty($groupIds)) return;
 
-        if (class_exists('App\Models\Server') && class_exists('App\Models\NodeTask')) {
-            $serverModel = new Server();
-            $servers     = $serverModel->getAll();
-
-            if (empty($servers)) return;
-
-            $taskModel = new NodeTask();
-            $payload   = [
-                'username'        => 'sub_' . $subId,
-                'uuid'            => $uuid,
-                'transfer_enable' => $bytesTotal,
-                'end_date'        => $endDate
-            ];
-
-            foreach ($servers as $server) {
-                $serverId = (int)($server['id'] ?? 0);
-                $serverGroupId = (int)($server['group_id'] ?? 0);
-                $status = $server['status'] ?? 'active';
-
-                if ($status === 'active' && in_array($serverGroupId, $groupIds, true)) {
-                    $taskModel->create([
-                        'server_id' => $serverId,
-                        'action'    => 'add_user',
-                        'payload'   => $payload
-                    ]);
-                }
-            }
-        }
+        (new \App\Services\NodeTaskService())->addUser(
+            $groupIds,
+            'sub_' . $subId,
+            $uuid,
+            $bytesTotal,
+            $endDate,
+            'active',
+            $maxDevices
+        );
     }
 
     /**
-     * Hàm phụ trợ: Tự động tạo task 'toggle_user' gửi xuống VPS khi tạm dừng hoặc đổi trạng thái gói
+     * Hàm phụ trợ: Tạo task disable_user (tắt mạng) — thay cho toggle_user cũ
      */
-    private function dispatchToggleUserTask(int $subId, string $status, array $groupIds): void
+    private function dispatchDisableUserTask(int $subId, string $reason, array $groupIds): void
     {
         if (empty($groupIds)) return;
 
-        if (class_exists('App\Models\Server') && class_exists('App\Models\NodeTask')) {
-            $serverModel = new Server();
-            $servers     = $serverModel->getAll();
-
-            if (empty($servers)) return;
-
-            $taskModel = new NodeTask();
-            $payload   = [
-                'username' => 'sub_' . $subId,
-                'status'   => $status
-            ];
-
-            foreach ($servers as $server) {
-                $serverId = (int)($server['id'] ?? 0);
-                $serverGroupId = (int)($server['group_id'] ?? 0);
-                $serverStatus = $server['status'] ?? 'active';
-
-                if ($serverStatus === 'active' && in_array($serverGroupId, $groupIds, true)) {
-                    $taskModel->create([
-                        'server_id' => $serverId,
-                        'action'    => 'toggle_user',
-                        'payload'   => $payload
-                    ]);
-                }
-            }
-        }
+        (new \App\Services\NodeTaskService())->disableUser($groupIds, 'sub_' . $subId, $reason);
     }
 
     /**
-     * Hàm phụ trợ: Tự động tạo task 'delete_user' gửi xuống VPS thuộc đúng Nhóm Máy Chủ (group_ids)
+     * Hàm phụ trợ: Tạo task delete_user gửi xuống VPS thuộc đúng Nhóm Máy Chủ (group_ids)
      */
-    private function dispatchDelUserTask(int $subId, array $groupIds): void
+    private function dispatchDelUserTask(int $subId, array $groupIds, string $reason = 'admin'): void
     {
         if (empty($groupIds)) return;
 
-        if (class_exists('App\Models\Server') && class_exists('App\Models\NodeTask')) {
-            $serverModel = new Server();
-            $servers     = $serverModel->getAll();
-
-            if (empty($servers)) return;
-
-            $taskModel = new NodeTask();
-            $payload   = [
-                'username' => 'sub_' . $subId
-            ];
-
-            foreach ($servers as $server) {
-                $serverId = (int)($server['id'] ?? 0);
-                $serverGroupId = (int)($server['group_id'] ?? 0);
-                $status = $server['status'] ?? 'active';
-
-                if ($status === 'active' && in_array($serverGroupId, $groupIds, true)) {
-                    $taskModel->create([
-                        'server_id' => $serverId,
-                        'action'    => 'delete_user',
-                        'payload'   => $payload
-                    ]);
-                }
-            }
-        }
+        (new \App\Services\NodeTaskService())->deleteUser($groupIds, 'sub_' . $subId, $reason);
     }
 
     public function index(): void
@@ -201,7 +131,13 @@ class SubscriptionController extends BaseController
             $this->redirect('/admin/subscriptions' . ($userId > 0 ? '?user_id=' . $userId : ''));
         }
 
-        if ($this->subscriptionModel->update($id, ['status' => $status])) {
+        // Khi bật lại sub active → xóa mốc khóa mạng 60s để cơ chế kiểm tra max_devices chạy lại từ đầu
+        $updateData = ['status' => $status];
+        if ($status === 'active') {
+            $updateData['network_locked_until'] = null;
+        }
+
+        if ($this->subscriptionModel->update($id, $updateData)) {
             $groupIds = [];
             if (class_exists('App\Models\VpnPlan') && !empty($sub['plan_id'])) {
                 $planModel = new VpnPlan();
@@ -211,11 +147,11 @@ class SubscriptionController extends BaseController
 
             if (!empty($groupIds)) {
                 if ($status === 'active') {
-                    $this->dispatchAddUserTask($id, $sub['uuid'], (int)$sub['transfer_enable'], $sub['end_date'], $groupIds);
+                    $this->dispatchAddUserTask($id, $sub['uuid'], (int)$sub['transfer_enable'], $sub['end_date'], $groupIds, (int)($sub['max_devices'] ?? 1));
                 } elseif ($status === 'suspended') {
-                    $this->dispatchToggleUserTask($id, 'inactive', $groupIds);
+                    $this->dispatchDisableUserTask($id, 'admin', $groupIds);
                 } else {
-                    $this->dispatchDelUserTask($id, $groupIds);
+                    $this->dispatchDelUserTask($id, $groupIds, $status === 'expired' ? 'expired' : 'cancelled');
                 }
             }
 
@@ -291,7 +227,7 @@ class SubscriptionController extends BaseController
             // 2. Cập nhật thời hạn và liên kết đơn hàng mới vào gói đăng ký
             if ($this->subscriptionModel->update($id, $updateData)) {
                 if (!empty($groupIds)) {
-                    $this->dispatchAddUserTask($id, $sub['uuid'], (int)$sub['transfer_enable'], $newEndDate, $groupIds);
+                    $this->dispatchAddUserTask($id, $sub['uuid'], (int)$sub['transfer_enable'], $newEndDate, $groupIds, (int)($sub['max_devices'] ?? 1));
                 }
 
                 $this->logActivity(
@@ -365,7 +301,7 @@ class SubscriptionController extends BaseController
             }
 
             if (!empty($groupIds)) {
-                $this->dispatchAddUserTask($id, $newUuid, (int)$sub['transfer_enable'], $sub['end_date'], $groupIds);
+                $this->dispatchAddUserTask($id, $newUuid, (int)$sub['transfer_enable'], $sub['end_date'], $groupIds, (int)($sub['max_devices'] ?? 1));
             }
 
             $this->logActivity('RESET_SUBSCRIPTION_TOKEN', 'Đặt lại UUID gói đăng ký #' . $id);

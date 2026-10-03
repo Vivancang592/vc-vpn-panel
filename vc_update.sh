@@ -126,6 +126,34 @@ if [ -f "$OUTPUT_LINK_MIGRATION" ] && [ -f "$APP_PATH/.env" ]; then
     echo -e " ${GREEN}✔ Hoàn tất liên kết Bài Viết AI ↔ hàng đợi đăng Fanpage (output_id).${NC}"
 fi
 
+# 3.5. Cột khóa mạng 1 phút khi vượt số thiết bị (an toàn khi chạy lại)
+DEVICE_LOCK_MIGRATION="$APP_PATH/database/migrations/20261005_add_network_locked_until.sql"
+if [ -f "$DEVICE_LOCK_MIGRATION" ] && [ -f "$APP_PATH/.env" ]; then
+    set -a
+    . "$APP_PATH/.env"
+    set +a
+    MYSQL_PWD="${DB_PASSWORD:-}" mysql \
+        -h "${DB_HOST:-127.0.0.1}" \
+        -P "${DB_PORT:-3306}" \
+        -u "${DB_USERNAME:-root}" \
+        "${DB_DATABASE:-vpn_service}" < "$DEVICE_LOCK_MIGRATION"
+    echo -e " ${GREEN}✔ Hoàn tất thêm cột network_locked_until (khóa mạng 1 phút).${NC}"
+fi
+
+# 3.6. Cột số IP đang kết nối theo inbound (Phase 2, an toàn khi chạy lại)
+INBOUND_CONN_MIGRATION="$APP_PATH/database/migrations/20261006_add_connected_devices.sql"
+if [ -f "$INBOUND_CONN_MIGRATION" ] && [ -f "$APP_PATH/.env" ]; then
+    set -a
+    . "$APP_PATH/.env"
+    set +a
+    MYSQL_PWD="${DB_PASSWORD:-}" mysql \
+        -h "${DB_HOST:-127.0.0.1}" \
+        -P "${DB_PORT:-3306}" \
+        -u "${DB_USERNAME:-root}" \
+        "${DB_DATABASE:-vpn_service}" < "$INBOUND_CONN_MIGRATION"
+    echo -e " ${GREEN}✔ Hoàn tất thêm cột connected_devices (số IP đang kết nối inbound).${NC}"
+fi
+
 # 4. Thiết lập lại phân quyền thư mục
 echo -e "${CYAN}[3/3] Đặt lại phân quyền bảo mật thư mục...${NC}"
 mkdir -p "$APP_PATH/storage/logs"

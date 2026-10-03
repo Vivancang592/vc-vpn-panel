@@ -9,7 +9,6 @@ use App\Models\Setting;
 use App\Models\Subscription;
 use App\Models\VpnPlan;
 use App\Models\Order;
-use App\Models\NodeTask;
 
 class PaymentService
 {
@@ -516,25 +515,22 @@ class PaymentService
             }
 
             // Đồng bộ tác vụ xuống máy chủ VPS để cập nhật hạn dùng
-            if (class_exists('App\Models\NodeTask') && !empty($plan['group_id'])) {
+            if (!empty($plan['group_id'])) {
                 $groupIds = json_decode($plan['group_id'] ?? '[]', true);
                 if (!is_array($groupIds)) {
                     $groupIds = !empty($plan['group_id']) ? [(int)$plan['group_id']] : [];
                 }
 
                 if (!empty($groupIds)) {
-                    $nodeTaskModel = new NodeTask();
-                    foreach ($groupIds as $gId) {
-                        $gId = (int)$gId;
-                        if ($gId > 0) {
-                            $nodeTaskModel->createTasksForGroup($gId, 'add_user', [
-                                'uuid'            => $subscription['uuid'],
-                                'end_date'        => $newEndDate->format('Y-m-d H:i:s'),
-                                'username'        => 'sub_' . $subscriptionId,
-                                'transfer_enable' => (int)($subscription['transfer_enable'] ?? 0)
-                            ]);
-                        }
-                    }
+                    (new NodeTaskService())->addUser(
+                        $groupIds,
+                        'sub_' . $subscriptionId,
+                        $subscription['uuid'],
+                        (int)($subscription['transfer_enable'] ?? 0),
+                        $newEndDate->format('Y-m-d H:i:s'),
+                        ($newStatus ?? 'active') === 'active' ? 'active' : 'disabled',
+                        isset($subscription['max_devices']) ? (int)$subscription['max_devices'] : (int)($plan['max_devices'] ?? 1)
+                    );
                 }
             }
 
