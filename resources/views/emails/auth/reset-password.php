@@ -12,7 +12,7 @@ require __DIR__ . '/../_header.php';
 </div>
 <ul class="mail-tips">
     <li>Nếu bạn không yêu cầu đặt lại mật khẩu, hãy bỏ qua email này và không chia sẻ mã với bất kỳ ai.</li>
-    <li>Nên đổi mật khẩu ngay và không sử dụng lại mật khẩu cũ nếu bạn cho nghi bị lộ tài khoản.</li>
+    <li>Nên đổi mật khẩu ngay và không sử dụng lại mật khẩu cũ nếu bạn cho rằng tài khoản đã bị lộ.</li>
     <li>Không nhận được mail? Kiểm tra thư mục Spam/Thư rác hoặc gửi lại yêu cầu sau ít phút.</li>
 </ul>
 <?php require __DIR__ . '/../_footer.php'; ?>
