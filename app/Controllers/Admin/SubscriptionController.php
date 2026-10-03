@@ -39,7 +39,7 @@ class SubscriptionController extends BaseController
     /**
      * Hàm phụ trợ: Tạo task add_user qua NodeTaskService (hợp đồng docs/task-contract.md)
      */
-    private function dispatchAddUserTask(int $subId, string $uuid, int $bytesTotal, string $endDate, array $groupIds, ?int $maxDevices = null): void
+    private function dispatchAddUserTask(int $subId, string $uuid, int $bytesTotal, string $endDate, array $groupIds, ?int $maxDevices = null, string $status = 'active'): void
     {
         if (empty($groupIds)) return;
 
@@ -49,7 +49,7 @@ class SubscriptionController extends BaseController
             $uuid,
             $bytesTotal,
             $endDate,
-            'active',
+            $status,
             $maxDevices
         );
     }
@@ -151,7 +151,8 @@ class SubscriptionController extends BaseController
                 } elseif ($status === 'suspended') {
                     $this->dispatchDisableUserTask($id, 'admin', $groupIds);
                 } else {
-                    $this->dispatchDelUserTask($id, $groupIds, $status === 'expired' ? 'expired' : 'cancelled');
+                    // cancelled/expired: giữ user trên VPS chỉ cắt mạng (contract §2.2 — phe disable, không xóa)
+                    $this->dispatchDisableUserTask($id, $status === 'expired' ? 'expired' : 'cancelled', $groupIds);
                 }
             }
 
@@ -301,7 +302,9 @@ class SubscriptionController extends BaseController
             }
 
             if (!empty($groupIds)) {
-                $this->dispatchAddUserTask($id, $newUuid, (int)$sub['transfer_enable'], $sub['end_date'], $groupIds, (int)($sub['max_devices'] ?? 1));
+                // Không âm thầm bật lại sub đang khóa: status gửi theo trạng thái thật của gói
+                $subStatus = ($sub['status'] ?? '') === 'active' ? 'active' : 'disabled';
+                $this->dispatchAddUserTask($id, $newUuid, (int)$sub['transfer_enable'], $sub['end_date'], $groupIds, (int)($sub['max_devices'] ?? 1), $subStatus);
             }
 
             $this->logActivity('RESET_SUBSCRIPTION_TOKEN', 'Đặt lại UUID gói đăng ký #' . $id);
