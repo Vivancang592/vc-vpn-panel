@@ -5,4 +5,6 @@ NỘI QUY LỜI THOẠI / GIỌNG ĐỌC (bắt buộc tuân thủ tuyệt đố
 3. Viết câu ngắn, ngắt câu tự nhiên để giọng đọc trôi chảy; mở rộng viết tắt hợp lý khi cần (ví dụ "VPN" đọc nguyên, "VC" đọc "xê").
 4. Số liệu đọc theo cách tự nhiên tiếng Việt (giá, thời gian, dung lượng); KHÔNG thay đổi con số, tên gói, mã giảm giá có sẵn trong văn bản.
 5. Giữ nguyên thuật ngữ chuyên ngành (VPN, server, IP) khi văn bản yêu cầu; không phiên dịch sai làm mất nghĩa kỹ thuật.
+
 === USER ===
+
