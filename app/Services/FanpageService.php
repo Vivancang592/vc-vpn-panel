@@ -2,9 +2,11 @@
 
 namespace App\Services;
 
+use App\AI\Knowledge\SiteKnowledge;
 use App\Models\ChatEvent;
 use App\Models\ChatMessage;
 use App\Models\ChatSession;
+use App\Models\Post;
 use App\Models\Setting;
 
 class FanpageService
@@ -268,6 +270,13 @@ class FanpageService
             $systemPrompt .= "\n\nNguồn: khách đang bình luận công khai trên FACEBOOK Fanpage (KHÔNG phải chat website).";
         }
 
+        // Kiến thức trả lời bình luận (BẮT BUỘC): quy trình dò bài hướng dẫn
+        // trước + bài liên quan + bản đồ trang Facebook — chèn SAU khi đã
+        // chốt prompt file để luôn có mặt ở cả 2 nhánh file/mặc định.
+        // Bỏ phần quy trình nếu Admin đã tự viết sẵn trong file (tránh trùng).
+        $withProcedure = !str_contains($systemPrompt, 'QUY TRÌNH TRẢ LỜI BẮT BUỘC');
+        $systemPrompt .= "\n\n" . $this->appendCommentKnowledge($message, $withProcedure);
+
         $messages = [
             ['role' => 'system', 'content' => $systemPrompt],
             ['role' => 'user', 'content' => $userPrompt]
@@ -341,6 +350,35 @@ class FanpageService
         $text = preg_replace('/\[(.*?)\]\((.*?)\)/', '$1 ($2)', $text);
         $text = preg_replace("/\n{3,}/", "\n\n", $text);
         return trim($text, " \t\n\r\0\x0B\"'");
+    }
+
+    /**
+     * Khối kiến thức cho luồng trả lời bình luận Facebook:
+     *   QUY TRÌNH (dò bài hướng dẫn TRƯỚC) + [1] bài hướng dẫn liên quan
+     *   + [2] bản đồ trang Facebook (chỉ nhóm công khai, URL đầy đủ).
+     * Đủ để AI trả lời bình luận "đúng như người thật" mà vẫn tiết kiệm token.
+     */
+    private function appendCommentKnowledge(string $comment, bool $withProcedure = true): string
+    {
+        $siteUrl = rtrim((string) ($this->settings['site_url'] ?? ''), '/');
+        if ($siteUrl === '') {
+            $host = $_SERVER['HTTP_HOST'] ?? '';
+            $siteUrl = $host !== '' ? 'https://' . $host : 'https://vcvpn.com';
+        }
+
+        $posts = (new Post())->getAllPublished();
+        $matches = SiteKnowledge::matchGuides($comment, $posts);
+
+        $parts = [];
+        if ($withProcedure) {
+            $parts[] = SiteKnowledge::renderProcedure(true);
+            $parts[] = '';
+        }
+        $parts[] = SiteKnowledge::renderGuides($matches, true, false, $siteUrl);
+        $parts[] = '';
+        $parts[] = SiteKnowledge::renderPageMap(true, false, '', $siteUrl);
+
+        return implode("\n", $parts);
     }
 
     private function buildCommentPlanSummary(): string

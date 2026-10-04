@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\AI\Knowledge\SiteKnowledge;
 use App\Models\ChatEvent;
 use App\Models\ChatAiCache;
 use App\Models\Coupon;
@@ -55,7 +56,7 @@ class ChatbotService
         $userName = !empty($context['user_name']) ? trim((string) $context['user_name']) : '';
 
         $systemPrompt = $this->resolveSystemPrompt($context, $isFacebook, $isLoggedIn, $userName);
-        $knowledge = $this->buildKnowledgeSnippet($context);
+        $knowledge = $this->buildKnowledgeSnippet($context, $message);
         $messages = [
             ['role' => 'system', 'content' => $systemPrompt],
             ['role' => 'system', 'content' => $knowledge],
@@ -92,7 +93,7 @@ class ChatbotService
             if ($cached && !empty($cached['answer'])) {
                 return [
                     'success' => true,
-                    'answer' => (string) $cached['answer'],
+                    'answer' => $this->resolveAnswerMacros((string) $cached['answer'], $isFacebook),
                     'handoff' => $this->shouldHandoff($message, (string) $cached['answer']),
                     'provider' => 'cache',
                     'model' => (string) ($cached['model'] ?? ''),
@@ -124,7 +125,7 @@ class ChatbotService
             return $this->fallbackResponse('Hệ thống AI đang xử lý lượng yêu cầu lớn. Bạn có thể để lại câu hỏi hoặc liên hệ hỗ trợ trực tiếp để được phục vụ ngay nhé.');
         }
 
-        $answer = trim((string) ($result['content'] ?? ''));
+        $answer = $this->resolveAnswerMacros(trim((string) ($result['content'] ?? '')), $isFacebook);
         $handoff = $this->shouldHandoff($message, $answer);
 
         if ($answer !== '' && class_exists(ChatAiCache::class)) {
@@ -214,14 +215,29 @@ class ChatbotService
                 }
 
                 if ($text !== '') {
-                    return $text;
+                    return $this->withProcedure($text, $isFacebook);
                 }
             }
         } catch (\Throwable) {
             // rơi xuống builder mặc định bên dưới
         }
 
-        return $this->buildSystemPrompt($context);
+        // Quy trình dò bài hướng dẫn + bản đồ trang + tâm lý chốt đơn:
+        // ÉP BẮT BUỘC cho MỌI nguồn prompt (file admin / registry / mặc định).
+        return $this->withProcedure($this->buildSystemPrompt($context), $isFacebook);
+    }
+
+    /**
+     * Nối quy trình trả lời vào system prompt — bỏ qua nếu Admin đã tự viết
+     * sẵn mục "QUY TRÌNH TRẢ LỜI BẮT BUỘC" trong file prompt (tránh trùng).
+     */
+    private function withProcedure(string $text, bool $isFacebook): string
+    {
+        if (str_contains($text, 'QUY TRÌNH TRẢ LỜI BẮT BUỘC')) {
+            return $text;
+        }
+
+        return $text . "\n\n" . SiteKnowledge::renderProcedure($isFacebook);
     }
 
     /**
@@ -259,11 +275,7 @@ class ChatbotService
         $source = strtolower((string) ($context['source'] ?? 'web'));
         $isFacebook = in_array($source, ['fanpage', 'facebook', 'messenger'], true);
 
-        $siteUrl = rtrim((string) ($this->settings['site_url'] ?? (getenv('APP_URL') ?: '')), '/');
-        if ($siteUrl === '') {
-            $host = $_SERVER['HTTP_HOST'] ?? '';
-            $siteUrl = $host !== '' ? 'https://' . $host : 'https://vcvpn.com';
-        }
+        $siteUrl = $this->resolveSiteUrl();
 
         if ($isFacebook) {
             $promptParts = [
@@ -367,7 +379,7 @@ class ChatbotService
         return implode("\n", $promptParts);
     }
 
-    private function buildKnowledgeSnippet(array $context): string
+    private function buildKnowledgeSnippet(array $context, string $question = ''): string
     {
         $siteTitle = $this->settings['site_title'] ?? 'VC VPN';
         $contactEmail = $this->settings['contact_email'] ?? '';
@@ -383,6 +395,21 @@ class ChatbotService
 
         $lines = ["=== DỮ LIỆU NỘI BỘ HỆ THỐNG {$siteTitle} ==="];
 
+        // [1] BÀI HƯỚNG DẪN LIÊN QUAN + [2] BẢN ĐỒ TRANG & NÚT THAO TÁC —
+        // đặt ĐẦU tiên: AI phải dò bài hướng dẫn trước, thiếu mới dùng bản
+        // đồ trang + dữ liệu thực tế bên dưới để trả lời đúng sự thật.
+        $isFacebook = in_array(strtolower((string) ($context['source'] ?? 'web')), ['fanpage', 'facebook', 'messenger'], true);
+        $isLoggedIn = !empty($context['is_logged_in']);
+        $siteUrl = $this->resolveSiteUrl();
+
+        $postModel = new Post();
+        $posts = $postModel->getAllPublished();
+        $matches = SiteKnowledge::matchGuides($question, $posts);
+
+        $lines[] = "\n" . SiteKnowledge::renderGuides($matches, $isFacebook, $isLoggedIn, $siteUrl);
+        $currentPage = $isFacebook ? '' : trim((string) ($context['page'] ?? ''));
+        $lines[] = "\n" . SiteKnowledge::renderPageMap($isFacebook, $isLoggedIn, $currentPage, $siteUrl);
+
         // 1. Danh sách Gói Cước VPN
         $planModel = new VpnPlan();
         $plans = $planModel->getAllActiveWithGroup();
@@ -390,7 +417,7 @@ class ChatbotService
             $plans = $planModel->getAllActive();
         }
 
-        $lines[] = "\n[1. DANH SÁCH GÓI DỊCH VỤ VPN ĐANG BÁN]:";
+        $lines[] = "\n[3. DANH SÁCH GÓI DỊCH VỤ VPN ĐANG BÁN]:";
         if (!empty($plans)) {
             foreach ($plans as $plan) {
                 $priceFormatted = number_format((float) ($plan['price'] ?? 0), 0, '.', ',') . ' VND';
@@ -430,7 +457,7 @@ class ChatbotService
             ));
         }
 
-        $lines[] = "\n[2. MÃ GIẢM GIÁ ĐANG HOẠT ĐỘNG (DÙNG ĐỂ QUẢNG CÁO & CHỐT ĐƠN)]:";
+        $lines[] = "\n[4. MÃ GIẢM GIÁ ĐANG HOẠT ĐỘNG (DÙNG ĐỂ QUẢNG CÁO & CHỐT ĐƠN)]:";
         if (!empty($activeCoupons)) {
             // Gói áp dụng: không có bản ghi = mọi gói; có = chỉ gói được chọn
             $planMap = $couponModel->getPlanAssignmentsForCoupons(array_column($activeCoupons, 'id'));
@@ -452,10 +479,8 @@ class ChatbotService
             $lines[] = "- Hiện tại không có mã giảm giá phụ nào đang kích hoạt. Hãy thông báo cho khách rằng giá niêm yết trên website đã là giá ưu đãi trực tiếp tốt nhất.";
         }
 
-        // 3. Danh sách Bài Viết Hướng Dẫn & FAQ
-        $postModel = new Post();
-        $posts = $postModel->getAllPublished();
-        $lines[] = "\n[3. BÀI VIẾT HƯỚNG DẪN & TÀI LIỆU KỸ THUẬT]:";
+        // 5. Danh sách Bài Viết Hướng Dẫn & FAQ (đã tải $posts ở trên)
+        $lines[] = "\n[5. BÀI VIẾT HƯỚNG DẪN & TÀI LIỆU KỸ THUẬT]:";
         if (!empty($posts)) {
             foreach (array_slice($posts, 0, 8) as $p) {
                 $type = ($p['type'] ?? '') === 'tutorial' ? '[Hướng dẫn]' : '[Tin tức]';
@@ -465,8 +490,8 @@ class ChatbotService
             $lines[] = "• Hướng dẫn kết nối VPN: Hỗ trợ đầy đủ cho iOS (Shadowrocket), Android (v2rayNG, Sing-box), Windows (v2rayN, Clash Verge), macOS, Android TV.";
         }
 
-        // 4. Chính Sách & Điều Khoản Vận Hành
-        $lines[] = "\n[4. CHÍNH SÁCH VẬN HÀNH & HỖ TRỢ]:";
+        // 6. Chính Sách & Điều Khoản Vận Hành
+        $lines[] = "\n[6. CHÍNH SÁCH VẬN HÀNH & HỖ TRỢ]:";
         $lines[] = "- **Chính sách Hoàn Tiền**: Được xem xét xử lý hoàn tiền nếu do lỗi kỹ thuật máy chủ kéo dài không khắc phục được hoặc do lỗi thanh toán trùng lặp. Không áp dụng hoàn tiền khi dịch vụ đã sử dụng bình thường, tài khoản vi phạm quy chế hoặc thay đổi ý định cá nhân.";
         $lines[] = "- **Nạp / Rút Tiền**: Nạp tối thiểu vào ví {$minDeposit}, rút hoa hồng tối thiểu {$minWithdrawal}.";
         $lines[] = "- **Tiếp Thị Liên Kết (Affiliate)**: Nhận hoa hồng lên đến {$commissionRate} cho mỗi đơn hàng giới thiệu thành công. Đăng ký qua mã giới thiệu được tặng {$referralBonus} vào ví.";
@@ -476,6 +501,64 @@ class ChatbotService
             . ($zaloUrl ? " Zalo: {$zaloUrl}" : "");
 
         return implode("\n", $lines);
+    }
+
+    /**
+     * Tên miền gốc của site (https://...) — nguồn duy nhất cho URL
+     * Facebook, bản đồ trang và giải macro câu trả lời.
+     */
+    private function resolveSiteUrl(): string
+    {
+        $siteUrl = rtrim((string) ($this->settings['site_url'] ?? (getenv('APP_URL') ?: '')), '/');
+        if ($siteUrl === '') {
+            $host = $_SERVER['HTTP_HOST'] ?? '';
+            $siteUrl = $host !== '' ? 'https://' . $host : 'https://vcvpn.com';
+        }
+
+        return $siteUrl;
+    }
+
+    /**
+     * An toàn macro trong câu trả lời: file prompt bắt buộc model dùng
+     * {url_faq}, {domain}... nhưng KHÔNG có nơi nào thay thế — nếu model
+     * sinh ra thì khách sẽ thấy chữ thô. Thay tại đây trước khi trả/cached.
+     *
+     * Web: giữ đường dẫn tương đối (widget tự link). Facebook: bung thành
+     * URL đầy đủ https://... (Messenger không render link tương đối).
+     */
+    private function resolveAnswerMacros(string $answer, bool $isFacebook): string
+    {
+        if ($answer === '' || !str_contains($answer, '{')) {
+            return $answer;
+        }
+
+        $siteUrl = $this->resolveSiteUrl();
+        $map = [
+            'url_home' => '/', 'url_faq' => '/faq', 'url_download' => '/download',
+            'url_terms' => '/terms', 'url_privacy' => '/privacy', 'url_refund' => '/refund',
+            'url_register' => '/register', 'url_login' => '/login',
+            'url_dashboard' => '/dashboard', 'url_guides' => '/user/guides',
+            'url_user_downloads' => '/user/downloads', 'url_user_plans' => '/user/plans',
+            'url_subscriptions' => '/subscriptions', 'url_orders' => '/orders',
+            'url_deposit' => '/payments/deposit', 'url_tickets' => '/tickets/create',
+        ];
+        foreach ($map as $macro => $path) {
+            $answer = str_replace('{' . $macro . '}', $isFacebook ? $siteUrl . $path : $path, $answer);
+        }
+
+        // Macro lạ {url_xxx} / {macro_url} còn sót → trỏ về đường dẫn site.
+        $answer = (string) preg_replace_callback(
+            '/\{(?:macro_url|url_)([a-z0-9_\/-]*)\}/i',
+            static function (array $m) use ($siteUrl, $isFacebook): string {
+                $slug = trim($m[1], '_-');
+                $path = '/' . ($slug !== '' ? trim($slug, '/') : '');
+                return $isFacebook ? $siteUrl . $path : $path;
+            },
+            $answer
+        );
+
+        // {domain} trong URL đầy đủ https://{domain}/... → thay bằng host thật.
+        return str_replace('{domain}', (string) (parse_url($siteUrl, PHP_URL_HOST) ?: 'vcvpn.com'), $answer);
     }
 
     private function shouldHandoff(string $question, string $answer): bool
