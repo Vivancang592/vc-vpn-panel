@@ -7,3 +7,6 @@ NỘI QUY LỜI THOẠI / GIỌNG ĐỌC (bắt buộc tuân thủ tuyệt đố
 5. Giữ nguyên thuật ngữ chuyên ngành (VPN, server, IP) khi văn bản yêu cầu; không phiên dịch sai làm mất nghĩa kỹ thuật.
 
 Chuyển văn bản thành giọng nói tiếng Việt tự nhiên.
+
+=== USER ===
+{{text}}

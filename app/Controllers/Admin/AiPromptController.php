@@ -94,6 +94,11 @@ final class AiPromptController extends AiBaseController
             return;
         }
 
+        // Admin có thể dán nguyên khối file (kèm "=== SYSTEM ===" / "=== USER ===")
+        // -> gỡ các dòng mark này đi, PromptFileStore::write() sẽ ghi lại đúng 1 lần.
+        $system = trim((string) preg_replace('/^\s*=== (?:SYSTEM|USER) ===\s*$/m', '', $system));
+        $user   = trim((string) preg_replace('/^\s*=== (?:SYSTEM|USER) ===\s*$/m', '', $user));
+
         // Chặn admin dán key/secret vào prompt.
         $store = $this->registry()->fileStore();
         $leak = $store->detectSecret($system . "\n" . $user);

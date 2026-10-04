@@ -76,8 +76,18 @@ $tplUser   = (string) ($defaultTemplate['user'] ?? '');
         <input type="hidden" name="prompt_key" value="<?= htmlspecialchars($promptKey) ?>">
 
         <div style="margin-bottom: 0.75rem;">
-            <label style="display: block; font-size: 0.8rem; color: var(--ios-text-secondary); margin-bottom: 0.25rem;">Chỉ dẫn cho AI</label>
+            <label style="display: block; font-size: 0.8rem; color: var(--ios-text-secondary); margin-bottom: 0.25rem;">Chỉ dẫn cho AI (system prompt)</label>
             <textarea name="system_prompt" rows="16" required style="width: 100%; padding: 0.6rem 0.7rem; border-radius: var(--radius-sm); border: 1px solid var(--ios-border, rgba(255,255,255,0.15)); background: transparent; color: inherit; font-size: 0.85rem; font-family: ui-monospace, monospace; box-sizing: border-box; resize: vertical; min-height: 16rem; max-height: 40rem; line-height: 1.5;"><?= htmlspecialchars($rawSystem !== '' ? $rawSystem : $tplSystem) ?></textarea>
+        </div>
+
+        <div style="margin-bottom: 0.75rem;">
+            <label style="display: block; font-size: 0.8rem; color: var(--ios-text-secondary); margin-bottom: 0.25rem;">
+                Mẫu câu trả lời / dữ liệu đầu vào (phần === USER ===)
+                <?php if (!empty($variables)): ?>
+                    <span style="margin-left: 0.5rem;">Biến bắt buộc: <?php foreach ($variables as $var): ?><code>{{<?= htmlspecialchars($var) ?>}}</code> <?php endforeach; ?></span>
+                <?php endif; ?>
+            </label>
+            <textarea name="user_template" rows="6" style="width: 100%; padding: 0.6rem 0.7rem; border-radius: var(--radius-sm); border: 1px solid var(--ios-border, rgba(255,255,255,0.15)); background: transparent; color: inherit; font-size: 0.85rem; font-family: ui-monospace, monospace; box-sizing: border-box; resize: vertical; min-height: 6rem; max-height: 20rem; line-height: 1.5;"><?= htmlspecialchars($rawUser !== '' ? $rawUser : $tplUser) ?></textarea>
         </div>
 
         <div style="display: flex; justify-content: flex-end;">
