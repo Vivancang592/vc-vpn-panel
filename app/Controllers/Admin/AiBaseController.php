@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Controllers\Admin;
 
 use App\AI\Contracts\AICapability;
+use App\AI\Contracts\AIResult;
 use App\AI\Core\AICore;
 use App\AI\Core\DirectMediaService;
 use App\AI\Core\ModuleRegistry;
@@ -14,6 +15,7 @@ use App\AI\Core\TaskRunner;
 use App\Controllers\BaseController;
 use App\Models\AIModule;
 use App\Models\AIModel;
+use App\Models\Setting;
 
 /**
  * AiBaseController — base dùng chung cho khu vực Admin AI (/admin/ai/*).
@@ -241,7 +243,8 @@ abstract class AiBaseController extends BaseController
     protected function modelsByCapability(string $capability): array
     {
         try {
-            $rows = (new AIModel())->byCapability($capability);
+            // Chỉ model mà API key HIỆN TẠI mở khóa (ẩn model bị key chặn).
+            $rows = $this->filterUnlockedModels((new AIModel())->byCapability($capability));
         } catch (\Throwable $e) {
             return [];
         }
@@ -326,6 +329,408 @@ abstract class AiBaseController extends BaseController
 
         // Không bao giờ để dropdown rỗng (catalog chưa có model capability đó).
         return $out === [] ? array_values($models) : $out;
+    }
+
+    /**
+     * Chuẩn hoá URL quay lại sau khi submit (chỉ chấp nhận path nội bộ bắt
+     * đầu bằng /admin/ai — chặn open-redirect).
+     */
+    protected function safeBack(string $default, string $back): string
+    {
+        $back = trim($back);
+
+        if ($back !== '' && str_starts_with($back, '/admin/ai/') && !str_contains($back, '//')) {
+            return $back;
+        }
+
+        return $default;
+    }
+
+    /**
+     * API key Kira hiện hành (env trước, sau đó vc_settings) — KHÔNG log/echo.
+     */
+    protected function resolveKiraApiKey(): ?string
+    {
+        $provider = (string) ($this->aiConfig['default_provider'] ?? 'kira');
+        $config = (array) ($this->aiConfig['providers'][$provider] ?? []);
+
+        $env = getenv((string) ($config['env_key'] ?? 'KIRA_API_KEY'));
+        if (is_string($env) && trim($env) !== '') {
+            return trim($env);
+        }
+
+        try {
+            $value = (new Setting())->getByKey((string) ($config['setting_key'] ?? 'kira_api_key'));
+        } catch (\Throwable $e) {
+            return null;
+        }
+
+        return is_string($value) && trim($value) !== '' ? trim($value) : null;
+    }
+
+    /**
+     * Danh sách model mà key HIỆN TẠI được mở khóa.
+     *
+     * Probe bằng 1 request chat completion với model giả `__vc_probe__`
+     * (max_tokens=1): provider chặn TRƯỚC khi sinh token nên KHÔNG tốn credit
+     * và trả 403 kèm "Allowed models: a, b, c." → parse ra danh sách.
+     *
+     * @return array<int, string>|null  null = không probe được (giữ nguyên cờ cũ)
+     */
+    protected function fetchKiraAllowedModels(): ?array
+    {
+        $key = $this->resolveKiraApiKey();
+
+        if ($key === null) {
+            return null;
+        }
+
+        $provider = (string) ($this->aiConfig['default_provider'] ?? 'kira');
+        $config = (array) ($this->aiConfig['providers'][$provider] ?? []);
+        $baseUrl = rtrim((string) ($config['base_url'] ?? ''), '/');
+
+        if ($baseUrl === '') {
+            return null;
+        }
+
+        $ch = curl_init($baseUrl . '/chat/completions');
+        if ($ch === false) {
+            return null;
+        }
+
+        curl_setopt_array($ch, [
+            CURLOPT_POST           => true,
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_TIMEOUT        => 20,
+            CURLOPT_HTTPHEADER     => [
+                'Authorization: Bearer ' . $key,
+                'Content-Type: application/json',
+            ],
+            CURLOPT_POSTFIELDS     => json_encode(
+                [
+                    'model'      => '__vc_probe__',
+                    'max_tokens' => 1,
+                    'messages'   => [['role' => 'user', 'content' => 'x']],
+                ],
+                JSON_UNESCAPED_UNICODE
+            ),
+        ]);
+
+        $body = (string) curl_exec($ch);
+        curl_close($ch);
+
+        $decoded = json_decode($body, true);
+        $message = is_array($decoded) ? (string) ($decoded['error']['message'] ?? '') : $body;
+
+        if (!preg_match('/Allowed models:\s*(.+)$/is', $message, $m)) {
+            return null;
+        }
+
+        $list = [];
+        foreach (explode(',', rtrim((string) $m[1], " .\"'\t\n\r")) as $item) {
+            $item = trim($item, " \t\n\r\"'");
+            if ($item !== '') {
+                $list[] = $item;
+            }
+        }
+
+        return $list === [] ? null : $list;
+    }
+
+    /**
+     * Cờ model có được key mở khóa hay không (null = chưa ghi nhận).
+     */
+    protected function isModelUnlocked(array $model): ?bool
+    {
+        $limits = $model['limits'] ?? null;
+
+        if (is_string($limits)) {
+            $limits = $this->decodeJson($limits);
+        }
+
+        if (!is_array($limits) || !array_key_exists('key_unlocked', $limits)) {
+            return null;
+        }
+
+        return (bool) $limits['key_unlocked'];
+    }
+
+    /**
+     * Ẩn model mà key KHÔNG mở khóa (giữ model chưa có cờ — fail-open cho
+     * lần đầu chưa từng đồng bộ).
+     *
+     * @param array<int, array<string, mixed>> $models
+     * @return array<int, array<string, mixed>>
+     */
+    protected function filterUnlockedModels(array $models): array
+    {
+        $out = [];
+
+        foreach ($models as $model) {
+            if (!is_array($model)) {
+                continue;
+            }
+
+            if ($this->isModelUnlocked($model) === false) {
+                continue;
+            }
+
+            $out[] = $model;
+        }
+
+        return array_values($out);
+    }
+
+    /**
+     * Đồng bộ catalog model từ Kira (`GET /models`) + ghi cờ key mở khóa
+     * (`limits.key_unlocked`) cho TỪNG model — nguồn dữ liệu cho bộ lọc dropdown.
+     *
+     * @return array{ok: bool, message: string, inserted: int, updated: int, unlocked: int}
+     */
+    protected function syncModelCatalog(): array
+    {
+        $out = ['ok' => false, 'message' => '', 'inserted' => 0, 'updated' => 0, 'unlocked' => 0, 'retired' => 0];
+
+        if ($this->resolveKiraApiKey() === null) {
+            $out['message'] = 'Chưa cấu hình Kira API key nên không thể đồng bộ model từ provider.';
+            return $out;
+        }
+
+        $result = $this->core()->listModels();
+
+        if (!$result->isOk()) {
+            $this->logActivity('ai_model_sync_failed', (string) $result->errorMessage());
+            $out['message'] = (string) $result->errorMessage();
+            return $out;
+        }
+
+        $items = $this->extractModelItems($result);
+
+        if ($items === []) {
+            $out['message'] = 'Provider trả về danh sách model rỗng hoặc không đọc được.';
+            return $out;
+        }
+
+        // Danh sách model key HIỆN TẠI mở khóa (probe 1 request, không tốn token).
+        $allowed = $this->fetchKiraAllowedModels();
+        $allowedSet = $allowed === null ? null : array_flip($allowed);
+
+        $provider = (string) ($this->aiConfig['default_provider'] ?? 'kira');
+        $modelModel = new AIModel();
+        $existing = [];
+
+        try {
+            foreach ((array) $modelModel->getAll() as $row) {
+                if (is_array($row) && (string) ($row['provider'] ?? '') === $provider) {
+                    $existing[(string) ($row['model_key'] ?? '')] = $row;
+                }
+            }
+        } catch (\Throwable $e) {
+            $existing = [];
+        }
+
+        $inserted = 0;
+        $updated = 0;
+        $unlocked = 0;
+        $seen = [];
+        $now = date('Y-m-d H:i:s');
+
+        foreach ($items as $item) {
+            $modelKey = trim((string) ($item['id'] ?? $item['model'] ?? $item['name'] ?? ''));
+
+            if ($modelKey === '') {
+                continue;
+            }
+
+            $seen[$modelKey] = true;
+            $capability = $this->guessCapability($item, $modelKey);
+            $isOpen = $allowedSet === null ? null : isset($allowedSet[$modelKey]);
+
+            if ($isOpen === true) {
+                $unlocked++;
+            }
+
+            if (isset($existing[$modelKey])) {
+                $row = $existing[$modelKey];
+                $limits = $this->decodeJson($row['limits'] ?? null);
+                $limits['source'] = 'kira_sync';
+                $limits['synced_at'] = $now;
+
+                if ($isOpen !== null) {
+                    $limits['key_unlocked'] = $isOpen;
+                }
+
+                $patch = ['model_name' => $modelKey];
+
+                // Chỉ cập nhật capability nếu bản ghi cũ đang trống.
+                if (trim((string) ($row['capability'] ?? '')) === '') {
+                    $patch['capability'] = $capability;
+                }
+
+                $patch['limits'] = json_encode($limits, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+
+                $modelModel->update((int) $row['id'], $patch);
+                $updated++;
+                continue;
+            }
+
+            $limits = ['source' => 'kira_sync', 'synced_at' => $now];
+
+            if ($isOpen !== null) {
+                $limits['key_unlocked'] = $isOpen;
+            }
+
+            $modelModel->create([
+                'provider'   => $provider,
+                'model_key'  => $modelKey,
+                'model_name' => $modelKey,
+                'capability' => $capability,
+                'is_active'  => 1,
+                'limits'     => json_encode($limits, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES),
+            ]);
+            $inserted++;
+        }
+
+        // Model CÙNG provider nhưng không còn trong /models hiện tại (provider đã bỏ):
+        // đánh dấu key_unlocked=false để không lọt vào dropdown chọn model.
+        $retired = 0;
+        foreach ($existing as $legacyKey => $row) {
+            if (isset($seen[$legacyKey])) {
+                continue;
+            }
+
+            $limits = $this->decodeJson($row['limits'] ?? null);
+            $limits['source'] = 'kira_sync';
+            $limits['synced_at'] = $now;
+            $limits['key_unlocked'] = false;
+            $limits['missing_in_catalog'] = true;
+            $modelModel->update((int) $row['id'], ['limits' => json_encode($limits, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES)]);
+            $retired++;
+        }
+
+        $this->logActivity(
+            'ai_model_sync',
+            sprintf('Đồng bộ model Kira: thêm %d, cập nhật %d, key mở khóa %d, đánh dấu bỏ %d.', $inserted, $updated, $unlocked, $retired)
+        );
+
+        $out['ok'] = true;
+        $out['inserted'] = $inserted;
+        $out['updated'] = $updated;
+        $out['unlocked'] = $unlocked;
+        $out['retired'] = $retired;
+        $out['message'] = sprintf(
+            'Đồng bộ model từ Kira thành công: thêm %d, cập nhật %d (key mở khóa %d model'
+            . ($retired > 0 ? ', đánh dấu bỏ %d model provider không còn cung cấp' : '') . ').',
+            $inserted,
+            $updated,
+            $unlocked,
+            $retired
+        );
+
+        return $out;
+    }
+
+    /**
+     * Đọc danh sách model từ kết quả `GET /models` (content có thể null nên
+     * fallback sang raw).
+     *
+     * @return array<int, array<string, mixed>>
+     */
+    protected function extractModelItems(AIResult $result): array
+    {
+        $content = $result->content;
+        $decoded = null;
+
+        if (is_string($content) && $content !== '') {
+            $decoded = json_decode($content, true);
+        } elseif (is_array($content)) {
+            $decoded = $content;
+        }
+
+        if (!is_array($decoded)) {
+            $decoded = is_array($result->raw) ? $result->raw : [];
+        }
+
+        $list = $decoded['data'] ?? $decoded['models'] ?? $decoded;
+
+        if (!is_array($list)) {
+            return [];
+        }
+
+        // Bỏ khoá không phải danh sách.
+        if (isset($list['data']) && is_array($list['data'])) {
+            $list = $list['data'];
+        }
+
+        $items = [];
+        foreach ($list as $item) {
+            if (is_string($item)) {
+                $items[] = ['id' => $item];
+                continue;
+            }
+
+            if (is_array($item)) {
+                $items[] = $item;
+            }
+        }
+
+        return $items;
+    }
+
+    /**
+     * Suy ra capability từ dữ liệu provider trả về (KHÔNG bịa thêm).
+     *
+     * @param array<string, mixed> $item
+     */
+    protected function guessCapability(array $item, string $modelKey): string
+    {
+        foreach (['capability', 'type', 'category', 'modality'] as $field) {
+            if (isset($item[$field]) && is_string($item[$field])) {
+                $normalized = AICapability::normalize($item[$field]);
+                if ($normalized !== null) {
+                    return $normalized;
+                }
+            }
+        }
+
+        $haystack = strtolower($modelKey . ' ' . json_encode($item['output_types'] ?? $item['modalities'] ?? [], JSON_UNESCAPED_UNICODE));
+
+        $rules = [
+            'image'   => ['image', 'img', 'vision', 'sd', 'diffusion'],
+            'video'   => ['video'],
+            'audio'   => ['audio', 'tts', 'speech', 'voice'],
+            'comment' => ['comment'],
+            'publish' => ['publish'],
+            'chat'    => ['chat', 'dialog', 'conversation'],
+        ];
+
+        foreach ($rules as $capability => $needles) {
+            foreach ($needles as $needle) {
+                if (str_contains($haystack, $needle)) {
+                    return $capability;
+                }
+            }
+        }
+
+        return AICapability::TEXT;
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    protected function decodeJson(mixed $value): array
+    {
+        if (is_array($value)) {
+            return $value;
+        }
+
+        if (!is_string($value) || $value === '') {
+            return [];
+        }
+
+        $decoded = json_decode($value, true);
+
+        return is_array($decoded) ? $decoded : [];
     }
 
     protected function moduleSynchronizer(): ModuleSynchronizer
@@ -414,10 +819,10 @@ abstract class AiBaseController extends BaseController
                 'publish' => 'Đăng bài',
             ],
             'task_type' => [
-                'text'    => 'Sinh văn bản',
-                'image'   => 'Sinh hình ảnh',
-                'video'   => 'Sinh video',
-                'audio'   => 'Chuyển thành giọng nói',
+                'text'    => 'Tạo bài viết',
+                'image'   => 'Tạo hình ảnh',
+                'video'   => 'Tạo video',
+                'audio'   => 'Tạo giọng nói',
                 'chat'    => 'Hội thoại hỗ trợ',
                 'comment' => 'Trả lời bình luận',
                 'publish' => 'Chuẩn bị đăng bài',
@@ -487,12 +892,12 @@ abstract class AiBaseController extends BaseController
     protected function promptLabel(string $promptKey): string
     {
         $map = [
-            'content_article'  => 'Sinh bài viết',
-            'image_generation' => 'Sinh hình ảnh',
-            'video_generation' => 'Sinh video',
-            'audio_tts'        => 'Chuyển văn bản thành giọng nói',
-            'fanpage_comment'  => 'Trả lời bình luận fanpage',
-            'support_chat'     => 'Hội thoại hỗ trợ khách hàng',
+            'content_article'  => 'Tạo Bài Viết',
+            'image_generation' => 'Tạo Hình Ảnh',
+            'video_generation' => 'Tạo Video',
+            'audio_tts'        => 'Tạo Giọng Nói',
+            'fanpage_comment'  => 'Trả Lời Bình Luận Fanpage',
+            'support_chat'     => 'Hội Thoại Hỗ Trợ Khách Hàng',
         ];
 
         return $map[$promptKey] ?? $this->moduleLabel($promptKey);

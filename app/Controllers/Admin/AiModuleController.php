@@ -23,21 +23,6 @@ use App\Models\AIModule;
 final class AiModuleController extends AiBaseController
 {
     /**
-     * Chuẩn hoá URL quay lại sau khi submit từ tab (chỉ chấp nhận path nội bộ
-     * bắt đầu bằng /admin/ai — chặn open-redirect).
-     */
-    private function safeBack(string $default, string $back): string
-    {
-        $back = trim($back);
-
-        if ($back !== '' && str_starts_with($back, '/admin/ai/') && !str_contains($back, '//')) {
-            return $back;
-        }
-
-        return $default;
-    }
-
-    /**
      * Đồng bộ ModuleRegistry → vc_ai_modules (chỉ THÊM module còn thiếu).
      */
     public function sync(): void
@@ -161,6 +146,17 @@ final class AiModuleController extends AiBaseController
         $provider = (string) ($this->aiConfig['default_provider'] ?? 'kira');
         if ((string) ($model['provider'] ?? '') !== $provider) {
             $this->flash('Model không thuộc provider "' . $provider . '".', 'danger', $back);
+            return;
+        }
+
+        // CHẶN: model chưa được API key mở khóa (cờ ghi khi "⟳ Đồng Bộ Model"/"Kiểm Tra Kết Nối").
+        if ($this->isModelUnlocked($model) === false) {
+            $this->flash(
+                'Không gán được: model "' . (string) ($model['model_key'] ?? '')
+                . '" chưa được API key mở khóa. Hãy bấm "⟳ Đồng Bộ Model" để cập nhật danh sách key hỗ trợ.',
+                'danger',
+                $back
+            );
             return;
         }
 

@@ -214,8 +214,9 @@ $cfgValue = static function ($value, string $key = '') use ($errLabels, $aiLabel
                 Danh mục phân hệ do hệ thống quy định sẵn. Quản trị viên chỉ bật/tắt và gán mô hình AI mặc định.
             </p>
         </div>
-        <form method="POST" action="/admin/ai/modules/sync" style="margin: 0;">
+        <form method="POST" action="/admin/ai/models/sync" style="margin: 0;">
             <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrf_token ?? '') ?>">
+            <input type="hidden" name="back" value="/admin/ai/settings">
             <button type="submit" class="glass-btn" style="white-space: nowrap;">⟳ Đồng Bộ Model</button>
         </form>
     </div>

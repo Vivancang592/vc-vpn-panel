@@ -1353,6 +1353,7 @@ if (!response.ok || !result.valid) {
         const input = document.getElementById('vc-chatbot-input');
         const box = document.getElementById('vc-chatbot-messages');
         const page = (chatbotRoot.dataset.page || '/').replace(/^\//, '') || 'home';
+        const pageTitle = (document.title || '').trim().slice(0, 150);
         const siteTitle = (chatbotRoot.dataset.siteTitle || 'VC VPN').trim();
         const chatLoggedIn = chatbotRoot.dataset.loggedIn === '1';
         const chatUserName = (chatbotRoot.dataset.userName || '').trim();
@@ -1661,7 +1662,8 @@ if (!response.ok || !result.valid) {
                         },
                         body: JSON.stringify({
                             message: message,
-                            page: page
+                            page: page,
+                            page_title: pageTitle
                         })
                     });
 

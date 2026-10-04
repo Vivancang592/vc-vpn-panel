@@ -78,6 +78,13 @@ class ChatbotService
         $cacheTtl = max(1, min(1440, $cacheTtl));
         $cacheScope = $isFacebook ? 'fp_' : 'web_';
         $cacheScope .= $isLoggedIn ? 'auth_' : 'guest_';
+        // Web: tách cache theo trang đang xem để câu trả lời đúng ngữ cảnh trang.
+        if (!$isFacebook) {
+            $cachePage = trim((string) ($context['page'] ?? ''));
+            if ($cachePage !== '') {
+                $cacheScope .= 'page_' . sha1(mb_strtolower($cachePage)) . '_';
+            }
+        }
         $cacheKey = sha1($cacheScope . mb_strtolower(preg_replace('/\s+/', ' ', trim($message))));
 
         if (class_exists(ChatAiCache::class)) {
@@ -199,6 +206,13 @@ class ChatbotService
                     $text .= "\n" . $contextLine;
                 }
 
+                // Luôn bổ sung dòng trang khách đang mở (khách hỏi khác nhau
+                // tùy trang) — kể cả khi file prompt đã có sẵn nguồn hội thoại.
+                $pageLine = $this->pageContextLine($context, $isFacebook);
+                if ($text !== '' && $pageLine !== '') {
+                    $text .= "\n" . $pageLine;
+                }
+
                 if ($text !== '') {
                     return $text;
                 }
@@ -208,6 +222,33 @@ class ChatbotService
         }
 
         return $this->buildSystemPrompt($context);
+    }
+
+    /**
+     * Dòng ngữ cảnh cho biết khách đang mở trang nào (chỉ luồng web —
+     * fanpage/Messenger không có khái niệm trang web nên bỏ qua).
+     */
+    private function pageContextLine(array $context, bool $isFacebook): string
+    {
+        if ($isFacebook) {
+            return '';
+        }
+
+        $page = trim((string) ($context['page'] ?? ''));
+        if ($page === '' || strtolower($page) === 'messenger') {
+            return '';
+        }
+
+        $line = $page === 'home'
+            ? 'Khách đang xem trang: Trang chủ.'
+            : 'Khách đang xem trang: /' . ltrim($page, '/') . '.';
+
+        $title = trim((string) ($context['page_title'] ?? ''));
+        if ($title !== '') {
+            $line .= ' Tiêu đề trang: ' . $title . '.';
+        }
+
+        return $line;
     }
 
     private function buildSystemPrompt(array $context): string
@@ -316,6 +357,11 @@ class ChatbotService
         $customPrompt = trim((string) ($this->settings['ai_system_prompt'] ?? ''));
         if ($customPrompt !== '') {
             $promptParts[] = "\n6. QUY ĐỊNH CẤU HÌNH TỪ QUẢN TRỊ VIÊN (ADMIN SETTINGS - ƯU TIÊN CAO NHẤT):\n" . $customPrompt;
+        }
+
+        $pageLine = $this->pageContextLine($context, $isFacebook);
+        if ($pageLine !== '') {
+            $promptParts[] = $pageLine;
         }
 
         return implode("\n", $promptParts);

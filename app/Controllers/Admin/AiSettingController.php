@@ -59,7 +59,8 @@ final class AiSettingController extends AiBaseController
         // hoặc của provider khác trong dropdown Phân Hệ).
         $models = [];
         try {
-            $models = (new \App\Models\AIModel())->allActive($provider);
+            // Chỉ model mà API key HIỆN TẠI mở khóa (cờ ghi khi Đồng Bộ/Kiểm Tra Kết Nối).
+            $models = $this->filterUnlockedModels((new \App\Models\AIModel())->allActive($provider));
         } catch (\Throwable $e) {
             $models = [];
         }
@@ -234,17 +235,34 @@ final class AiSettingController extends AiBaseController
             return;
         }
 
-        $count = 0;
-        $decoded = json_decode((string) ($result->content ?? ''), true);
-        if (is_array($decoded)) {
-            $list = $decoded['data'] ?? $decoded['models'] ?? $decoded;
-            $count = is_array($list) ? count($list) : 0;
+        // Kira GET /models trả {"data":[...]} — content của result có thể là null
+        // nên đếm qua extractModelItems (fallback raw) thay vì json_decode(content).
+        $count = count($this->extractModelItems($result));
+
+        // Kiểm tra OK → đồng bộ NGAY catalog model + ghi cờ key mở khóa,
+        // để dropdown model lọc theo key mà không cần bấm nút khác.
+        $syncNote = '';
+        try {
+            $sync = $this->syncModelCatalog();
+            if ($sync['ok'] ?? false) {
+                $retired = (int) ($sync['retired'] ?? 0);
+                $syncNote = sprintf(
+                    ' Đã đồng bộ catalog: thêm %d, cập nhật %d — key mở khóa %d model'
+                    . ($retired > 0 ? ', đánh dấu bỏ %d model provider không còn cung cấp' : '') . '.',
+                    (int) ($sync['inserted'] ?? 0),
+                    (int) ($sync['updated'] ?? 0),
+                    (int) ($sync['unlocked'] ?? 0),
+                    $retired
+                );
+            }
+        } catch (\Throwable $e) {
+            $syncNote = ' (Đồng bộ catalog lỗi: ' . $e->getMessage() . ')';
         }
 
         $this->logActivity('ai_setting_test', 'Kiểm tra kết nối provider ' . $provider . ' thành công (' . $count . ' model).');
 
         $this->flash(
-            'Kiểm tra kết nối THÀNH CÔNG. Provider "' . $provider . '" phản hồi ' . $count . ' model. Hãy vào trang Model để đồng bộ.',
+            'Kiểm tra kết nối THÀNH CÔNG. Provider "' . $provider . '" phản hồi ' . $count . ' model.' . $syncNote,
             'success',
             '/admin/ai/settings'
         );

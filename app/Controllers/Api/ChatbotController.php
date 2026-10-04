@@ -34,6 +34,7 @@ class ChatbotController extends BaseController
         $payload = $this->parseInput();
         $message = trim((string) ($payload['message'] ?? ''));
         $page = trim((string) ($payload['page'] ?? ''));
+        $pageTitle = mb_substr(trim((string) ($payload['page_title'] ?? '')), 0, 150);
 
         $rateCheck = $this->canProcessRequest($cooldownSeconds, $maxPerMinute);
         if (!$rateCheck['allowed']) {
@@ -111,6 +112,7 @@ class ChatbotController extends BaseController
         $result = $service->reply($message, [
             'source' => $source,
             'page' => $page,
+            'page_title' => $pageTitle,
             'history' => $history,
             'user_id' => (int) ($userId ?? 0),
             'is_logged_in' => $isLoggedIn,
