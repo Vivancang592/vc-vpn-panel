@@ -653,18 +653,36 @@ body.home-festival .admin-content > .public-page.home-page.home-subpage.home-pol
 .home-policy-page .policy-eyebrow { display: inline-block; margin-bottom: .65rem; color: #007aff; font-size: .78rem; font-weight: 800; letter-spacing: .12em; text-transform: uppercase; }
 .home-policy-page .policy-title { margin-bottom: .65rem; }
 .home-policy-page .home-subpage-header .policy-meta { margin-top: .9rem; font-size: .84rem; color: #7f8da6 !important; }
-.home-policy-page .policy-content { max-width: 960px; margin-inline: auto; border: 1px solid rgba(148, 163, 184, .16); border-radius: 12px; background: #101828 !important; box-shadow: inset 0 1px rgba(255, 255, 255, .04) !important; padding: clamp(1.4rem, 3vw, 2.2rem); color: #cbd5e1; }
-.home-policy-page .policy-section + .policy-section { border-top-color: rgba(148, 163, 184, .16); }
-.home-policy-page .policy-section h2 { color: #e6ecf5 !important; font-size: 1.15rem; font-weight: 800; }
-.home-policy-page .policy-section p { color: #cbd5e1; line-height: 1.75; }
-.home-policy-page .policy-list li { color: #cbd5e1; line-height: 1.65; }
-.home-policy-page .policy-note { margin-top: 1.75rem; border-left-color: #007aff; background: rgba(0, 122, 255, .1); color: #cbd5e1; }
+/* Layout 2 cột: nội dung + mục lục sticky — bỏ card bọc ngoài, để nội dung tự nhiên trên nền trang */
+.home-policy-page .policy-layout { display: grid; grid-template-columns: minmax(0, 1fr) 250px; gap: clamp(2rem, 5vw, 4rem); max-width: 1080px; margin: 2.5rem auto 0; align-items: start; }
+.home-policy-page .policy-content { grid-column: 1; grid-row: 1; min-width: 0; padding: 0; border: 0; border-radius: 0; background: none; box-shadow: none; color: #cbd5e1; }
+.home-policy-page .policy-section { margin-top: 2rem; padding-top: 2rem; border-top: 1px solid rgba(148, 163, 184, .14); }
+.home-policy-page .policy-section:first-of-type { margin-top: 0; padding-top: 0; border-top: 0; }
+.home-policy-page .policy-section h2 { color: #eef3fa !important; font-size: 1.3rem; font-weight: 800; letter-spacing: -.01em; margin-bottom: .85rem; }
+.home-policy-page .policy-section p { color: #c3cddc; line-height: 1.8; font-size: .98rem; }
+.home-policy-page .policy-list li { color: #c3cddc; line-height: 1.7; }
+.home-policy-page .policy-list li::marker { color: #007aff; }
+.home-policy-page .policy-note { margin-top: 2rem; padding: .95rem 1.1rem; border-left: 3px solid #007aff; border-radius: 0; background: none; color: #aab6c6; }
 .home-policy-page .policy-contact-link { color: #007aff; }
 .home-policy-page .policy-contact-link:hover { color: #5eb2ff; }
 
-/* Song ngữ — dark override */
+/* Mục lục (cột phải, sticky trên desktop) */
+.home-policy-page .policy-toc { grid-column: 2; grid-row: 1; position: sticky; top: 6rem; padding-left: .25rem; }
+.home-policy-page .policy-toc-title { margin-bottom: .8rem; color: #7f8da6; font-size: .72rem; font-weight: 800; letter-spacing: .14em; text-transform: uppercase; }
+.home-policy-page .policy-toc ol { margin: 0; padding: 0; list-style: none; }
+.home-policy-page .policy-toc li + li { margin-top: .15rem; }
+.home-policy-page .policy-toc a { display: block; padding: .3rem 0 .3rem .8rem; border-left: 2px solid rgba(148, 163, 184, .18); color: #9fb0c6; font-size: .85rem; line-height: 1.45; text-decoration: none; transition: color .15s ease, border-color .15s ease; }
+.home-policy-page .policy-toc a:hover { border-left-color: #007aff; color: #ffffff; }
+
+@media (max-width: 900px) {
+  .home-policy-page .policy-layout { grid-template-columns: 1fr; gap: 1.5rem; margin-top: 1.75rem; }
+  .home-policy-page .policy-toc { position: static; grid-column: 1; grid-row: auto; padding-bottom: 1.25rem; border-bottom: 1px solid rgba(148, 163, 184, .16); }
+  .home-policy-page .policy-content { grid-column: 1; grid-row: auto; }
+}
+
+/* Song ngữ — dark override: khối EN thụt lề với trái tuyến xanh nhạt, tách nhẹ khỏi bản Việt */
 .home-policy-page .policy-title-en { color: #93a3b8 !important; }
-.home-policy-page .policy-en { border-top-color: rgba(148, 163, 184, .22); }
-.home-policy-page .policy-en h3 { color: #d7e1ef !important; }
+.home-policy-page .policy-en { margin-top: 1.05rem; padding: .35rem 0 .35rem 1rem; border-top: 0; border-left: 2px solid rgba(0, 122, 255, .35); }
+.home-policy-page .policy-en h3 { color: #8fa3bd !important; font-size: .95rem; font-weight: 700; }
 .home-policy-page .policy-en p,
-.home-policy-page .policy-en li { color: #aab6c6; line-height: 1.7; }
+.home-policy-page .policy-en li { color: #aab6c6; line-height: 1.75; }

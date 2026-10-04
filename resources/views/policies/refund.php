@@ -18,8 +18,21 @@ ob_start();
         <p class="policy-meta">Cập nhật lần cuối: 03/10/2026 &middot; Last updated: 03/10/2026</p>
     </header>
 
-    <article class="glass-card policy-content">
-        <section class="policy-section">
+    <div class="policy-layout">
+        <nav class="policy-toc" aria-label="Mục lục trang">
+            <p class="policy-toc-title">Mục lục &middot; Contents</p>
+            <ol>
+                <li><a href="#muc-1">1. Nguyên tắc xử lý</a></li>
+                <li><a href="#muc-2">2. Trường hợp có thể được xem xét</a></li>
+                <li><a href="#muc-3">3. Trường hợp không áp dụng hoàn tiền</a></li>
+                <li><a href="#muc-4">4. Cách gửi yêu cầu</a></li>
+                <li><a href="#muc-5">5. Phương thức và thời gian hoàn tiền</a></li>
+                <li><a href="#muc-6">6. Cập nhật chính sách</a></li>
+            </ol>
+        </nav>
+
+        <article class="policy-content">
+        <section class="policy-section" id="muc-1">
             <h2>1. Nguyên tắc xử lý</h2>
             <p>Chúng tôi xem xét yêu cầu hoàn tiền theo từng trường hợp, dựa trên tình trạng đơn hàng, mức độ sử dụng dịch vụ và nguyên nhân yêu cầu. Việc gửi yêu cầu không đồng nghĩa yêu cầu sẽ được chấp thuận.</p>
             <div class="policy-en" lang="en">
@@ -28,7 +41,7 @@ ob_start();
             </div>
         </section>
 
-        <section class="policy-section">
+        <section class="policy-section" id="muc-2">
             <h2>2. Trường hợp có thể được xem xét</h2>
             <ul class="policy-list">
                 <li>Thanh toán bị trùng lặp hoặc ghi nhận sai số tiền do lỗi hệ thống.</li>
@@ -45,7 +58,7 @@ ob_start();
             </div>
         </section>
 
-        <section class="policy-section">
+        <section class="policy-section" id="muc-3">
             <h2>3. Trường hợp không áp dụng hoàn tiền</h2>
             <ul class="policy-list">
                 <li>Dịch vụ đã được sử dụng, đã hết hạn hoặc bị gián đoạn do thiết bị, kết nối mạng hay cấu hình từ phía người dùng.</li>
@@ -64,7 +77,7 @@ ob_start();
             </div>
         </section>
 
-        <section class="policy-section">
+        <section class="policy-section" id="muc-4">
             <h2>4. Cách gửi yêu cầu</h2>
             <p>Vui lòng gửi yêu cầu qua kênh hỗ trợ, nêu rõ mã đơn hàng, tài khoản đăng ký, thời điểm thanh toán, lý do yêu cầu và bằng chứng liên quan nếu có. Chúng tôi có thể yêu cầu thêm thông tin để xác minh.</p>
             <div class="policy-en" lang="en">
@@ -73,7 +86,7 @@ ob_start();
             </div>
         </section>
 
-        <section class="policy-section">
+        <section class="policy-section" id="muc-5">
             <h2>5. Phương thức và thời gian hoàn tiền</h2>
             <p>Nếu được chấp thuận, khoản hoàn tiền sẽ được xử lý qua phương thức thanh toán phù hợp hoặc theo hướng dẫn của bộ phận hỗ trợ. Thời gian nhận tiền phụ thuộc vào phương thức thanh toán và đơn vị trung gian; các khoản phí không hoàn lại sẽ được thông báo trước khi xử lý.</p>
             <div class="policy-en" lang="en">
@@ -82,7 +95,7 @@ ob_start();
             </div>
         </section>
 
-        <section class="policy-section">
+        <section class="policy-section" id="muc-6">
             <h2>6. Cập nhật chính sách</h2>
             <p>Chúng tôi có thể cập nhật chính sách này để phản ánh thay đổi về dịch vụ, thanh toán hoặc yêu cầu pháp lý. Chính sách áp dụng là phiên bản được công bố tại thời điểm bạn gửi yêu cầu.</p>
             <div class="policy-en" lang="en">
@@ -100,7 +113,8 @@ ob_start();
             <?php endif; ?>
             <span lang="en"> Contact our support team and provide your order code.</span>
         </aside>
-    </article>
+        </article>
+    </div>
 </section>
 
 <?php
