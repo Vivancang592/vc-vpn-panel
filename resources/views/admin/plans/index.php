@@ -82,11 +82,15 @@ ob_start();
                             <td style="text-align: center; font-weight: 600; font-size: 0.85rem;"><?= htmlspecialchars($plan['max_devices']) ?> Máy</td>
                             <td style="text-align: center; font-weight: 600; font-size: 0.85rem;">
                                 <?php if (($plan['stock_quantity'] ?? null) === null): ?>
-                                    <span style="color: var(--ios-success);">Không giới hạn</span>
-                                <?php elseif ((int) $plan['stock_quantity'] > 0): ?>
-                                    <span style="color: var(--ios-blue);">Còn <?= number_format((int) $plan['stock_quantity']) ?></span>
+                                    <span style="font-weight: 700; color: var(--ios-text);"><?= (int)($plan['sold_count'] ?? 0) ?></span>
+                                    <span style="color: var(--ios-text-secondary);">/ ∞</span>
                                 <?php else: ?>
-                                    <span style="color: var(--ios-danger);">Hết hàng</span>
+                                    <?php $stockOut = (int) ($plan['stock_quantity'] ?? 0) === 0; ?>
+                                    <span style="font-weight: 700; color: <?= $stockOut ? 'var(--ios-danger)' : 'var(--ios-text)'; ?>;"><?= (int)($plan['sold_count'] ?? 0) ?></span>
+                                    <span style="color: var(--ios-text-secondary);">/ <?= (int)($plan['total_count'] ?? 0) ?></span>
+                                    <?php if ($stockOut): ?>
+                                        <div style="font-size: 0.72rem; color: var(--ios-danger); font-weight: 700;">HẾT HÀNG</div>
+                                    <?php endif; ?>
                                 <?php endif; ?>
                             </td>
                             <td style="text-align: center;">

@@ -188,6 +188,7 @@ CREATE TABLE `vc_subscriptions` (
     `user_id` BIGINT UNSIGNED NOT NULL,
     `plan_id` INT UNSIGNED NOT NULL,
     `order_id` BIGINT UNSIGNED NULL,
+    `stock_state` ENUM('none', 'held', 'released') NOT NULL DEFAULT 'none',
     `uuid` VARCHAR(36) NOT NULL UNIQUE,
     `max_devices` INT NOT NULL DEFAULT 1,
     `transfer_enable` BIGINT UNSIGNED NOT NULL DEFAULT 0,

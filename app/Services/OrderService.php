@@ -329,6 +329,7 @@ class OrderService
                 'user_id'         => $order['user_id'],
                 'plan_id'         => $order['plan_id'],
                 'order_id'        => $order['id'],
+                'stock_state'     => (int) ($order['stock_reserved'] ?? 0) === 1 ? 'held' : 'none',
                 'uuid'            => $uuid,
                 'max_devices'     => $maxDevices,
                 'transfer_enable' => $transferEnable,

@@ -423,4 +423,130 @@ class Subscription extends BaseModel
         $stmt->execute();
         return (int)$stmt->fetchColumn();
     }
+
+    /**
+     * Hoàn 1 suất tồn kho khi gói cước bị hủy (stock_state: held -> released).
+     *
+     * Idempotent: chỉ hoàn đúng 1 lần (WHERE stock_state = 'held').
+     * Gọi tại: admin hủy subscription, xóa subscription, cron hết hạn -> hủy.
+     *
+     * @return bool true nếu vừa hoàn suất, false nếu không giữ suất nào.
+     */
+    public function releaseSlot(int $subId): bool
+    {
+        if ($subId <= 0) {
+            return false;
+        }
+
+        self::beginTransaction();
+
+        try {
+            $stmt = self::$db->prepare(
+                "SELECT `id`, `plan_id`, `stock_state`
+                 FROM `{$this->table}`
+                 WHERE `id` = :id
+                 FOR UPDATE"
+            );
+            $stmt->execute(['id' => $subId]);
+            $sub = $stmt->fetch();
+
+            if (!is_array($sub) || ($sub['stock_state'] ?? 'none') !== 'held') {
+                self::rollBack();
+                return false;
+            }
+
+            $mark = self::$db->prepare(
+                "UPDATE `{$this->table}`
+                 SET `stock_state` = 'released', `updated_at` = NOW()
+                 WHERE `id` = :id AND `stock_state` = 'held'"
+            );
+            $mark->execute(['id' => $subId]);
+            if ($mark->rowCount() !== 1) {
+                self::rollBack();
+                return false;
+            }
+
+            // Cộng lại tồn kho (gói không giới hạn = NULL thì giữ nguyên)
+            $restock = self::$db->prepare(
+                'UPDATE `vc_vpn_plans`
+                 SET `stock_quantity` = `stock_quantity` + 1
+                 WHERE `id` = :plan_id AND `stock_quantity` IS NOT NULL'
+            );
+            $restock->execute(['plan_id' => (int) $sub['plan_id']]);
+
+            self::commit();
+            return true;
+        } catch (\Throwable $exception) {
+            self::rollBack();
+            throw $exception;
+        }
+    }
+
+    /**
+     * Trừ lại 1 suất tồn kho khi bật lại gói đã hủy (stock_state: released -> held).
+     *
+     * Chỉ áp cho sub từng giữ suất (released); trial / đơn không trừ kho thì bỏ qua.
+     * Trả về:
+     *   - ok = true  : đã trừ (hoặc gói không giới hạn), trạng thái chuyển sang held.
+     *   - ok = false : chặn bật lại — reason: out_of_stock | plan_disabled | plan_missing.
+     *
+     * @param array $sub Mảng subscription cần bật lại (cần id, plan_id, stock_state).
+     * @return array{ok: bool, reason: string}
+     */
+    public function tryReserveSlotOnReactivate(array $sub): array
+    {
+        $state = $sub['stock_state'] ?? 'none';
+        if ($state !== 'released') {
+            // Chưa từng hoàn kho (trial / đơn không trừ / còn đang giữ) — không cần trừ
+            return ['ok' => true, 'reason' => 'noop'];
+        }
+
+        $subId  = (int) ($sub['id'] ?? 0);
+        $planId = (int) ($sub['plan_id'] ?? 0);
+        if ($subId <= 0 || $planId <= 0) {
+            return ['ok' => false, 'reason' => 'plan_missing'];
+        }
+
+        self::beginTransaction();
+
+        try {
+            $reserved = (new VpnPlan())->reserveForPurchase($planId);
+
+            if (!$reserved['available']) {
+                self::rollBack();
+
+                $planStmt = self::$db->prepare(
+                    'SELECT `status` FROM `vc_vpn_plans` WHERE `id` = :id LIMIT 1'
+                );
+                $planStmt->execute(['id' => $planId]);
+                $planStatus = $planStmt->fetchColumn();
+
+                if ($planStatus === false) {
+                    return ['ok' => false, 'reason' => 'plan_missing'];
+                }
+                return [
+                    'ok' => false,
+                    'reason' => $planStatus === 'active' ? 'out_of_stock' : 'plan_disabled',
+                ];
+            }
+
+            $mark = self::$db->prepare(
+                "UPDATE `{$this->table}`
+                 SET `stock_state` = 'held', `updated_at` = NOW()
+                 WHERE `id` = :id AND `stock_state` = 'released'"
+            );
+            $mark->execute(['id' => $subId]);
+            if ($mark->rowCount() !== 1) {
+                // Trạng thái đổi giữa chừng (luồng khác) — hoàn tác việc trừ kho
+                self::rollBack();
+                return ['ok' => false, 'reason' => 'state_changed'];
+            }
+
+            self::commit();
+            return ['ok' => true, 'reason' => 'ok'];
+        } catch (\Throwable $exception) {
+            self::rollBack();
+            throw $exception;
+        }
+    }
 }

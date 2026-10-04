@@ -97,6 +97,9 @@ class CronController extends BaseController
                 continue;
             }
 
+            // Hoàn 1 suất tồn kho khi hết hạn quá hạn lưu trữ → cancelled (idempotent)
+            $subscriptionModel->releaseSlot((int) $subscription['id']);
+
             $groupIds = $this->parseGroupIds($subscription['group_id'] ?? []);
             if (!empty($groupIds)) {
                 // Quá hạn lưu trữ → cắt mạng, không xóa user (contract §2.2)

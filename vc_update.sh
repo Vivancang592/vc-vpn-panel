@@ -168,6 +168,20 @@ if [ -f "$STOCK_MIGRATION" ] && [ -f "$APP_PATH/.env" ]; then
     echo -e " ${GREEN}✔ Hoàn tất thêm cột stock_quantity/stock_reserved (tồn kho đơn hàng).${NC}"
 fi
 
+# 3.7.1. Hoan luot mua khi goi bi huy (vc_subscriptions.stock_state — idempotent)
+SUB_STATE_MIGRATION="$APP_PATH/database/migrations/20261007_add_subscription_stock_state.sql"
+if [ -f "$SUB_STATE_MIGRATION" ] && [ -f "$APP_PATH/.env" ]; then
+    set -a
+    . "$APP_PATH/.env"
+    set +a
+    MYSQL_PWD="${DB_PASSWORD:-}" mysql \
+        -h "${DB_HOST:-127.0.0.1}" \
+        -P "${DB_PORT:-3306}" \
+        -u "${DB_USERNAME:-root}" \
+        "${DB_DATABASE:-vpn_service}" < "$SUB_STATE_MIGRATION"
+    echo -e " ${GREEN}✔ Hoàn tất thêm cột stock_state (hoàn lượt mua khi hủy gói).${NC}"
+fi
+
 # 3.8. Cột error_msg cho vc_node_tasks (contract §4 — update_task_status)
 TASK_ERR_MIGRATION="$APP_PATH/database/migrations/20261006_add_task_error_msg.sql"
 if [ -f "$TASK_ERR_MIGRATION" ] && [ -f "$APP_PATH/.env" ]; then

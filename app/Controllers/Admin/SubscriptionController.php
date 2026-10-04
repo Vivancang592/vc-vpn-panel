@@ -131,6 +131,26 @@ class SubscriptionController extends BaseController
             $this->redirect('/admin/subscriptions' . ($userId > 0 ? '?user_id=' . $userId : ''));
         }
 
+        // Bật lại gói đã hủy (stock_state = released): trừ lại 1 suất tồn kho.
+        // Hết hàng / gói ngừng bán → chặn, không đổi trạng thái.
+        $reservedForReactivate = false;
+        if (in_array($status, ['active', 'suspended'], true)
+            && ($sub['stock_state'] ?? 'none') === 'released') {
+            $reserve = $this->subscriptionModel->tryReserveSlotOnReactivate($sub);
+            if (!$reserve['ok']) {
+                $reserveErrors = [
+                    'out_of_stock'  => 'Tồn kho gói đã hết — không thể bật lại gói đã hủy!',
+                    'plan_disabled' => 'Gói cước đang ngừng bán — không thể bật lại gói đã hủy!',
+                    'plan_missing'  => 'Không tìm thấy gói cước — không thể bật lại gói đã hủy!',
+                ];
+                $_SESSION['flash_message'] = $reserveErrors[$reserve['reason']]
+                    ?? 'Không thể giữ suất tồn kho — vui lòng thử lại!';
+                $_SESSION['flash_type']    = 'danger';
+                $this->redirect('/admin/subscriptions' . ($userId > 0 ? '?user_id=' . $userId : ''));
+            }
+            $reservedForReactivate = true;
+        }
+
         // Khi bật lại sub active → xóa mốc khóa mạng 60s để cơ chế kiểm tra max_devices chạy lại từ đầu
         $updateData = ['status' => $status];
         if ($status === 'active') {
@@ -138,6 +158,11 @@ class SubscriptionController extends BaseController
         }
 
         if ($this->subscriptionModel->update($id, $updateData)) {
+            // Hủy gói: hoàn 1 suất tồn kho (idempotent — không giữ suất thì bỏ qua)
+            if ($status === 'cancelled') {
+                $this->subscriptionModel->releaseSlot($id);
+            }
+
             $groupIds = [];
             if (class_exists('App\Models\VpnPlan') && !empty($sub['plan_id'])) {
                 $planModel = new VpnPlan();
@@ -163,6 +188,10 @@ class SubscriptionController extends BaseController
             $_SESSION['flash_message'] = 'Cập nhật trạng thái gói đăng ký thành công!';
             $_SESSION['flash_type']    = 'success';
         } else {
+            // Đổi trạng thái thất bại → hoàn tác suất vừa trừ (tránh treo tồn kho)
+            if ($reservedForReactivate) {
+                $this->subscriptionModel->releaseSlot($id);
+            }
             $_SESSION['flash_message'] = 'Không thể cập nhật trạng thái gói!';
             $_SESSION['flash_type']    = 'danger';
         }
@@ -189,6 +218,25 @@ class SubscriptionController extends BaseController
             $_SESSION['flash_message'] = 'Không tìm thấy thông tin gói cước tương ứng!';
             $_SESSION['flash_type']    = 'danger';
             $this->redirect('/admin/subscriptions' . ($userId > 0 ? '?user_id=' . $userId : ''));
+        }
+
+        // Gia hạn gói đã hủy (stock_state = released): trừ lại 1 suất tồn kho trước.
+        // Hết hàng / gói ngừng bán → chặn, chưa tạo đơn hàng nào.
+        $reservedForRenew = false;
+        if (($sub['stock_state'] ?? 'none') === 'released') {
+            $reserve = $this->subscriptionModel->tryReserveSlotOnReactivate($sub);
+            if (!$reserve['ok']) {
+                $reserveErrors = [
+                    'out_of_stock'  => 'Tồn kho gói đã hết — không thể gia hạn gói đã hủy!',
+                    'plan_disabled' => 'Gói cước đang ngừng bán — không thể gia hạn gói đã hủy!',
+                    'plan_missing'  => 'Không tìm thấy gói cước — không thể gia hạn gói đã hủy!',
+                ];
+                $_SESSION['flash_message'] = $reserveErrors[$reserve['reason']]
+                    ?? 'Không thể giữ suất tồn kho — vui lòng thử lại!';
+                $_SESSION['flash_type']    = 'danger';
+                $this->redirect('/admin/subscriptions' . ($userId > 0 ? '?user_id=' . $userId : ''));
+            }
+            $reservedForRenew = true;
         }
 
         // 1. Khởi tạo đơn hàng mới cho giao dịch gia hạn
@@ -238,10 +286,17 @@ class SubscriptionController extends BaseController
                 $_SESSION['flash_message'] = 'Gia hạn gói đăng ký và tạo đơn hàng mới thành công!';
                 $_SESSION['flash_type']    = 'success';
             } else {
+                // Cập nhật gia hạn thất bại → hoàn tác suất vừa trừ (tránh treo tồn kho)
+                if ($reservedForRenew) {
+                    $this->subscriptionModel->releaseSlot($id);
+                }
                 $_SESSION['flash_message'] = 'Tạo đơn hàng thành công nhưng không thể cập nhật gia hạn!';
                 $_SESSION['flash_type']    = 'warning';
             }
         } else {
+            if ($reservedForRenew) {
+                $this->subscriptionModel->releaseSlot($id);
+            }
             $_SESSION['flash_message'] = 'Không thể khởi tạo đơn hàng mới cho lần gia hạn này!';
             $_SESSION['flash_type']    = 'danger';
         }
@@ -328,6 +383,9 @@ class SubscriptionController extends BaseController
             $_SESSION['flash_message'] = 'Gói đăng ký không tồn tại!';
             $_SESSION['flash_type']    = 'danger';
         } else {
+            // Xóa gói: hoàn 1 suất tồn kho trước khi xóa (idempotent — không giữ suất thì bỏ qua)
+            $this->subscriptionModel->releaseSlot($id);
+
             if (class_exists('App\Models\VpnPlan') && !empty($sub['plan_id'])) {
                 $planModel = new VpnPlan();
                 $plan      = $planModel->find((int)$sub['plan_id']);

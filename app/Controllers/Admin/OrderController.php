@@ -414,6 +414,7 @@ class OrderController extends BaseController
                         'user_id'         => $userId,
                         'plan_id'         => $planId,
                         'order_id'        => $orderId ?: null,
+                        'stock_state'     => (int) ($orderData['stock_reserved'] ?? 0) === 1 ? 'held' : 'none',
                         'uuid'            => $uuid,
                         'max_devices'     => $maxDevices,
                         'transfer_enable' => $bytesTotal,
