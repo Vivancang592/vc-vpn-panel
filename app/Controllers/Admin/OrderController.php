@@ -338,6 +338,10 @@ class OrderController extends BaseController
                 }
                 $orderData['stock_reserved'] = $reservation['reserved'] ? 1 : 0;
                 $createdOrder = $this->orderModel->create($orderData);
+                // PDO::lastInsertId() trả về 0 sau khi commit — phải đọc ID đơn hàng TRƯỚC commit.
+                $orderId = $createdOrder && method_exists($this->orderModel, 'lastInsertId')
+                    ? (int) $this->orderModel->lastInsertId()
+                    : 0;
                 BaseModel::commit();
             } catch (\Throwable $exception) {
                 BaseModel::rollBack();
@@ -345,7 +349,6 @@ class OrderController extends BaseController
             }
 
             if ($createdOrder) {
-                $orderId = method_exists($this->orderModel, 'lastInsertId') ? (int)$this->orderModel->lastInsertId() : 0;
 
                 if ($orderId > 0) {
                     $settingModel = new \App\Models\Setting();
