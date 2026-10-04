@@ -161,7 +161,7 @@ class Order extends BaseModel
         self::beginTransaction();
 
         try {
-            $sql = "SELECT `plan_id`, `stock_reserved`
+            $sql = "SELECT `id`, `plan_id`, `stock_reserved`, `coupon_id`, `coupon_counted`
                     FROM `{$this->table}`
                     WHERE `id` = :id
                       AND `payment_status` = 'pending'";
@@ -191,6 +191,9 @@ class Order extends BaseModel
                 return false;
             }
 
+            // Hoàn lượt mã giảm giá nếu đơn này đang giữ chỗ (hủy/từ chối)
+            $this->releaseCouponSlot($order);
+
             if ((int) ($order['stock_reserved'] ?? 0) === 1 && (int) ($order['plan_id'] ?? 0) > 0) {
                 $restock = self::$db->prepare(
                     'UPDATE `vc_vpn_plans`
@@ -215,6 +218,29 @@ class Order extends BaseModel
         }
     }
 
+    /**
+     * Hoàn 1 lượt dùng mã giảm giá nếu đơn này đang giữ chỗ (coupon_counted = 1).
+     * Chỉ gọi bên trong transaction của đơn hàng — mọi thay đổi commit/rollback cùng đơn.
+     * Trả về true nếu vừa hoàn lượt.
+     */
+    public function releaseCouponSlot(array $order): bool
+    {
+        $couponId = (int) ($order['coupon_id'] ?? 0);
+        if ($couponId <= 0 || (int) ($order['coupon_counted'] ?? 0) !== 1) {
+            return false;
+        }
+
+        if (class_exists('App\Models\Coupon')) {
+            (new Coupon())->decrementUsedCount($couponId);
+        }
+
+        $stmt = self::$db->prepare(
+            "UPDATE `{$this->table}` SET `coupon_counted` = 0 WHERE `id` = ? AND `coupon_counted` = 1"
+        );
+        $stmt->execute([(int) ($order['id'] ?? 0)]);
+        return true;
+    }
+
     public function cancelExpiredPending(int $minutes): int
     {
         $minutes = max(1, min(43200, $minutes));
@@ -222,7 +248,7 @@ class Order extends BaseModel
         self::beginTransaction();
 
         try {
-            $stmt = self::$db->prepare("SELECT o.`id`, o.`order_code`, o.`plan_id`, o.`stock_reserved`, u.`email` FROM `{$this->table}` o INNER JOIN `vc_users` u ON u.`id` = o.`user_id` WHERE o.`payment_status` = 'pending' AND o.`created_at` <= DATE_SUB(NOW(), INTERVAL {$minutes} MINUTE) FOR UPDATE");
+            $stmt = self::$db->prepare("SELECT o.`id`, o.`order_code`, o.`plan_id`, o.`stock_reserved`, o.`coupon_id`, o.`coupon_counted`, u.`email` FROM `{$this->table}` o INNER JOIN `vc_users` u ON u.`id` = o.`user_id` WHERE o.`payment_status` = 'pending' AND o.`created_at` <= DATE_SUB(NOW(), INTERVAL {$minutes} MINUTE) FOR UPDATE");
             $stmt->execute();
             $expiredOrders = $stmt->fetchAll();
             $orderIds = array_column($expiredOrders, 'id');
@@ -233,7 +259,7 @@ class Order extends BaseModel
             }
 
             $placeholders = implode(',', array_fill(0, count($orderIds), '?'));
-            $paymentStmt = self::$db->prepare("UPDATE `vc_payments` SET `status` = 'cancelled' WHERE `order_id` IN ({$placeholders}) AND `status` = 'pending'");
+            $paymentStmt = self::$db->prepare("UPDATE `vc_payments` SET `status` = 'failed' WHERE `order_id` IN ({$placeholders}) AND `status` = 'pending'");
             $paymentStmt->execute($orderIds);
 
             $restockStmt = self::$db->prepare("UPDATE `{$this->table}` o INNER JOIN `vc_vpn_plans` p ON p.`id` = o.`plan_id` SET p.`stock_quantity` = p.`stock_quantity` + 1, o.`stock_reserved` = 0 WHERE o.`id` IN ({$placeholders}) AND o.`stock_reserved` = 1 AND p.`stock_quantity` IS NOT NULL");
@@ -242,6 +268,11 @@ class Order extends BaseModel
             $orderStmt = self::$db->prepare("UPDATE `{$this->table}` SET `payment_status` = 'cancelled', `updated_at` = NOW() WHERE `id` IN ({$placeholders}) AND `payment_status` = 'pending'");
             $orderStmt->execute($orderIds);
             $cancelledOrders = $orderStmt->rowCount();
+
+            // Hoàn lượt mã giảm giá cho các đơn đã giữ chỗ (dòng dưới khóa FOR UPDATE)
+            foreach ($expiredOrders as $expiredOrder) {
+                $this->releaseCouponSlot($expiredOrder);
+            }
 
             self::commit();
 

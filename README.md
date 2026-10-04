@@ -54,7 +54,7 @@ URL=https://www.aapanel.com/script/install_panel_en.sh && if [ -f /usr/bin/curl 
      ```ini
      display_errors = Off
      ```
-   * **Ẩn phiên bản PHP trên Header (expose_php):**
+   * **Ẩn phiên bản PHP trên Header (Configuration file > expose_php):**
      ```ini
      expose_php = Off
      ```

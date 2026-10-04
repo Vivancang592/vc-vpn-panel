@@ -102,9 +102,9 @@ ob_start();
                             </td>
                             <td>
                                 <?php if ((int)($coupon['assigned_count'] ?? 0) === 0): ?>
-                                    <span style="padding: 0.2rem 0.5rem; border-radius: var(--radius-sm); font-size: 0.75rem; font-weight: 700; background: rgba(142, 142, 147, 0.15); color: var(--ios-text-secondary);">🌐 Công khai</span>
+                                    <span style="padding: 0.2rem 0.5rem; border-radius: var(--radius-sm); font-size: 0.75rem; font-weight: 700; background: rgba(142, 142, 147, 0.15); color: var(--ios-text-secondary);">Công khai</span>
                                 <?php else: ?>
-                                    <span style="padding: 0.2rem 0.5rem; border-radius: var(--radius-sm); font-size: 0.75rem; font-weight: 700; background: rgba(0, 122, 255, 0.15); color: var(--ios-blue);">🔒 <?= (int)$coupon['assigned_count'] ?> user</span>
+                                    <span style="padding: 0.2rem 0.5rem; border-radius: var(--radius-sm); font-size: 0.75rem; font-weight: 700; background: rgba(0, 122, 255, 0.15); color: var(--ios-blue);"><?= (int)$coupon['assigned_count'] ?> user</span>
                                     <div style="font-size: 0.72rem; color: var(--ios-text-secondary); margin-top: 2px; max-width: 160px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="<?= htmlspecialchars($coupon['assigned_names'] ?? '') ?>">
                                         <?= htmlspecialchars($coupon['assigned_names'] ?? '') ?>
                                     </div>
@@ -112,9 +112,9 @@ ob_start();
                             </td>
                             <td>
                                 <?php if ((int)($coupon['plan_count'] ?? 0) === 0): ?>
-                                    <span style="padding: 0.2rem 0.5rem; border-radius: var(--radius-sm); font-size: 0.75rem; font-weight: 700; background: rgba(255, 149, 0, 0.15); color: #ff9500;">📦 Tất cả gói</span>
+                                    <span style="padding: 0.2rem 0.5rem; border-radius: var(--radius-sm); font-size: 0.75rem; font-weight: 700; background: rgba(255, 149, 0, 0.15); color: #ff9500;">Tất cả gói</span>
                                 <?php else: ?>
-                                    <span style="padding: 0.2rem 0.5rem; border-radius: var(--radius-sm); font-size: 0.75rem; font-weight: 700; background: rgba(255, 149, 0, 0.22); color: #c86b00;">📦 <?= (int)$coupon['plan_count'] ?> gói</span>
+                                    <span style="padding: 0.2rem 0.5rem; border-radius: var(--radius-sm); font-size: 0.75rem; font-weight: 700; background: rgba(255, 149, 0, 0.22); color: #c86b00;"><?= (int)$coupon['plan_count'] ?> gói</span>
                                     <div style="font-size: 0.72rem; color: var(--ios-text-secondary); margin-top: 2px; max-width: 160px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="<?= htmlspecialchars($coupon['plan_names'] ?? '') ?>">
                                         <?= htmlspecialchars($coupon['plan_names'] ?? '') ?>
                                     </div>

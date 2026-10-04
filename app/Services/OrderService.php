@@ -73,6 +73,7 @@ class OrderService
             'user_id'        => $userId,
             'plan_id'        => $planId,
             'coupon_id'      => $couponId,
+            'coupon_counted' => $couponId > 0 ? 1 : 0,
             'total_amount'   => $finalPrice,
             'payment_method' => $paymentMethod,
             'payment_status' => 'pending',
@@ -92,6 +93,15 @@ class OrderService
             }
 
             $orderData['stock_reserved'] = $reservation['reserved'] ? 1 : 0;
+
+            // Giữ chỗ lượt dùng mã giảm giá NGAY khi tạo đơn (cùng transaction):
+            // atomic UPDATE chỉ +1 khi còn lượt (đóng race vượt max_uses),
+            // coupon_counted = 1 để mọi luồng sau không cộng/trừ trùng.
+            if ($couponId > 0 && !(new Coupon())->tryIncrementUsedCount($couponId)) {
+                BaseModel::rollBack();
+                return ['status' => false, 'message' => 'Mã giảm giá không còn hiệu lực hoặc đã hết lượt sử dụng.'];
+            }
+
             $created = $orderModel->create($orderData);
             if (!$created) {
                 BaseModel::rollBack();
@@ -359,13 +369,12 @@ class OrderService
                 }
             }
 
-            // 5. Tăng lượt sử dụng mã giảm giá (Coupon) nếu có
-            // Ưu tiên couponId truyền vào (luồng balance); fallback về coupon_id
-            // lưu trên đơn để mọi luồng kích hoạt (admin duyệt, webhook, đối soát)
-            // đều khấu trừ lượt dùng.
-            $couponIdToCount = ($couponId !== null && $couponId > 0) ? $couponId : (int) ($order['coupon_id'] ?? 0);
-            if ($couponIdToCount > 0 && class_exists('App\Models\Coupon')) {
+            // 5. Đếm lượt dùng mã giảm giá cho ĐƠN CŨ (tạo trước migration coupon_counted).
+            // Đơn mới đã +1 ngay lúc tạo đơn (coupon_counted = 1) → không cộng lại.
+            $couponIdToCount = (int) ($order['coupon_id'] ?? 0);
+            if ($couponIdToCount > 0 && (int) ($order['coupon_counted'] ?? 0) !== 1 && class_exists('App\Models\Coupon')) {
                 (new Coupon())->incrementUsedCount($couponIdToCount);
+                $orderModel->update($orderId, ['coupon_counted' => 1]);
             }
 
             // 6. Xử lý tính hoa hồng giới thiệu (Referral Commission)

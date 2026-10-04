@@ -262,7 +262,25 @@ class OrderController extends BaseController
                 $canDelete = $this->orderModel->cancelPendingAndReleaseStock($id);
             }
 
-            if ($canDelete && $this->orderModel->delete($id)) {
+            if ($canDelete) {
+                // Đơn đang giữ lượt mã giảm giá (coupon_counted = 1) → hoàn lượt
+                // cùng transaction với khi xóa, để used_count không lệch nếu 1 trong 2 bước fail.
+                $this->orderModel->beginTransaction();
+                try {
+                    $this->orderModel->releaseCouponSlot($order);
+                    $canDelete = $this->orderModel->delete($id);
+                    if ($canDelete) {
+                        $this->orderModel->commit();
+                    } else {
+                        $this->orderModel->rollBack();
+                    }
+                } catch (\Throwable $e) {
+                    $this->orderModel->rollBack();
+                    $canDelete = false;
+                }
+            }
+
+            if ($canDelete) {
                 $this->logActivity('DELETE_ORDER', 'Xóa đơn hàng #' . $id . ' (' . ($order['order_code'] ?? 'N/A') . ')');
                 $_SESSION['flash_message'] = 'Xóa đơn hàng thành công!';
                 $_SESSION['flash_type']    = 'success';

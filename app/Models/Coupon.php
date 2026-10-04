@@ -62,6 +62,27 @@ class Coupon extends BaseModel
         return $stmt->execute([$id]);
     }
 
+    public function decrementUsedCount(int $id): bool
+    {
+        $stmt = self::$db->prepare("UPDATE {$this->table} SET `used_count` = GREATEST(`used_count` - 1, 0) WHERE `id` = ?");
+        return $stmt->execute([$id]);
+    }
+
+    /**
+     * Cộng 1 lượt dùng CHỈ KHI còn lượt (max_uses = 0 → vô hạn).
+     * Atomic WHERE + row-lock của InnoDB: 2 đơn cùng lúc không thể cùng
+     * vượt max_uses. Trả về false nếu hết lượt / mã không tồn tại.
+     */
+    public function tryIncrementUsedCount(int $id): bool
+    {
+        $stmt = self::$db->prepare(
+            "UPDATE {$this->table} SET `used_count` = `used_count` + 1
+             WHERE `id` = ? AND (`max_uses` = 0 OR `used_count` < `max_uses`)"
+        );
+        $stmt->execute([$id]);
+        return $stmt->rowCount() > 0;
+    }
+
     /**
      * Lấy danh sách mã giảm giá đang hoạt động và còn hạn sử dụng
      */

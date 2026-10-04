@@ -1227,8 +1227,8 @@ body.vpn-theme .navbar-container { background: #eaf4fb !important; border-bottom
 body.vpn-theme .profile-trigger { background: #eaf4fb !important; border-color: rgba(22, 119, 255, 0.16) !important; }
 body.vpn-theme .profile-menu { background: #ffffff; border-color: rgba(43, 100, 163, 0.14); }
 body.vpn-theme .glass-card { border-color: rgba(43, 100, 163, 0.14); }
-body.vpn-theme .glass-btn { background: #1677ff; box-shadow: 0 5px 14px rgba(22, 119, 255, 0.25); }
-body.vpn-theme .glass-btn:hover { background: #0d5fd1; }
+body.vpn-theme .glass-btn { background: #1625ff; box-shadow: 0 5px 14px rgba(22, 119, 255, 0.25); }
+body.vpn-theme .glass-btn:hover { background: #37f103; }
 body.vpn-theme .glass-input:focus { border-color: #1677ff; box-shadow: 0 0 0 4px rgba(22, 119, 255, 0.12); }
 body.vpn-theme .vc-footer { color: #38536f; border-top-color: rgba(43, 100, 163, 0.16); background: #eaf4fb; }
 body.vpn-theme .vc-footer-title, body.vpn-theme .vc-footer-col h4 { color: #132238; }
