@@ -10,7 +10,7 @@ use App\Models\ChatSession;
  * AiReplyController — Tab "Trả Lời Tự Động" (/admin/ai/reply).
  *
  * Trạng thái auto-reply cho 2 nguồn (quyết định D7):
- *   - CHAT website  : ChatbotService (module support_chat, Nội Quy rules_auto_reply).
+ *   - CHAT website  : ChatbotService (module support_chat).
  *   - BÌNH LUẬN FB  : FanpageService (module fanpage_comment + rule riêng).
  *
  * Tab này CHỈ ĐỌC + hiển thị trạng thái bật/tắt: KHÔNG form test chat, KHÔNG

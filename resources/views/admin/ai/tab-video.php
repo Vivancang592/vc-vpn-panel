@@ -24,7 +24,7 @@ require __DIR__ . '/_tab-header.php';
     <div>
         <label style="display: block; font-weight: 600; font-size: 0.85rem; margin-bottom: 0.35rem;">Prompt mô tả video <span style="color: var(--ios-danger);">*</span></label>
         <textarea name="prompt" rows="4" maxlength="5000" class="glass-input" style="width: 100%; font-size: 0.88rem; line-height: 1.6; resize: vertical; min-height: 6rem;" placeholder="Ví dụ: Cận cảnh ly cà phê bốc khói trên bàn gỗ, ánh nắng buổi sáng, máy quay chuyển động chậm..." required></textarea>
-        <span style="font-size: 0.72rem; color: var(--ios-text-secondary);">Tối đa 5000 ký tự. Nội Quy AI (rules_video) ở header tự động được áp dụng.</span>
+        <span style="font-size: 0.72rem; color: var(--ios-text-secondary);">Tối đa 5000 ký tự. Nội quy AI đã được gộp sẵn trong System Prompt.</span>
     </div>
     <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(11rem, 1fr)); gap: 0.9rem; align-items: end;">
         <div>

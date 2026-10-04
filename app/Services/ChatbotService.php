@@ -176,9 +176,6 @@ class ChatbotService
             'plans' => '',
         ];
 
-        // NỘI QUY AI (rules_auto_reply) — đọc một lần, ghép TRƯỚC prompt kỹ thuật.
-        $rulesText = $this->rulesBlock($moduleKey, $variables);
-
         try {
             $registry = new \App\AI\Core\PromptRegistry();
             $raw = $registry->rawTemplate($moduleKey);
@@ -203,55 +200,14 @@ class ChatbotService
                 }
 
                 if ($text !== '') {
-                    return $rulesText !== '' ? $rulesText . "\n\n" . $text : $text;
+                    return $text;
                 }
             }
         } catch (\Throwable) {
             // rơi xuống builder mặc định bên dưới
         }
 
-        $fallback = $this->buildSystemPrompt($context);
-
-        return $rulesText !== '' ? $rulesText . "\n\n" . $fallback : $fallback;
-    }
-
-    /**
-     * Đọc NỘI QUY AI của nhóm chức năng (rules_auto_reply cho chat/bình luận)
-     * và render biến ngữ cảnh sẵn có. Trả về '' nếu nội quy chưa cấu hình.
-     *
-     * @param array<string, mixed> $variables
-     */
-    private function rulesBlock(string $moduleKey, array $variables): string
-    {
-        try {
-            $registry = new \App\AI\Core\PromptRegistry();
-            $rulesKey = $registry->rulesKeyForPrompt($moduleKey);
-
-            if ($rulesKey === null) {
-                return '';
-            }
-
-            $raw = $registry->rawRules($rulesKey);
-
-            if (!is_array($raw) || ($raw['source'] ?? 'none') === 'none') {
-                return '';
-            }
-
-            $text = (string) ($raw['system'] ?? '');
-
-            foreach ($variables as $name => $value) {
-                if (is_array($value) || is_object($value)) {
-                    continue;
-                }
-                $text = str_replace('{{' . $name . '}}', (string) $value, $text);
-            }
-
-            $text = trim((string) preg_replace('/\{\{\s*[a-zA-Z0-9_]+\s*\}\}/', '', $text));
-
-            return $text;
-        } catch (\Throwable) {
-            return '';
-        }
+        return $this->buildSystemPrompt($context);
     }
 
     private function buildSystemPrompt(array $context): string

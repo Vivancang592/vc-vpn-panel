@@ -16,7 +16,7 @@ use App\AI\Contracts\AIException;
 final class RequestBuilder
 {
     /**
-     * @param array{prompt_id: null, prompt_version_id: null, system: string, user: string, source: string, rules?: string} $prompt
+     * @param array{prompt_id: null, prompt_version_id: null, system: string, user: string, source: string} $prompt
      * @param array{model_key: string, model_id: ?int} $model
      * @param array<string, mixed> $options
      * @return array{payload: array<string, mixed>, options: array<string, mixed>}
@@ -50,7 +50,7 @@ final class RequestBuilder
     }
 
     /**
-     * @param array{system: string, user: string, rules?: string} $prompt
+     * @param array{system: string, user: string} $prompt
      * @param array{model_key: string} $model
      * @param array<string, mixed> $options
      * @return array<string, mixed>
@@ -59,13 +59,7 @@ final class RequestBuilder
     {
         $messages = [];
 
-        // Nội quy AI (quy định chức năng) đứng trước, prompt kỹ thuật sau.
-        $systemText = trim((string) ($prompt['rules'] ?? ''));
-        if ($systemText !== '' && trim((string) $prompt['system']) !== '') {
-            $systemText .= "\n\n" . (string) $prompt['system'];
-        } else {
-            $systemText = trim((string) $prompt['system']);
-        }
+        $systemText = trim((string) $prompt['system']);
 
         if ($systemText !== '') {
             $messages[] = [
@@ -85,7 +79,7 @@ final class RequestBuilder
     }
 
     /**
-     * @param array{system: string, user: string, rules?: string} $prompt
+     * @param array{system: string, user: string} $prompt
      * @param array{model_key: string} $model
      * @param array<string, mixed> $options
      * @return array<string, mixed>
@@ -93,7 +87,7 @@ final class RequestBuilder
     private function buildImagePayload(array $prompt, array $model, array $options): array
     {
         $payload = [
-            'prompt' => $this->withRules(
+            'prompt' => $this->withSystemPrompt(
                 trim((string) $prompt['user']) !== '' ? (string) $prompt['user'] : (string) $prompt['system'],
                 $prompt
             ),
@@ -120,10 +114,10 @@ final class RequestBuilder
     /**
      * Video: chỉ dùng tham số đã xác minh. KHÔNG thêm video-reference/edit.
      *
-     * Nội quy AI (prompt['rules']) được nối vào prompt để model video
+     * System prompt (đã gộp nội quy AI) được nối vào prompt để model video
      * tuân thủ quy định ngay cả khi không có channel system riêng.
      *
-     * @param array{system: string, user: string, rules?: string} $prompt
+     * @param array{system: string, user: string} $prompt
      * @param array{model_key: string} $model
      * @param array<string, mixed> $options
      * @return array<string, mixed>
@@ -131,7 +125,7 @@ final class RequestBuilder
     private function buildVideoPayload(array $prompt, array $model, array $options): array
     {
         $payload = [
-            'prompt' => $this->withRules((string) $prompt['user'], $prompt),
+            'prompt' => $this->withSystemPrompt((string) $prompt['user'], $prompt),
             // SKILL.md (đã xác minh): POST /videos/generations cần "model".
             'model'  => $model['model_key'],
         ];
@@ -148,7 +142,7 @@ final class RequestBuilder
     }
 
     /**
-     * @param array{system: string, user: string, rules?: string} $prompt
+     * @param array{system: string, user: string} $prompt
      * @param array{model_key: string} $model
      * @param array<string, mixed> $options
      * @return array<string, mixed>
@@ -156,7 +150,7 @@ final class RequestBuilder
     private function buildAudioPayload(array $prompt, array $model, array $options): array
     {
         $payload = [
-            'input' => $this->withRules((string) $prompt['user'], $prompt),
+            'input' => $this->withSystemPrompt((string) $prompt['user'], $prompt),
             // SKILL.md (đã xác minh): POST /audio/speech cần "model" bắt buộc.
             'model' => $model['model_key'],
         ];
@@ -172,25 +166,20 @@ final class RequestBuilder
     }
 
     /**
-     * Gắn nội quy AI vào payload một-kênh (image/video/audio): chỉ nối khi
-     * có nội quy thật; giữ văn bản gốc khi không có gì để thêm.
+     * Gắn system prompt vào payload một-kênh (image/video/audio): chỉ nối
+     * khi có system thật; giữ văn bản gốc khi không có gì để thêm.
      *
-     * @param array{system: string, user: string, rules?: string} $prompt
+     * @param array{system: string, user: string} $prompt
      */
-    private function withRules(string $text, array $prompt): string
+    private function withSystemPrompt(string $text, array $prompt): string
     {
-        $text    = trim($text);
-        $rules   = trim((string) ($prompt['rules'] ?? ''));
-        $system  = trim((string) ($prompt['system'] ?? ''));
+        $text   = trim($text);
+        $system = trim((string) ($prompt['system'] ?? ''));
 
-        $prefixes = array_values(array_filter([$rules, $system], static fn(string $s): bool => $s !== ''));
-
-        if ($prefixes === []) {
+        if ($system === '') {
             return $text;
         }
 
-        $head = implode("\n\n", $prefixes);
-
-        return $text !== '' ? $head . "\n\n---\n\n" . $text : $head;
+        return $text !== '' ? $system . "\n\n---\n\n" . $text : $system;
     }
 }

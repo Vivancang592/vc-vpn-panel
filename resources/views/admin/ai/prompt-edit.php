@@ -12,8 +12,6 @@ if ($promptKey === '' && !empty($defaultKeys)) {
 
 /** Tên tiếng Việt của bộ prompt (không hiển thị key thô). */
 $promptVi = $aiLabels['prompts'][$promptKey] ?? $promptKey;
-/** Determine if this prompt is a system rule (starts with 'rules_'). */
-$isRules = str_starts_with($promptKey, 'rules_');
 
 /** Nội dung hiện hành: file → mặc định. */
 $rawSystem = (string) ($rawTemplate['system'] ?? '');
@@ -83,15 +81,13 @@ $tplUser   = (string) ($defaultTemplate['user'] ?? '');
 
         <div style="margin-bottom: 0.75rem;">
             <label style="display: block; font-size: 0.8rem; color: var(--ios-text-secondary); margin-bottom: 0.25rem;">Chỉ dẫn cho AI (system prompt)</label>
-            <textarea name="system_prompt" rows="<?= $isRules ? 14 : 6 ?>" required style="width: 100%; padding: 0.6rem 0.7rem; border-radius: var(--radius-sm); border: 1px solid var(--ios-border, rgba(255,255,255,0.15)); background: transparent; color: inherit; font-size: 0.85rem; font-family: ui-monospace, monospace; box-sizing: border-box; resize: vertical; min-height: <?= $isRules ? '16rem' : '8rem' ?>; max-height: 40rem; line-height: 1.5;"><?= htmlspecialchars($rawSystem !== '' ? $rawSystem : $tplSystem) ?></textarea>
+            <textarea name="system_prompt" rows="16" required style="width: 100%; padding: 0.6rem 0.7rem; border-radius: var(--radius-sm); border: 1px solid var(--ios-border, rgba(255,255,255,0.15)); background: transparent; color: inherit; font-size: 0.85rem; font-family: ui-monospace, monospace; box-sizing: border-box; resize: vertical; min-height: 16rem; max-height: 40rem; line-height: 1.5;"><?= htmlspecialchars($rawSystem !== '' ? $rawSystem : $tplSystem) ?></textarea>
         </div>
 
-        <?php if (!$isRules): ?>
         <div style="margin-bottom: 0.75rem;">
             <label style="display: block; font-size: 0.8rem; color: var(--ios-text-secondary); margin-bottom: 0.25rem;">Mẫu nội dung gửi AI (dùng <code>{{biến}}</code>)</label>
             <textarea name="user_template" rows="6" style="width: 100%; padding: 0.6rem 0.7rem; border-radius: var(--radius-sm); border: 1px solid var(--ios-border, rgba(255,255,255,0.15)); background: transparent; color: inherit; font-size: 0.85rem; font-family: ui-monospace, monospace; box-sizing: border-box; resize: vertical; min-height: 8rem; max-height: 40rem; line-height: 1.5;"><?= htmlspecialchars($rawUser !== '' ? $rawUser : $tplUser) ?></textarea>
         </div>
-        <?php endif; ?>
 
         <div style="display: flex; justify-content: flex-end;">
             <button type="submit" class="glass-btn" style="white-space: nowrap;">💾 Lưu Prompt Vào File</button>

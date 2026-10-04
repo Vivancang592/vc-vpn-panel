@@ -67,7 +67,7 @@ require __DIR__ . '/_tab-header.php';
         </div>
         <p style="font-size: 0.82rem; color: var(--ios-text-secondary); margin-bottom: 0.75rem;">
             AI tự trả lời tin nhắn khách trên khung chat website qua module <code>support_chat</code>,
-            tuân thủ Nội Quy <code>rules_auto_reply</code> (tối đa 3–4 câu, không markdown, không bịa giá,
+            tuân thủ nội quy trong <code>support_chat</code> (tối đa 3–4 câu, không markdown, không bịa giá,
             không xin mật khẩu/OTP).
         </p>
         <div style="font-size: 0.8rem; color: var(--ios-text-secondary);">
@@ -85,7 +85,7 @@ require __DIR__ . '/_tab-header.php';
         </div>
         <p style="font-size: 0.82rem; color: var(--ios-text-secondary); margin-bottom: 0.75rem;">
             AI tự trả lời bình luận bài viết fanpage (1–2 câu) qua module <code>fanpage_comment</code>,
-            cùng Nội Quy <code>rules_auto_reply</code>. Bật/tắt từng kênh tại
+            cùng nội quy đã gộp sẵn trong prompt. Bật/tắt từng kênh tại
             <a href="/admin/settings" style="color: var(--ios-blue);">Cài Đặt Hệ Thống</a>.
         </p>
         <div style="font-size: 0.8rem; color: var(--ios-text-secondary);">
@@ -290,7 +290,7 @@ require __DIR__ . '/_tab-header.php';
 <div class="glass-card" style="padding: 1rem 1.25rem; width: 100%; box-sizing: border-box; border-left: 3px solid var(--ios-blue);">
     <div style="font-size: 0.8rem; color: var(--ios-text-secondary); line-height: 1.7;">
         💡 Nội dung trả lời được điều khiển bởi prompt <code>support_chat</code> / <code>fanpage_comment</code> và
-        Nội Quy <code>rules_auto_reply</code>. Sửa tại
+        Nội quy đã được gộp sẵn trong prompt. Sửa tại
         <a href="/admin/ai/settings" style="color: var(--ios-blue);">Cấu Hình AI → Nội Quy Hệ Thống</a>.
         Tab này chỉ theo dõi — không gửi tin nhắn thử theo đúng thiết kế D7.
     </div>

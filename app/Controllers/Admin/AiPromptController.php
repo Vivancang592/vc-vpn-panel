@@ -35,11 +35,7 @@ final class AiPromptController extends AiBaseController
         // Mở trang Nội Quy Hệ Thống không kèm query string: chọn key đầu tiên
         // trước khi nạp template để dropdown và textarea luôn cùng một nội dung.
         if ($promptKey === '') {
-            $rulesKeys = array_values(array_filter(
-                $this->registry()->defaultKeys(),
-                static fn (string $key): bool => str_starts_with($key, 'rules_')
-            ));
-            $promptKey = $rulesKeys[0] ?? '';
+            $promptKey = $this->registry()->defaultKeys()[0] ?? '';
         }
 
         // Nội dung THÔ hiện hành (file → mặc định) để Admin bắt đầu sửa.
@@ -52,19 +48,14 @@ final class AiPromptController extends AiBaseController
 
         $store = $this->registry()->fileStore();
 
-        // Dropdown chỉ liệt kê 4 NỘI QUY: prompt chức năng (sinh bài viết, sinh ảnh,
-        // sinh video, TTS...) được soạn trực tiếp trong form "Prompt Trực Tiếp"
-        // của từng tab chức năng, không cần chọn ở đây.
-        $rulesKeys = array_values(array_filter(
-            $this->registry()->defaultKeys(),
-            static fn (string $key): bool => str_starts_with($key, 'rules_')
-        ));
+        // Dropdown liệt kê toàn bộ prompt chức năng (nội quy đã gộp sẵn trong từng file).
+        $defaultKeys = $this->registry()->defaultKeys();
 
         $this->render('admin.ai.prompt-edit', [
             'activeMenu'      => 'ai-settings',
             'pageTitle'       => 'Prompt AI - Quản Trị Hệ Thống',
             'promptKey'       => $promptKey,
-            'defaultKeys'     => $rulesKeys,
+            'defaultKeys'     => $defaultKeys,
             'defaultTemplate' => $defaultTemplate,
             'rawTemplate'     => $rawTemplate,
             'filePath'        => $promptKey !== '' ? $store->path($promptKey) : '',

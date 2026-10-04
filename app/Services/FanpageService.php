@@ -268,13 +268,6 @@ class FanpageService
             $systemPrompt .= "\n\nNguồn: khách đang bình luận công khai trên FACEBOOK Fanpage (KHÔNG phải chat website).";
         }
 
-        // NỘI QUY AI (rules_auto_reply) ghép TRƯỚC system prompt — một điểm
-        // merge duy nhất, áp dụng cho cả luồng file/DB và luồng dựng mặc định.
-        $rulesBlock = $this->autoReplyRulesBlock();
-        if ($rulesBlock !== '') {
-            $systemPrompt = $rulesBlock . "\n\n" . $systemPrompt;
-        }
-
         $messages = [
             ['role' => 'system', 'content' => $systemPrompt],
             ['role' => 'user', 'content' => $userPrompt]
@@ -402,28 +395,6 @@ class FanpageService
             return $text !== '' ? $text : null;
         } catch (\Throwable) {
             return null;
-        }
-    }
-
-    /**
-     * Đọc NỘI QUY AI nhóm trả lời tự động (rules_auto_reply) để ghép vào ĐẦU
-     * system prompt trả lời bình luận. Trả về '' nếu nội quy chưa cấu hình.
-     */
-    private function autoReplyRulesBlock(): string
-    {
-        try {
-            $registry = new \App\AI\Core\PromptRegistry();
-            $raw = $registry->rawRules('rules_auto_reply');
-
-            if (!is_array($raw) || ($raw['source'] ?? 'none') === 'none') {
-                return '';
-            }
-
-            $text = trim((string) ($raw['system'] ?? ''));
-
-            return $text !== '' ? $text . "\n(Đây là NỘI QUY bắt buộc — mọi quy tắc dưới đây phải được tuân thủ khi viết câu trả lời.)" : '';
-        } catch (\Throwable) {
-            return '';
         }
     }
 

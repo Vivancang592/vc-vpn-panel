@@ -74,35 +74,35 @@ abstract class AiBaseController extends BaseController
             'title'       => 'Tạo Ảnh Bằng AI',
             'subtitle'    => 'Nhập prompt mô tả ảnh muốn tạo — kết quả hiển thị theo lưới ở Thư Mục Tab public/uploads/ai/image.',
             'module_key'  => 'image_generation',
-            'prompt_keys' => ['image_generation', 'rules_image'],
+            'prompt_keys' => ['image_generation'],
             'capability'  => 'image',
         ],
         'ai-video' => [
             'title'       => 'Tạo Video Bằng AI',
             'subtitle'    => 'Nhập prompt mô tả video muốn tạo — kết quả hiển thị theo lưới ở Thư Mục Tab public/uploads/ai/video.',
             'module_key'  => 'video_generation',
-            'prompt_keys' => ['video_generation', 'rules_video'],
+            'prompt_keys' => ['video_generation'],
             'capability'  => 'video',
         ],
         'ai-dubbing' => [
             'title'       => 'Tạo Giọng Đọc Bằng AI',
             'subtitle'    => 'Nhập lời thoại cần lồng tiếng, chọn giọng + model — file MP3 tạo xong hiển thị theo lưới ở Thư Mục Tab public/uploads/ai/audio.',
             'module_key'  => 'audio_tts',
-            'prompt_keys' => ['audio_tts', 'rules_video_dubbing'],
+            'prompt_keys' => ['audio_tts'],
             'capability'  => 'audio',
         ],
         'ai-fanpage' => [
             'title'       => 'Nội Dung Fanpage',
             'subtitle'    => 'Giao AI viết bài theo chủ đề, theo dõi tiến trình và quản lý Danh Sách Bài Viết (xem, copy prompt, lên lịch đăng).',
             'module_key'  => null,
-            'prompt_keys' => ['content_article', 'image_generation', 'rules_fanpage_content'],
+            'prompt_keys' => ['content_article', 'image_generation'],
             'capability'  => 'text',
         ],
         'ai-reply' => [
             'title'       => 'Trả Lời Tự Động',
             'subtitle'    => 'Trạng thái auto-reply chat & bình luận, Nội Quy AI và hội thoại khách.',
             'module_key'  => null,
-            'prompt_keys' => ['support_chat', 'rules_auto_reply'],
+            'prompt_keys' => ['support_chat'],
             'capability'  => null,
         ],
         'ai-settings' => [
@@ -493,11 +493,6 @@ abstract class AiBaseController extends BaseController
             'audio_tts'        => 'Chuyển văn bản thành giọng nói',
             'fanpage_comment'  => 'Trả lời bình luận fanpage',
             'support_chat'     => 'Hội thoại hỗ trợ khách hàng',
-            'rules_video'           => 'Nội quy tạo video',
-            'rules_video_dubbing'   => 'Nội quy lời thoại/giọng đọc',
-            'rules_image'           => 'Nội quy tạo ảnh',
-            'rules_fanpage_content' => 'Nội quy nội dung fanpage',
-            'rules_auto_reply'      => 'Nội quy trả lời tự động',
         ];
 
         return $map[$promptKey] ?? $this->moduleLabel($promptKey);
@@ -520,8 +515,8 @@ abstract class AiBaseController extends BaseController
             $promptLabels[$key] = $this->promptLabel($key);
         }
 
-        // Bổ sung nhãn prompt thuộc các tab (kể cả key nội quy rules_* chưa
-        // có trong ModuleRegistry) để tab hiển thị tiếng Việt.
+        // Bổ sung nhãn prompt thuộc các tab (chưa có trong ModuleRegistry)
+        // để tab hiển thị tiếng Việt.
         foreach (self::TAB_CONFIGS as $tabCfg) {
             foreach ((array) $tabCfg['prompt_keys'] as $key) {
                 $key = (string) $key;

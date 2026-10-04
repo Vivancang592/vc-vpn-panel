@@ -25,7 +25,7 @@ require __DIR__ . '/_tab-header.php';
     <div>
         <label style="display: block; font-weight: 600; font-size: 0.85rem; margin-bottom: 0.35rem;">Lời thoại <span style="color: var(--ios-danger);">*</span></label>
         <textarea name="text" rows="4" maxlength="10000" class="glass-input" style="width: 100%; font-size: 0.88rem; line-height: 1.6; resize: vertical; min-height: 6rem;" placeholder="Ví dụ: Bạn đang mất thời gian chờ game load? VPN của chúng tôi giúp giảm lag ngay hôm nay..." required></textarea>
-        <span style="font-size: 0.72rem; color: var(--ios-text-secondary);">Tối đa 10000 ký tự. Nội Quy AI (rules_video_dubbing) ở header tự động được áp dụng.</span>
+        <span style="font-size: 0.72rem; color: var(--ios-text-secondary);">Tối đa 10000 ký tự. Nội quy AI đã được gộp sẵn trong System Prompt.</span>
     </div>
     <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(11rem, 1fr)); gap: 0.9rem; align-items: end;">
         <div>
