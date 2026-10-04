@@ -360,8 +360,12 @@ class OrderService
             }
 
             // 5. Tăng lượt sử dụng mã giảm giá (Coupon) nếu có
-            if ($couponId !== null && $couponId > 0 && class_exists('App\Models\Coupon')) {
-                (new Coupon())->incrementUsedCount($couponId);
+            // Ưu tiên couponId truyền vào (luồng balance); fallback về coupon_id
+            // lưu trên đơn để mọi luồng kích hoạt (admin duyệt, webhook, đối soát)
+            // đều khấu trừ lượt dùng.
+            $couponIdToCount = ($couponId !== null && $couponId > 0) ? $couponId : (int) ($order['coupon_id'] ?? 0);
+            if ($couponIdToCount > 0 && class_exists('App\Models\Coupon')) {
+                (new Coupon())->incrementUsedCount($couponIdToCount);
             }
 
             // 6. Xử lý tính hoa hồng giới thiệu (Referral Commission)
