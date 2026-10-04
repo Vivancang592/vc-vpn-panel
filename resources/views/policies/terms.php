@@ -18,8 +18,23 @@ ob_start();
         <p class="policy-meta">Cập nhật lần cuối: 03/10/2026 &middot; Last updated: 03/10/2026</p>
     </header>
 
-    <article class="glass-card policy-content">
-        <section class="policy-section">
+    <div class="policy-layout">
+        <nav class="policy-toc" aria-label="Mục lục trang">
+            <p class="policy-toc-title">Mục lục &middot; Contents</p>
+            <ol>
+                <li><a href="#muc-1">1. Chấp nhận điều khoản</a></li>
+                <li><a href="#muc-2">2. Tài khoản và trách nhiệm của bạn</a></li>
+                <li><a href="#muc-3">3. Sử dụng dịch vụ hợp pháp</a></li>
+                <li><a href="#muc-4">4. Thanh toán và thay đổi dịch vụ</a></li>
+                <li><a href="#muc-5">5. Tạm ngừng hoặc chấm dứt dịch vụ</a></li>
+                <li><a href="#muc-6">6. Giới hạn trách nhiệm</a></li>
+                <li><a href="#muc-7">7. Giới hạn số thiết bị và thông báo qua email</a></li>
+                <li><a href="#muc-8">8. Thay đổi điều khoản</a></li>
+            </ol>
+        </nav>
+
+        <article class="policy-content">
+        <section class="policy-section" id="muc-1">
             <h2>1. Chấp nhận điều khoản</h2>
             <p>Khi tạo tài khoản, truy cập hoặc sử dụng dịch vụ, bạn xác nhận đã đọc, hiểu và đồng ý với các điều khoản này. Nếu không đồng ý, vui lòng không tiếp tục sử dụng dịch vụ.</p>
             <div class="policy-en" lang="en">
@@ -28,7 +43,7 @@ ob_start();
             </div>
         </section>
 
-        <section class="policy-section">
+        <section class="policy-section" id="muc-2">
             <h2>2. Tài khoản và trách nhiệm của bạn</h2>
             <ul class="policy-list">
                 <li>Cung cấp thông tin chính xác, đầy đủ và cập nhật khi đăng ký tài khoản.</li>
@@ -47,7 +62,7 @@ ob_start();
             </div>
         </section>
 
-        <section class="policy-section">
+        <section class="policy-section" id="muc-3">
             <h2>3. Sử dụng dịch vụ hợp pháp</h2>
             <p>Bạn cam kết sử dụng dịch vụ phù hợp với pháp luật hiện hành và không xâm phạm quyền, lợi ích hợp pháp của tổ chức hoặc cá nhân khác.</p>
             <ul class="policy-list">
@@ -66,7 +81,7 @@ ob_start();
             </div>
         </section>
 
-        <section class="policy-section">
+        <section class="policy-section" id="muc-4">
             <h2>4. Thanh toán và thay đổi dịch vụ</h2>
             <p>Giá, quyền lợi, chu kỳ sử dụng và phương thức thanh toán của từng gói được hiển thị tại thời điểm đặt hàng. Chúng tôi có thể điều chỉnh giá, tính năng hoặc hạ tầng để vận hành dịch vụ; thay đổi quan trọng sẽ được công bố hợp lý trước khi áp dụng khi có thể.</p>
             <div class="policy-en" lang="en">
@@ -75,7 +90,7 @@ ob_start();
             </div>
         </section>
 
-        <section class="policy-section">
+        <section class="policy-section" id="muc-5">
             <h2>5. Tạm ngừng hoặc chấm dứt dịch vụ</h2>
             <p>Chúng tôi có thể tạm ngừng hoặc chấm dứt quyền truy cập khi có căn cứ cho thấy tài khoản vi phạm điều khoản, gây rủi ro an toàn, hoặc theo yêu cầu hợp pháp của cơ quan có thẩm quyền. Việc này không loại trừ các quyền và biện pháp xử lý khác theo pháp luật.</p>
             <div class="policy-en" lang="en">
@@ -84,7 +99,7 @@ ob_start();
             </div>
         </section>
 
-        <section class="policy-section">
+        <section class="policy-section" id="muc-6">
             <h2>6. Giới hạn trách nhiệm</h2>
             <p>Dịch vụ được cung cấp trên cơ sở nỗ lực hợp lý để duy trì tính ổn định và an toàn. Tuy nhiên, chúng tôi không bảo đảm dịch vụ luôn không gián đoạn hoặc không có lỗi do các yếu tố ngoài khả năng kiểm soát, như sự cố mạng, thiết bị của người dùng hoặc sự kiện bất khả kháng.</p>
             <div class="policy-en" lang="en">
@@ -93,7 +108,7 @@ ob_start();
             </div>
         </section>
 
-        <section class="policy-section">
+        <section class="policy-section" id="muc-7">
             <h2>7. Giới hạn số thiết bị và thông báo qua email</h2>
             <p>Mỗi gói dịch vụ quy định số thiết bị (số địa chỉ IP) đồng thời được phép kết nối. Khi hệ thống phát hiện số kết nối vượt quá hạn mức của gói, một cơ chế khóa mạng tạm thời (mặc định 60 giây) sẽ được áp dụng để bảo vệ tài khoản và hạ tầng. Hệ thống đồng thời gửi email thông báo đến địa chỉ đăng ký của bạn. Việc kết nối vượt hạn mức lặp lại có thể bị xem xét theo mục 2 và mục 5.</p>
             <div class="policy-en" lang="en">
@@ -102,7 +117,7 @@ ob_start();
             </div>
         </section>
 
-        <section class="policy-section">
+        <section class="policy-section" id="muc-8">
             <h2>8. Thay đổi điều khoản</h2>
             <p>Chúng tôi có thể cập nhật điều khoản này để phù hợp với thay đổi của dịch vụ hoặc quy định pháp luật. Bản cập nhật có hiệu lực khi được đăng trên trang này, trừ khi có thông báo khác.</p>
             <div class="policy-en" lang="en">
@@ -120,7 +135,8 @@ ob_start();
             <?php endif; ?>
             <span lang="en"> For questions about these terms, please contact our support team.</span>
         </aside>
-    </article>
+        </article>
+    </div>
 </section>
 
 <?php

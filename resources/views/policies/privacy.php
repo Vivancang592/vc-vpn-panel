@@ -18,8 +18,23 @@ ob_start();
         <p class="policy-meta">Cập nhật lần cuối: 03/10/2026 &middot; Last updated: 03/10/2026</p>
     </header>
 
-    <article class="glass-card policy-content">
-        <section class="policy-section">
+    <div class="policy-layout">
+        <nav class="policy-toc" aria-label="Mục lục trang">
+            <p class="policy-toc-title">Mục lục &middot; Contents</p>
+            <ol>
+                <li><a href="#muc-1">1. Phạm vi áp dụng</a></li>
+                <li><a href="#muc-2">2. Thông tin chúng tôi có thể thu thập</a></li>
+                <li><a href="#muc-3">3. Mục đích sử dụng thông tin</a></li>
+                <li><a href="#muc-4">4. Chia sẻ thông tin</a></li>
+                <li><a href="#muc-5">5. Lưu trữ và bảo mật</a></li>
+                <li><a href="#muc-6">6. Quyền của bạn</a></li>
+                <li><a href="#muc-7">7. Cookie và công nghệ tương tự</a></li>
+                <li><a href="#muc-8">8. Cập nhật chính sách</a></li>
+            </ol>
+        </nav>
+
+        <article class="policy-content">
+        <section class="policy-section" id="muc-1">
             <h2>1. Phạm vi áp dụng</h2>
             <p>Chính sách này áp dụng cho thông tin cá nhân và dữ liệu kỹ thuật được thu thập khi bạn đăng ký, truy cập hoặc sử dụng dịch vụ của chúng tôi.</p>
             <div class="policy-en" lang="en">
@@ -28,7 +43,7 @@ ob_start();
             </div>
         </section>
 
-        <section class="policy-section">
+        <section class="policy-section" id="muc-2">
             <h2>2. Thông tin chúng tôi có thể thu thập</h2>
             <ul class="policy-list">
                 <li>Thông tin tài khoản như tên người dùng, họ tên, email và thông tin bạn tự cung cấp.</li>
@@ -49,7 +64,7 @@ ob_start();
             </div>
         </section>
 
-        <section class="policy-section">
+        <section class="policy-section" id="muc-3">
             <h2>3. Mục đích sử dụng thông tin</h2>
             <p>Chúng tôi sử dụng thông tin để tạo và quản lý tài khoản, cung cấp dịch vụ, xử lý thanh toán, hỗ trợ khách hàng, bảo vệ hệ thống, phát hiện hành vi lạm dụng và thực hiện nghĩa vụ pháp lý khi cần thiết.</p>
             <div class="policy-en" lang="en">
@@ -58,7 +73,7 @@ ob_start();
             </div>
         </section>
 
-        <section class="policy-section">
+        <section class="policy-section" id="muc-4">
             <h2>4. Chia sẻ thông tin</h2>
             <p>Chúng tôi không bán thông tin cá nhân của bạn. Thông tin chỉ có thể được chia sẻ ở mức cần thiết với nhà cung cấp hạ tầng, cổng thanh toán hoặc đối tác hỗ trợ vận hành; theo yêu cầu hợp pháp của cơ quan có thẩm quyền; hoặc khi cần bảo vệ quyền, tài sản và an toàn của người dùng hay hệ thống.</p>
             <div class="policy-en" lang="en">
@@ -67,7 +82,7 @@ ob_start();
             </div>
         </section>
 
-        <section class="policy-section">
+        <section class="policy-section" id="muc-5">
             <h2>5. Lưu trữ và bảo mật</h2>
             <p>Thông tin được lưu giữ trong thời gian cần thiết để thực hiện các mục đích nêu trên, giải quyết tranh chấp và đáp ứng nghĩa vụ pháp lý. Chúng tôi áp dụng các biện pháp kỹ thuật và tổ chức hợp lý để hạn chế truy cập, sử dụng hoặc tiết lộ trái phép.</p>
             <div class="policy-en" lang="en">
@@ -76,7 +91,7 @@ ob_start();
             </div>
         </section>
 
-        <section class="policy-section">
+        <section class="policy-section" id="muc-6">
             <h2>6. Quyền của bạn</h2>
             <p>Tùy theo quy định pháp luật áp dụng, bạn có thể yêu cầu truy cập, chỉnh sửa hoặc xóa thông tin cá nhân của mình. Một số dữ liệu có thể cần được lưu giữ để bảo mật, phòng chống gian lận hoặc đáp ứng nghĩa vụ pháp lý.</p>
             <div class="policy-en" lang="en">
@@ -85,7 +100,7 @@ ob_start();
             </div>
         </section>
 
-        <section class="policy-section">
+        <section class="policy-section" id="muc-7">
             <h2>7. Cookie và công nghệ tương tự</h2>
             <p>Chúng tôi có thể sử dụng cookie hoặc công nghệ tương tự cần thiết cho đăng nhập, duy trì phiên làm việc và cải thiện trải nghiệm. Bạn có thể quản lý cookie trong trình duyệt, tuy nhiên một số chức năng có thể không hoạt động đầy đủ nếu bạn tắt chúng.</p>
             <div class="policy-en" lang="en">
@@ -94,7 +109,7 @@ ob_start();
             </div>
         </section>
 
-        <section class="policy-section">
+        <section class="policy-section" id="muc-8">
             <h2>8. Cập nhật chính sách</h2>
             <p>Chính sách này có thể được cập nhật khi dịch vụ hoặc quy định pháp luật thay đổi. Phiên bản mới nhất luôn được công bố trên trang này.</p>
             <div class="policy-en" lang="en">
@@ -112,7 +127,8 @@ ob_start();
             <?php endif; ?>
             <span lang="en"> Send data requests from your registered email address so we can verify and assist you.</span>
         </aside>
-    </article>
+        </article>
+    </div>
 </section>
 
 <?php
