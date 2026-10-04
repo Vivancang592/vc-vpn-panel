@@ -80,8 +80,15 @@ $renderGroupTabs = function () use ($activeAdminGroup, $activeMenu) {
  * chỉ trả về nội dung .admin-content + sidebar, KHÔNG render trang đầy đủ.
  *Điều hướng nội bộ trong /admin vì thế không reload trang, không nháy
  * màn hình (xem public/assets/js/admin.js). --- */
+
+// Toast trung tâm: xây MỘT lần, dùng cho cả 2 nhánh (partial JSON + full page)
+ob_start();
+require __DIR__ . '/_toast.php';
+$vcToastHtml = ob_get_clean();
+
 if (($_SERVER['HTTP_X_VC_PARTIAL'] ?? '') === '1') {
     ob_start();
+    echo $vcToastHtml;    // toast hiện trên trang đích khi fragment thay .admin-content
     echo $renderGroupTabs();
     echo $content ?? '';
     $fragmentMain = ob_get_clean();
@@ -121,6 +128,7 @@ require_once __DIR__ . '/header.php';
 
         <main class="admin-main">
             <div class="admin-content">
+                <?= $vcToastHtml ?>
                 <?= $renderGroupTabs() ?>
                 <?= $content ?? '' ?>
             </div>

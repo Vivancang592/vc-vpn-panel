@@ -156,6 +156,36 @@ abstract class BaseController
             }
         }
 
+        // Thu flash thông báo vào $vcToasts TRƯỚC khi render view admin.
+        // Mọi trang admin đều đi qua render() này nên toast hiển thị đúng trang
+        // sau mỗi thao tác, với màu viền theo trạng thái (success/danger/warning/info)
+        // và không còn phụ thuộc đoạn code flash copy trong từng view.
+        if (strpos($view, 'admin.') === 0) {
+            $vcToasts = [];
+
+            if (!empty($_SESSION['flash_message'])) {
+                $vcToasts[] = [
+                    'message' => (string)$_SESSION['flash_message'],
+                    'type'    => (string)($_SESSION['flash_type'] ?? 'info'),
+                ];
+                unset($_SESSION['flash_message'], $_SESSION['flash_type']);
+            }
+
+            if (!empty($_SESSION['success'])) {
+                $vcToasts[] = ['message' => (string)$_SESSION['success'], 'type' => 'success'];
+                unset($_SESSION['success']);
+            }
+
+            if (!empty($_SESSION['error'])) {
+                $vcToasts[] = ['message' => (string)$_SESSION['error'], 'type' => 'danger'];
+                unset($_SESSION['error']);
+            }
+
+            if ($vcToasts) {
+                $data['vcToasts'] = $vcToasts;
+            }
+        }
+
         extract($data);
         $viewFile = BASE_PATH . '/resources/views/' . str_replace('.', '/', $view) . '.php';
 
