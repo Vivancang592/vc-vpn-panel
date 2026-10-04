@@ -830,6 +830,16 @@ $_SESSION['success'] = 'Đã tạo đơn hàng ' . $orderCode . ' thành công. 
             ];
         }
 
+        $currentUserId = (int) ($_SESSION['user_id'] ?? 0);
+        if (!$couponModel->isAllowedForUser($coupon, $currentUserId)) {
+            return [
+                'valid' => false,
+                'discount_amount' => 0,
+                'final_amount' => $originalPrice,
+                'message' => 'Mã giảm giá này không áp dụng cho tài khoản của bạn.'
+            ];
+        }
+
         $discountType = $coupon['discount_type'] ?? 'percent';
         $discountValue = (float) ($coupon['discount_value'] ?? 0);
         $discountAmount = $discountType === 'percent'

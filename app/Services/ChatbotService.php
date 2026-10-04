@@ -414,6 +414,20 @@ class ChatbotService
         $couponModel = new Coupon();
         $activeCoupons = $couponModel->getActiveCoupons();
 
+        // Mã đã gán riêng cho user: chỉ hiện cho user được gán (khách
+        // chưa đăng nhập user_id=0 chỉ thấy mã công khai).
+        if (!empty($activeCoupons)) {
+            $chatUserId = (int) ($context['user_id'] ?? 0);
+            $assignments = $couponModel->getAssignmentsForCoupons(array_column($activeCoupons, 'id'));
+            $activeCoupons = array_values(array_filter(
+                $activeCoupons,
+                static function ($c) use ($assignments, $chatUserId) {
+                    $assigned = $assignments[(int) $c['id']] ?? [];
+                    return empty($assigned) || in_array($chatUserId, array_keys($assigned), true);
+                }
+            ));
+        }
+
         $lines[] = "\n[2. MÃ GIẢM GIÁ ĐANG HOẠT ĐỘNG (DÙNG ĐỂ QUẢNG CÁO & CHỐT ĐƠN)]:";
         if (!empty($activeCoupons)) {
             foreach ($activeCoupons as $c) {

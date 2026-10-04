@@ -130,6 +130,20 @@ CREATE TABLE `vc_coupons` (
     `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+-- Gán mã giảm giá riêng cho user: không có bản ghi = công khai (mọi user
+-- dùng được); có bản ghi = chỉ user được gán mới dùng được mã đó.
+CREATE TABLE `vc_coupon_users` (
+    `coupon_id` INT UNSIGNED NOT NULL,
+    `user_id` BIGINT UNSIGNED NOT NULL,
+    `created_at` DATETIME DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (`coupon_id`, `user_id`),
+    KEY `idx_coupon_users_user` (`user_id`),
+    CONSTRAINT `fk_coupon_users_coupon` FOREIGN KEY (`coupon_id`)
+        REFERENCES `vc_coupons` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
+    CONSTRAINT `fk_coupon_users_user` FOREIGN KEY (`user_id`)
+        REFERENCES `vc_users` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
 CREATE TABLE `vc_orders` (
     `id` BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     `order_code` VARCHAR(50) NOT NULL UNIQUE,

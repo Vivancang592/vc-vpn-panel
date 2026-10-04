@@ -143,6 +143,8 @@ return [
     'GET /admin/coupons/edit'     => ['Admin\CouponController', 'showEdit'],
     'POST /admin/coupons/edit'    => ['Admin\CouponController', 'edit'],
     'POST /admin/coupons/delete'   => ['Admin\CouponController', 'delete'],
+    'POST /admin/coupons/assign'   => ['Admin\CouponController', 'assign'],
+    'POST /admin/coupons/unassign' => ['Admin\CouponController', 'unassign'],
 
     // Quản lý đơn hàng (Orders)
     'GET /admin/orders'                => ['Admin\OrderController', 'index'],

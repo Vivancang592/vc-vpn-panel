@@ -44,8 +44,9 @@ class OrderService
             if ($coupon && ($coupon['status'] ?? '') === 'active') {
                 $isExpired = !empty($coupon['expires_at']) && strtotime($coupon['expires_at']) < time();
                 $isMaxUsed = !empty($coupon['max_uses']) && ((int)($coupon['used_count'] ?? 0) >= (int)($coupon['max_uses']));
+                $isAssignable = $couponModel->isAllowedForUser($coupon, $userId);
 
-                if (!$isExpired && !$isMaxUsed) {
+                if (!$isExpired && !$isMaxUsed && $isAssignable) {
                     $couponId = (int)$coupon['id'];
                     $discountType = $coupon['discount_type'] ?? 'percent';
                     $discountVal  = (float)($coupon['discount_value'] ?? 0);
