@@ -101,6 +101,28 @@ ob_start();
             </div>
         </div>
 
+        <!-- Gói Áp Dụng Mã -->
+        <div style="background: rgba(255, 149, 0, 0.05); border: 1px solid rgba(255, 149, 0, 0.18); border-radius: var(--radius-md); padding: 1.1rem 1.25rem; width: 100%; box-sizing: border-box;">
+            <div style="font-weight: 700; font-size: 0.95rem; color: var(--ios-text); margin-bottom: 0.3rem;">📦 Gói Áp Dụng Mã</div>
+            <div style="font-size: 0.82rem; color: var(--ios-text-secondary); margin-bottom: 0.85rem; line-height: 1.5;">
+                Bỏ chọn tất cả = mã áp dụng cho <strong>mọi gói dịch vụ</strong>. Chọn gói = <strong>chỉ gói được chọn</strong> mới áp dụng mã này. Thay đổi lưu cùng nút "Cập Nhật" bên dưới.
+            </div>
+            <?php $plansList = $plans ?? []; $checkedPlans = array_map('intval', $assigned_plan_ids ?? []); ?>
+            <?php if (empty($plansList)): ?>
+                <div style="font-size: 0.82rem; color: var(--ios-text-secondary); font-style: italic;">Chưa có gói dịch vụ nào trong hệ thống.</div>
+            <?php else: ?>
+                <div style="display: flex; flex-wrap: wrap; gap: 0.6rem 1.25rem;">
+                    <?php foreach ($plansList as $p): ?>
+                        <label style="display: inline-flex; align-items: center; gap: 0.45rem; font-size: 0.85rem; color: var(--ios-text); cursor: pointer; font-weight: 500;">
+                            <input type="checkbox" name="plan_ids[]" value="<?= (int)$p['id'] ?>" <?= in_array((int)$p['id'], $checkedPlans, true) ? 'checked' : '' ?> style="accent-color: #ff9500; width: 16px; height: 16px; cursor: pointer;">
+                            <?= htmlspecialchars($p['name']) ?>
+                            <span style="color: var(--ios-text-secondary); font-size: 0.75rem;"><?= number_format((float)$p['price'], 0, '.', ',') ?>đ</span>
+                        </label>
+                    <?php endforeach; ?>
+                </div>
+            <?php endif; ?>
+        </div>
+
         <div style="display: flex; justify-content: flex-end; margin-top: 0.5rem;">
             <button type="submit" class="glass-btn" style="padding: 0.65rem 1.75rem; font-size: 0.9rem;">💾 Cập Nhật Thông Tin</button>
         </div>

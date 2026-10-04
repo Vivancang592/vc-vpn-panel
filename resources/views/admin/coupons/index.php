@@ -75,6 +75,7 @@ ob_start();
                     <th>Ngày Hết Hạn</th>
                     <th style="text-align: center;">Trạng Thái</th>
                     <th>Đối Tượng</th>
+                    <th>Gói Áp Dụng</th>
                     <th style="text-align: right;">Thao Tác</th>
                 </tr>
             </thead>
@@ -131,6 +132,16 @@ ob_start();
                                     </div>
                                 <?php endif; ?>
                             </td>
+                            <td>
+                                <?php if ((int)($coupon['plan_count'] ?? 0) === 0): ?>
+                                    <span style="padding: 0.2rem 0.5rem; border-radius: var(--radius-sm); font-size: 0.75rem; font-weight: 700; background: rgba(255, 149, 0, 0.15); color: #ff9500;">📦 Tất cả gói</span>
+                                <?php else: ?>
+                                    <span style="padding: 0.2rem 0.5rem; border-radius: var(--radius-sm); font-size: 0.75rem; font-weight: 700; background: rgba(255, 149, 0, 0.22); color: #c86b00;">📦 <?= (int)$coupon['plan_count'] ?> gói</span>
+                                    <div style="font-size: 0.72rem; color: var(--ios-text-secondary); margin-top: 2px; max-width: 160px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="<?= htmlspecialchars($coupon['plan_names'] ?? '') ?>">
+                                        <?= htmlspecialchars($coupon['plan_names'] ?? '') ?>
+                                    </div>
+                                <?php endif; ?>
+                            </td>
                             <td style="text-align: right;">
                                 <div class="action-dropdown">
                                         <button type="button" class="action-btn" title="Thao tác">⋮</button>
@@ -151,7 +162,7 @@ ob_start();
                     <?php endforeach; ?>
                 <?php else: ?>
                     <tr>
-                        <td colspan="10" style="text-align: center; padding: 2rem; color: var(--ios-text-secondary);">Chưa có mã giảm giá nào được tạo.</td>
+                        <td colspan="11" style="text-align: center; padding: 2rem; color: var(--ios-text-secondary);">Chưa có mã giảm giá nào được tạo.</td>
                     </tr>
                 <?php endif; ?>
             </tbody>

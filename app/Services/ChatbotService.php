@@ -430,14 +430,20 @@ class ChatbotService
 
         $lines[] = "\n[2. MÃ GIẢM GIÁ ĐANG HOẠT ĐỘNG (DÙNG ĐỂ QUẢNG CÁO & CHỐT ĐƠN)]:";
         if (!empty($activeCoupons)) {
+            // Gói áp dụng: không có bản ghi = mọi gói; có = chỉ gói được chọn
+            $planMap = $couponModel->getPlanAssignmentsForCoupons(array_column($activeCoupons, 'id'));
             foreach ($activeCoupons as $c) {
                 $discountStr = ($c['discount_type'] === 'percent')
                     ? ((float) $c['discount_value'] . '%')
                     : (number_format((float) $c['discount_value'], 0, '.', ',') . ' VND');
                 $expireStr = !empty($c['expires_at']) ? (" | HSD: " . date('d/m/Y', strtotime($c['expires_at']))) : ' | Không giới hạn thời gian';
                 $usesLeft = ((int) $c['max_uses'] > 0) ? (" | Còn lại: " . ((int) $c['max_uses'] - (int) $c['used_count']) . " lượt") : '';
+                $assignedPlans = $planMap[(int) $c['id']] ?? [];
+                $planStr = empty($assignedPlans)
+                    ? ' | Áp dụng: mọi gói'
+                    : ' | Áp dụng chỉ: ' . implode(', ', $assignedPlans);
 
-                $lines[] = "• Mã: **`{$c['code']}`** - Giảm: **{$discountStr}**{$expireStr}{$usesLeft}";
+                $lines[] = "• Mã: **`{$c['code']}`** - Giảm: **{$discountStr}**{$expireStr}{$usesLeft}{$planStr}";
             }
             $lines[] = "* LƯU Ý: Khi khách hỏi về giá hoặc có ý định mua, hãy chủ động nhắc khách áp dụng mã giảm giá này ở bước thanh toán để kích thích chốt đơn!";
         } else {

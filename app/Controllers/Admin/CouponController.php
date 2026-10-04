@@ -5,6 +5,7 @@ namespace App\Controllers\Admin;
 use App\Controllers\BaseController;
 use App\Models\Coupon;
 use App\Models\User;
+use App\Models\VpnPlan;
 
 class CouponController extends BaseController
 {
@@ -24,18 +25,25 @@ class CouponController extends BaseController
 
         // Gắn thông tin gán user (công khai / danh sách được gán) cho từng dòng
         $assignments = $this->couponModel->getAssignmentsForCoupons(array_column($coupons, 'id'));
+        $planAssignments = $this->couponModel->getPlanAssignmentsForCoupons(array_column($coupons, 'id'));
         foreach ($coupons as &$coupon) {
             $assigned = $assignments[(int) $coupon['id']] ?? [];
             $coupon['assigned_count']    = count($assigned);
             $coupon['assigned_names']    = implode(', ', $assigned);
             $coupon['assigned_user_ids'] = array_keys($assigned);
+
+            $plansForCoupon = $planAssignments[(int) $coupon['id']] ?? [];
+            $coupon['plan_count'] = count($plansForCoupon);
+            $coupon['plan_names']  = implode(', ', $plansForCoupon);
+            $coupon['plan_ids']    = array_keys($plansForCoupon);
         }
         unset($coupon);
 
         $this->render('admin.coupons.index', [
             'activeMenu' => 'coupons',
             'coupons'    => $coupons,
-            'users'      => (new User())->getAll()
+            'users'      => (new User())->getAll(),
+            'plans'      => (new VpnPlan())->getAll()
         ]);
     }
 
@@ -43,7 +51,9 @@ class CouponController extends BaseController
     public function showCreate(): void
     {
         $this->render('admin.coupons.create', [
-            'activeMenu' => 'coupons'
+            'activeMenu' => 'coupons',
+            'users'      => (new User())->getAll(),
+            'plans'      => (new VpnPlan())->getAll()
         ]);
     }
 
@@ -56,11 +66,19 @@ class CouponController extends BaseController
         $maxUses       = (int)($_POST['max_uses'] ?? 0);
         $expiresAt     = !empty($_POST['expires_at']) ? $_POST['expires_at'] : null;
         $status        = $_POST['status'] ?? 'active';
+        $planIds       = array_map('intval', (array)($_POST['plan_ids'] ?? []));
+        $userIds       = array_filter(array_map('intval', (array)($_POST['assigned_user_ids'] ?? [])), static fn ($v) => $v > 0);
 
         if (empty($code) || $discountValue <= 0) {
             $_SESSION['error'] = 'Vui lòng nhập mã giảm giá và giá trị giảm hợp lệ!';
             $this->redirect('/admin/coupons/create');
             return;
+        }
+
+        // Chống id giả từ request: chỉ giữ user thật sự tồn tại
+        if (!empty($userIds)) {
+            $validIds = array_map('intval', array_column((new User())->getAll(), 'id'));
+            $userIds  = array_values(array_intersect($userIds, $validIds));
         }
 
         $data = [
@@ -74,6 +92,15 @@ class CouponController extends BaseController
         ];
 
         if ($this->couponModel->create($data)) {
+            // Gán user + gói áp dụng (nếu admin có chọn ở form thêm)
+            $newCoupon = $this->couponModel->findByCode($code);
+            $newId     = (int)($newCoupon['id'] ?? 0);
+            if ($newId > 0) {
+                if (!empty($userIds)) {
+                    $this->couponModel->assignUsers($newId, $userIds);
+                }
+                $this->couponModel->setPlans($newId, $planIds); // rỗng = mọi gói
+            }
             $this->logActivity('CREATE_COUPON', 'Tạo mã giảm giá mới: ' . $code);
             $_SESSION['flash_message'] = 'Tạo mã giảm giá thành công!';
             $_SESSION['flash_type']    = 'success';
@@ -98,12 +125,16 @@ class CouponController extends BaseController
 
         // Danh sách user đang được gán riêng cho mã này (id => username)
         $assignMap = $this->couponModel->getAssignmentsForCoupons([$id]);
+        // Danh sách gói đang được áp dụng (id => tên gói), rỗng = mọi gói
+        $planMap   = $this->couponModel->getPlanAssignmentsForCoupons([$id]);
 
         $this->render('admin.coupons.edit', [
-            'activeMenu'     => 'coupons',
-            'coupon'         => $coupon,
-            'assigned_users' => $assignMap[$id] ?? [],
-            'users'          => (new User())->getAll()
+            'activeMenu'       => 'coupons',
+            'coupon'           => $coupon,
+            'assigned_users'   => $assignMap[$id] ?? [],
+            'assigned_plan_ids' => array_keys($planMap[$id] ?? []),
+            'users'            => (new User())->getAll(),
+            'plans'            => (new VpnPlan())->getAll()
         ]);
     }
 
@@ -125,6 +156,7 @@ class CouponController extends BaseController
         $maxUses       = (int)($_POST['max_uses'] ?? 0);
         $expiresAt     = !empty($_POST['expires_at']) ? $_POST['expires_at'] : null;
         $status        = $_POST['status'] ?? 'active';
+        $planIds       = array_map('intval', (array)($_POST['plan_ids'] ?? []));
 
         if (empty($code) || $discountValue <= 0) {
             $_SESSION['error'] = 'Vui lòng nhập mã giảm giá và giá trị giảm hợp lệ!';
@@ -142,6 +174,9 @@ class CouponController extends BaseController
         ];
 
         if ($this->couponModel->update($id, $data)) {
+            // Ghi đè gói áp dụng theo checkbox trên form
+            // (rỗng = không chọn gói nào → áp dụng mọi gói)
+            $this->couponModel->setPlans($id, $planIds);
             $this->logActivity('UPDATE_COUPON', 'Cập nhật mã giảm giá ID #' . $id . ' (' . $code . ')');
             $_SESSION['flash_message'] = 'Cập nhật mã giảm giá thành công!';
             $_SESSION['flash_type']    = 'success';

@@ -202,4 +202,101 @@ class Coupon extends BaseModel
         $stmt->execute([$couponId, $userId]);
         return (int) $stmt->fetchColumn() > 0;
     }
+
+    /**
+     * Ghi đè danh sách GÓI áp dụng cho coupon (replace toàn bộ).
+     * Mảng rỗng = xóa hết = coupon áp dụng cho TẤT CẢ gói.
+     * Plan không tồn tại bị loại bỏ trước khi ghi (chống id giả).
+     * @param int[] $planIds
+     */
+    public function setPlans(int $couponId, array $planIds): bool
+    {
+        if ($couponId <= 0) {
+            return false;
+        }
+        $planIds = array_values(array_unique(array_filter(array_map('intval', $planIds), static fn ($v) => $v > 0)));
+        if (!empty($planIds)) {
+            $placeholders = implode(',', array_fill(0, count($planIds), '?'));
+            $stmt = self::$db->prepare("SELECT `id` FROM `vc_vpn_plans` WHERE `id` IN ({$placeholders})");
+            $stmt->execute($planIds);
+            $planIds = array_map('intval', $stmt->fetchAll(PDO::FETCH_COLUMN) ?: []);
+        }
+
+        $del = self::$db->prepare("DELETE FROM `vc_coupon_plans` WHERE `coupon_id` = ?");
+        $del->execute([$couponId]);
+
+        if (empty($planIds)) {
+            return true; // không chọn gói nào → áp dụng tất cả
+        }
+        $ins = self::$db->prepare("INSERT INTO `vc_coupon_plans` (`coupon_id`, `plan_id`) VALUES (?, ?)");
+        foreach ($planIds as $planId) {
+            $ins->execute([$couponId, $planId]);
+        }
+        return true;
+    }
+
+    /**
+     * Danh sách plan ID được gán cho 1 coupon (rỗng = tất cả gói)
+     * @return int[]
+     */
+    public function getPlanIdsForCoupon(int $couponId): array
+    {
+        if ($couponId <= 0) {
+            return [];
+        }
+        $stmt = self::$db->prepare("SELECT `plan_id` FROM `vc_coupon_plans` WHERE `coupon_id` = ? ORDER BY `plan_id`");
+        $stmt->execute([$couponId]);
+        return array_map('intval', $stmt->fetchAll(PDO::FETCH_COLUMN) ?: []);
+    }
+
+    /**
+     * Gán nhiều coupon: map coupon_id => [plan_id => plan_name] (1 query, tránh N+1)
+     * @param int[] $couponIds
+     * @return array<int, array<int, string>>
+     */
+    public function getPlanAssignmentsForCoupons(array $couponIds): array
+    {
+        $couponIds = array_values(array_unique(array_filter(array_map('intval', $couponIds), static fn ($v) => $v > 0)));
+        if (empty($couponIds)) {
+            return [];
+        }
+        $placeholders = implode(',', array_fill(0, count($couponIds), '?'));
+        $stmt = self::$db->prepare(
+            "SELECT cp.`coupon_id`, cp.`plan_id`, COALESCE(p.`name`, CONCAT('#', cp.`plan_id`)) AS `plan_name`
+             FROM `vc_coupon_plans` cp
+             LEFT JOIN `vc_vpn_plans` p ON p.`id` = cp.`plan_id`
+             WHERE cp.`coupon_id` IN ({$placeholders})
+             ORDER BY cp.`plan_id`"
+        );
+        $stmt->execute($couponIds);
+        $map = [];
+        foreach ($stmt->fetchAll() ?: [] as $row) {
+            $map[(int) $row['coupon_id']][(int) $row['plan_id']] = (string) $row['plan_name'];
+        }
+        return $map;
+    }
+
+    /**
+     * Kiểm tra coupon có được áp dụng cho gói này không.
+     * Chưa chọn gói nào → mọi gói đều áp dụng được.
+     * Đã chọn gói → chỉ những gói được chọn mới hợp lệ.
+     */
+    public function isAllowedForPlan(array $coupon, int $planId): bool
+    {
+        $couponId = (int) ($coupon['id'] ?? 0);
+        if ($couponId <= 0) {
+            return false;
+        }
+        $stmt = self::$db->prepare("SELECT COUNT(*) FROM `vc_coupon_plans` WHERE `coupon_id` = ?");
+        $stmt->execute([$couponId]);
+        if ((int) $stmt->fetchColumn() === 0) {
+            return true;
+        }
+        if ($planId <= 0) {
+            return false;
+        }
+        $stmt = self::$db->prepare("SELECT COUNT(*) FROM `vc_coupon_plans` WHERE `coupon_id` = ? AND `plan_id` = ?");
+        $stmt->execute([$couponId, $planId]);
+        return (int) $stmt->fetchColumn() > 0;
+    }
 }

@@ -840,6 +840,15 @@ $_SESSION['success'] = 'Đã tạo đơn hàng ' . $orderCode . ' thành công. 
             ];
         }
 
+        if (!$couponModel->isAllowedForPlan($coupon, $planId)) {
+            return [
+                'valid' => false,
+                'discount_amount' => 0,
+                'final_amount' => $originalPrice,
+                'message' => 'Mã giảm giá này không áp dụng cho gói dịch vụ bạn đang chọn.'
+            ];
+        }
+
         $discountType = $coupon['discount_type'] ?? 'percent';
         $discountValue = (float) ($coupon['discount_value'] ?? 0);
         $discountAmount = $discountType === 'percent'
