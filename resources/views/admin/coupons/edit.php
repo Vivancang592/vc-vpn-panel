@@ -72,55 +72,37 @@ ob_start();
             </div>
         </div>
 
-        <!-- Đối Tượng Áp Dụng (gán riêng cho user) -->
-        <div style="background: rgba(0, 122, 255, 0.04); border: 1px solid rgba(0, 122, 255, 0.15); border-radius: var(--radius-md); padding: 1.1rem 1.25rem; width: 100%; box-sizing: border-box;">
-            <div style="font-weight: 700; font-size: 0.95rem; color: var(--ios-text); margin-bottom: 0.3rem;">🎯 Đối Tượng Áp Dụng</div>
-            <div style="font-size: 0.82rem; color: var(--ios-text-secondary); margin-bottom: 0.85rem; line-height: 1.5;">
-                Để trống = <strong>mã công khai</strong> (mọi user đều dùng được). Gán user = <strong>chỉ user được chọn</strong> mới áp dụng được mã này (trang thanh toán &amp; AI chat).
-            </div>
-            <div id="assignedChips" style="display: flex; flex-wrap: wrap; gap: 0.5rem; margin-bottom: 0.85rem; align-items: center; min-height: 30px;">
-                <?php if (!empty($assigned_users)): ?>
-                    <?php foreach ($assigned_users as $uid => $uname): ?>
-                        <span class="assigned-chip" data-user="<?= (int)$uid ?>" style="display: inline-flex; align-items: center; gap: 0.4rem; padding: 0.3rem 0.6rem; border-radius: 999px; background: rgba(0, 122, 255, 0.12); color: var(--ios-blue); font-size: 0.8rem; font-weight: 600;">
-                            🔒 @<?= htmlspecialchars($uname) ?>
-                            <button type="button" onclick="removeAssigned(this)" title="Gỡ gán" style="background: none; border: none; color: var(--ios-blue); cursor: pointer; font-size: 1rem; line-height: 1; padding: 0;">&times;</button>
-                        </span>
-                    <?php endforeach; ?>
-                <?php else: ?>
-                    <span id="noAssignHint" style="font-size: 0.8rem; color: var(--ios-text-secondary); font-style: italic;">Đang công khai — chưa gán user riêng nào.</span>
-                <?php endif; ?>
-            </div>
-            <div style="display: flex; flex-wrap: wrap; gap: 0.6rem; align-items: center;">
-                <select id="assignUserSelect" class="glass-input" style="min-width: 220px; max-width: 320px; cursor: pointer;">
-                    <option value="">— Chọn user —</option>
-                    <?php foreach ($users as $u): ?>
-                        <option value="<?= (int)$u['id'] ?>">@<?= htmlspecialchars($u['username']) ?> (#<?= (int)$u['id'] ?>)</option>
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1.25rem;">
+            <div>
+                <label style="display: block; font-weight: 600; font-size: 0.85rem; margin-bottom: 0.4rem;">Gán Riêng Cho User</label>
+                <?php $selectedUserIds = array_map('intval', array_keys($assigned_users ?? [])); ?>
+                <select name="assigned_user_ids[]" multiple size="4" class="glass-input" style="width: 100%;">
+                    <?php foreach (($users ?? []) as $u): ?>
+                        <option value="<?= (int)$u['id'] ?>" <?= in_array((int)$u['id'], $selectedUserIds, true) ? 'selected' : '' ?>>@<?= htmlspecialchars($u['username']) ?> (#<?= (int)$u['id'] ?>)</option>
                     <?php endforeach; ?>
                 </select>
-                <button type="button" class="glass-btn glass-btn-primary" style="padding: 0.5rem 1rem; font-size: 0.85rem;" onclick="assignUser()">Gán user này</button>
+                <div style="font-size: 0.75rem; color: var(--ios-text-secondary); margin-top: 0.35rem;">Bỏ trống = công khai (mọi user dùng được). Chọn = chỉ user đó. Giữ Ctrl/⌘ để chọn nhiều, lưu cùng nút Cập Nhật.</div>
             </div>
-        </div>
 
-        <!-- Gói Áp Dụng Mã -->
-        <div style="background: rgba(255, 149, 0, 0.05); border: 1px solid rgba(255, 149, 0, 0.18); border-radius: var(--radius-md); padding: 1.1rem 1.25rem; width: 100%; box-sizing: border-box;">
-            <div style="font-weight: 700; font-size: 0.95rem; color: var(--ios-text); margin-bottom: 0.3rem;">📦 Gói Áp Dụng Mã</div>
-            <div style="font-size: 0.82rem; color: var(--ios-text-secondary); margin-bottom: 0.85rem; line-height: 1.5;">
-                Bỏ chọn tất cả = mã áp dụng cho <strong>mọi gói dịch vụ</strong>. Chọn gói = <strong>chỉ gói được chọn</strong> mới áp dụng mã này. Thay đổi lưu cùng nút "Cập Nhật" bên dưới.
-            </div>
-            <?php $plansList = $plans ?? []; $checkedPlans = array_map('intval', $assigned_plan_ids ?? []); ?>
-            <?php if (empty($plansList)): ?>
-                <div style="font-size: 0.82rem; color: var(--ios-text-secondary); font-style: italic;">Chưa có gói dịch vụ nào trong hệ thống.</div>
-            <?php else: ?>
-                <div style="display: flex; flex-wrap: wrap; gap: 0.6rem 1.25rem;">
+            <div>
+                <label style="display: block; font-weight: 600; font-size: 0.85rem; margin-bottom: 0.4rem;">Gói Áp Dụng</label>
+                <?php
+                $checkedPlans = array_map('intval', $assigned_plan_ids ?? []);
+                $plansList = array_filter($plans ?? [], static function ($p) use ($checkedPlans) {
+                    $sellable  = ($p['status'] ?? '') === 'active'
+                        && ($p['stock_quantity'] === null || (int)$p['stock_quantity'] > 0);
+                    $assigned  = in_array((int)$p['id'], $checkedPlans, true);
+                    return $sellable || $assigned; // giữ gói đang gán dù hết hàng
+                });
+                ?>
+                <select name="plan_ids[]" multiple size="4" class="glass-input" style="width: 100%;">
                     <?php foreach ($plansList as $p): ?>
-                        <label style="display: inline-flex; align-items: center; gap: 0.45rem; font-size: 0.85rem; color: var(--ios-text); cursor: pointer; font-weight: 500;">
-                            <input type="checkbox" name="plan_ids[]" value="<?= (int)$p['id'] ?>" <?= in_array((int)$p['id'], $checkedPlans, true) ? 'checked' : '' ?> style="accent-color: #ff9500; width: 16px; height: 16px; cursor: pointer;">
-                            <?= htmlspecialchars($p['name']) ?>
-                            <span style="color: var(--ios-text-secondary); font-size: 0.75rem;"><?= number_format((float)$p['price'], 0, '.', ',') ?>đ</span>
-                        </label>
+                        <?php $sellable = ($p['status'] ?? '') === 'active' && ($p['stock_quantity'] === null || (int)$p['stock_quantity'] > 0); ?>
+                        <option value="<?= (int)$p['id'] ?>" <?= in_array((int)$p['id'], $checkedPlans, true) ? 'selected' : '' ?>><?= htmlspecialchars($p['name']) ?> — <?= number_format((float)$p['price'], 0, '.', ',') ?>đ<?= $sellable ? '' : ' (không còn bán — giữ gán)' ?></option>
                     <?php endforeach; ?>
-                </div>
-            <?php endif; ?>
+                </select>
+                <div style="font-size: 0.75rem; color: var(--ios-text-secondary); margin-top: 0.35rem;">Bỏ trống = áp dụng mọi gói. Chỉ hiện gói còn hàng. Giữ Ctrl/⌘ để chọn nhiều, lưu cùng nút Cập Nhật.</div>
+            </div>
         </div>
 
         <div style="display: flex; justify-content: flex-end; margin-top: 0.5rem;">
@@ -128,50 +110,6 @@ ob_start();
         </div>
     </form>
 </div>
-
-<script>
-(function () {
-    const ASSIGN_CSRF = <?= json_encode($csrf_token ?? '', JSON_UNESCAPED_UNICODE) ?>;
-    const COUPON_ID   = <?= (int)($coupon['id'] ?? 0) ?>;
-
-    function postAssign(action, userId) {
-        const form = document.createElement('form');
-        form.method = 'POST';
-        form.action = action;
-        const append = (name, value) => {
-            const input = document.createElement('input');
-            input.type = 'hidden';
-            input.name = name;
-            input.value = value;
-            form.appendChild(input);
-        };
-        append('csrf_token', ASSIGN_CSRF);
-        append('coupon_ids[]', COUPON_ID);
-        append('user_id', userId);
-        append('back', 'edit');
-        append('coupon_id', COUPON_ID);
-        document.body.appendChild(form);
-        form.submit();
-    }
-
-    window.assignUser = function () {
-        const sel = document.getElementById('assignUserSelect');
-        if (!sel.value) { alert('Vui lòng chọn user cần gán!'); return; }
-        if (document.querySelector('.assigned-chip[data-user="' + sel.value + '"]')) {
-            alert('User này đã được gán rồi!');
-            return;
-        }
-        postAssign('/admin/coupons/assign', sel.value);
-    };
-
-    window.removeAssigned = function (btn) {
-        const chip = btn.closest('.assigned-chip');
-        if (!chip) return;
-        if (!confirm('Gỡ user này khỏi mã giảm giá?')) return;
-        postAssign('/admin/coupons/unassign', chip.dataset.user);
-    };
-})();
-</script>
 
 <?php
 $content = ob_get_clean();

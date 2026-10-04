@@ -43,30 +43,11 @@ ob_start();
 </div>
 
 <!-- Bảng Mã Giảm Giá -->
-<?php if (!empty($coupons) && !empty($users)): ?>
-<div class="glass-card" style="padding: 1rem 1.25rem; margin-bottom: 1rem; width: 100%; box-sizing: border-box; display: flex; flex-wrap: wrap; gap: 0.75rem; align-items: center; justify-content: space-between;">
-    <div style="display: flex; flex-wrap: wrap; gap: 0.6rem; align-items: center;">
-        <span style="font-size: 0.85rem; font-weight: 700; color: var(--ios-text);">🎯 Gán riêng theo user:</span>
-        <select id="bulkAssignUser" style="padding: 0.45rem 0.7rem; border-radius: var(--radius-sm); background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.15); color: var(--ios-text); font-size: 0.85rem; min-width: 180px;">
-            <option value="">— Chọn user —</option>
-            <?php foreach ($users as $u): ?>
-                <option value="<?= (int)$u['id'] ?>">@<?= htmlspecialchars($u['username']) ?> (#<?= (int)$u['id'] ?>)</option>
-            <?php endforeach; ?>
-        </select>
-        <button type="button" class="glass-btn glass-btn-primary" style="font-size: 0.82rem; padding: 0.45rem 0.9rem;" onclick="bulkSubmit('assign')">Gán mã đã chọn</button>
-        <button type="button" class="glass-btn" style="font-size: 0.82rem; padding: 0.45rem 0.9rem;" onclick="bulkSubmit('unassign-user')">Gỡ của user này</button>
-        <button type="button" class="glass-btn" style="font-size: 0.82rem; padding: 0.45rem 0.9rem; color: var(--ios-danger);" onclick="bulkSubmit('unassign-all')">Gỡ mọi user (công khai)</button>
-    </div>
-    <span id="bulkCount" style="font-size: 0.8rem; color: var(--ios-text-secondary);">0 mã được chọn</span>
-</div>
-<?php endif; ?>
-
 <div class="glass-card" style="padding: 1.25rem; width: 100%; box-sizing: border-box;">
     <div class="table-responsive">
         <table class="glass-table">
             <thead>
                 <tr>
-                    <th style="width: 36px; text-align: center;"><input type="checkbox" id="selectAllCoupons" title="Chọn tất cả"></th>
                     <th>ID</th>
                     <th>Mã Code</th>
                     <th>Loại Giảm Giá</th>
@@ -83,9 +64,6 @@ ob_start();
                 <?php if (!empty($coupons)): ?>
                     <?php foreach ($coupons as $coupon): ?>
                         <tr>
-                            <td style="text-align: center;">
-                                <input type="checkbox" class="coupon-checkbox" value="<?= (int)$coupon['id'] ?>">
-                            </td>
                             <td style="font-weight: 700;">#<?= $coupon['id'] ?></td>
                             <td>
                                 <code style="background: rgba(0, 122, 255, 0.08); padding: 0.2rem 0.5rem; border-radius: var(--radius-sm); font-weight: 700; color: var(--ios-blue); font-size: 0.9rem;">
@@ -162,72 +140,13 @@ ob_start();
                     <?php endforeach; ?>
                 <?php else: ?>
                     <tr>
-                        <td colspan="11" style="text-align: center; padding: 2rem; color: var(--ios-text-secondary);">Chưa có mã giảm giá nào được tạo.</td>
+                        <td colspan="10" style="text-align: center; padding: 2rem; color: var(--ios-text-secondary);">Chưa có mã giảm giá nào được tạo.</td>
                     </tr>
                 <?php endif; ?>
             </tbody>
         </table>
     </div>
 </div>
-
-<script>
-(function () {
-    const COUPON_CSRF = <?= json_encode($csrf_token ?? '', JSON_UNESCAPED_UNICODE) ?>;
-    const selectAll = document.getElementById('selectAllCoupons');
-    const bulkCount = document.getElementById('bulkCount');
-    const boxes = () => Array.from(document.querySelectorAll('.coupon-checkbox'));
-
-    function refreshCount() {
-        if (bulkCount) bulkCount.textContent = boxes().filter(b => b.checked).length + ' mã được chọn';
-    }
-
-    if (selectAll) {
-        selectAll.addEventListener('change', function () {
-            boxes().forEach(b => { b.checked = selectAll.checked; });
-            refreshCount();
-        });
-    }
-    document.addEventListener('change', function (e) {
-        if (e.target && e.target.classList && e.target.classList.contains('coupon-checkbox')) refreshCount();
-    });
-
-    // Tạo form động khi submit bulk — tránh lồng <form> với form xóa ở từng dòng
-    window.bulkSubmit = function (mode) {
-        const ids = boxes().filter(b => b.checked).map(b => b.value);
-        if (!ids.length) { alert('Vui lòng chọn ít nhất một mã giảm giá!'); return; }
-
-        const userSel = document.getElementById('bulkAssignUser');
-        let url = '/admin/coupons/assign';
-
-        if (mode === 'assign') {
-            if (!userSel.value) { alert('Vui lòng chọn user nhận gán!'); return; }
-            if (!confirm('Gán ' + ids.length + ' mã giảm giá đã chọn cho @' + userSel.options[userSel.selectedIndex].text + '?')) return;
-        } else if (mode === 'unassign-user') {
-            if (!userSel.value) { alert('Vui lòng chọn user cần gỡ gán!'); return; }
-            url = '/admin/coupons/unassign';
-        } else if (mode === 'unassign-all') {
-            if (!confirm('Xóa TOÀN BỘ user được gán của ' + ids.length + ' mã đã chọn (đưa về công khai)?')) return;
-            url = '/admin/coupons/unassign';
-        }
-
-        const form = document.createElement('form');
-        form.method = 'POST';
-        form.action = url;
-        const append = (name, value) => {
-            const input = document.createElement('input');
-            input.type = 'hidden';
-            input.name = name;
-            input.value = value;
-            form.appendChild(input);
-        };
-        append('csrf_token', COUPON_CSRF);
-        ids.forEach(id => append('coupon_ids[]', id));
-        if (mode === 'assign' || mode === 'unassign-user') append('user_id', userSel.value);
-        document.body.appendChild(form);
-        form.submit();
-    };
-})();
-</script>
 
 <?php
 $content = ob_get_clean();

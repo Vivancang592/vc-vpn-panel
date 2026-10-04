@@ -157,6 +157,7 @@ class CouponController extends BaseController
         $expiresAt     = !empty($_POST['expires_at']) ? $_POST['expires_at'] : null;
         $status        = $_POST['status'] ?? 'active';
         $planIds       = array_map('intval', (array)($_POST['plan_ids'] ?? []));
+        $userIds       = array_map('intval', (array)($_POST['assigned_user_ids'] ?? []));
 
         if (empty($code) || $discountValue <= 0) {
             $_SESSION['error'] = 'Vui lòng nhập mã giảm giá và giá trị giảm hợp lệ!';
@@ -174,9 +175,16 @@ class CouponController extends BaseController
         ];
 
         if ($this->couponModel->update($id, $data)) {
-            // Ghi đè gói áp dụng theo checkbox trên form
+            // Ghi đè gói áp dụng theo ô chọn trên form
             // (rỗng = không chọn gói nào → áp dụng mọi gói)
             $this->couponModel->setPlans($id, $planIds);
+            // Ghi đè danh sách user được gán: xóa hết rồi gán lại theo form
+            // (bỏ trống = công khai), lọc id không tồn tại
+            $validUserIds = array_values(array_intersect($userIds, array_map('intval', array_column((new User())->getAll(), 'id'))));
+            $this->couponModel->removeAssignments($id);
+            if (!empty($validUserIds)) {
+                $this->couponModel->assignUsers($id, $validUserIds);
+            }
             $this->logActivity('UPDATE_COUPON', 'Cập nhật mã giảm giá ID #' . $id . ' (' . $code . ')');
             $_SESSION['flash_message'] = 'Cập nhật mã giảm giá thành công!';
             $_SESSION['flash_type']    = 'success';
