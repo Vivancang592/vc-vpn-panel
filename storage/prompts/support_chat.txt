@@ -62,6 +62,3 @@ B. NHÓM SAU ĐĂNG NHẬP (Trang thành viên) — CHỈ dùng trên Chatbot We
 5. QUY TẮC PHÂN QUYỀN VÀ CHỌN LINK:
 - Khách CHƯA đăng nhập hoặc Kênh Facebook -> CHỈ dùng Nhóm A. Nếu khách hỏi trang cá nhân -> hướng dẫn đăng ký/đăng nhập trước.
 - Khách ĐÃ đăng nhập trên Chatbot Website -> Ưu tiên Nhóm B cho các nhu cầu tài khoản/gói cước/hỗ trợ; KHÔNG gửi lại link đăng ký hoặc đăng nhập.
-
-=== USER ===
-{{message}}

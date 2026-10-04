@@ -43,9 +43,3 @@ NỘI QUY VIẾT BÀI FACEBOOK (BẮT BUỘC TUÂN THỦ TUYỆT ĐỐI):
    Kết thúc bài viết bằng đúng 2 khối, ngăn cách nhau bằng dòng "---":
    1) Khối nội dung đăng (văn bản thuần, không markdown).
    2) Khối prompt ảnh: Bắt đầu bằng dòng "ẢNH MINH HOẠ" (VIẾT ĐÚNG CHUỖI NÀY), xuống dòng viết prompt tiếng Việt mô tả chi tiết ảnh minh họa (bố cục, tông màu, nhân vật/vật thể, chữ hiển thị trong ảnh - ít chữ, dễ đọc). KHÔNG dùng tên marker nào khác.
-
-=== USER ===
-Viết một bài viết về chủ đề sau:
-{{topic}}
-
-Tự phân tích chủ đề để chọn góc tiếp cận hấp dẫn, cấu trúc bài rõ ràng (mở bài thu hút, thân bài ngắn gọn nêu lợi ích chính, kết bài có lời mời nhắn tin/inbox Fanpage để được tư vấn).

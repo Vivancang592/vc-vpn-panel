@@ -28,7 +28,7 @@ $tplUser   = (string) ($defaultTemplate['user'] ?? '');
 ?>
 
 <div style="margin-bottom: 1rem; width: 100%; box-sizing: border-box;">
-    <h1 style="font-size: 1.5rem; font-weight: 700; word-break: break-word; margin-bottom: 0.35rem;">Bộ Prompt: <?= htmlspecialchars($promptVi) ?></h1>
+    <h1 style="font-size: 1.5rem; font-weight: 700; word-break: break-word; margin-bottom: 0.35rem;">Prompt <?= htmlspecialchars($promptVi) ?></h1>
     <p style="color: var(--ios-text-secondary); font-size: 0.85rem;">
         Mã nội bộ: <code><?= htmlspecialchars($promptKey) ?></code>
         &nbsp;·&nbsp; <?= htmlspecialchars($sourceVi) ?>
@@ -55,11 +55,7 @@ $tplUser   = (string) ($defaultTemplate['user'] ?? '');
 
 <!-- Soạn thảo prompt (lưu vào FILE — nguồn duy nhất) -->
 <div class="glass-card" style="padding: 1.25rem; width: 100%; box-sizing: border-box; margin-bottom: 1rem; border-left: 4px solid var(--ios-blue);">
-    <h2 style="font-size: 1rem; font-weight: 700; margin-bottom: 0.35rem;">📄 Soạn Thảo Prompt (lưu vào FILE)</h2>
-    <p style="font-size: 0.83rem; color: var(--ios-text-secondary); margin-bottom: 0.75rem;">
-        Nội dung dưới đây được lưu vào <strong>file trên máy chủ</strong> <code>storage/prompts/<?= htmlspecialchars($promptKey) ?>.txt</code>
-        — <strong>nguồn duy nhất</strong> khi AI sinh câu trả lời. Lưu xong là AI dùng ngay, không cần chạy lại tác vụ nào.
-    </p>
+    <h2 style="font-size: 1rem; font-weight: 700; margin-bottom: 0.35rem;">📄 Soạn Thảo Prompt</h2>
     <div style="font-size: 0.78rem; color: var(--ios-text-secondary); margin-bottom: 0.75rem; word-break: break-all;">
         <div>Đường dẫn file: <code><?= htmlspecialchars((string) ($filePath ?? '')) ?></code></div>
         <div>
@@ -80,17 +76,12 @@ $tplUser   = (string) ($defaultTemplate['user'] ?? '');
         <input type="hidden" name="prompt_key" value="<?= htmlspecialchars($promptKey) ?>">
 
         <div style="margin-bottom: 0.75rem;">
-            <label style="display: block; font-size: 0.8rem; color: var(--ios-text-secondary); margin-bottom: 0.25rem;">Chỉ dẫn cho AI (system prompt)</label>
+            <label style="display: block; font-size: 0.8rem; color: var(--ios-text-secondary); margin-bottom: 0.25rem;">Chỉ dẫn cho AI</label>
             <textarea name="system_prompt" rows="16" required style="width: 100%; padding: 0.6rem 0.7rem; border-radius: var(--radius-sm); border: 1px solid var(--ios-border, rgba(255,255,255,0.15)); background: transparent; color: inherit; font-size: 0.85rem; font-family: ui-monospace, monospace; box-sizing: border-box; resize: vertical; min-height: 16rem; max-height: 40rem; line-height: 1.5;"><?= htmlspecialchars($rawSystem !== '' ? $rawSystem : $tplSystem) ?></textarea>
         </div>
 
-        <div style="margin-bottom: 0.75rem;">
-            <label style="display: block; font-size: 0.8rem; color: var(--ios-text-secondary); margin-bottom: 0.25rem;">Mẫu nội dung gửi AI (dùng <code>{{biến}}</code>)</label>
-            <textarea name="user_template" rows="6" style="width: 100%; padding: 0.6rem 0.7rem; border-radius: var(--radius-sm); border: 1px solid var(--ios-border, rgba(255,255,255,0.15)); background: transparent; color: inherit; font-size: 0.85rem; font-family: ui-monospace, monospace; box-sizing: border-box; resize: vertical; min-height: 8rem; max-height: 40rem; line-height: 1.5;"><?= htmlspecialchars($rawUser !== '' ? $rawUser : $tplUser) ?></textarea>
-        </div>
-
         <div style="display: flex; justify-content: flex-end;">
-            <button type="submit" class="glass-btn" style="white-space: nowrap;">💾 Lưu Prompt Vào File</button>
+            <button type="submit" class="glass-btn" style="white-space: nowrap;">💾 Lưu Prompt</button>
         </div>
     </form>
 </div>
