@@ -680,6 +680,11 @@ body.home-festival .admin-content > .public-page.home-page.home-subpage.home-pol
   .home-policy-page .policy-content { grid-column: 1; grid-row: auto; }
 }
 
+/* Mobile: bù lề ngang 5px mỗi bên (rule mobile trang chủ set padding ngang 0 làm nội dung sát viền) */
+@media (max-width: 800px) {
+  .home-page.home-policy-page { padding-right: 5px; padding-left: 5px; }
+}
+
 /* Song ngữ — dark override: khối EN thụt lề với trái tuyến xanh nhạt, tách nhẹ khỏi bản Việt */
 .home-policy-page .policy-title-en { color: #93a3b8 !important; }
 .home-policy-page .policy-en { margin-top: 1.05rem; padding: .35rem 0 .35rem 1rem; border-top: 0; border-left: 2px solid rgba(0, 122, 255, .35); }
