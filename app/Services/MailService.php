@@ -50,6 +50,21 @@ class MailService
             return false;
         }
 
+        return $this->sendRaw($to, $subject, $body);
+    }
+
+    /**
+     * Gửi Email bằng nội dung HTML có sẵn (không qua template) + ghi Log.
+     * Dùng cho chiến dịch của Trợ Lý Admin (nội dung AI soạn).
+     */
+    public function sendRaw(string $to, string $subject, string $htmlBody): bool
+    {
+        $body = trim($htmlBody);
+        if ($body === '') {
+            $this->logEmail($to, $subject, '', 'failed', 'Nội dung email rỗng.');
+            return false;
+        }
+
         $host = $this->settings['smtp_host'] ?? '';
         $port = (int)($this->settings['smtp_port'] ?? 465);
         $encryption = strtolower($this->settings['smtp_encryption'] ?? 'ssl');

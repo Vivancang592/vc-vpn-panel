@@ -656,7 +656,11 @@ class FanpageService
         return $history;
     }
 
-    private function sendMessage(string $recipientId, string $text): void
+    /**
+     * Gửi tin nhắn Messenger cho một người (public — chiến dịch Trợ Lý Admin
+     * cũng gọi để quảng cáo tới người từng nhắn fanpage).
+     */
+    public function sendMessage(string $recipientId, string $text): void
     {
         $token = trim((string) ($this->settings['fanpage_page_access_token'] ?? getenv('FANPAGE_PAGE_ACCESS_TOKEN') ?: ''));
         if ($token === '' || $recipientId === '' || trim($text) === '') {

@@ -11,6 +11,7 @@ use App\Models\Payment;
 use App\Models\ScheduledPost;
 use App\Services\MailService;
 use App\Services\FanpageService;
+use App\Services\CampaignService;
 use App\Services\NodeTaskService;
 
 class CronController extends BaseController
@@ -260,6 +261,14 @@ class CronController extends BaseController
                 ]);
                 $stats['expiring_soon']++;
             }
+        }
+
+        // Gửi CHIẾN DỊCH của Trợ Lý Admin (mail/Fanpage theo lịch — mỗi ngày
+        // tối đa daily_limit người, chống trùng vĩnh viễn qua vc_campaign_sends).
+        try {
+            $stats['campaigns'] = (new CampaignService())->sendDueCampaigns();
+        } catch (\Throwable $e) {
+            $stats['campaigns'] = ['error' => $e->getMessage()];
         }
 
         $this->json([
