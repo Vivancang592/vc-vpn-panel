@@ -171,7 +171,15 @@ class ChatbotService
     {
         $moduleKey = $isFacebook ? 'fanpage_comment' : 'support_chat';
 
+        // Tên miền THẬT của hệ thống — file prompt Admin dùng {domain} /
+        // {{domain}} (dạng https://{domain}/faq...). Không thay tại đây thì
+        // model nhận placeholder thô và mỗi lần tự bịa một tên miền khác.
+        $siteUrl = rtrim($this->resolveSiteUrl(), '/');
+        $domain  = (string) (parse_url($siteUrl, PHP_URL_HOST) ?: '');
+
         $variables = [
+            'site_url' => $siteUrl,
+            'domain'   => $domain,
             'source_label' => $isFacebook ? 'Facebook Fanpage' : 'Website',
             'user_context' => $isLoggedIn
                 ? 'Khách đã ĐĂNG NHẬP website' . ($userName !== '' ? ', tên: ' . $userName : '') . '.'
@@ -199,6 +207,13 @@ class ChatbotService
                 }
 
                 $text = trim((string) preg_replace('/\{\{\s*[a-zA-Z0-9_]+\s*\}\}/', '', $text));
+
+                // {domain} (single-brace) là macro chuẩn của file prompt Admin —
+                // thay bằng host thật để model không bịa tên miền. Khác với
+                // {{domain}} đã thay ở vòng variables phía trên.
+                if ($domain !== '') {
+                    $text = str_replace('{domain}', $domain, $text);
+                }
 
                 // Ghép thêm ngữ cảnh nguồn/tên khách vào cuối system prompt khi
                 // file prompt của Admin chưa có biến tương ứng.
