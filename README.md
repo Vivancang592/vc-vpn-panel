@@ -513,7 +513,6 @@ vc-vpn-2027/
 │   │   └── video_generation.txt
 │   └── tmp/
 ├── tools/
-│   ├── _p3_probe.php
 │   ├── ai_core_selftest.php
 │   ├── ai_worker.php
 │   ├── kira_probe.php

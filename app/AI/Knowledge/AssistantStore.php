@@ -210,9 +210,19 @@ final class AssistantStore
                 continue;
             }
             $decoded = json_decode($line, true);
-            if (is_array($decoded)) {
-                $out[] = $decoded;
+            if (!is_array($decoded)) {
+                continue;
             }
+
+            // JSON tool thô/bị cắt (lỗi cũ finish_reason=length): loại khỏi cả
+            // prompt lẫn lịch sử hiển thị — model không học theo, admin không thấy JSON rác.
+            if (($decoded['role'] ?? '') === 'assistant'
+                && is_string($decoded['content'] ?? '')
+                && preg_match('/\{\s*"tool"\s*:/u', $decoded['content']) === 1) {
+                continue;
+            }
+
+            $out[] = $decoded;
         }
 
         return $out;
@@ -234,7 +244,7 @@ final class AssistantStore
             if ((string) ($meta['id'] ?? '') !== $convId) {
                 continue;
             }
-            foreach (['title', 'model'] as $key) {
+            foreach (['title', 'model', 'active_plan'] as $key) {
                 if (isset($patch[$key]) && is_string($patch[$key]) && trim($patch[$key]) !== '') {
                     $index['conversations'][$i][$key] = trim($patch[$key]);
                 }
@@ -463,6 +473,43 @@ final class AssistantStore
         }
 
         return ['meta' => ['id' => $planId, 'title' => $planId, 'kind' => 'other', 'created_at' => ''], 'content' => $content];
+    }
+
+    /**
+     * Ghi đè nội dung kế hoạch có sẵn (AI sửa từ khung chat).
+     * Giữ nguyên id/title/kind, cập nhật bytes + updated_at trong index.
+     */
+    public function updatePlan(string $planId, string $content): bool
+    {
+        if (!$this->validId($planId)) {
+            return false;
+        }
+        $file = $this->baseDir . '/plans/' . $planId . '.md';
+        if (!is_file($file)) {
+            return false;
+        }
+        if (@file_put_contents($file, $content) === false) {
+            return false;
+        }
+        @chmod($file, 0644);
+
+        $now = date('Y-m-d H:i:s');
+        $index = $this->loadJson($this->baseDir . '/plans-index.json');
+        $plans = is_array($index['plans'] ?? null) ? $index['plans'] : [];
+        $changed = false;
+        foreach ($plans as $i => $meta) {
+            if (is_array($meta) && (string) ($meta['id'] ?? '') === $planId) {
+                $index['plans'][$i]['bytes'] = (int) (@filesize($file) ?: 0);
+                $index['plans'][$i]['updated_at'] = $now;
+                $changed = true;
+                break;
+            }
+        }
+        if ($changed) {
+            $this->savePlansIndex($index);
+        }
+
+        return true;
     }
 
     public function deletePlan(string $planId): bool

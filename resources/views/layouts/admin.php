@@ -42,8 +42,7 @@ $adminGroups = [
             'ai-dubbing'   => ['label' => 'Lời Thoại', 'icon' => '🗣️', 'url' => '/admin/ai/dubbing'],
             'ai-fanpage'   => ['label' => 'Nội Dung Fanpage', 'icon' => '📰', 'url' => '/admin/ai/fanpage'],
             'ai-reply'     => ['label' => 'Trả Lời Tự Động', 'icon' => '💬', 'url' => '/admin/ai/reply'],
-            'ai-settings'  => ['label' => 'Cấu Hình AI', 'icon' => '⚙️', 'url' => '/admin/ai/settings'],
-            'ai-assistant' => ['label' => 'Trợ Lý Admin', 'icon' => '🤖', 'url' => '/admin/assistant']
+            'ai-settings'  => ['label' => 'Cấu Hình AI', 'icon' => '⚙️', 'url' => '/admin/ai/settings']
         ]
     ]
 ];
@@ -133,6 +132,7 @@ require_once __DIR__ . '/header.php';
                 <?= $renderGroupTabs() ?>
                 <?= $content ?? '' ?>
             </div>
+            <?php require_once __DIR__ . '/_assistant_bubble.php'; // Bong bóng trợ lý — chỉ nhánh trang đầy đủ (fragment JSON đã exit ở nhánh trên) ?>
             <?php require_once __DIR__ . '/footer.php'; ?>
         </main>
     </div>

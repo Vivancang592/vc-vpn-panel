@@ -51,11 +51,26 @@ class AiAssistantController extends AiBaseController
 
     public function index(): void
     {
+        // Trang mỏng — bong bóng tự tải dữ liệu qua bootstrap() khi admin mở
+        // (xem resources/views/layouts/_assistant_bubble.php).
         $this->render('admin.ai.assistant', [
-            'activeMenu'    => 'ai-assistant',
+            'activeMenu' => 'ai-assistant',
+        ]);
+    }
+
+    /**
+     * GET /admin/assistant/bootstrap — nạp một lần khi admin mở bong bóng:
+     * lịch sử chat, kế hoạch đã lưu và model chat mà key hiện tại mở khóa.
+     */
+    public function bootstrap(): void
+    {
+        $models = $this->modelsByCapability('chat');
+        $this->json([
+            'ok'            => true,
             'conversations' => $this->store->listConversations(),
             'plans'         => $this->store->listPlans(),
-            'models'        => $this->modelsByCapability('chat'),
+            'models'        => $models,
+            'has_model'     => $models !== [],
         ]);
     }
 
@@ -112,6 +127,8 @@ class AiAssistantController extends AiBaseController
             $this->json(['ok' => false, 'error' => 'Hiện không có model chat nào được API key mở khóa.'], 400);
         }
         $message = trim((string) ($_POST['message'] ?? ''));
+        // Bối cảnh trang admin mà bong bóng đang mở (đã sanitize + redact phía server)
+        $page = $this->sanitizePageContext();
 
         try {
             $attachments = $this->handleUploads($convId);
@@ -126,7 +143,7 @@ class AiAssistantController extends AiBaseController
         $this->store->updateConversation($convId, ['model' => $model]);
 
         try {
-            $result = $this->assistant()->send($convId, $model, $message, $attachments);
+            $result = $this->assistant()->send($convId, $model, $message, $attachments, $page);
         } catch (\Throwable $e) {
             $this->json(['ok' => false, 'error' => 'Lỗi xử lý chat: ' . $e->getMessage()]);
         }
@@ -134,6 +151,44 @@ class AiAssistantController extends AiBaseController
         // meta đổi sau append (tự đặt tiêu đề từ tin nhắn đầu, msg_count, updated_at)
         $result['meta'] = $this->findMeta($convId);
         $this->json($result);
+    }
+
+    /**
+     * Bối cảnh trang admin đang mở do bong bóng gửi kèm (page_url/title/text).
+     *
+     * Lớp redact phía SERVER (client đã redact trước): chỉ chấp nhận đường dẫn
+     * bắt đầu bằng /admin, lọc ký tự điều khiển, ẩn mọi dạng secret phổ biến
+     * rồi cắt độ dài — key/mật khẩu không bao giờ lọt vào prompt.
+     *
+     * @return array{url: string, title: string, text: string}
+     */
+    private function sanitizePageContext(): array
+    {
+        $url = trim((string) ($_POST['page_url'] ?? ''));
+        $title = trim((string) ($_POST['page_title'] ?? ''));
+        $text = (string) ($_POST['page_text'] ?? '');
+
+        if ($url === '' || !str_starts_with($url, '/admin') || preg_match('/[\x00-\x1F\x7F]/', $url)) {
+            return ['url' => '', 'title' => '', 'text' => ''];
+        }
+        $url = mb_substr($url, 0, 300);
+
+        $title = strip_tags($title);
+        $title = preg_replace('/[\x00-\x1F\x7F]/u', ' ', $title) ?? '';
+        $title = mb_substr(trim($title), 0, 200);
+
+        $text = str_replace("\0", '', $text);
+        $text = preg_replace('/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/', '', $text) ?? $text;
+        $text = preg_replace([
+            '/sk-[A-Za-z0-9_\-]{8,}/',
+            '/ghp_[A-Za-z0-9]{10,}/',
+            '/EAAG[A-Za-z0-9]+/',
+            '/Bearer\s+[A-Za-z0-9._\-]+/i',
+            '/\b(api[_-]?key|secret|token|password)\b\s*[:=]\s*["\']?[^\s"\',;]{4,}/i',
+        ], '[BẢO MẬT ẨN]', $text) ?? $text;
+        $text = mb_substr($text, 0, 6000);
+
+        return ['url' => $url, 'title' => $title, 'text' => $text];
     }
 
     public function deleteChat(): void
@@ -186,6 +241,33 @@ class AiAssistantController extends AiBaseController
         $this->json(['ok' => true, 'plans' => $this->store->listPlans()]);
     }
 
+    /**
+     * Tải báo cáo Excel do trợ lý AI xuất (storage/assistant/reports/*.xlsx).
+     * Chỉ cho qua tên file đơn (không có đường dẫn) và đuôi .xlsx.
+     */
+    public function report(): void
+    {
+        $file = basename(trim((string) ($_GET['file'] ?? '')));
+        if (!preg_match('/^[A-Za-z0-9_\-]{1,80}\.xlsx$/', $file)) {
+            http_response_code(404);
+            exit;
+        }
+
+        $reportsDir = realpath(BASE_PATH . '/storage/assistant/reports');
+        $abs = $reportsDir !== false ? realpath($reportsDir . DIRECTORY_SEPARATOR . $file) : false;
+        if ($abs === false || !is_file($abs) || !str_starts_with($abs, $reportsDir . DIRECTORY_SEPARATOR)) {
+            http_response_code(404);
+            exit;
+        }
+
+        header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+        header('Content-Disposition: attachment; filename="' . $file . '"');
+        header('Content-Length: ' . (string) filesize($abs));
+        header('X-Content-Type-Options: nosniff');
+        readfile($abs);
+        exit;
+    }
+
     public function planView(): void
     {
         $plan = $this->store->readPlan(trim((string) ($_GET['id'] ?? '')));
@@ -210,6 +292,7 @@ class AiAssistantController extends AiBaseController
         $details = trim((string) ($_POST['details'] ?? ''));
         $model = $this->allowedModel((string) ($_POST['model'] ?? ''));
         $reqId = (string) preg_replace('/[^a-z0-9\-]/', '', strtolower((string) ($_POST['req_id'] ?? '')));
+        $convId = trim((string) ($_POST['conv_id'] ?? ''));
 
         if ($title === '') {
             $this->json(['ok' => false, 'error' => 'Hãy đặt tên cho kế hoạch.']);
@@ -245,6 +328,11 @@ class AiAssistantController extends AiBaseController
         if ($reqId !== '' && $this->store->isPlanCancelled($reqId)) {
             $this->store->deletePlan((string) ($plan['id'] ?? ''));
             exit;
+        }
+
+        // Gắn kế hoạch vừa tạo vào hội thoại để AI chat bám sát phiên hiện tại.
+        if ($convId !== '' && !empty($plan['id'])) {
+            $this->store->updateConversation($convId, ['active_plan' => (string) $plan['id']]);
         }
 
         $this->logActivity('ai_assistant_plan_new', 'Trợ lý admin tạo kế hoạch "' . $title . '".');

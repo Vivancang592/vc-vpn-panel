@@ -305,6 +305,8 @@ return [
     // TRỢ LÝ ADMIN — chat AI riêng cho admin (lưu storage/assistant/)
     // =================================================================
     'GET /admin/assistant'                 => ['Admin\AiAssistantController', 'index'],
+    // Nạp lầm đầu khi admin mở bong bóng: lịch sử chat + kế hoạch + model chat
+    'GET /admin/assistant/bootstrap'       => ['Admin\AiAssistantController', 'bootstrap'],
     'GET /admin/assistant/list'            => ['Admin\AiAssistantController', 'listChats'],
     'GET /admin/assistant/history'         => ['Admin\AiAssistantController', 'history'],
     'GET /admin/assistant/attachment'      => ['Admin\AiAssistantController', 'attachment'],
@@ -316,4 +318,6 @@ return [
     'POST /admin/assistant/plan/new'       => ['Admin\AiAssistantController', 'planNew'],
     'POST /admin/assistant/plan/cancel'    => ['Admin\AiAssistantController', 'planCancel'],
     'POST /admin/assistant/plan/delete'    => ['Admin\AiAssistantController', 'planDelete'],
+    // Báo cáo Excel do trợ lý AI xuất (file trong storage/assistant/reports/)
+    'GET /admin/assistant/report'          => ['Admin\AiAssistantController', 'report'],
 ];

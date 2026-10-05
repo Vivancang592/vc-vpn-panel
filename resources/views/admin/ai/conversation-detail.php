@@ -33,13 +33,9 @@ $loggedIn = $uid > 0;
                 <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrf_token ?? '') ?>">
                 <input type="hidden" name="id" value="<?= (int) ($session['id'] ?? 0) ?>">
                 <input type="hidden" name="back" value="/admin/ai/conversations/detail?id=<?= (int) ($session['id'] ?? 0) ?>">
-                <button type="submit" title="Đánh dấu đã xử lý và đóng hội thoại"
-                    style="padding: 0.4rem 0.8rem; border-radius: var(--radius-sm); font-size: 0.82rem; font-weight: 700; border: 1px solid var(--ios-success); color: var(--ios-success); background: transparent; cursor: pointer;">
-                    ✅ Đã xử lý
-                </button>
             </form>
         <?php endif; ?>
-        <a href="/admin/ai/reply#cab-conversations" style="text-decoration: none; padding: 0.4rem 0.8rem; border-radius: var(--radius-sm); font-size: 0.82rem; font-weight: 600; border: 1px solid var(--ios-border, rgba(255,255,255,0.15)); color: var(--ios-text-secondary);">
+        <a href="/admin/ai/reply#cab-conversations" style="text-decoration: none; padding: 0.4rem 0.8rem; border-radius: var(--radius-sm); font-size: 0.82rem; font-weight: 600; border: 1px solid var(--ios-border, rgba(255,255,255,0.15)); color: var(--ios-blue);">
             ← Danh sách
         </a>
     </div>
