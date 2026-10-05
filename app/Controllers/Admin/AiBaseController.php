@@ -898,6 +898,7 @@ abstract class AiBaseController extends BaseController
             'audio_tts'        => 'Tạo Giọng Nói',
             'fanpage_comment'  => 'Trả Lời Bình Luận Fanpage',
             'support_chat'     => 'Hội Thoại Hỗ Trợ Khách Hàng',
+            'admin_assistant'  => 'Trợ Lý Admin',
         ];
 
         return $map[$promptKey] ?? $this->moduleLabel($promptKey);

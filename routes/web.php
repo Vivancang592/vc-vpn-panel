@@ -300,4 +300,20 @@ return [
     'POST /admin/ai/settings/save'      => ['Admin\AiSettingController', 'save'],
     'POST /admin/ai/settings/chatbot'   => ['Admin\AiSettingController', 'saveChatbotSettings'],
     'POST /admin/ai/settings/test'      => ['Admin\AiSettingController', 'test'],
+
+    // =================================================================
+    // TRỢ LÝ ADMIN — chat AI riêng cho admin (lưu storage/assistant/)
+    // =================================================================
+    'GET /admin/assistant'                 => ['Admin\AiAssistantController', 'index'],
+    'GET /admin/assistant/list'            => ['Admin\AiAssistantController', 'listChats'],
+    'GET /admin/assistant/history'         => ['Admin\AiAssistantController', 'history'],
+    'GET /admin/assistant/attachment'      => ['Admin\AiAssistantController', 'attachment'],
+    'GET /admin/assistant/plans'           => ['Admin\AiAssistantController', 'plans'],
+    'GET /admin/assistant/plan/view'       => ['Admin\AiAssistantController', 'planView'],
+    'POST /admin/assistant/new'            => ['Admin\AiAssistantController', 'newChat'],
+    'POST /admin/assistant/send'           => ['Admin\AiAssistantController', 'send'],
+    'POST /admin/assistant/delete'         => ['Admin\AiAssistantController', 'deleteChat'],
+    'POST /admin/assistant/plan/new'       => ['Admin\AiAssistantController', 'planNew'],
+    'POST /admin/assistant/plan/cancel'    => ['Admin\AiAssistantController', 'planCancel'],
+    'POST /admin/assistant/plan/delete'    => ['Admin\AiAssistantController', 'planDelete'],
 ];
