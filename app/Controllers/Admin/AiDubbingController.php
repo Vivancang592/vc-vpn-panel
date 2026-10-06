@@ -103,9 +103,11 @@ final class AiDubbingController extends AiBaseController
         $options = ['voice' => $voice];
 
         $model = trim((string) ($_POST['model'] ?? ''));
-        if ($model !== '') {
-            $options['model'] = $model;
+        if ($model === '') {
+            $this->flash('Vui lòng chọn Model AI trước khi tạo lời thoại.', 'danger', $back);
+            return;
         }
+        $options['model'] = $model;
 
         try {
             $res = $this->media()->generateDubbing($text, $options, (int) ($_SESSION['user_id'] ?? 0));

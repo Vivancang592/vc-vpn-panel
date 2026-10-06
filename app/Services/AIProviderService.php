@@ -74,60 +74,6 @@ class AIProviderService
         return $this->toLegacyText($result);
     }
 
-    /**
-     * Sinh nội dung bài đăng Fanpage (1 bài).
-     *
-     * Đi qua module `content_article` của AI Core → prompt đọc từ
-     * storage/prompts/content_article.txt (Admin sửa được).
-     *
-     * P12: admin chỉ gửi DANH SÁCH CHỦ ĐỀ — AI tự phân tích và viết theo
-     * chủ đề (không còn ô "Yêu cầu thêm"; hướng dẫn văn phong nằm trong
-     * prompt hệ thống do admin sửa ở tab prompt).
-     *
-     * @return array{ok: bool, content: string, error: ?string, provider?: string, model?: string}
-     */
-    public function generateContent(string $topic): array
-    {
-        $result = $this->core()->run('content_article', ['topic' => $topic]);
-
-        return $this->toLegacyText($result);
-    }
-
-    /**
-     * Sinh ảnh minh hoạ qua AI Core (module `image_generation`), lưu cục bộ.
-     *
-     * @return array{ok: bool, url: string, error: ?string}
-     */
-    public function generateImage(string $prompt, string $size = '1024x1024'): array
-    {
-        $prompt = trim($prompt);
-
-        if ($prompt === '') {
-            return ['ok' => false, 'url' => '', 'error' => 'Prompt sinh ảnh không được để trống.'];
-        }
-
-        $size = trim($size) !== '' ? trim($size) : '1024x1024';
-
-        $result = $this->core()->run('image_generation', ['prompt' => $prompt], ['size' => $size]);
-
-        if (!$result->isOk()) {
-            return [
-                'ok'    => false,
-                'url'   => '',
-                'error' => $result->errorMessage() ?? 'AI Core không thể sinh ảnh.',
-            ];
-        }
-
-        $file = is_array($result->files) ? ($result->files[0] ?? null) : null;
-        $url = $this->persistImage(is_array($file) ? $file : []);
-
-        if ($url === null) {
-            return ['ok' => false, 'url' => '', 'error' => 'Không lưu được ảnh do AI trả về.'];
-        }
-
-        return ['ok' => true, 'url' => $url, 'error' => null];
-    }
-
     // -----------------------------------------------------------------
     // Nội bộ
     // -----------------------------------------------------------------

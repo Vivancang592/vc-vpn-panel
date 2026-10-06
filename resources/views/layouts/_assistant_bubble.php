@@ -28,16 +28,23 @@ $suggestions = [
 
 <style>
     .asst-head {
-        display: flex; justify-content: space-between; align-items: flex-start;
+        display: flex; justify-content: space-between; align-items: center;
         gap: 1rem; flex-wrap: wrap; margin-bottom: 1rem; width: 100%; box-sizing: border-box;
     }
-    .asst-head h1 { font-size: 1.5rem; font-weight: 700; margin: 0 0 0.25rem; }
-    .asst-head p { color: var(--ios-text-secondary); font-size: 0.85rem; margin: 0; }
+    /* Tiêu đề rõ ràng: icon + tên đậm + mô tả ngắn — màu theo theme hệ thống. */
+    .asst-head-info { display: flex; align-items: center; gap: 0.7rem; min-width: 0; }
+    .asst-head-icon { font-size: 1.7rem; line-height: 1; }
+    .asst-head h1 {
+        font-size: 1.4rem; font-weight: 800; margin: 0 0 0.15rem;
+        color: var(--ios-text, #132238); letter-spacing: 0.2px;
+    }
+    .asst-head p { color: var(--ios-text-secondary, #617087); font-size: 0.82rem; margin: 0; line-height: 1.45; }
+    .asst-head p code { color: var(--ios-blue, #1677ff); }
     .asst-tools { display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap; }
     .asst-tools select {
         padding: 0.45rem 0.6rem; border-radius: var(--radius-sm);
-        border: 1px solid var(--glass-border); background: transparent;
-        color: inherit; font-size: 0.85rem; max-width: 220px;
+        border: 1px solid var(--glass-border); background: rgba(255, 255, 255, 0.75);
+        color: var(--ios-text, #132238); font-size: 0.85rem; max-width: 220px;
     }
 
     .asst-wrap {
@@ -184,21 +191,28 @@ $suggestions = [
     .asst-chip img { width: 20px; height: 20px; object-fit: cover; border-radius: 4px; }
     .asst-chip button { border: none; background: none; color: var(--ios-text-secondary); cursor: pointer; padding: 0; font-size: 0.85rem; }
     .asst-chip button:hover { color: var(--ios-danger); }
-    .asst-input-row { display: flex; gap: 0.5rem; align-items: flex-end; }
+    /* Ô nhập kiểu GEMINI: nút thêm ảnh (trái) + ô soạn (giữa) + nút gửi (phải)
+       nằm TRONG một khung bo góc duy nhất, không tách rời nhau. */
+    .asst-input-row {
+        position: relative; display: flex; gap: 0.25rem; align-items: flex-end;
+        border: 1px solid var(--glass-border); border-radius: 14px;
+        background: rgba(0, 0, 0, 0.18); padding: 4px;
+    }
+    .asst-input-row:focus-within { border-color: var(--ios-blue); }
     .asst-ico-btn {
         flex: 0 0 auto; width: 36px; height: 36px; border-radius: 10px; cursor: pointer;
-        border: 1px solid var(--glass-border); background: rgba(255, 255, 255, 0.05);
-        color: inherit; font-size: 1rem; display: flex; align-items: center; justify-content: center;
+        border: none; background: transparent; color: #9aa4b2;
+        font-size: 1.15rem; display: flex; align-items: center; justify-content: center;
     }
-    .asst-ico-btn:hover { border-color: var(--ios-blue); color: var(--ios-blue); }
+    .asst-ico-btn:hover { color: var(--ios-blue); background: rgba(0, 122, 255, 0.14); }
+    .asst-ico-btn:disabled { opacity: 0.45; cursor: not-allowed; }
     .asst-input {
-        flex: 1; min-width: 0; resize: none; padding: 0.55rem 0.75rem;
-        border-radius: 12px; border: 1px solid var(--glass-border);
-        background: rgba(0, 0, 0, 0.18); color: inherit; font-size: 0.88rem;
-        font-family: inherit; line-height: 1.45; min-height: 38px;
+        flex: 1; min-width: 0; resize: none; padding: 0.5rem 0.35rem;
+        border-radius: 10px; border: none; background: transparent; color: inherit;
+        font-size: 0.88rem; font-family: inherit; line-height: 1.45; min-height: 36px;
         overflow-y: hidden; /* tự mở rộng theo hàng — không cuộn, không tràn scrollbar ra ngoài bo góc */
     }
-    .asst-input:focus { outline: none; border-color: var(--ios-blue); }
+    .asst-input:focus { outline: none; border: none; }
     .asst-send {
         flex: 0 0 auto; width: 36px; height: 36px; border-radius: 10px; border: none;
         background: var(--ios-blue); color: #fff; font-size: 1rem; cursor: pointer;
@@ -206,6 +220,33 @@ $suggestions = [
     }
     .asst-send:disabled { opacity: 0.45; cursor: not-allowed; }
     .asst-note { font-size: 0.7rem; color: var(--ios-text-secondary); margin-top: 0.4rem; }
+
+    /* Menu chọn nguồn ảnh khi bấm nút thêm ảnh (máy / thư mục AI) */
+    .asst-attach-menu {
+        position: absolute; left: 0; bottom: calc(100% + 8px); z-index: 30;
+        min-width: 250px; padding: 0.3rem; display: flex; flex-direction: column; gap: 2px;
+        background: var(--glass-bg, #101726); border: 1px solid var(--glass-border);
+        border-radius: 12px; box-shadow: 0 12px 32px rgba(0, 0, 0, 0.5);
+    }
+    .asst-attach-menu[hidden] { display: none; }
+    .asst-attach-menu button {
+        display: flex; align-items: center; gap: 0.55rem; width: 100%; box-sizing: border-box;
+        padding: 0.55rem 0.65rem; border: none; border-radius: 8px; background: transparent;
+        color: #f2f4f8; font-size: 0.85rem; cursor: pointer; text-align: left;
+    }
+    .asst-attach-menu button:hover { background: rgba(0, 122, 255, 0.16); }
+
+    /* Lưới ảnh do AI tạo (modal chọn ảnh từ thư mục AI) */
+    .asst-ai-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 0.65rem; }
+    .asst-ai-card {
+        display: flex; flex-direction: column; padding: 0; cursor: pointer; color: inherit; text-align: left;
+        border: 1px solid var(--glass-border); border-radius: 10px; overflow: hidden;
+        background: rgba(255, 255, 255, 0.04);
+    }
+    .asst-ai-card:hover { border-color: var(--ios-blue); }
+    .asst-ai-card img { width: 100%; aspect-ratio: 4 / 3; object-fit: cover; display: block; background: rgba(0, 0, 0, 0.35); }
+    .asst-ai-card span { font-size: 0.72rem; padding: 0.4rem 0.5rem; color: var(--ios-text-secondary); word-break: break-all; }
+    .asst-ai-empty { color: var(--ios-text-secondary); font-size: 0.85rem; text-align: center; padding: 1.5rem 0.5rem; }
 
     /* --- Modal kế hoạch --- */
     .asst-modal {
@@ -215,13 +256,23 @@ $suggestions = [
     }
     .asst-modal.open { display: flex; }
     .asst-modal-box {
-        width: min(680px, 100%); max-height: 86vh; overflow-y: auto;
+        width: min(80vw, 1600px); max-height: 86vh; overflow: hidden;
+        display: flex; flex-direction: column;
         background: var(--glass-bg, #101726); border: 1px solid var(--glass-border);
         border-radius: var(--radius-lg); padding: 1.25rem 1.35rem;
         box-shadow: var(--glass-shadow);
     }
-    .asst-modal-box h3 { margin: 0 0 0.85rem; font-size: 1.05rem; display: flex; justify-content: space-between; gap: 1rem; align-items: center; }
-    .asst-modal-close { border: none; background: none; color: var(--ios-text-secondary); font-size: 1.3rem; cursor: pointer; line-height: 1; }
+    .asst-modal-box h3 {
+        margin: 0 0 0.85rem; font-size: 1.05rem; display: flex; justify-content: space-between;
+        gap: 1rem; align-items: center; flex: 0 0 auto; color: var(--ios-text, #172033);
+    }
+    /* Vùng cuộn riêng: tiêu đề + nút X đứng yên, không cuộn theo nội dung;
+       scrollbar nằm trong padding của modal nên KHÔNG tràn ra ngoài bo góc. */
+    .asst-modal-scroll {
+        flex: 1 1 auto; min-height: 0; overflow-y: auto; overflow-x: hidden;
+        overscroll-behavior: contain; padding: 0 6px 4px 0;
+    }
+    .asst-modal-close { border: none; background: none; color: var(--ios-text, #172033); font-size: 1.3rem; cursor: pointer; line-height: 1; }
     .asst-modal-close:hover { color: var(--ios-danger); }
     .asst-field { margin-bottom: 0.8rem; }
     .asst-field label { display: block; font-size: 0.78rem; font-weight: 600; margin-bottom: 0.3rem; color: var(--ios-text-secondary); }
@@ -232,17 +283,18 @@ $suggestions = [
     }
     .asst-field textarea { min-height: 84px; resize: vertical; }
     .asst-field input:focus, .asst-field select:focus, .asst-field textarea:focus { outline: none; border-color: var(--ios-blue); }
-    .asst-modal-actions { display: flex; gap: 0.5rem; justify-content: flex-end; margin-top: 1rem; flex-wrap: wrap; }
+    .asst-modal-actions { display: flex; gap: 0.5rem; justify-content: flex-end; margin-top: 1rem; flex-wrap: wrap; flex: 0 0 auto; }
     .asst-btn {
         padding: 0.5rem 1rem; border-radius: var(--radius-sm); font-size: 0.85rem;
         font-weight: 600; cursor: pointer; border: 1px solid var(--glass-border);
-        background: rgba(255, 255, 255, 0.06); color: inherit;
+        background: rgba(255, 255, 255, 0.6); color: var(--ios-text, #132238);
     }
     .asst-btn:hover { border-color: var(--ios-text-secondary); }
     .asst-btn.primary { background: var(--ios-blue); border-color: var(--ios-blue); color: #fff; }
     .asst-btn.primary:disabled { opacity: 0.5; cursor: not-allowed; }
     .asst-btn.danger { color: var(--ios-danger); border-color: rgba(255, 69, 58, 0.4); }
-    .asst-plan-meta { font-size: 0.75rem; color: var(--ios-text-secondary); margin: -0.4rem 0 0.8rem; }
+    .asst-plan-card-head { display: flex; align-items: center; gap: 0.45rem; flex-wrap: wrap; font-size: 0.93rem; font-weight: 600; padding-bottom: 0.5rem; margin-bottom: 0.5rem; border-bottom: 1px dashed var(--glass-border); }
+    .asst-plan-card-meta { font-size: 0.72rem; font-weight: 400; color: var(--ios-text-secondary); margin-left: auto; }
     .asst-plan-body { font-size: 0.88rem; line-height: 1.6; }
     .asst-plan-body h2, .asst-plan-body h3, .asst-plan-body h4 { margin: 0.8rem 0 0.4rem; }
     .asst-plan-body p { margin: 0 0 0.5rem; }
@@ -251,13 +303,51 @@ $suggestions = [
         background: rgba(0, 0, 0, 0.35); border: 1px solid var(--glass-border);
         border-radius: 8px; padding: 0.6rem 0.75rem; overflow-x: auto; font-size: 0.78rem;
     }
+
+    /* —— Card bài viết xem trước (post_draft) — CHƯA lưu, bấm "Lưu Bài" —— */
+    .asst-post-card .asst-post-head {
+        display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+        padding-bottom: 8px; margin-bottom: 10px;
+        border-bottom: 1px solid rgba(22, 119, 255, 0.2);
+    }
+    .asst-post-title { font-weight: 700; color: var(--ios-text, #132238); font-size: 14px; }
+    .asst-post-chip {
+        font-size: 11px; padding: 2px 9px; border-radius: 999px; font-weight: 600;
+        background: rgba(22, 119, 255, 0.1); color: var(--ios-blue, #1677ff);
+        border: 1px solid rgba(22, 119, 255, 0.32);
+    }
+    .asst-post-chip.saved {
+        background: rgba(34, 160, 107, 0.12); color: var(--ios-success, #22a06b);
+        border-color: rgba(34, 160, 107, 0.38);
+    }
+    .asst-post-chip.pending {
+        background: rgba(217, 119, 6, 0.12); color: var(--ios-warning, #d97706);
+        border-color: rgba(217, 119, 6, 0.38);
+    }
+    .asst-post-body { font-size: 13.5px; }
+    .asst-post-body h1, .asst-post-body h2, .asst-post-body h3, .asst-post-body h4 { color: var(--ios-text, #132238); margin: 10px 0 6px; }
+    .asst-post-body p { margin: 6px 0; color: var(--ios-text, #132238); }
+    .asst-post-body ul, .asst-post-body ol { padding-left: 18px; margin: 6px 0; }
+    .asst-post-body li { margin: 3px 0; color: var(--ios-text, #132238); }
+    .asst-post-body a { color: var(--ios-blue, #1677ff); }
+    .asst-post-body img { max-width: 100%; border-radius: 8px; margin: 6px 0; }
+    .asst-post-body pre {
+        background: #0f172a; color: #e2e8f0; border: 1px solid rgba(15, 23, 42, 0.4);
+        border-radius: 8px; padding: 0.6rem 0.75rem; overflow-x: auto; font-size: 0.78rem;
+    }
+    .asst-post-foot {
+        display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+        margin-top: 10px; padding-top: 10px;
+        border-top: 1px solid rgba(22, 119, 255, 0.2);
+    }
+    .asst-post-hint { font-size: 12px; color: var(--ios-text-secondary, #617087); }
     .asst-plan-body code { font-family: Consolas, Monaco, monospace; font-size: 0.85em; }
     .asst-plan-body :not(pre) > code { background: rgba(0, 122, 255, 0.12); padding: 0.08em 0.35em; border-radius: 4px; }
 
     @media (max-width: 860px) {
         .asst-wrap { flex-direction: column; height: auto; }
-        .asst-side { flex: none; width: 100%; }
-        .asst-list { max-height: 170px; }
+        .asst-side { flex: none; width: 100%; height: auto; }
+        .asst-list { flex: none; height: auto; max-height: 170px; overflow-y: auto; }
         .asst-side-plans { max-height: none; }
         .asst-main { height: 70vh; }
     }
@@ -300,9 +390,12 @@ $suggestions = [
 <div class="vc-asst-popup-inner">
 
 <div class="asst-head">
-    <div>
-        <h1>Trợ Lý Admin</h1>
-        <p>Chat AI dành cho admin — tra cứu số liệu bán hàng, khách hàng, chi phí và soạn thảo kế hoạch. Lịch sử lưu riêng trong <code>storage/assistant/</code>.</p>
+    <div class="asst-head-info">
+        <span class="asst-head-icon" aria-hidden="true">🤖</span>
+        <div>
+            <h1>Trợ Lý Admin</h1>
+            <p>Trợ lý AI của admin — tra cứu số liệu, khách hàng, chi phí &amp; soạn kế hoạch. Lịch sử lưu tại <code>storage/assistant/</code>.</p>
+        </div>
     </div>
     <div class="asst-tools">
         <select id="asst-model" title="Chọn model AI" disabled>
@@ -340,7 +433,11 @@ $suggestions = [
         <form class="asst-composer" id="asst-form" autocomplete="off">
             <div class="asst-chips" id="asst-chips"></div>
             <div class="asst-input-row">
-                <button type="button" class="asst-ico-btn" id="asst-attach" title="Đính kèm ảnh / file văn bản (tối đa 5)">📎</button>
+                <button type="button" class="asst-ico-btn" id="asst-attach" title="Thêm ảnh / file (tối đa 5)">＋</button>
+                <div class="asst-attach-menu" id="asst-attach-menu" hidden>
+                    <button type="button" data-attach="device">💻 Chọn ảnh / file từ máy</button>
+                    <button type="button" data-attach="ai">🎨 Chọn ảnh do AI tạo</button>
+                </div>
                 <textarea class="asst-input" id="asst-input" rows="1" placeholder="Nhập câu hỏi cho trợ lý... (Enter gửi, Shift+Enter xuống dòng)"></textarea>
                 <button type="submit" class="asst-send" id="asst-send" title="Gửi">➤</button>
             </div>
@@ -357,6 +454,7 @@ $suggestions = [
         <h3 id="asst-modal-new-title">📅 Kế Hoạch Mới
             <button type="button" class="asst-modal-close" data-close aria-label="Đóng">&times;</button>
         </h3>
+        <div class="asst-modal-scroll">
         <div class="asst-field">
             <label for="asst-plan-title">Tên kế hoạch</label>
             <input type="text" id="asst-plan-title" maxlength="160" placeholder="VD: Chiến dịch tăng trưởng tháng 12">
@@ -373,6 +471,7 @@ $suggestions = [
             <label for="asst-plan-details">Yêu cầu bổ sung (không bắt buộc)</label>
             <textarea id="asst-plan-details" placeholder="Mục tiêu, thời gian, nguồn lực, đối tượng khách hàng..."></textarea>
         </div>
+        </div><!-- /.asst-modal-scroll -->
         <div class="asst-modal-actions">
             <button type="button" class="asst-btn" data-close>Huỷ</button>
             <button type="button" class="asst-btn primary" id="asst-plan-submit">✨ Tạo Kế Hoạch</button>
@@ -380,16 +479,18 @@ $suggestions = [
     </div>
 </div>
 
-<!-- Modal: xem kế hoạch -->
-<div class="asst-modal" id="asst-modal-view" role="dialog" aria-modal="true" aria-labelledby="asst-modal-view-title">
+<!-- Modal: chọn ảnh từ thư mục AI tạo ra (public/uploads/ai/image/) -->
+<div class="asst-modal" id="asst-modal-aiimg" role="dialog" aria-modal="true" aria-labelledby="asst-modal-aiimg-title">
     <div class="asst-modal-box">
-        <h3 id="asst-modal-view-title">📅 Kế Hoạch
+        <h3 id="asst-modal-aiimg-title">🖼️ Ảnh Do AI Tạo
             <button type="button" class="asst-modal-close" data-close aria-label="Đóng">&times;</button>
         </h3>
-        <div class="asst-plan-meta" id="asst-view-meta"></div>
-        <div class="asst-plan-body" id="asst-view-body"></div>
+        <div class="asst-modal-scroll">
+            <div class="asst-ai-grid" id="asst-ai-grid">
+                <div class="asst-ai-empty">Đang tải danh sách ảnh...</div>
+            </div>
+        </div>
         <div class="asst-modal-actions">
-            <button type="button" class="asst-btn danger" id="asst-view-del">🗑 Xoá</button>
             <button type="button" class="asst-btn" data-close>Đóng</button>
         </div>
     </div>
@@ -434,7 +535,9 @@ $suggestions = [
     var msgsEl = $('asst-msgs'), convListEl = $('asst-conv-list'), planListEl = $('asst-plan-list');
     var inputEl = $('asst-input'), sendBtn = $('asst-send'), chipsEl = $('asst-chips');
     var fileEl = $('asst-file'), modelSel = $('asst-model');
-    var modalNew = $('asst-modal-new'), modalView = $('asst-modal-view');
+    var modalNew = $('asst-modal-new');
+    var modalAi = $('asst-modal-aiimg'), aiGridEl = $('asst-ai-grid');
+    var attachMenuEl = $('asst-attach-menu');
 
     var current  = '';
     var pending  = [];   // File chờ gửi
@@ -443,7 +546,6 @@ $suggestions = [
     var ctrl     = new AbortController();
     var planCtrl = null;   // AbortController riêng cho lần tạo kế hoạch (bấm Huỷ → dừng ngay)
     var planReqId = null;  // Mã yêu cầu lần tạo hiện tại (server hủy theo req_id qua beacon)
-    var viewPlanId = '';
 
     try { current = localStorage.getItem(STORE_CONV) || ''; } catch (e) { current = ''; }
     // KHÔNG validate current tại đây — CONVS rỗng cho tới khi bootstrap(); validate sau khi tải.
@@ -497,7 +599,9 @@ $suggestions = [
         s = s.replace(/\*\*([^*\n]+)\*\*/g, '<strong>$1</strong>');
         s = s.replace(/(^|[\s(])\*([^*\n]+)\*/g, '$1<em>$2</em>');
         s = s.replace(/\[([^\]\n]+)\]\((https?:\/\/[^\s)]+|\/[^\s)]*)\)/g, function (m, t, u) {
-            return '<a href="' + esc(u) + '" target="_blank" rel="noopener">' + t + '</a>';
+            // Link kế hoạch → mở popup tại chỗ (không tab mới); link khác giữ tab mới.
+            var blank = u.indexOf('assistant/plan/view') === -1 ? ' target="_blank" rel="noopener"' : '';
+            return '<a href="' + esc(u) + '"' + blank + '>' + t + '</a>';
         });
         s = s.replace(/\u0000C(\d+)\u0000/g, function (m, i) { return '<code>' + codes[+i] + '</code>'; });
         return s;
@@ -535,6 +639,21 @@ $suggestions = [
         for (var i = 0; i < parts.length; i++) {
             if (i % 2 === 1) {
                 var t = parts[i], nl = t.indexOf('\n');
+                // Khối bài xem trước (post_draft) → render card THAY block code thường.
+                var fl = nl > -1 ? t.slice(0, nl).trim() : t.trim();
+                if (fl === 'post-preview') {
+                    var po = null;
+                    try { po = JSON.parse(t.slice(nl + 1).trim()); } catch (e) { po = null; }
+                    if (po && po.preview_id) {
+                        // Backtick trong JSON đã thay U+2027 lúc gắn marker (chống phá
+                        // fence) — khôi phục tại đây để hiển thị/lưu đúng gốc.
+                        po.content = String(po.content || '').split('‧').join('`');
+                        po.title = String(po.title || '').split('‧').join('`');
+                        POSTS[po.preview_id] = po;
+                        html += postPreviewInner(po);
+                        continue;
+                    }
+                }
                 if (nl > -1 && /^[a-zA-Z0-9+#._-]*\s*$/.test(t.slice(0, nl))) t = t.slice(nl + 1);
                 html += '<pre><code>' + esc(t.replace(/\n$/, '')) + '</code></pre>';
             } else if (parts[i] !== '') {
@@ -561,6 +680,82 @@ $suggestions = [
         });
         var body = rest.trim() ? '<div>' + md(rest) + '</div>' : '';
         return extra + body;
+    }
+
+    /* ============ Bài viết xem trước (post_draft): card trong chat ============
+     * AI soạn bài → post_draft trả payload preview (CHƯA ghi DB) → hệ thống
+     * nhúng ```post-preview\n{json}\n``` vào reply → md() render card TRƯỚC khi
+     * lưu; admin bấm "Lưu Bài" → POST post/save mới ghi bài nháp.            */
+    var POSTS = {};
+
+    function postPreviewInner(p) {
+        var typeLabels = { news: 'Tin tức', tutorial: 'Hướng dẫn', faq: 'FAQ', popup: 'Popup' };
+        var saved = p.saved_post_id;
+        var foot = saved
+            ? '<a class="asst-btn" href="/admin/posts/edit?id=' + saved + '">Mở bài nháp</a>'
+                + '<span class="asst-post-hint">Đã lưu — hiển thị trong Danh Sách Bài Viết.</span>'
+            : '<button type="button" class="asst-btn primary" data-post-save="' + escAttr(p.preview_id) + '">Lưu Bài</button>'
+                + '<span class="asst-post-hint">Bài CHƯA lưu — bấm "Lưu Bài" để vào Danh Sách Bài Viết.</span>';
+        return '<div class="asst-plan-card asst-post-card" data-post-card="' + escAttr(p.preview_id) + '">'
+            + '<div class="asst-post-head"><span style="font-size:16px">📝</span>'
+            + '<span class="asst-post-title">' + esc(p.title || '(không có tiêu đề)') + '</span>'
+            + '<span class="asst-post-chip">' + esc(typeLabels[p.type] || p.type || 'news') + '</span>'
+            + (saved
+                ? '<span class="asst-post-chip saved">Đã lưu</span>'
+                : '<span class="asst-post-chip pending">Chưa lưu</span>')
+            + '</div>'
+            + '<div class="asst-post-body">' + md(p.content || '') + '</div>'
+            + '<div class="asst-post-foot">' + foot + '</div>'
+            + '</div>';
+    }
+
+    function savePostCard(btn) {
+        var id = btn.getAttribute('data-post-save');
+        var p = POSTS[id];
+        if (!p || p.saved_post_id) { return; }
+        btn.disabled = true;
+        btn.textContent = 'Đang lưu...';
+        post('/admin/assistant/post/save', {
+            preview_id: id,
+            title: p.title,
+            content: p.content,
+            type: p.type || 'news',
+            slug: p.slug || ''
+        }).then(function (res) {
+            if (!res.ok) {
+                btn.disabled = false;
+                btn.textContent = 'Lưu Bài';
+                toast('danger', res.error || 'Không lưu được bài.');
+                return;
+            }
+            p.saved_post_id = res.post_id;
+            var card = document.querySelector('[data-post-card="' + id + '"]');
+            if (card) { card.innerHTML = postPreviewInner(p); }
+            toast('success', res.already ? 'Bài đã lưu trước đó (không tạo trùng).' : 'Đã lưu NHÁP — vào Danh Sách Bài Viết.');
+        }).catch(function () {
+            btn.disabled = false;
+            btn.textContent = 'Lưu Bài';
+            toast('danger', 'Mất kết nối — chưa lưu được bài.');
+        });
+    }
+
+    /* Sau khi tải lịch sử: đồng bộ trạng thái đã lưu của các card bài viết
+     * (tránh bấm "Lưu Bài" lần 2 sau khi mở lại đoạn chat). */
+    function syncSavedPosts() {
+        var ids = [];
+        Object.keys(POSTS).forEach(function (k) {
+            if (!POSTS[k].saved_post_id) { ids.push(k); }
+        });
+        if (!ids.length) { return; }
+        get('/admin/assistant/post/status?ids=' + ids.join(',')).then(function (res) {
+            var saved = (res && res.ok && res.saved) ? res.saved : {};
+            Object.keys(saved).forEach(function (id) {
+                if (!POSTS[id]) { return; }
+                POSTS[id].saved_post_id = saved[id];
+                var card = document.querySelector('[data-post-card="' + id + '"]');
+                if (card) { card.innerHTML = postPreviewInner(POSTS[id]); }
+            });
+        }).catch(function () { /* noop */ });
     }
 
     /* ================= Sidebar ================= */
@@ -656,6 +851,7 @@ $suggestions = [
                 && modelSel.querySelector('option[value="' + res.meta.model + '"]')) {
                 modelSel.value = res.meta.model;
             }
+            syncSavedPosts();
             scrollBottom();
         }).catch(function () { toast('danger', 'Mất kết nối khi tải lịch sử chat.'); });
     }
@@ -727,12 +923,62 @@ $suggestions = [
         }).join('');
     }
 
+    /* Chọn ảnh từ thư mục AI tạo ra (public/uploads/ai/image/) → fetch về
+       thành File rồi đẩy vào pending như chọn file từ máy (giữ chung limit 5MB/5 file). */
+    function openAiPicker() {
+        openModal(modalAi);
+        aiGridEl.innerHTML = '<div class="asst-ai-empty">Đang tải danh sách ảnh...</div>';
+        get('/admin/assistant/ai-images').then(function (res) {
+            if (!res || !res.ok) {
+                aiGridEl.innerHTML = '<div class="asst-ai-empty">Không tải được danh sách ảnh.</div>';
+                return;
+            }
+            var imgs = res.images || [];
+            if (!imgs.length) {
+                aiGridEl.innerHTML = '<div class="asst-ai-empty">Thư mục AI chưa có ảnh nào.</div>';
+                return;
+            }
+            aiGridEl.innerHTML = imgs.map(function (im) {
+                return '<button type="button" class="asst-ai-card" data-url="' + esc(im.url) + '" data-name="' + esc(im.name) + '" title="Bấm để đính kèm ảnh này">'
+                    + '<img src="' + esc(im.url) + '" loading="lazy" alt="">'
+                    + '<span>' + esc(im.name) + '</span></button>';
+            }).join('');
+        }).catch(function () {
+            aiGridEl.innerHTML = '<div class="asst-ai-empty">Mất kết nối — không tải được ảnh.</div>';
+        });
+    }
+    aiGridEl.addEventListener('click', function (e) {
+        var card = e.target.closest ? e.target.closest('.asst-ai-card') : null;
+        if (!card) return;
+        var url = card.getAttribute('data-url') || '';
+        var name = card.getAttribute('data-name') || 'ai-image.png';
+        if (!url) return;
+        fetch(url, { credentials: 'same-origin' }).then(function (r) {
+            if (!r.ok) throw new Error('HTTP ' + r.status);
+            return r.blob();
+        }).then(function (b) {
+            if (b.size > 5242880) { toast('danger', 'Ảnh "' + name + '" vượt 5MB.'); return; }
+            var f;
+            try {
+                f = new File([b], name, { type: b.type || 'image/png' });
+            } catch (err) {
+                f = new Blob([b], { type: b.type || 'image/png' });
+                f.name = name;
+            }
+            addFiles([f]);
+            closeModal(modalAi);
+        }).catch(function () {
+            toast('danger', 'Không tải được ảnh: ' + name);
+        });
+    });
+
     /* ================= Gửi tin ================= */
     function setBusy(b) {
         busy = b;
         sendBtn.disabled = b;
         inputEl.disabled = b;
         $('asst-attach').disabled = b;
+        if (b && attachMenuEl) attachMenuEl.hidden = true;
     }
     function showTyping() {
         var row = document.createElement('div');
@@ -848,6 +1094,9 @@ $suggestions = [
                 }
                 bubble('assistant', md(res.reply || ''), '');
                 scrollBottom();
+                // AI vừa tạo/cập nhật kế hoạch (đã KHÔNG còn chèn link) → luôn nạp lại
+                // sidebar Kế Hoạch NGAY sau mỗi lượt trả lời — không cần F5.
+                refreshPlans();
                 if (res.meta) {
                     // đưa đoạn đang chat lên đầu danh sách (meta server đã có title/msg_count mới)
                     CONVS = [res.meta].concat(CONVS.filter(function (c) { return c.id !== id; }));
@@ -864,9 +1113,22 @@ $suggestions = [
     }
 
     /* ================= Kế hoạch ================= */
-    function openModal(m) { m.classList.add('open'); }
+    /* Tải lại danh sách Kế Hoạch từ server (gọi sau khi AI tạo/cập nhật kế hoạch). */
+    function refreshPlans() {
+        get('/admin/assistant/plans').then(function (res) {
+            if (res && res.ok && Array.isArray(res.plans)) {
+                PLANS = res.plans;
+                renderPlans();
+            }
+        }).catch(function () { /* mất kết nối — sidebar giữ danh sách cũ */ });
+    }
+    function openModal(m) {
+        m.classList.add('open');
+        var sc = m.querySelector('.asst-modal-scroll');
+        if (sc) sc.scrollTop = 0;
+    }
     function closeModal(m) { m.classList.remove('open'); }
-    function anyOpen() { return modalNew.classList.contains('open') || modalView.classList.contains('open'); }
+    function anyOpen() { return modalNew.classList.contains('open') || modalAi.classList.contains('open'); }
 
     /* Báo server hủy yêu cầu tạo kế hoạch (gửi kèm khi abort — không tin được
        connection_status trên Windows/Apache, nên client phải "tự thú" bằng beacon). */
@@ -913,7 +1175,7 @@ $suggestions = [
             PLANS = [res.plan].concat(PLANS.filter(function (p) { return p.id !== res.plan.id; }));
             renderPlans();
             toast('success', 'Đã tạo kế hoạch: ' + (res.plan.title || ''));
-            openPlanView(res.plan.id);
+            showPlanInChat(res.plan.id);
         }).catch(function (err) {
             planCtrl = null;
             btn.disabled = false;
@@ -936,15 +1198,26 @@ $suggestions = [
         planCtrl = null;
     }
 
-    function openPlanView(id) {
+    /* Kế hoạch mở NGAY TRONG đoạn chat (không popup, không tab mới): bấm kế hoạch
+       ở cột trái hoặc link [Xem kế hoạch] cũ trong tin nhắn → nội dung hiện thành bong bóng chat. */
+    function showPlanInChat(id) {
         get('/admin/assistant/plan/view?id=' + encodeURIComponent(id)).then(function (res) {
             if (!res.ok) { toast('danger', res.error || 'Không mở được kế hoạch.'); return; }
-            viewPlanId = id;
             var p = res.plan || {};
-            $('asst-modal-view-title').childNodes[0].nodeValue = (KIND_ICONS[p.kind] || '📌') + ' ' + (p.title || 'Kế hoạch');
-            $('asst-view-meta').textContent = (p.created_at || '') + (p.kind ? ' · loại: ' + p.kind : '');
-            $('asst-view-body').innerHTML = md(res.content || '');
-            openModal(modalView);
+            var w = msgsEl.querySelector('.asst-welcome');
+            if (w) w.remove();
+            // Chỉ giữ MỘT thẻ kế hoạch: mở bản mới → thay thẻ cũ (không xếp nhiều card),
+            // và KHÔNG bọc thêm hộp phụ — bong bóng chat là lớp viền duy nhất.
+            var old = msgsEl.querySelector('[data-plan-card]');
+            if (old && old.parentNode) old.parentNode.removeChild(old);
+            var html = '<div data-plan-card>'
+                + '<div class="asst-plan-card-head">' + (KIND_ICONS[p.kind] || '📌')
+                + ' <strong>' + esc(p.title || 'Kế hoạch') + '</strong>'
+                + '<span class="asst-plan-card-meta">' + esc(p.created_at || '') + '</span></div>'
+                + '<div class="asst-plan-body">' + md(res.content || '') + '</div>'
+                + '</div>';
+            bubble('assistant', html, '');
+            scrollBottom();
         }).catch(function () { toast('danger', 'Mất kết nối — không mở được kế hoạch.'); });
     }
 
@@ -957,7 +1230,6 @@ $suggestions = [
             toast('success', 'Đã xoá kế hoạch.');
             PLANS = PLANS.filter(function (p) { return p.id !== id; });
             renderPlans();
-            if (viewPlanId === id) { closeModal(modalView); viewPlanId = ''; }
         }).catch(function () { toast('danger', 'Mất kết nối — không xoá được.'); });
     }
 
@@ -975,18 +1247,33 @@ $suggestions = [
         var del = e.target.closest ? e.target.closest('[data-delplan]') : null;
         if (del) { e.stopPropagation(); delPlan(del.getAttribute('data-delplan')); return; }
         var item = e.target.closest ? e.target.closest('[data-plan]') : null;
-        if (item) openPlanView(item.getAttribute('data-plan'));
+        if (item) showPlanInChat(item.getAttribute('data-plan'));
     });
 
-    // Gợi ý trong khung chào + ảnh bấm để xem
+    // Gợi ý trong khung chào + ảnh bấm để xem + nút Lưu Bài trên card bài viết
     msgsEl.addEventListener('click', function (e) {
+        var psv = e.target.closest ? e.target.closest('[data-post-save]') : null;
+        if (psv) { savePostCard(psv); return; }
         var sug = e.target.closest ? e.target.closest('.asst-sug') : null;
         if (sug) { inputEl.value = sug.getAttribute('data-q') || ''; inputEl.focus(); autoGrow(); return; }
         var img = e.target.closest ? e.target.closest('.asst-img') : null;
         if (img && img.src) window.open(img.src, '_blank', 'noopener');
     });
 
-    $('asst-attach').addEventListener('click', function () { fileEl.click(); });
+    // Nút thêm ảnh → mở menu chọn NGUỒN (máy / thư mục AI), không mở picker ngay
+    $('asst-attach').addEventListener('click', function (e) {
+        e.stopPropagation();
+        if (this.disabled) return;
+        attachMenuEl.hidden = !attachMenuEl.hidden;
+    });
+    attachMenuEl.addEventListener('click', function (e) {
+        e.stopPropagation();
+        var pick = e.target.closest ? e.target.closest('[data-attach]') : null;
+        if (!pick) return;
+        attachMenuEl.hidden = true;
+        if (pick.getAttribute('data-attach') === 'device') { fileEl.click(); return; }
+        openAiPicker();
+    });
     fileEl.addEventListener('change', function () { addFiles(fileEl.files); fileEl.value = ''; });
     chipsEl.addEventListener('click', function (e) {
         var rm = e.target.closest ? e.target.closest('[data-rm]') : null;
@@ -1024,9 +1311,21 @@ $suggestions = [
         $('asst-plan-title').focus();
     });
     $('asst-plan-submit').addEventListener('click', createPlan);
-    $('asst-view-del').addEventListener('click', function () { if (viewPlanId) delPlan(viewPlanId); });
 
     document.addEventListener('click', function (e) {
+        // Đóng menu nguồn ảnh khi bấm ra ngoài
+        if (attachMenuEl && !attachMenuEl.hidden
+            && !(e.target && e.target.closest && e.target.closest('#asst-attach-menu, #asst-attach'))) {
+            attachMenuEl.hidden = true;
+        }
+        // Link kế hoạch ở BẤT KỲ đâu trong chat → hiển thị NGAY trong đoạn chat (không popup, không mở tab mới).
+        var plink = e.target && e.target.closest ? e.target.closest('a[href*="assistant/plan/view"]') : null;
+        if (plink) {
+            e.preventDefault();
+            var pm = (plink.getAttribute('href') || '').match(/[?&]id=([^&]+)/);
+            if (pm) showPlanInChat(decodeURIComponent(pm[1]));
+            return;
+        }
         if (e.target && e.target.closest && e.target.closest('[data-close]')) {
             var m = e.target.closest('.asst-modal');
             if (m) {
@@ -1039,7 +1338,7 @@ $suggestions = [
         if (e.key !== 'Escape') return;
         if (anyOpen()) {
             if (modalNew.classList.contains('open')) cancelPlanCreate();
-            closeModal(modalNew); closeModal(modalView);
+            closeModal(modalNew); closeModal(modalAi);
             return;
         }
         // Không có modal nào mở → đóng popup trợ lý
@@ -1080,7 +1379,6 @@ $suggestions = [
                     var o = document.createElement('option');
                     o.value = m.model_key;
                     o.textContent = m.model_name || m.model_key;
-                    if (m.is_default) o.selected = true;
                     modelSel.appendChild(o);
                 });
                 modelSel.disabled = false;

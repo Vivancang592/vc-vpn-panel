@@ -6,6 +6,7 @@ namespace App\Controllers\Admin;
 
 use App\AI\Contracts\AIException;
 use App\AI\Core\TaskRunner;
+use App\Models\AIModel;
 use App\Models\AIModule;
 use App\Models\AIOutput;
 use App\Models\AITask;
@@ -78,6 +79,30 @@ final class AiTaskController extends AiBaseController
             return;
         }
 
+        // CHỌN MODEL BẮT BUỘC — chưa chọn / chọn sai → báo ngay, không xếp hàng.
+        $modelKey = trim((string) ($_POST['model'] ?? ''));
+        if ($modelKey === '') {
+            $this->flash('Vui lòng chọn Model AI trước khi giao việc viết bài.', 'danger', '/admin/ai/fanpage');
+            return;
+        }
+
+        $modelRow = (new AIModel())->findByKey($modelKey);
+        if ($modelRow === null) {
+            $this->flash('Model "' . $modelKey . '" không có trong danh mục model của hệ thống.', 'danger', '/admin/ai/fanpage');
+            return;
+        }
+
+        $allowedCaps = $this->modelCapabilitiesForModule((string) ($this->moduleRegistry()->capabilityOf($moduleKey) ?? 'text'));
+        if ($allowedCaps !== [] && !in_array((string) ($modelRow['capability'] ?? ''), $allowedCaps, true)) {
+            $this->flash(
+                'Model "' . $modelKey . '" (capability: ' . (string) ($modelRow['capability'] ?? '?')
+                . ') không hợp lệ cho module viết bài (cần: ' . implode(' / ', $allowedCaps) . ').',
+                'danger',
+                '/admin/ai/fanpage'
+            );
+            return;
+        }
+
         // XẾP HÀNG (session) — writeNext() sẽ viết TỪNG bài một theo thứ tự.
         $batchId = bin2hex(random_bytes(8));
         $items   = [];
@@ -99,6 +124,8 @@ final class AiTaskController extends AiBaseController
 
         $_SESSION['article_queue'] = [
             'id'         => $batchId,
+            // Model admin chọn cho batch này — writeNext truyền vào task options.
+            'model'      => $modelKey,
             'items'      => $items,
             'created_at' => time(),
             'updated_at' => time(),
@@ -107,9 +134,10 @@ final class AiTaskController extends AiBaseController
         $this->logActivity(
             'ai_task_create_bulk',
             sprintf(
-                'Viết bài: %d chủ đề × %d bài → xếp %d bài vào hàng đợi VIẾT TUẦN TỰ (batch %s).',
+                'Viết bài: %d chủ đề × %d bài (model %s) → xếp %d bài vào hàng đợi VIẾT TUẦN TỰ (batch %s).',
                 count($topics),
                 $perTopic,
+                $modelKey,
                 count($items),
                 $batchId
             )
@@ -200,11 +228,19 @@ final class AiTaskController extends AiBaseController
         $runStatus  = 'failed';
         $message    = '';
 
+        // Model admin chọn ở form giao việc (lưu trong queue) → truyền vào task
+        // để ModelResolver dùng ĐÚNG model đã chọn (không còn model mặc định ngầm).
+        $queueModel = trim((string) ($queue['model'] ?? ''));
+        $taskOptions = ['priority' => 5];
+        if ($queueModel !== '') {
+            $taskOptions['model'] = $queueModel;
+        }
+
         try {
             $outcome = $this->runner()->request(
                 'content_article',
                 ['topic' => $topic],
-                ['priority' => 5],
+                $taskOptions,
                 (string) ($queue['items'][$idx]['idempotency_key'] ?? '') ?: null,
                 $userId
             );

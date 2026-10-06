@@ -67,6 +67,33 @@ abstract class BaseController
     }
 
     /**
+     * Thay macro {domain} trong nội dung bằng tên miền THẬT của hệ thống.
+     *
+     * Prompt content_article (mục 3-4) YÊU CẦU model giữ nguyên {domain}
+     * trong URL — chỉ ChatbotService từng thay, pipeline bài viết Fanpage
+     * không thay ở đâu → admin thấy link thô, khách bấm không được. Dùng
+     * chung cho AiBaseController (hiển thị/lên lịch) và CronController
+     * (hàng đợi cũ). Thứ tự nguồn theo resolveSiteUrl() của ChatbotService:
+     * site_url/app_url (DB) → APP_URL → HTTP_HOST → fallback vcvpn.com.
+     */
+    protected function replaceDomainMacro(string $text): string
+    {
+        if (!str_contains($text, '{domain}')) {
+            return $text;
+        }
+
+        $siteUrl = rtrim((string) ($this->settings['site_url'] ?? $this->settings['app_url'] ?? (getenv('APP_URL') ?: '')), '/');
+        if ($siteUrl === '') {
+            $host = (string) ($_SERVER['HTTP_HOST'] ?? '');
+            $siteUrl = $host !== '' ? 'https://' . $host : '';
+        }
+
+        $domain = (string) (parse_url($siteUrl, PHP_URL_HOST) ?: 'vcvpn.com');
+
+        return str_replace('{domain}', $domain, $text);
+    }
+
+    /**
      * Định dạng số tiền động theo cấu hình CSDL (Mặc định chuẩn VND)
      */
     public function formatMoney($amount): string

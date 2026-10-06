@@ -21,6 +21,7 @@ $activeMenu = 'ai-fanpage';
 
 $writeQueue = is_array($writeQueue ?? null) ? $writeQueue : null;
 $fpQueueJson = json_encode($writeQueue, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+$fpModels = is_array($fpModels ?? null) ? $fpModels : [];
 
 ob_start();
 
@@ -46,10 +47,41 @@ require __DIR__ . '/_tab-header.php';
                 <label style="display: block; font-weight: 600; font-size: 0.82rem; margin-bottom: 0.3rem;">Số bài mỗi chủ đề <span style="font-weight: 400; color: var(--ios-text-secondary);">(1–10)</span></label>
                 <input type="number" name="per_topic" class="glass-input" value="1" min="1" max="10" style="width: 100%;">
             </div>
+            <div>
+                <label style="display: block; font-weight: 600; font-size: 0.82rem; margin-bottom: 0.3rem;">Model AI <span style="color: var(--ios-danger);">*</span></label>
+                <select name="model" class="glass-input" style="width: 100%;" required>
+                    <option value="">— Chọn model —</option>
+                    <?php foreach ($fpModels as $m): ?>
+                        <option value="<?= htmlspecialchars((string) ($m['model_key'] ?? '')) ?>"><?= htmlspecialchars((string) ($m['model_name'] ?? ($m['model_key'] ?? ''))) ?></option>
+                    <?php endforeach; ?>
+                </select>
+            </div>
             <button type="submit" class="glass-btn" style="width: 100%; justify-content: center; font-weight: 700; background: var(--ios-blue); color: #fff;">🤖 Viết Bài</button>
         </div>
     </form>
 </div><!-- /CAB 1 -->
+
+<script>
+// GIỮ LỰA CHỌN MODEL THEO TỪNG TAB (localStorage, không ghi SQL): chọn 1 lần →
+// F5/viết lại vẫn giữ; nếu model đã lưu không còn trong dropdown thì để trống.
+(function () {
+    var KEY = 'vc_ai_model_fanpage';
+    var sels = document.querySelectorAll('select[name="model"]');
+    if (sels.length !== 1) return;
+    var sel = sels[0];
+    var saved = '';
+    try { saved = localStorage.getItem(KEY) || ''; } catch (e) {}
+    if (saved) {
+        var opts = sel.options;
+        for (var i = 0; i < opts.length; i++) {
+            if (opts[i].value === saved) { sel.value = saved; break; }
+        }
+    }
+    sel.addEventListener('change', function () {
+        try { localStorage.setItem(KEY, sel.value); } catch (e) {}
+    });
+})();
+</script>
 
 <!-- ============ CAB 2: TIẾN TRÌNH VIẾT TUẦN TỰ (phía dưới form) ============ -->
 <div id="fp-pane-progress">
@@ -86,15 +118,24 @@ require __DIR__ . '/_tab-header.php';
                 Bài viết do AI Core sinh ra. Xem chi tiết, sao chép prompt tạo ảnh, lên lịch đăng lên fanpage hoặc xóa bài.
             </p>
         </div>
-        <div style="display: flex; gap: 0.4rem; flex-wrap: wrap;">
-            <?php foreach ($tabs as $tabKey => $tabLabel): ?>
-                <?php $tabHref = $tabKey === '' ? '/admin/ai/fanpage' : '/admin/ai/fanpage?tab=' . urlencode($tabKey); ?>
-                <a href="<?= htmlspecialchars($tabHref) ?>"
-                   style="text-decoration: none; padding: 0.35rem 0.7rem; border-radius: var(--radius-sm); font-size: 0.8rem; font-weight: 600; border: 1px solid <?= $filter === $tabKey ? 'var(--ios-blue)' : 'var(--ios-border, rgba(255,255,255,0.15))' ?>; color: <?= $filter === $tabKey ? 'var(--ios-blue)' : 'var(--ios-text-secondary)' ?>;">
-                    <?= htmlspecialchars($tabLabel) ?>
-                </a>
-            <?php endforeach; ?>
+        <div style="display: flex; gap: 0.4rem; flex-wrap: wrap; align-items: center;">
+            <button type="button" id="fp-bulk-delete" disabled
+                    style="text-decoration: none; padding: 0.35rem 0.7rem; border-radius: var(--radius-sm); font-size: 0.8rem; font-weight: 600; border: 1px solid var(--ios-danger, #ff453a); background: transparent; color: var(--ios-danger, #ff453a); cursor: pointer; opacity: 0.5;"
+                    title="Xóa các bài viết đã chọn trong trang này">
+                🗑️ Xóa Đã Chọn (<span id="fp-bulk-count">0</span>)
+            </button>
         </div>
+    </div>
+
+    <!-- Phân loại bài viết: hàng riêng ngay dưới mô tả -->
+    <div style="display: flex; gap: 0.4rem; flex-wrap: wrap; align-items: center; margin-bottom: 0.85rem;">
+        <?php foreach ($tabs as $tabKey => $tabLabel): ?>
+            <?php $tabHref = $tabKey === '' ? '/admin/ai/fanpage' : '/admin/ai/fanpage?tab=' . urlencode($tabKey); ?>
+            <a href="<?= htmlspecialchars($tabHref) ?>"
+               style="text-decoration: none; padding: 0.35rem 0.7rem; border-radius: var(--radius-sm); font-size: 0.8rem; font-weight: 600; border: 1px solid <?= $filter === $tabKey ? 'var(--ios-blue)' : 'var(--ios-border, rgba(255,255,255,0.15))' ?>; color: <?= $filter === $tabKey ? 'var(--ios-blue)' : 'var(--ios-text-secondary)' ?>;">
+                <?= htmlspecialchars($tabLabel) ?>
+            </a>
+        <?php endforeach; ?>
     </div>
 
     <?php $statusInfo = static function (string $status) use ($postStatus): array {
@@ -106,6 +147,9 @@ require __DIR__ . '/_tab-header.php';
             <table class="glass-table">
                 <thead>
                     <tr>
+                        <th style="width: 34px;" title="Chọn tất cả bài viết trong trang này">
+                            <input type="checkbox" id="fp-check-all" style=" cursor: pointer;" aria-label="Chọn tất cả trang này">
+                        </th>
                         <th>ID</th>
                         <th>Tên Bài Viết</th>
                         <th>Trạng Thái</th>
@@ -123,6 +167,7 @@ require __DIR__ . '/_tab-header.php';
                             $scheduleAt = trim((string) ($article['scheduled_at'] ?? ''));
                             ?>
                             <tr>
+                                <td><input type="checkbox" class="fp-check" value="<?= (int) $article['id'] ?>" style="cursor: pointer;" aria-label="Chọn bài #<?= (int) $article['id'] ?>"></td>
                                 <td style="font-weight: 700;">#<?= (int) $article['id'] ?></td>
                                 <td style="font-size: 0.82rem; max-width: 380px;">
                                     <a href="/admin/ai/outputs/detail?id=<?= (int) $article['id'] ?>" style="color: var(--ios-text); text-decoration: none; font-weight: 600; display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="<?= htmlspecialchars((string) $article['title']) ?>">
@@ -173,6 +218,8 @@ require __DIR__ . '/_tab-header.php';
                                                   onsubmit="return confirm('Xóa bài viết này? Toàn bộ phiên bản và lịch đăng liên quan sẽ bị xóa.');">
                                                 <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrf_token ?? '') ?>">
                                                 <input type="hidden" name="output_id" value="<?= (int) $article['id'] ?>">
+                                                <input type="hidden" name="tab" value="<?= htmlspecialchars($filter) ?>">
+                                                <input type="hidden" name="page" value="<?= (int) $page ?>">
                                                 <button type="submit" class="action-item" style="font-family: inherit; width: 100%; text-align: left; color: var(--ios-danger);">
                                                     <span>🗑️</span> Xóa
                                                 </button>
@@ -184,7 +231,7 @@ require __DIR__ . '/_tab-header.php';
                         <?php endforeach; ?>
                     <?php else: ?>
                         <tr>
-                            <td colspan="6" style="text-align: center; padding: 2rem; color: var(--ios-text-secondary);">
+                            <td colspan="7" style="text-align: center; padding: 2rem; color: var(--ios-text-secondary);">
                             <?php if ($filter === 'scheduled'): ?>
                                 Không có bài viết nào đang lên lịch.
                             <?php elseif ($filter === 'published'): ?>
@@ -199,7 +246,110 @@ require __DIR__ . '/_tab-header.php';
             </table>
         </div>
     </div>
+
+    <?php
+    // Link phân trang: giữ bộ lọc tab, page=1 bỏ hẳn tham số cho gọn.
+    $fpPageHref = static function (int $p) use ($filter): string {
+        $qs = [];
+        if ($filter !== '') {
+            $qs['tab'] = $filter;
+        }
+        if ($p > 1) {
+            $qs['page'] = $p;
+        }
+        return '/admin/ai/fanpage' . ($qs !== [] ? '?' . http_build_query($qs) : '');
+    };
+    ?>
+    <div style="display: flex; justify-content: space-between; align-items: center; gap: 0.5rem; margin-top: 0.75rem; flex-wrap: wrap; font-size: 0.82rem; color: var(--ios-text-secondary);">
+        <span>Tổng <strong><?= (int) $totalRows ?></strong> bài — Trang <strong><?= (int) $page ?>/<?= (int) $totalPages ?></strong></span>
+        <span style="display: flex; gap: 0.4rem; align-items: center;">
+            <?php if ($page > 1): ?>
+                <a href="<?= htmlspecialchars($fpPageHref($page - 1)) ?>" style="text-decoration: none; padding: 0.3rem 0.7rem; border-radius: var(--radius-sm); font-size: 0.8rem; font-weight: 600; border: 1px solid var(--ios-border, rgba(255,255,255,0.15)); color: var(--ios-text-secondary);">« Trước</a>
+            <?php endif; ?>
+            <?php if ($totalPages > 1): ?>
+                <span style="padding: 0 0.4rem;">
+                    <?php
+                    $from = ($page - 1) * 10 + 1;
+                    $to   = min($page * 10, $totalRows);
+                    echo $totalRows > 0 ? (int) $from . '–' . (int) $to : '0';
+                    ?>
+                </span>
+            <?php endif; ?>
+            <?php if ($page < $totalPages): ?>
+                <a href="<?= htmlspecialchars($fpPageHref($page + 1)) ?>" style="text-decoration: none; padding: 0.3rem 0.7rem; border-radius: var(--radius-sm); font-size: 0.8rem; font-weight: 600; border: 1px solid var(--ios-border, rgba(255,255,255,0.15)); color: var(--ios-text-secondary);">Sau »</a>
+            <?php endif; ?>
+        </span>
+    </div>
 </div><!-- /fp-articles -->
+
+<!-- Form ẩn: xóa hàng loạt (JS gom ids từ checkbox đang chọn rồi submit) -->
+<form id="fp-bulk-form" method="POST" action="/admin/ai/outputs/delete-bulk" style="display: none;">
+    <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrf_token ?? '') ?>">
+    <input type="hidden" name="tab" value="<?= htmlspecialchars($filter) ?>">
+    <input type="hidden" name="page" value="<?= (int) $page ?>">
+</form>
+
+<!-- ===== JS: CHỌN ĐÁNG NHIỀU + XÓA HÀNG LOẠT (delegate toàn trang — sống qua refresh AJAX) ===== -->
+<script>
+(function () {
+    'use strict';
+
+    function checkedBoxes() {
+        return document.querySelectorAll('#fp-articles .fp-check:checked');
+    }
+
+    window.vcBulkUpdate = function () {
+        var n = checkedBoxes().length;
+        var cnt = document.getElementById('fp-bulk-count');
+        var btn = document.getElementById('fp-bulk-delete');
+        var all = document.getElementById('fp-check-all');
+        if (cnt) { cnt.textContent = String(n); }
+        if (btn) {
+            btn.disabled = n === 0;
+            btn.style.opacity = n === 0 ? '0.5' : '1';
+        }
+        if (all) {
+            var total = document.querySelectorAll('#fp-articles .fp-check').length;
+            all.checked = total > 0 && n === total;
+            all.indeterminate = n > 0 && n < total;
+        }
+    };
+
+    document.addEventListener('change', function (e) {
+        var t = e.target;
+        if (!t || !t.classList) { return; }
+        if (t.id === 'fp-check-all') {
+            document.querySelectorAll('#fp-articles .fp-check').forEach(function (b) {
+                b.checked = t.checked;
+            });
+            window.vcBulkUpdate();
+        } else if (t.classList.contains('fp-check')) {
+            window.vcBulkUpdate();
+        }
+    });
+
+    document.addEventListener('click', function (e) {
+        var btn = e.target && e.target.closest ? e.target.closest('#fp-bulk-delete') : null;
+        if (!btn) { return; }
+        var boxes = checkedBoxes();
+        if (!boxes.length) { return; }
+        if (!confirm('Xóa ' + boxes.length + ' bài viết đã chọn?\nToàn bộ phiên bản và lịch đăng liên quan sẽ bị xóa.')) {
+            return;
+        }
+        var form = document.getElementById('fp-bulk-form');
+        if (!form) { return; }
+        form.querySelectorAll('input[name="output_ids[]"]').forEach(function (el) { el.remove(); });
+        boxes.forEach(function (b) {
+            var inp = document.createElement('input');
+            inp.type = 'hidden';
+            inp.name = 'output_ids[]';
+            inp.value = b.value;
+            form.appendChild(inp);
+        });
+        form.submit();
+    });
+})();
+</script>
 
 <!-- ===== JS: HÀNG ĐỢI VIẾT TUẦN TỰ ===== -->
 <script>
@@ -396,6 +546,7 @@ require __DIR__ . '/_tab-header.php';
             if (typeof window.fpBindScheduleOpen === 'function') { window.fpBindScheduleOpen(host); }
             if (typeof window.vcBindActionMenus === 'function') { window.vcBindActionMenus(host); }
             if (typeof window.vcBindCopyButtons === 'function') { window.vcBindCopyButtons(host); }
+            if (typeof window.vcBulkUpdate === 'function') { window.vcBulkUpdate(); }
         }).catch(function () { /* mạng lỗi → giữ list cũ, không ảnh hưởng tiến trình */ });
     }
 

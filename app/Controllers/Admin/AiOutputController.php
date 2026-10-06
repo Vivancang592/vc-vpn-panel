@@ -198,16 +198,31 @@ final class AiOutputController extends AiBaseController
 
     /**
      * Xóa bài viết: hàng đợi liên kết trước, versions tự xóa theo FK cascade.
+     * Quay về đúng tab + trang đang xem (giữ ngữ cảnh phân trang).
      */
     public function delete(): void
     {
+        $filter = (string) ($_POST['tab'] ?? '');
+        if (!array_key_exists($filter, self::OUTPUT_TABS)) {
+            $filter = '';
+        }
+        $page = max(1, (int) ($_POST['page'] ?? 1));
+        $qs = [];
+        if ($filter !== '') {
+            $qs['tab'] = $filter;
+        }
+        if ($page > 1) {
+            $qs['page'] = $page;
+        }
+        $back = '/admin/ai/fanpage' . ($qs !== [] ? '?' . http_build_query($qs) : '');
+
         if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-            $this->flash('Phương thức không hợp lệ.', 'danger', '/admin/ai/outputs');
+            $this->flash('Phương thức không hợp lệ.', 'danger', $back);
             return;
         }
 
         if (!$this->validateCsrfToken((string) ($_POST['csrf_token'] ?? ''))) {
-            $this->flash('CSRF token không hợp lệ.', 'danger', '/admin/ai/outputs');
+            $this->flash('CSRF token không hợp lệ.', 'danger', $back);
             return;
         }
 
@@ -222,7 +237,7 @@ final class AiOutputController extends AiBaseController
         }
 
         if (!is_array($article)) {
-            $this->flash('Bài viết không tồn tại.', 'danger', '/admin/ai/outputs');
+            $this->flash('Bài viết không tồn tại.', 'danger', $back);
             return;
         }
 
@@ -233,11 +248,75 @@ final class AiOutputController extends AiBaseController
             $outputModel->delete($outputId);
         } catch (\Throwable $e) {
             $this->logActivity('ai_output_delete_failed', $e->getMessage());
-            $this->flash('Không xóa được bài viết: ' . $e->getMessage(), 'danger', '/admin/ai/outputs');
+            $this->flash('Không xóa được bài viết: ' . $e->getMessage(), 'danger', $back);
             return;
         }
 
         $this->logActivity('ai_output_delete', sprintf('Output #%d deleted.', $outputId));
-        $this->flash('Đã xóa bài viết #' . $outputId . '.', 'success', '/admin/ai/outputs');
+        $this->flash('Đã xóa bài viết #' . $outputId . '.', 'success', $back);
+    }
+
+    /**
+     * Xóa nhiều bài viết (checkbox trong Danh Sách Bài Viết → "Xóa Đã Chọn").
+     * Giữ nguyên bộ lọc tab + trang hiện tại sau khi xóa.
+     */
+    public function deleteBulk(): void
+    {
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            $this->flash('Phương thức không hợp lệ.', 'danger', '/admin/ai/fanpage');
+            return;
+        }
+
+        if (!$this->validateCsrfToken((string) ($_POST['csrf_token'] ?? ''))) {
+            $this->flash('CSRF token không hợp lệ.', 'danger', '/admin/ai/fanpage');
+            return;
+        }
+
+        $ids = array_values(array_unique(array_filter(array_map(
+            'intval',
+            (array) ($_POST['output_ids'] ?? [])
+        ), static fn (int $id): bool => $id > 0)));
+
+        if ($ids === []) {
+            $this->flash('Chưa chọn bài viết nào để xóa.', 'danger', '/admin/ai/fanpage');
+            return;
+        }
+
+        $filter = (string) ($_POST['tab'] ?? '');
+        if (!array_key_exists($filter, self::OUTPUT_TABS)) {
+            $filter = '';
+        }
+        $page = max(1, (int) ($_POST['page'] ?? 1));
+
+        $qs = [];
+        if ($filter !== '') {
+            $qs['tab'] = $filter;
+        }
+        if ($page > 1) {
+            $qs['page'] = $page;
+        }
+        $back = '/admin/ai/fanpage' . ($qs !== [] ? '?' . http_build_query($qs) : '');
+
+        $outputModel = new AIOutput();
+        $deleted = 0;
+        $failed  = 0;
+        foreach ($ids as $outputId) {
+            try {
+                (new ScheduledPost())->deleteByOutput($outputId);
+                $outputModel->delete($outputId);
+                $deleted++;
+            } catch (\Throwable $e) {
+                $failed++;
+                $this->logActivity('ai_output_delete_failed', '#' . $outputId . ': ' . $e->getMessage());
+            }
+        }
+
+        $this->logActivity('ai_output_delete_bulk', sprintf('Bulk deleted %d output(s), %d failed.', $deleted, $failed));
+
+        $msg = 'Đã xóa ' . $deleted . ' bài viết.';
+        if ($failed > 0) {
+            $msg .= ' Không xóa được ' . $failed . ' bài.';
+        }
+        $this->flash($msg, $failed > 0 ? 'danger' : 'success', $back);
     }
 }

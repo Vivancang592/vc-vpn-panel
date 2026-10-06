@@ -42,16 +42,38 @@ require __DIR__ . '/_tab-header.php';
         </div>
         <div>
             <label style="display: block; font-weight: 600; font-size: 0.82rem; margin-bottom: 0.3rem;">Chọn Model TTS</label>
-            <select name="model" class="glass-input" style="width: 100%;">
-                <option value="">Mặc định của module</option>
+            <select name="model" class="glass-input" style="width: 100%;" required>
+                <option value="">— Chọn model —</option>
                 <?php foreach ($ttsModels as $m): ?>
-                    <option value="<?= htmlspecialchars((string) ($m['model_key'] ?? '')) ?>" <?= !empty($m['is_default']) ? 'selected' : '' ?>><?= htmlspecialchars((string) ($m['model_name'] ?? '')) ?></option>
+                    <option value="<?= htmlspecialchars((string) ($m['model_key'] ?? '')) ?>"><?= htmlspecialchars((string) ($m['model_name'] ?? '')) ?></option>
                 <?php endforeach; ?>
             </select>
         </div>
         <button type="submit" class="glass-btn" data-busy-label="Đang tạo lời thoại..." style="justify-self: start; justify-content: center; font-weight: 700; background: var(--ios-blue); color: #fff; white-space: nowrap;">🎙️ Tạo Lời Thoại</button>
     </div>
 </form>
+
+<script>
+// GIỮ LỰA CHỌN MODEL THEO TỪNG TAB (localStorage, không ghi SQL): chọn 1 lần →
+// F5/viết lại vẫn giữ; nếu model đã lưu không còn trong dropdown thì để trống.
+(function () {
+    var KEY = 'vc_ai_model_dubbing';
+    var sels = document.querySelectorAll('select[name="model"]');
+    if (sels.length !== 1) return;
+    var sel = sels[0];
+    var saved = '';
+    try { saved = localStorage.getItem(KEY) || ''; } catch (e) {}
+    if (saved) {
+        var opts = sel.options;
+        for (var i = 0; i < opts.length; i++) {
+            if (opts[i].value === saved) { sel.value = saved; break; }
+        }
+    }
+    sel.addEventListener('change', function () {
+        try { localStorage.setItem(KEY, sel.value); } catch (e) {}
+    });
+})();
+</script>
 
 <!-- Nút nghe thử giọng phóng to khi bấm — CSS gom trong public/assets/css/admin.css -->
 <script>

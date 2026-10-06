@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Controllers\Admin;
 
+use App\Models\AIModule;
 use App\Models\ChatSession;
 
 /**
@@ -36,6 +37,27 @@ final class AiReplyController extends AiBaseController
         // Trạng thái bật/tắt từng kênh auto-reply (giá trị '1' = bật, mặc định bật).
         $chatEnabled = trim((string) ($settings['ai_chatbot_enabled'] ?? '1')) === '1';
         $commentEnabled = trim((string) ($settings['ai_comment_auto_reply'] ?? '1')) === '1';
+
+        // Model trả lời tự động: đọc config.model_override của 2 module chat
+        // (tab này gán CẢ support_chat + fanpage_comment trong một thao tác chọn).
+        $moduleModel = new AIModule();
+        $readOverride = static function ($row): string {
+            if (!is_array($row) || empty($row['config'])) {
+                return '';
+            }
+            $decoded = json_decode((string) $row['config'], true);
+            return is_array($decoded) ? trim((string) ($decoded['model_override'] ?? '')) : '';
+        };
+        $replyModelOverride = $readOverride($moduleModel->findByKey('support_chat'));
+        $fpModelOverride = $readOverride($moduleModel->findByKey('fanpage_comment'));
+
+        // Danh sách model hợp lệ capability chat (bắt buộc chọn — thiếu báo ngay)
+        // + ẩn model bị API key chặn — đồng bộ với tab Ảnh/Video/Lồng giọng.
+        $replyTabConfig = $this->tabConfig();
+        $replyModels = $this->filterUnlockedModels($this->filterModelsForModule(
+            is_array($replyTabConfig['models'] ?? null) ? $replyTabConfig['models'] : [],
+            'chat'
+        ));
 
         $sessionModel = new ChatSession();
 
@@ -84,6 +106,10 @@ final class AiReplyController extends AiBaseController
             'pageTitle'  => 'Trả Lời Tự Động - Trung Tâm AI',
             'chatEnabled'    => $chatEnabled,
             'commentEnabled' => $commentEnabled,
+            // Chọn model trả lời (áp dụng CẢ 2 kênh) + override hiện tại của từng module.
+            'replyModels'        => $replyModels,
+            'replyModelOverride' => $replyModelOverride,
+            'fpModelOverride'    => $fpModelOverride,
             'conversationStats' => $conversationStats,
             'statusStats' => $statusStats,
             // Danh sách hội thoại đầy đủ (tìm kiếm/phân trang/đóng).

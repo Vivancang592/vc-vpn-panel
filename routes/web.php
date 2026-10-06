@@ -248,10 +248,7 @@ return [
     'GET /admin/ai/reply'               => ['Admin\AiReplyController', 'index'],
 
     // Module AI — trang hiển thị đã gộp vào /admin/ai/settings (chỉ còn POST actions)
-    'POST /admin/ai/modules/sync'       => ['Admin\AiModuleController', 'sync'],
-    'POST /admin/ai/modules/toggle'     => ['Admin\AiModuleController', 'toggle'],
-    'POST /admin/ai/modules/set-default-model' => ['Admin\AiModuleController', 'setDefaultModel'],
-    // Model key thủ công free-text (ưu tiên hơn default_model_id, lưu ở config JSON)
+    // Model key thủ công free-text — chọn model trực tiếp trong từng tab (config JSON)
     'POST /admin/ai/modules/set-model-override' => ['Admin\AiModuleController', 'setModelOverride'],
 
     // Model AI (đồng bộ từ provider / nhập tay / bật-tắt)
@@ -294,6 +291,7 @@ return [
     // Lên lịch → tạo dòng vc_scheduled_posts (output_id) → cron tự đăng
     'POST /admin/ai/outputs/schedule'   => ['Admin\AiOutputController', 'schedule'],
     'POST /admin/ai/outputs/delete'     => ['Admin\AiOutputController', 'delete'],
+    'POST /admin/ai/outputs/delete-bulk' => ['Admin\AiOutputController', 'deleteBulk'],
 
     // Cấu hình AI (API key provider + kiểm tra kết nối thật)
     'GET /admin/ai/settings'            => ['Admin\AiSettingController', 'index'],
@@ -311,9 +309,13 @@ return [
     'GET /admin/assistant/history'         => ['Admin\AiAssistantController', 'history'],
     'GET /admin/assistant/attachment'      => ['Admin\AiAssistantController', 'attachment'],
     'GET /admin/assistant/plans'           => ['Admin\AiAssistantController', 'plans'],
+    // Ảnh do AI tạo (tab Tạo Ảnh) — chọn đính kèm vào tin nhắn chat
+    'GET /admin/assistant/ai-images'       => ['Admin\AiAssistantController', 'aiImages'],
     'GET /admin/assistant/plan/view'       => ['Admin\AiAssistantController', 'planView'],
     'POST /admin/assistant/new'            => ['Admin\AiAssistantController', 'newChat'],
     'POST /admin/assistant/send'           => ['Admin\AiAssistantController', 'send'],
+    'POST /admin/assistant/post/save'      => ['Admin\AiAssistantController', 'postSave'],
+    'GET /admin/assistant/post/status'     => ['Admin\AiAssistantController', 'postSaveStatus'],
     'POST /admin/assistant/delete'         => ['Admin\AiAssistantController', 'deleteChat'],
     'POST /admin/assistant/plan/new'       => ['Admin\AiAssistantController', 'planNew'],
     'POST /admin/assistant/plan/cancel'    => ['Admin\AiAssistantController', 'planCancel'],

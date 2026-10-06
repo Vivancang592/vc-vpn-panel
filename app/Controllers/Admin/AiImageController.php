@@ -71,9 +71,11 @@ final class AiImageController extends AiBaseController
         }
 
         $model = trim((string) ($_POST['model'] ?? ''));
-        if ($model !== '') {
-            $options['model'] = $model;
+        if ($model === '') {
+            $this->flash('Vui lòng chọn Model AI trước khi tạo ảnh.', 'danger', $back);
+            return;
         }
+        $options['model'] = $model;
 
         try {
             $res = $this->media()->generateImage($prompt, $options, (int) ($_SESSION['user_id'] ?? 0));

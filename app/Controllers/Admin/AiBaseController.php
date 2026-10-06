@@ -249,19 +249,12 @@ abstract class AiBaseController extends BaseController
             return [];
         }
 
-        $defaultId = null;
-        $config = $this->tabConfig();
-        if ($config !== null && ($config['module_row'] ?? null) !== null) {
-            $defaultId = (int) ($config['module_row']['default_model_id'] ?? 0) ?: null;
-        }
-
         $out = [];
         foreach ($rows as $row) {
             $out[] = [
                 'model_key'  => (string) ($row['model_key'] ?? ''),
                 'model_name' => (string) ($row['model_name'] ?? ($row['model_key'] ?? '')),
                 'id'         => (int) ($row['id'] ?? 0),
-                'is_default' => $defaultId !== null && (int) ($row['id'] ?? 0) === $defaultId,
             ];
         }
 
@@ -790,7 +783,6 @@ abstract class AiBaseController extends BaseController
                 'db'              => $byKey[$key] ?? null,
                 'id'              => isset($byKey[$key]['id']) ? (int) $byKey[$key]['id'] : null,
                 'db_enabled'      => isset($byKey[$key]['is_enabled']) ? ((int) $byKey[$key]['is_enabled'] === 1) : null,
-                'default_model_id' => isset($byKey[$key]['default_model_id']) ? (int) $byKey[$key]['default_model_id'] : null,
             ];
         }
 
@@ -1004,9 +996,13 @@ abstract class AiBaseController extends BaseController
      */
     protected function decorate(array $row): array
     {
-        [$body, $imagePrompt] = $this->splitArticle((string) ($row['content_snapshot'] ?? ''));
+        // Thay {domain} TRƯỚC khi tách khối: body, image_prompt và cả title
+        // (lấy từ topic/firstLine) đều ra URL dùng được ngay khi hiển thị
+        // hay đưa vào hàng đợi đăng bài (helper ở BaseController).
+        $rawContent    = $this->replaceDomainMacro((string) ($row['content_snapshot'] ?? ''));
+        [$body, $imagePrompt] = $this->splitArticle($rawContent);
 
-        $title = trim((string) ($row['topic'] ?? ''));
+        $title = $this->replaceDomainMacro(trim((string) ($row['topic'] ?? '')));
         if ($title === '') {
             $title = $this->firstLine($body);
         }
@@ -1092,9 +1088,21 @@ abstract class AiBaseController extends BaseController
         // Bỏ dấu phân cách "---" còn sót ngay trước khối prompt.
         $body = trim((string) preg_replace('/\s*-{3,}\s*\z/u', '', $body));
 
-        $prompt  = mb_substr($content, $at);
+        $prompt = mb_substr($content, $at);
         $newline = mb_strpos($prompt, "\n");
-        $prompt  = $newline === false ? '' : trim(mb_substr($prompt, $newline));
+        if ($newline !== false) {
+            // Bỏ dòng marker, giữ toàn bộ prompt phía sau nó.
+            $prompt = trim(mb_substr($prompt, $newline));
+        } else {
+            // Khối prompt nằm TRÊN MỘT DÒNG DUY NHẤT (marker + mô tả cùng dòng,
+            // không có xuống dòng) — bỏ tiền tố marker chứ không được bỏ hết prompt.
+            $prompt = trim((string) preg_replace(
+                '/^[ \t]*(?:[-*•]\s*)?(?:\d+\s*\.\s*)?(?:ẢNH\s+MINH\s+HOẠ|MÔ\s+TẢ\s+ẢNH(?:\s+MINH\s+HOẠ)?|PROMPT\s+ẢNH(?:\s+TẠO\s+ẢNH)?)\s*[:：\-]?\s*/iu',
+                '',
+                (string) $prompt,
+                1
+            ));
+        }
 
         return [$body, $prompt];
     }

@@ -22,7 +22,7 @@ use App\Models\AIModule;
  *  - IDEMPOTENT: chạy bao nhiêu lần cũng được. Chỉ THÊM module còn thiếu.
  *  - KHÔNG sửa / KHÔNG bật-tắt module đã có (quyền đó thuộc Admin UI) — ngoại lệ
  *    duy nhất: nếu `capability` trong DB trống thì điền lại (dữ liệu khuyết).
- *  - KHÔNG tạo `vc_ai_models`. KHÔNG gán `default_model_id`. Model phải do con
+ *  - KHÔNG tạo `vc_ai_models`. KHÔNG gán model cho module — model phải do admin
  *    người cấu hình từ catalog Kira thật (không hard-code model_key ở đây).
  *  - Trả về báo cáo rõ ràng: inserted / updated / skipped + chi tiết.
  */

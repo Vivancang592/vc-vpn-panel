@@ -91,9 +91,11 @@ final class AiVideoController extends AiBaseController
         ];
 
         $model = trim((string) ($_POST['model'] ?? ''));
-        if ($model !== '') {
-            $options['model'] = $model;
+        if ($model === '') {
+            $this->flash('Vui lòng chọn Model AI trước khi tạo video.', 'danger', $back);
+            return;
         }
+        $options['model'] = $model;
 
         // Ảnh minh hoạ (tuỳ chọn) → lưu thư viện, gắn metadata tab video.
         $referenceNote = '';

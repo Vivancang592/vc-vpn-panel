@@ -26,19 +26,6 @@ final class AiDashboardController extends AiBaseController
 {
     public function index(): void
     {
-        $moduleRows = $this->moduleRows();
-
-        $modulesRegistered = 0;
-        $modulesEnabled = 0;
-        foreach ($moduleRows as $row) {
-            if ($row['id'] !== null) {
-                $modulesRegistered++;
-            }
-            if ($row['db_enabled'] === true) {
-                $modulesEnabled++;
-            }
-        }
-
         $models = [];
         try {
             $models = (new AIModel())->getAll();
@@ -46,17 +33,35 @@ final class AiDashboardController extends AiBaseController
             $models = [];
         }
 
-        // Đếm module đang gán model làm mặc định (cảnh báo trước khi tắt model).
+        // Đếm module đang gán model override (cảnh báo trước khi tắt model).
+        // $serverTabUsage: model_id → [tên module] — tooltip cột "Số Phân Hệ Dùng"
+        // ở Tổng Quan (phần client đọc localStorage từng tab, JS trong view).
         $usageByModel = [];
+        $serverTabUsage = [];
         try {
+            $idByKey = [];
+            foreach ((array) $models as $m) {
+                $idByKey[(string) ($m['model_key'] ?? '')] = (int) ($m['id'] ?? 0);
+            }
             foreach ((array) (new AIModule())->getAll() as $module) {
-                $modelId = (int) ($module['default_model_id'] ?? 0);
+                $cfg = $module['config'] ?? null;
+                if (is_string($cfg) && $cfg !== '') {
+                    $decoded = json_decode($cfg, true);
+                    $cfg = is_array($decoded) ? $decoded : [];
+                }
+                $override = is_array($cfg) ? trim((string) ($cfg['model_override'] ?? '')) : '';
+                $modelId = $override !== '' ? ($idByKey[$override] ?? 0) : 0;
                 if ($modelId > 0) {
                     $usageByModel[$modelId] = ($usageByModel[$modelId] ?? 0) + 1;
+                    $tabName = trim((string) ($module['module_name'] ?? $module['module_key'] ?? ''));
+                    if ($tabName !== '') {
+                        $serverTabUsage[$modelId][] = $tabName;
+                    }
                 }
             }
         } catch (\Throwable $e) {
             $usageByModel = [];
+            $serverTabUsage = [];
         }
 
         $tasks = [];
@@ -144,9 +149,6 @@ final class AiDashboardController extends AiBaseController
         $this->render('admin.ai.dashboard', [
             'activeMenu'        => 'ai-dashboard',
             'pageTitle'         => 'Trung Tâm AI - Quản Trị Hệ Thống',
-            'moduleRows'        => $moduleRows,
-            'modulesRegistered' => $modulesRegistered,
-            'modulesEnabled'    => $modulesEnabled,
             'modelCount'        => count($models),
             'activeModelCount'  => count(array_filter($models, static fn($m): bool => (int) ($m['is_active'] ?? 0) === 1)),
             'taskCounts'        => $taskCounts,
@@ -160,6 +162,7 @@ final class AiDashboardController extends AiBaseController
             // Danh mục model hiển ở Tổng Quan (trang /admin/ai/models đã gỡ).
             'models'            => $models,
             'usageByModel'      => $usageByModel,
+            'serverTabUsage'    => $serverTabUsage,
         ]);
     }
 

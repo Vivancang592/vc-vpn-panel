@@ -11,7 +11,7 @@ use App\Support\XlsxWriter;
 
 /**
  * Công cụ HÀNH ĐỘNG của Trợ Lý Admin (protocol JSON text như AdminStatsTools):
- *   - post_draft       : tạo bài viết NHÁP lên web (admin duyệt tay)
+ * - post_draft       : soạn bài + xem trước TRONG ĐOẠN CHAT, admin bấm "Lưu Bài" mới ghi nháp
  *   - user_lookup      : tìm user để chọn người nhận mail
  *   - campaign_create  : lập lịch chiến dịch email/Fanpage (cron gửi dần)
  *   - campaign_list    : xem chiến dịch + tiến độ
@@ -24,7 +24,7 @@ final class AdminActionTools
 {
     /** @var array<string, string> mô tả từng tool cho system prompt. */
     private const TOOLS = [
-        'post_draft'      => 'Tạo bài viết NHÁP đăng lên web (admin duyệt tay ở trang Bài viết). args: {title: string, content: string (Markdown/HTML), type: "news"|"tutorial"|"faq"|"popup", slug?: string}.',
+        'post_draft'      => 'Soạn bài viết CHƯA lưu: trả về bản xem trước hiển thị TRONG ĐOẠN CHAT cho admin xem trước, admin bấm "Lưu Bài" mới ghi thành bài nháp (tool KHÔNG ghi database). args: {title: string, content: string (Markdown/HTML), type: "news"|"tutorial"|"faq"|"popup", slug?: string}.',
         'user_lookup'     => 'Tìm tài khoản user (id, username, email) để chọn người nhận mail. args: {q?: string (tên hoặc email — để trống lấy tối đa 50).}',
         'campaign_create' => 'Lập lịch chiến dịch gửi theo ngày (cron gửi dần, CHỐNG GỬI TRÙNG vĩnh viễn). args: {kind: "email"|"fb", title, subject (bắt buộc khi email), body (nội dung đã soạn), target_mode: "all_users"|"all_fans"|"specific", user_ids?: int[], emails?: string[], psids?: string[], daily_limit?: int (1-500, mặc định 50)}.',
         'campaign_list'   => 'Liệt kê chiến dịch + trạng thái + số đã gửi. args: {}.',
@@ -45,6 +45,7 @@ final class AdminActionTools
             $lines[] = "- {$name}: {$desc}";
         }
         $lines[] = '- campaign_create KHÔNG gửi ngay: hệ thống cron gửi dần mỗi ngày tối đa daily_limit người, mỗi người chỉ nhận MỘT LẦN mỗi chiến dịch (chống trùng). Sau khi tạo, trả lời admin: số người nhận, daily_limit, số ngày dự kiến + link [Xem chiến dịch](/admin/assistant) không cần thiết — chỉ nêu tóm tắt.';
+        $lines[] = '- post_draft CHỈ soạn + hiển thị bài cho admin xem TRƯỚC trong đoạn chat (CHƯA ghi database). Khi tool trả preview=true → trả lời ĐÚNG MỘT CÂU: "Bài viết đã soạn xong và hiển thị ngay bên dưới — admin bấm **Lưu Bài** để lưu nháp." TUYỆT ĐỐI KHÔNG nói "đã lưu", KHÔNG chèn link, KHÔNG lặp lại nội dung bài.';
         $lines[] = '- revenue_report trả về link TƯƠNG ĐỐI dạng /admin/assistant/report?file=... — hãy chèn vào câu trả lời Markdown dạng [Tải file Excel](/admin/assistant/report?file=...) (KHÔNG ghép domain).';
         return implode("\n", $lines);
     }
@@ -96,13 +97,71 @@ final class AdminActionTools
     // -----------------------------------------------------------------
 
     /**
-     * Tạo bài NHÁP — admin duyệt tay ở /admin/posts rồi mới đăng.
+     * Soạn bài MỚI — CHƯA ghi database: trả payload xem trước để hệ thống
+     * HIỂN THỊ bài trong đoạn chat; admin bấm "Lưu Bài" → savePreview()
+     * mới ghi nháp vào vc_posts.
      *
      * @param array<string, mixed> $args
      * @return array<string, mixed>
      */
     private static function postDraft(array $args): array
     {
+        $title = trim((string) ($args['title'] ?? ''));
+        $content = trim((string) ($args['content'] ?? ''));
+        if ($title === '' || $content === '') {
+            return ['ok' => false, 'error' => 'Thiếu title hoặc content.'];
+        }
+
+        $type = (string) ($args['type'] ?? 'news');
+        if (!in_array($type, ['news', 'tutorial', 'faq', 'popup'], true)) {
+            return ['ok' => false, 'error' => 'type phải là: news | tutorial | faq | popup.'];
+        }
+
+        $slug = self::slugify($title);
+        $custom = trim((string) ($args['slug'] ?? ''));
+        if ($custom !== '') {
+            $slug = self::slugify($custom);
+        }
+
+        return [
+            'ok'         => true,
+            'preview'    => true,
+            'preview_id' => bin2hex(random_bytes(8)),
+            'title'      => $title,
+            'content'    => $content,
+            'type'       => $type,
+            'slug'       => $slug,
+            'message'    => 'Bài đã soạn xong và hiển thị trong đoạn chat cho admin xem trước — CHƯA lưu. '
+                . 'Admin bấm "Lưu Bài" mới ghi thành bài nháp.',
+        ];
+    }
+
+    /**
+     * Lưu bài nháp KHI admin bấm "Lưu Bài" trên card xem trước trong đoạn chat.
+     * Idempotent theo preview_id: bấm lại/lưu lại cùng bài KHÔNG tạo trùng.
+     *
+     * @param array<string, mixed> $args
+     * @return array<string, mixed>
+     */
+    public static function savePreview(array $args): array
+    {
+        $previewId = trim((string) ($args['preview_id'] ?? ''));
+        if (!preg_match('/^[a-f0-9]{16}$/', $previewId)) {
+            return ['ok' => false, 'error' => 'Mã bài xem trước không hợp lệ.'];
+        }
+
+        $map = self::loadSaveMap();
+        if (isset($map[$previewId]['post_id'])) {
+            $pid = (int) $map[$previewId]['post_id'];
+            return [
+                'ok'      => true,
+                'post_id' => $pid,
+                'already' => true,
+                'link'    => '/admin/posts/edit?id=' . $pid,
+                'message' => 'Bài này đã được lưu trước đó (không tạo trùng).',
+            ];
+        }
+
         $title = trim((string) ($args['title'] ?? ''));
         $content = trim((string) ($args['content'] ?? ''));
         if ($title === '' || $content === '') {
@@ -143,16 +202,66 @@ final class AdminActionTools
         $pdo = Order::getPdo();
         $id = (int) $pdo->lastInsertId();
 
+        $map[$previewId] = ['post_id' => $id, 'saved_at' => date('Y-m-d H:i:s')];
+        self::saveSaveMap($map);
+
         return [
-            'ok'       => true,
-            'post_id'  => $id,
-            'status'   => 'draft',
-            'type'     => $type,
-            'slug'     => $slug,
-            'message'  => 'Đã lưu NHÁP — admin duyệt/tu chỉnh ở trang Bài viết rồi mới đăng.',
-            'link'     => '/admin/posts/edit?id=' . $id,
-            'list_link'=> '/admin/posts',
+            'ok'        => true,
+            'post_id'   => $id,
+            'already'   => false,
+            'status'    => 'draft',
+            'type'      => $type,
+            'slug'      => $slug,
+            'link'      => '/admin/posts/edit?id=' . $id,
+            'list_link' => '/admin/posts',
+            'message'   => 'Đã lưu NHÁP — bài đã vào Danh Sách Bài Viết.',
         ];
+    }
+
+    /**
+     * Tra trạng thái lưu của các card xem trước (dùng khi tải lại lịch sử chat).
+     *
+     * @param string[] $ids
+     * @return array<string, mixed>
+     */
+    public static function saveStatus(array $ids): array
+    {
+        $map = self::loadSaveMap();
+        $saved = [];
+        foreach ($ids as $id) {
+            $id = trim((string) $id);
+            if (!preg_match('/^[a-f0-9]{16}$/', $id)) {
+                continue;
+            }
+            if (isset($map[$id]['post_id'])) {
+                $saved[$id] = (int) $map[$id]['post_id'];
+            }
+        }
+        return ['ok' => true, 'saved' => $saved];
+    }
+
+    /** @return array<string, array<string, mixed>> */
+    private static function loadSaveMap(): array
+    {
+        $path = (defined('BASE_PATH') ? BASE_PATH : dirname(__DIR__, 3))
+            . '/storage/assistant/post_saves.json';
+        if (!is_file($path)) {
+            return [];
+        }
+        $data = json_decode((string) @file_get_contents($path), true);
+        return is_array($data) ? $data : [];
+    }
+
+    /** @param array<string, array<string, mixed>> $map */
+    private static function saveSaveMap(array $map): void
+    {
+        $path = (defined('BASE_PATH') ? BASE_PATH : dirname(__DIR__, 3))
+            . '/storage/assistant/post_saves.json';
+        @file_put_contents(
+            $path,
+            json_encode($map, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT),
+            LOCK_EX
+        );
     }
 
     /** @return array<string, mixed> */

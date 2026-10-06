@@ -14,8 +14,8 @@ use App\Models\Setting;
  *    `setting_key` khai báo trong config/ai.php (KHÔNG hard-code tên cột).
  *  - Kiểm tra kết nối provider (GET /models hoặc /user/profile) và hiển thị
  *    kết quả THẬT. Không mô phỏng, không giả lập thành công.
- *  - Hiển thị danh mục Phân Hệ AI (gộp từ trang riêng /admin/ai/modules đã
- *    bỏ) — POST sync/toggle/set-default-model vẫn do AiModuleController xử lý.
+ *  - Chọn Model AI TRỰC TIẾP trong từng tab (bắt buộc) — tab Trả Lời Tự Động
+ *    gán config.model_override cho module chat qua AiModuleController.
  *
  * BẢO MẬT: giá trị API key KHÔNG BAO GIỜ được trả về view — chỉ trạng thái
  * "đã cấu hình / chưa cấu hình". Không log key. Không echo key.

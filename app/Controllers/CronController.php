@@ -341,6 +341,9 @@ class CronController extends BaseController
             $postModel->markAsGenerating($postId);
 
             $content = trim((string) ($post['generated_content'] ?? ''));
+            // Hàng đợi cũ (đặt trước khi pipeline thay macro) có thể còn
+            // {domain} nguyên văn — thay lần cuối trước khi đăng lên Fanpage.
+            $content = $this->replaceDomainMacro($content);
             $imageUrl = trim((string) ($post['image_url'] ?? ''));
             $metaData = !empty($post['meta_data']) ? (is_array($post['meta_data']) ? $post['meta_data'] : json_decode((string) $post['meta_data'], true)) : [];
 

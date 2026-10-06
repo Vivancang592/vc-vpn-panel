@@ -446,14 +446,12 @@ CREATE TABLE IF NOT EXISTS `vc_ai_modules` (
     `module_name` VARCHAR(150) NOT NULL,
     `capability` VARCHAR(30) NOT NULL,
     `is_enabled` TINYINT(1) UNSIGNED NOT NULL DEFAULT 0,
-    `default_model_id` BIGINT UNSIGNED NULL,
     `config` JSON NULL,
     `sort_order` SMALLINT UNSIGNED NOT NULL DEFAULT 0,
     `created_at` DATETIME DEFAULT CURRENT_TIMESTAMP,
     `updated_at` DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     UNIQUE KEY `uniq_ai_modules_key` (`module_key`),
-    KEY `idx_ai_modules_capability` (`capability`),
-    CONSTRAINT `fk_ai_modules_default_model` FOREIGN KEY (`default_model_id`) REFERENCES `vc_ai_models`(`id`) ON DELETE SET NULL ON UPDATE CASCADE
+    KEY `idx_ai_modules_capability` (`capability`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- vc_ai_tasks — queue/lock/retry/idempotency

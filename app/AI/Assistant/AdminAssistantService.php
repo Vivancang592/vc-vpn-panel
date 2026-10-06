@@ -39,6 +39,8 @@ final class AdminAssistantService
     private PromptRegistry $prompts;
     /** @var array{url?: string, title?: string, text?: string} bối cảnh trang bong bóng đang mở. */
     private array $pageCtx = [];
+    /** Payload bài viết do post_draft soạn ở lượt này — gắn vào reply dạng khối post-preview. */
+    private ?array $pendingPostPreview = null;
 
     public function __construct(private AICore $core, ?AssistantStore $store = null, ?PromptRegistry $prompts = null)
     {
@@ -62,6 +64,7 @@ final class AdminAssistantService
         // Bối cảnh trang admin bong bóng đang mở — dùng cho page_get/page_edit
         // và để AI biết admin đang đứng ở trang nào ([] khi bong bóng chưa mở).
         $this->pageCtx = $page;
+        $this->pendingPostPreview = null;
 
         $storedText = $this->buildStoredUserText($userText, $attachments);
         $this->store->append($convId, ['role' => 'user', 'content' => $storedText]);
@@ -116,6 +119,7 @@ final class AdminAssistantService
                     $resultJson = $this->dispatchTool($convId, (string) $toolCall['tool'], (array) $toolCall['args']);
                     $content = "Kết quả truy vấn:\n```json\n" . json_encode($resultJson, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT) . "\n```";
                 }
+                $content = $this->appendPostPreview($content);
                 $this->store->append($convId, ['role' => 'assistant', 'content' => $content]);
                 return ['ok' => true, 'reply' => $content];
             }
@@ -150,10 +154,12 @@ final class AdminAssistantService
         };
 
         $system = 'Bạn là chuyên gia lập kế hoạch của hệ thống VPN. '
-            . 'Khi được yêu cầu, hãy viết MỘT bản kế hoạch hoàn chỉnh bằng Markdown, tiếng Việt, gồm: '
+            . 'Khi được yêu cầu, hãy viết MỘT bản kế hoạch hoàn chỉnh bằng Markdown, 100% tiếng Việt, gồm: '
             . 'mục tiêu, các giai đoạn/công việc cụ thể (bullet có hành động rõ ràng), '
             . 'mốc thời gian gợi ý, và tiêu chí đo lường. '
-            . 'Không mở đầu lan man, không hỏi lại — bám sát thông tin admin cung cấp.';
+            . 'Không mở đầu lan man, không hỏi lại — bám sát thông tin admin cung cấp. '
+            . 'TUYỆT ĐỐI KHÔNG dùng bảng Markdown (dòng kiểu "| cột 1 | cột 2 |") — khó đọc; '
+            . 'dùng heading và bullet (-) thay thế.';
 
         $user = "Kế hoạch: {$title}\nLoại: {$kindLabel}\n"
             . ($details !== '' ? "Yêu cầu bổ sung: {$details}" : 'Yêu cầu bổ sung: không có.');
@@ -210,6 +216,7 @@ final class AdminAssistantService
             . "\n" . PageEditTools::protocolBlock()
             . "\n" . $this->planProtocolBlock()
             . "\n" . $this->planContextBlock($convId)
+            . "\n" . $this->userUiBlock()
             . "\n" . $this->pageContextBlock();
     }
 
@@ -288,14 +295,45 @@ final class AdminAssistantService
     private function planProtocolBlock(): string
     {
         return implode("\n", [
-            "\n### CÔNG CỤ KẾ HOẠCH (đọc & sửa file kế hoạch đã lưu)",
-            'Khi admin yêu cầu xem/sửa/cập nhật một kế hoạch đã tạo, hãy gọi tool kế hoạch — CHỈ trả về MỘT JSON trong code block ```json:',
+            "\n### CÔNG CỤ KẾ HOẠCH (tạo, đọc & sửa file kế hoạch đã lưu)",
+            'Khi admin yêu cầu tạo/tạo mới/xem/sửa/cập nhật một kế hoạch, hãy gọi tool kế hoạch — CHỈ trả về MỘT JSON trong code block ```json:',
             '{"tool": "<ten_tool>", "args": {...}}',
             '- plan_list: Liệt kê mọi kế hoạch hiện có. args: {}.',
             '- plan_read: Đọc TRỌN VẸN một kế hoạch. args: {plan_id: string}. BẮT BUỘC đọc trước khi sửa.',
+            '- plan_create: TẠO MỚI một kế hoạch khi admin yêu cầu. args: {title: string (bắt buộc, 100% tiếng Việt), kind?: "general"|"content"|"sales"|"other", content: string (bắt buộc — Markdown đầy đủ: mục tiêu, các bước, thời gian; KHÔNG dùng bảng Markdown kiểu | cột | cột, dùng heading/bullet; triển khai đúng ý admin; 100% tiếng Việt, không trộn câu/từ tiếng Anh)}.',
             '- plan_update: Ghi/cập nhật kế hoạch. args: {plan_id: string, find?: string, replace?: string (thay đúng đoạn find — ƯU TIÊN khi sửa một phần), content?: string (ghi đè toàn bộ Markdown)}. Thiếu plan_id → dùng plan_list tìm theo tiêu đề.',
-            'QUY TẮC: (1) plan_read trước mọi plan_update. (2) Chỉ sửa một đoạn → find/replace; viết lại toàn bộ → content. (3) Sau khi cập nhật OK, trả lời kèm link TƯƠNG ĐỐI [Xem kế hoạch](/admin/assistant/plan/view?id=<plan_id>) — KHÔNG ghép domain/https vào link này. (4) KHÔNG bịa nội dung kế hoạch — mọi thứ phải đọc từ file thật qua tool.',
+            'QUY TẮC: (1) Admin yêu cầu TẠO/KHỞI TẠO kế hoạch mới → plan_create NGAY (không cần plan_read); sau khi tạo xong CHỈ báo "đã tạo" kèm tên kế hoạch — KHÔNG trả link hay nút xem (kế hoạch tự hiện ở cột "Kế Hoạch Đã Lưu", admin bấm là mở ngay trong đoạn chat). (2) plan_read trước mọi plan_update. (3) Chỉ sửa một đoạn → find/replace; viết lại toàn bộ → content. (4) Sau khi cập nhật OK CHỈ báo "đã cập nhật" — KHÔNG trả link/nút xem kế hoạch. (5) KHÔNG bịa nội dung kế hoạch — nội dung phải do tool ghi/đọc từ file thật. (6) Title + content kế hoạch BẮT BUỘC 100% tiếng Việt — không trộn câu/từ tiếng Anh (chỉ giữ tên công nghệ riêng biệt khi thật sự cần).',
         ]);
+    }
+
+    /** Khối bản đồ GIAO DIỆN TRANG NGƯỜI DÙNG (từng nút + vị trí thật) — neo vào system prompt
+     *  để admin hỏi bất cứ chỗ nào trên trang khách là trả lời ngay, không cần mở trang. */
+    private function userUiBlock(): string
+    {
+        return <<<'MD'
+
+### GIAO DIỆN TRANG NGƯỜI DÙNG (USER) — từng nút & vị trí
+Khi admin hỏi về giao diện/trang khách hàng thấy (trang user), trả lời theo khối dưới đây:
+
+**Layout chung (resources/views/layouts/):**
+- navbar.php — đầu MỌI trang: trái — "Trang chủ"(/), "Sản phẩm"(#bang-gia), "Hướng dẫn"(/faq), "Câu hỏi thường gặp"(#cau-hoi-thuong-gap), "Tải ứng dụng"(/download); phải — đã đăng nhập: icon 🔔 → /notifications + dropdown hồ sơ có "Đăng xuất"(/logout), chưa đăng nhập: "Đăng nhập"(/login) + "Đăng ký"(/register); mobile: nút ☰ mở menu.
+- sidebar.php — menu trái khu vực khách (trang đã đăng nhập): Dashboard(/dashboard), Cửa Hàng(/user/plans), Gói Đăng Ký(/subscriptions), Đơn Hàng(/orders), Lịch Sử Giao Dịch(/payments), Ví Tiền(/wallet), Tiếp Thị Liên Kết(/referrals), Rút Hoa Hồng(/withdrawals), Ticket(/tickets), Thông Báo(/notifications), Hướng Dẫn(/user/guides), Tải Ứng Dụng(/user/downloads), Tài Khoản(/profile).
+- footer.php — chân trang: mạng xã hội (Facebook, Zalo, YouTube, Email); "Điều Khoản"(/terms), "Quyền Riêng Tư"(/privacy), "Chính Sách Hoàn Tiền"(/refund); chatbot 💬 neo góc dưới phải (ô "Nhập câu hỏi..." + nút "Gửi").
+
+**Trang chủ (/) — home/index.php:** hero "Bảo vệ kết nối ngay" (cuộn xuống #bang-gia) + nút "Bắt đầu ngay"/"Mở bảng điều khiển"; bảng giá giữa trang: tab nhóm gói (button lọc) + mỗi card gói có "ĐĂNG KÝ GÓI NÀY" → /checkout?id=... (chưa đăng nhập → /login); CTA cuối: "Tải ứng dụng VPN"(/download), "Hướng dẫn cài đặt"(/faq), "Xem gói VPN"(#bang-gia).
+
+**Auth:** /login — ô "Email hoặc Username", ô mật khẩu + nút 👁 hiện/ẩn, nút "ĐĂNG NHẬP", nút "Đăng nhập bằng Google"(/auth/google), link "Quên mật khẩu?"(/forgot-password), link "Đăng ký ngay". /register — ô "Email hoặc Username", ô Email, ô "Mã OTP" 6 số + nút "Gửi mã", ô mật khẩu + 👁, ô "Mã giới thiệu", checkbox đồng ý điều khoản (bắt buộc — thiếu là nút disabled), nút "ĐĂNG KÝ", link "Điều khoản"/"Riêng tư". /forgot-password — ô Email + "Gửi mã", ô OTP, ô mật khẩu mới, nút "CẬP NHẬT MẬT KHẨU".
+
+**Dashboard (/dashboard) — user/dashboard.php:** card gói gần nhất ("Kết nối" → /subscriptions/detail, "Gia hạn" → /checkout?type=renewal, "Tất cả gói của tôi" → /subscriptions); hàng quick-actions: "💳 Nạp tiền"(/payments/deposit), "🛒 Mua gói dịch vụ"(/user/plans), "🎫 Tạo ticket hỗ trợ"(/tickets/create); 4 card thống kê (gói/đơn/ticket/ví, mỗi card có "Xem chi tiết"); CTA "Cửa Hàng", "Đăng ký ngay", "Chọn gói này".
+
+**Mua gói:** /user/plans — tab lọc "Tất cả" + tên nhóm, mỗi card có "Chọn gói này" → /checkout?id=...; /checkout — (đơn chờ: "hoàn tất thanh toán" → /payment/checkout, "hủy đơn"), chọn nhanh số tiền (button), ô "Nhập số tiền", ô mã giảm giá + "Xác nhận mã", khu chọn phương thức thanh toán, link Điều khoản/Hoàn tiền, nút submit cuối form; /payment/checkout — thẻ tài khoản/nội dung CK + nút 📋 sao chép, link "Xem lịch sử giao dịch", "Xem gói dịch vụ", "Xem đơn gia hạn".
+
+**Ví & giao dịch:** /payments — nút "Nạp tiền", giao dịch chờ → menu ⋮ ("Thanh toán ngay"/"Hủy giao dịch"); /wallet — chọn nhanh số tiền (button), ô "Nhập số tiền", nút "Tiếp tục nạp tiền".
+
+**Gói & đơn:** /subscriptions — "Mua gói dịch vụ", mỗi dòng "Chi tiết"(→ /subscriptions/detail) + "Gia hạn"(→ /checkout?type=renewal); /subscriptions/detail — ô readonly chứa connection URL/key + nút "Sao chép", nút "Mở Karing" (deep link karing://), nút "Lấy mã QR" (modal QR); /orders — menu ⋮ (chi tiết, "Thanh toán ngay", "Hủy đơn"); /orders/detail — nút "Thanh toán ngay" cuối hóa đơn.
+
+**Khác:** /profile — username/email/ngày tạo/Google readonly + form đổi mật khẩu ("Mật khẩu hiện tại", "Mật khẩu mới", nút "Lưu thay đổi"); /download (công khai) & /user/downloads — lưới 5 card "iPhone & iPad, Android, Windows, macOS, Linux" → /client?tag=...; /user/guides (bài hướng dẫn), /tickets (tạo/chi tiết ticket), /referrals (form mời bạn + link giới thiệu), /withdrawals (rút hoa hồng), /notifications (danh sách + 🔔 navbar).
+MD;
     }
 
     /** Khối thực tế: danh sách kế hoạch đã lưu + kế hoạch đang làm của hội thoại này. */
@@ -350,7 +388,7 @@ final class AdminAssistantService
     /** Phân công tool: nhánh kế hoạch xử lý trong service, còn lại sang AdminStatsTools. */
     private function dispatchTool(string $convId, string $tool, array $args): array
     {
-        if (in_array($tool, ['plan_list', 'plan_read', 'plan_update'], true)) {
+        if (in_array($tool, ['plan_list', 'plan_read', 'plan_create', 'plan_update'], true)) {
             return $this->planDispatch($convId, $tool, $args);
         }
         if (PageEditTools::handles($tool)) {
@@ -358,7 +396,15 @@ final class AdminAssistantService
             return PageEditTools::dispatch($tool, $args, $this->pageCtx);
         }
         if (AdminActionTools::handles($tool)) {
-            return AdminActionTools::dispatch($tool, $args);
+            $result = AdminActionTools::dispatch($tool, $args);
+            if ($tool === 'post_draft' && !empty($result['ok']) && !empty($result['preview'])) {
+                // Bài CHƯA lưu — stash payload để gắn card xem trước vào reply cuối;
+                // trả model bản rút gọn (nội dung model đã tự viết trong args).
+                $this->pendingPostPreview = $result;
+                $result['content'] = '(Bài viết đã hiển thị card xem trước trong đoạn chat cho admin — '
+                    . 'bấm "Lưu Bài" để lưu. Không cần nói thêm.)';
+            }
+            return $result;
         }
 
         return AdminStatsTools::dispatch($tool, $args);
@@ -381,6 +427,28 @@ final class AdminAssistantService
                     $this->setActivePlan($convId, (string) $plan['meta']['id']);
 
                     return ['ok' => true, 'plan' => $plan['meta'], 'content' => $plan['content']];
+
+                case 'plan_create':
+                    $title = trim((string) ($args['title'] ?? ''));
+                    $content = (string) ($args['content'] ?? '');
+                    $kind = (string) ($args['kind'] ?? 'other');
+                    if ($title === '') {
+                        return ['ok' => false, 'error' => 'Thiếu title — hãy đặt tên kế hoạch (tiếng Việt) trước khi tạo.'];
+                    }
+                    if (trim($content) === '') {
+                        return ['ok' => false, 'error' => 'Thiếu content — kế hoạch phải có nội dung Markdown đầy đủ (mục tiêu, các bước, thời gian...).'];
+                    }
+                    $meta = $this->store->savePlan($title, $kind, $content);
+                    $newId = (string) ($meta['id'] ?? '');
+                    $this->setActivePlan($convId, $newId);
+
+                    return [
+                        'ok'      => true,
+                        'plan_id' => $newId,
+                        'title'   => (string) ($meta['title'] ?? $title),
+                        'kind'    => (string) ($meta['kind'] ?? 'other'),
+                        'bytes'   => (int) ($meta['bytes'] ?? strlen($content)),
+                    ];
 
                 case 'plan_update':
                     $id = trim((string) ($args['plan_id'] ?? ''));
@@ -416,7 +484,6 @@ final class AdminAssistantService
                         'plan_id' => $id,
                         'title'  => (string) $plan['meta']['title'],
                         'bytes'  => strlen($content),
-                        'link'   => '/admin/assistant/plan/view?id=' . $id,
                     ];
             }
 
@@ -456,6 +523,11 @@ final class AdminAssistantService
                 continue;
             }
             $content = (string) ($msg['content'] ?? '');
+            if ($role === 'assistant') {
+                // Khối post-preview (bài xem trước) là UI-render — loại khỏi
+                // message gửi model: model không "nhìn" lại nội dung đã soạn.
+                $content = (string) preg_replace('/```post-preview\n.*?\n```/s', '', $content);
+            }
             if ($content === '') {
                 continue;
             }
@@ -469,6 +541,33 @@ final class AdminAssistantService
         }
 
         return $messages;
+    }
+
+    /**
+     * Gắn payload bài xem trước (post_draft ở lượt này) vào cuối reply dạng
+     * ```post-preview\n{json}\n``` — giao diện parse/render card TRƯỚC khi lưu.
+     * Thoát backtick trong JSON (thay U+2027) để bài chứa code fence không
+     * phá khối marker; JSON.parse tự khôi phục ký tự trong chuỗi.
+     */
+    private function appendPostPreview(string $content): string
+    {
+        if ($this->pendingPostPreview === null) {
+            return $content;
+        }
+        $payload = [
+            'preview_id' => (string) ($this->pendingPostPreview['preview_id'] ?? ''),
+            'title'      => (string) ($this->pendingPostPreview['title'] ?? ''),
+            'content'    => (string) ($this->pendingPostPreview['content'] ?? ''),
+            'type'       => (string) ($this->pendingPostPreview['type'] ?? 'news'),
+            'slug'       => (string) ($this->pendingPostPreview['slug'] ?? ''),
+        ];
+        $json = json_encode($payload, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+        if ($json === false) {
+            return $content;
+        }
+        $json = str_replace('`', "\u{2027}", $json);
+        $this->pendingPostPreview = null;
+        return $content . "\n\n```post-preview\n" . $json . "\n```";
     }
 
     /**

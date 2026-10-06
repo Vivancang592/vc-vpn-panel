@@ -46,10 +46,6 @@ $statusColor = static function (string $status): string {
     </div>
     <div style="display: flex; flex-direction: column; font-size: 0.85rem;">
         <div style="display: flex; justify-content: space-between; align-items: center; gap: 0.75rem; padding: 0.55rem 0; border-bottom: 1px solid var(--ios-border, rgba(255,255,255,0.12));">
-            <span style="color: var(--ios-text-secondary);">Phân Hệ Đang Bật</span>
-            <strong style="color: <?= $modulesEnabled > 0 ? 'var(--ios-success)' : 'var(--ios-danger)' ?>;"><?= (int) $modulesEnabled ?></strong>
-        </div>
-        <div style="display: flex; justify-content: space-between; align-items: center; gap: 0.75rem; padding: 0.55rem 0; border-bottom: 1px solid var(--ios-border, rgba(255,255,255,0.12));">
             <span style="color: var(--ios-text-secondary);">Tác Vụ Đang Chờ</span>
             <strong><?= (int) $taskCounts['pending'] + (int) $taskCounts['processing'] + (int) $taskCounts['retrying'] ?></strong>
         </div>
@@ -114,28 +110,6 @@ $statusColor = static function (string $status): string {
 
     </div>
 
-    <!-- Trạng thái phân hệ -->
-    <div class="glass-card" style="padding: 1.25rem;">
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem;">
-            <h2 style="font-size: 1rem; font-weight: 700;">Trạng Thái Phân Hệ</h2>
-            <a href="/admin/ai/settings" style="font-size: 0.8rem; color: var(--ios-blue); text-decoration: none;">Cài đặt</a>
-        </div>
-        <div style="display: flex; flex-direction: column; gap: 0.45rem; font-size: 0.85rem;">
-            <?php foreach ($moduleRows as $row): ?>
-                <div style="display: flex; justify-content: space-between; align-items: center; gap: 0.5rem;">
-                    <span style="color: var(--ios-text-secondary); overflow: hidden; text-overflow: ellipsis; white-space: nowrap;"><?= htmlspecialchars((string) $row['label']) ?></span>
-                    <?php if ($row['id'] === null): ?>
-                        <span style="font-size: 0.75rem; color: var(--ios-text-secondary); white-space: nowrap;">Chưa đăng ký</span>
-                    <?php elseif ($row['db_enabled'] === true): ?>
-                        <span style="font-size: 0.75rem; color: var(--ios-success); font-weight: 600; white-space: nowrap;">● Đang bật</span>
-                    <?php else: ?>
-                        <span style="font-size: 0.75rem; color: var(--ios-danger); font-weight: 600; white-space: nowrap;">○ Đang tắt</span>
-                    <?php endif; ?>
-                </div>
-            <?php endforeach; ?>
-        </div>
-    </div>
-
 </div>
 
 <!-- Danh sách model đầy đủ (chuyển từ trang /admin/ai/models — hiển ngay tại Tổng Quan) -->
@@ -144,7 +118,7 @@ $capViDash = static function (?string $cap) use ($aiLabels): string {
     $cap = trim((string) $cap);
     return $cap === '' ? '—' : ($aiLabels['map']['capability'][$cap] ?? $cap);
 };
-// Model "đang dùng" = đang được một phân hệ chọn làm mặc định (usageByModel).
+// Model "đang dùng" = đang được một phân hệ gán qua model_override (usageByModel).
 $modelUsedCount = 0;
 foreach ($models as $mItem) {
     if ((int) ($usageByModel[(int) ($mItem['id'] ?? 0)] ?? 0) > 0) {
@@ -172,7 +146,7 @@ $modelIdleCount = max(0, count($models) - $modelUsedCount);
         </div>
     </div>
     <?php if ($modelIdleCount > 0): ?>
-    <p style="font-size: 0.78rem; color: var(--ios-text-secondary); margin: 0 0 0.75rem;">
+    <p id="ai-model-usage-summary" style="font-size: 0.78rem; color: var(--ios-text-secondary); margin: 0 0 0.75rem;">
         Đang dùng <strong style="color: var(--ios-success);"><?= (int) $modelUsedCount ?> model </strong>
         - <strong><?= (int) $modelIdleCount ?> model</strong> chưa dùng.
     </p>
@@ -224,8 +198,14 @@ $modelIdleCount = max(0, count($models) - $modelUsedCount);
                             <td style="font-size: 0.78rem; color: var(--ios-text-secondary);">
                                 <?= htmlspecialchars($aiLabels['map']['model_source'][$source] ?? $source) ?>
                             </td>
-                            <td style="font-size: 0.82rem; font-weight: 600;">
-                                <?= (int) ($usageByModel[(int) $model['id']] ?? 0) ?>
+                            <?php
+                            $usageTabs = (array) ($serverTabUsage[(int) $model['id']] ?? []);
+                            $usageCount = (int) ($usageByModel[(int) $model['id']] ?? 0);
+                            ?>
+                            <td data-model-key="<?= htmlspecialchars((string) ($model['model_key'] ?? '')) ?>"
+                                <?= $usageTabs ? 'title="' . htmlspecialchars(implode(', ', $usageTabs)) . '"' : '' ?>
+                                style="font-size: 0.82rem; font-weight: 600;">
+                                <?= $usageCount ?>
                             </td>
                             <td>
                                 <?php if ((int) ($model['is_active'] ?? 0) === 1): ?>
@@ -266,16 +246,68 @@ $modelIdleCount = max(0, count($models) - $modelUsedCount);
 <script>
 (function () {
     'use strict';
+    // Nút "▼ Hiện tất cả": bật/tắt hiển thị model chưa dùng.
     var btn = document.getElementById('ai-model-toggle');
     var box = document.getElementById('ai-models-catalog');
-    if (!btn || !box) return;
-    btn.addEventListener('click', function () {
-        var on = box.classList.toggle('show-all');
-        btn.setAttribute('aria-expanded', on ? 'true' : 'false');
-        btn.textContent = on
-            ? '▲ Ẩn model chưa dùng'
-            : '▼ Hiện tất cả (' + btn.getAttribute('data-total') + ' model)';
+    if (btn && box) {
+        btn.addEventListener('click', function () {
+            var on = box.classList.toggle('show-all');
+            btn.setAttribute('aria-expanded', on ? 'true' : 'false');
+            btn.textContent = on
+                ? '▲ Ẩn model chưa dùng'
+                : '▼ Hiện tất cả (' + btn.getAttribute('data-total') + ' model)';
+        });
+    }
+
+    // Cột "Số Phân Hệ Dùng": cộng thêm các tab chọn model ở localStorage
+    // (4 tab lưu model đang chọn, value = model_key).
+    var TABS = [
+        { key: 'vc_ai_model_image',   label: '🖼️ Tạo Ảnh' },
+        { key: 'vc_ai_model_video',   label: '🎬 Tạo Video' },
+        { key: 'vc_ai_model_dubbing', label: '🗣️ Lời Thoại' },
+        { key: 'vc_ai_model_fanpage', label: '📰 Nội Dung Fanpage' },
+        { key: 'vcAsstModel',         label: '💬 Trợ Lý Admin' }
+    ];
+    var chosen = {}; // model_key -> [label]
+    TABS.forEach(function (t) {
+        var v = '';
+        try { v = localStorage.getItem(t.key) || ''; } catch (e) {}
+        if (v) {
+            if (!chosen[v]) chosen[v] = [];
+            chosen[v].push(t.label);
+        }
     });
+    var cells = document.querySelectorAll('#ai-models-table td[data-model-key]');
+    var anyClient = false;
+    cells.forEach(function (td) {
+        var labels = chosen[td.getAttribute('data-model-key')] || [];
+        if (!labels.length) return;
+        anyClient = true;
+        var n = parseInt(td.textContent, 10);
+        if (isNaN(n)) n = 0;
+        td.textContent = String(n + labels.length);
+        var tr = td.closest('tr');
+        if (tr) tr.classList.remove('ai-model-idle'); // tab chọn → coi như đang dùng, không ẩn
+        var title = td.getAttribute('title') || '';
+        var all = title ? title.split(',').map(function (s) { return s.trim(); }).filter(Boolean) : [];
+        labels.forEach(function (l) { if (all.indexOf(l) === -1) all.push(l); });
+        if (all.length) td.setAttribute('title', all.join(', '));
+    });
+    if (anyClient) {
+        var note = document.querySelector('#ai-models-table .ai-model-idle-note');
+        if (note) note.style.display = 'none';
+        var summary = document.getElementById('ai-model-usage-summary');
+        if (summary) {
+            var total = cells.length, used = 0;
+            cells.forEach(function (td) {
+                var tr = td.closest('tr');
+                if (tr && !tr.classList.contains('ai-model-idle')) used++;
+            });
+            var strongs = summary.querySelectorAll('strong');
+            if (strongs[0]) strongs[0].textContent = used + ' model ';
+            if (strongs[1]) strongs[1].textContent = (total - used) + ' model';
+        }
+    }
 })();
 </script>
 

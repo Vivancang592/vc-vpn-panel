@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Controllers\Admin;
 
 use App\AI\Knowledge\AssistantStore;
+use App\AI\Knowledge\AdminActionTools;
 use App\AI\Assistant\AdminAssistantService;
 
 /**
@@ -239,6 +240,67 @@ class AiAssistantController extends AiBaseController
     public function plans(): void
     {
         $this->json(['ok' => true, 'plans' => $this->store->listPlans()]);
+    }
+
+    /**
+     * POST /admin/assistant/post/save — lưu bài nháp khi admin bấm "Lưu Bài"
+     * trên card xem trước trong đoạn chat.
+     */
+    public function postSave(): void
+    {
+        $this->requirePost();
+        $this->requireCsrf();
+
+        $res = AdminActionTools::savePreview($_POST);
+        if (empty($res['ok'])) {
+            $this->json(['ok' => false, 'error' => (string) ($res['error'] ?? 'Không lưu được bài.')], 400);
+        }
+        $this->json([
+            'ok'        => true,
+            'post_id'   => (int) ($res['post_id'] ?? 0),
+            'already'   => !empty($res['already']),
+            'link'      => (string) ($res['link'] ?? ''),
+            'list_link' => (string) ($res['list_link'] ?? '/admin/posts'),
+            'message'   => (string) ($res['message'] ?? 'Đã lưu NHÁP.'),
+        ]);
+    }
+
+    /**
+     * GET /admin/assistant/post/status?ids=a,b,c — trạng thái lưu của các
+     * card xem trước (gọi sau khi tải lại lịch sử chat).
+     */
+    public function postSaveStatus(): void
+    {
+        $ids = array_filter(array_map('trim', explode(',', (string) ($_GET['ids'] ?? ''))));
+        $this->json(AdminActionTools::saveStatus($ids));
+    }
+
+    /**
+     * GET /admin/assistant/ai-images — danh sách ảnh do AI tạo (tab Tạo Ảnh,
+     * public/uploads/ai/image/) để admin chọn đính kèm vào tin nhắn chat.
+     */
+    public function aiImages(): void
+    {
+        $items = [];
+        foreach ($this->galleryItems('image') as $row) {
+            $url = (string) ($row['_url'] ?? '');
+            $rel = (string) ($row['relative_path'] ?? '');
+            $ext = strtolower(pathinfo($rel, PATHINFO_EXTENSION));
+            if ($url === '' || $rel === '' || !isset(self::IMAGE_TYPES[$ext])) {
+                continue;
+            }
+            $items[] = [
+                'name'       => basename($rel),
+                'url'        => $url,
+                'size'       => (int) ($row['size_bytes'] ?? 0),
+                'created_at' => (string) ($row['created_at'] ?? ''),
+            ];
+        }
+        // Mới nhất trước
+        usort($items, static function (array $a, array $b): int {
+            return strcmp($b['created_at'], $a['created_at']);
+        });
+        $this->json(['ok' => true, 'images' => $items]);
     }
 
     /**

@@ -55,6 +55,43 @@ require __DIR__ . '/_flash.php';
 require __DIR__ . '/_tab-header.php';
 ?>
 
+<?php
+// Model Trả Lời Tự Động — CHỌN TRỰC TIẾP TRONG TAB (bắt buộc, thiếu model báo ngay).
+// Gán override cho CẢ support_chat + fanpage_comment cùng lúc → 2 kênh đồng bộ.
+$_replyModels = is_array($replyModels ?? null) ? $replyModels : [];
+$_currentModel = trim((string) ($replyModelOverride ?? ''));
+$_fpModel = trim((string) ($fpModelOverride ?? ''));
+$_modelMismatch = ($_fpModel !== '' && $_currentModel !== '' && $_fpModel !== $_currentModel);
+$_catalogKeys = array_map(static fn ($m): string => (string) ($m['model_key'] ?? ''), $_replyModels);
+?>
+<div class="glass-card" style="padding: 1.1rem 1.3rem; margin-bottom: 1rem; border: 1px solid <?= $_currentModel === '' ? 'var(--ios-danger)' : 'var(--glass-border)' ?>;">
+    <form method="post" action="/admin/ai/modules/set-model-override" style="display: flex; flex-wrap: wrap; gap: 1rem; align-items: flex-end;">
+        <input type="hidden" name="csrf_token" value="<?= htmlspecialchars((string) ($_SESSION['csrf_token'] ?? '')) ?>">
+        <input type="hidden" name="back" value="/admin/ai/reply">
+        <input type="hidden" name="module_key" value="support_chat,fanpage_comment">
+        <div style="flex: 1 1 280px; min-width: 220px;">
+            <label style="display: block; font-weight: 700; font-size: 0.85rem; margin-bottom: 0.35rem;">🤖 Model Trả Lời Tự Động <span style="color: var(--ios-danger);">*</span></label>
+            <select name="model_override" class="glass-input" style="width: 100%;" required>
+                <option value="">— Chọn model trả lời —</option>
+                <?php if ($_currentModel !== '' && !in_array($_currentModel, $_catalogKeys, true)): ?>
+                    <option value="<?= htmlspecialchars($_currentModel) ?>" selected><?= htmlspecialchars($_currentModel) ?> (không còn trong danh mục)</option>
+                <?php endif; ?>
+                <?php foreach ($_replyModels as $m): $mk = (string) ($m['model_key'] ?? ''); if ($mk === '') { continue; } ?>
+                    <option value="<?= htmlspecialchars($mk) ?>" <?= $mk === $_currentModel ? 'selected' : '' ?>><?= htmlspecialchars((string) ($m['model_name'] ?? $mk)) ?></option>
+                <?php endforeach; ?>
+            </select>
+        </div>
+        <button type="submit" class="glass-btn" style="font-weight: 700; background: var(--ios-blue); color: #fff;">💾 Lưu Model Trả Lời</button>
+    </form>
+    <?php if ($_currentModel === ''): ?>
+        <div style="margin-top: 0.7rem; font-size: 0.85rem; color: var(--ios-danger); font-weight: 700;">⚠ Chưa chọn Model — Chatbot và Comment AI CHƯA TRẢ LỜI được. Chọn model rồi bấm Lưu ngay.</div>
+    <?php endif; ?>
+    <?php if ($_modelMismatch): ?>
+        <div style="margin-top: 0.7rem; font-size: 0.83rem; color: var(--ios-danger);">⚠ Fanpage Comment đang dùng <b><?= htmlspecialchars($_fpModel) ?></b> khác model tab này — bấm Lưu để đồng bộ cả 2 kênh.</div>
+    <?php endif; ?>
+    <div style="margin-top: 0.6rem; font-size: 0.78rem; color: var(--text-muted);">Áp dụng CẢ Trả Lời Web + Fanpage Comment — model lấy trực tiếp từ đây, không còn model mặc định ngầm.</div>
+</div>
+
 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1rem; align-items: start;">
 
     <!-- Kênh 1: Chat website -->

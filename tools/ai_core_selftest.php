@@ -649,7 +649,8 @@ if (!$dbOk) {
         $fkStmt->execute(['db' => $dbName, 'pattern' => 'vc_ai_%']);
         $fks = $fkStmt->fetchAll();
 
-        $t->check('Có FK được tạo (>= 14)', count($fks) >= 14, 'count=' . count($fks));
+        // 20261013: bỏ fk_ai_modules_default_model (model mặc định ngầm) → còn 13 FK.
+        $t->check('Có FK được tạo (>= 13)', count($fks) >= 13, 'count=' . count($fks));
 
         $invalidFkTargets = [];
         foreach ($fks as $fk) {
@@ -1888,6 +1889,16 @@ if (!$dbOk) {
 
 // Dọn dẹp dữ liệu test (chạy cả khi DB không đủ điều kiện).
 if ($dbOk) {
+    // FK fk_ai_outputs_task là ON DELETE SET NULL: phải xoá output TRƯỚC khi
+    // xoá task, nếu không output sẽ sót lại với task_id=NULL (bẩn DB thật).
+    foreach (($created ?? [])['vc_ai_tasks'] ?? [] as $taskId) {
+        try {
+            $pdo->prepare('DELETE FROM vc_ai_outputs WHERE task_id = :id')->execute(['id' => $taskId]);
+        } catch (Throwable $e) {
+            // bỏ qua — chỉ là dọn dẹp
+        }
+    }
+
     foreach (['vc_ai_assets', 'vc_ai_tasks', 'vc_ai_modules'] as $table) {
         foreach (($created ?? [])[$table] ?? [] as $id) {
             try {
@@ -1981,6 +1992,10 @@ if ($mysqlBin === null) {
             $legacyCount = (int) trim($countLegacy['out']);
             $t->check('G2. Schema legacy có >= 20 bảng', $legacyCount >= 20, 'count=' . $legacyCount);
 
+            // Dump có thể đã bao gồm sẵn bảng vc_ai_* (CREATE TABLE IF NOT EXISTS) —
+            // đếm trước để G4 tính đúng số bảng migration phải tạo thêm.
+            $aiBefore = (int) trim($runMysql('-N -e "SELECT COUNT(*) FROM information_schema.tables WHERE table_schema=\'' . $scratchDb . '\' AND table_name LIKE \'vc_ai_%\';"')['out']);
+
             // Áp migration
             $migrationPath = $ROOT . '/database/migrations/20260927_add_ai_core_tables.sql';
             $migCmd = $mysqlCmd . ' --protocol=TCP --default-character-set=utf8mb4 -h ' . escapeshellarg($host)
@@ -1995,7 +2010,8 @@ if ($mysqlBin === null) {
 
             // Xác nhận đủ 7 bảng mới (P6: 7 bảng chết, P9: 2 bảng prompt DB đã loại khỏi migration)
             $afterCount = (int) trim($runMysql('-N -e "SELECT COUNT(*) FROM information_schema.tables WHERE table_schema=\'' . $scratchDb . '\';"')['out']);
-            $t->equals('G4. Tổng số bảng = legacy + 7', $legacyCount + 7, $afterCount);
+            // Dump đã gồm sẵn N bảng vc_ai_* → migration chỉ cần tạo (7 - N) bảng còn thiếu.
+            $t->equals('G4. Tổng số bảng = legacy + (7 - vc_ai có sẵn)', $legacyCount + (7 - $aiBefore), $afterCount);
 
             // Chạy lại migration lần 2 → phải không lỗi (idempotent)
             $out = [];
@@ -2005,7 +2021,8 @@ if ($mysqlBin === null) {
 
             // FK + PK trên DB tạm
             $fkCount = (int) trim($runMysql('-N -e "SELECT COUNT(*) FROM information_schema.KEY_COLUMN_USAGE WHERE table_schema=\'' . $scratchDb . '\' AND table_name LIKE \'vc_ai_%\' AND referenced_table_name IS NOT NULL;"')['out']);
-            $t->check('G6. Có >= 14 FK trên 7 bảng mới', $fkCount >= 14, 'count=' . $fkCount);
+            // 20261013: bỏ fk_ai_modules_default_model → 13 FK.
+            $t->check('G6. Có >= 13 FK trên 7 bảng mới', $fkCount >= 13, 'count=' . $fkCount);
 
             $tableCount = (int) trim($runMysql('-N -e "SELECT COUNT(*) FROM information_schema.tables WHERE table_schema=\'' . $scratchDb . '\' AND table_name LIKE \'vc_ai_%\';"')['out']);
             $t->equals('G7. Đủ 7 bảng vc_ai_* trên DB sạch', 7, $tableCount);

@@ -58,15 +58,35 @@ final class AiFanpageController extends AiBaseController
             }
         }
 
+        // Phân trang: 10 bài/trang — page qua GET ?page= (áp dụng sau filter tab).
+        $totalRows  = count($articles);
+        $pageSize   = 10;
+        $totalPages = max(1, (int) ceil($totalRows / $pageSize));
+        $page       = min(max(1, (int) ($_GET['page'] ?? 1)), $totalPages);
+        $articles   = array_slice($articles, ($page - 1) * $pageSize, $pageSize);
+
+        // Model cho form giao việc viết bài (lọc theo capability hợp lệ của content_article
+        // + ẩn model bị API key chặn — đồng bộ với tab Ảnh/Video/Lồng giọng).
+        $tabConfig = $this->tabConfig();
+        $fpModels  = $this->filterUnlockedModels($this->filterModelsForModule(
+            is_array($tabConfig['models'] ?? null) ? $tabConfig['models'] : [],
+            (string) ($this->moduleRegistry()->capabilityOf('content_article') ?? 'text')
+        ));
+
         $this->render('admin.ai.tab-fanpage', [
             'activeMenu' => 'ai-fanpage',
             'pageTitle'  => 'Nội Dung Fanpage - Trung Tâm AI',
+            // Dropdown Model ở form giao việc (bắt buộc chọn — chưa chọn báo ngay).
+            'fpModels'   => $fpModels,
             // Hàng đợi VIẾT TUẦN TỰ (session, do AiTaskController::storeTopics
             // tạo) — tab "Tiến Trình" hiển thị + gọi write-next để viết tiếp.
             'writeQueue' => $this->liveWriteQueue(),
             // Danh sách bài viết — CAB 3 (trước đây là trang outputs.php).
             'articles'     => $articles,
             'filter'       => $filter,
+            'page'         => $page,
+            'totalPages'   => $totalPages,
+            'totalRows'    => $totalRows,
             'tabs'         => self::OUTPUT_TABS,
             'postStatus'   => self::POST_STATUS,
             // Ảnh tab Tạo Ảnh → chọn đính kèm trong popup lên lịch.

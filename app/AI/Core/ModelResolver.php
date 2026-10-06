@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace App\AI\Core;
 
-use App\AI\Contracts\AICapability;
 use App\AI\Contracts\AIException;
 
 /**
@@ -13,11 +12,11 @@ use App\AI\Contracts\AIException;
  * Thứ tự ưu tiên:
  *  1. Model chỉ định tường minh (options['model']).
  *  2. Model thủ công admin gán cho module (vc_ai_modules.config JSON → model_override).
- *  3. Model mặc định của module (vc_ai_modules.default_model_id → vc_ai_models).
- *  4. Model active đầu tiên khớp capability.
  *
+ * KHÔNG còn "model mặc định ngầm": module chưa chọn model → ném
+ * AIException::CONFIG (fail-fast — báo admin chọn model trong tab tương ứng),
+ * không đoán bừa model đầu tiên nữa.
  * KHÔNG hard-code tên model ở bất kỳ chỗ nào khác trong AI Core.
- * Nếu không tìm thấy model → ném AIException::CONFIG (fail-fast, không đoán bừa).
  */
 final class ModelResolver
 {
@@ -77,29 +76,10 @@ final class ModelResolver
             ];
         }
 
-        $moduleModelId = $this->moduleDefaultModelId($module);
-
-        if ($moduleModelId !== null) {
-            $row = $this->findById($moduleModelId);
-            if ($row !== null && ($row['is_active'] ?? 1)) {
-                return [
-                    'model_key' => (string) $row['model_key'],
-                    'model_id'  => (int) $row['id'],
-                ];
-            }
-        }
-
-        $candidate = $this->firstActiveByCapability($capability);
-
-        if ($candidate !== null) {
-            return [
-                'model_key' => (string) $candidate['model_key'],
-                'model_id'  => (int) $candidate['id'],
-            ];
-        }
-
+        // Không còn "model mặc định ngầm": module chưa chọn model → báo NGAY
+        // cho admin biết (chọn model trong tab tương ứng) thay vì tự chọn bừa.
         throw new AIException(
-            sprintf('Không tìm thấy model khả dụng cho module "%s" (capability "%s").', $module, $capability),
+            sprintf('Module "%s" chưa chọn Model AI — hãy chọn model trong tab tương ứng trước khi chạy.', $module),
             AIException::CONFIG,
             null,
             ['module' => $module, 'capability' => $capability]
@@ -152,53 +132,6 @@ final class ModelResolver
             if ((string) ($row['model_key'] ?? '') === $modelKey) {
                 return (int) $row['id'];
             }
-        }
-
-        return null;
-    }
-
-    /**
-     * @return array<string, mixed>|null
-     */
-    private function findById(int $id): ?array
-    {
-        foreach ($this->catalog() as $row) {
-            if ((int) ($row['id'] ?? 0) === $id) {
-                return $row;
-            }
-        }
-
-        return null;
-    }
-
-    /**
-     * @return array<string, mixed>|null
-     */
-    private function firstActiveByCapability(string $capability): ?array
-    {
-        $normalized = AICapability::normalize($capability);
-
-        foreach ($this->catalog() as $row) {
-            if (AICapability::normalize((string) ($row['capability'] ?? '')) === $normalized) {
-                return $row;
-            }
-        }
-
-        return null;
-    }
-
-    private function moduleDefaultModelId(string $module): ?int
-    {
-        foreach ($this->moduleCatalog() as $row) {
-            if ((string) ($row['module_key'] ?? '') !== $module) {
-                continue;
-            }
-
-            if (empty($row['default_model_id'])) {
-                return null;
-            }
-
-            return (int) $row['default_model_id'];
         }
 
         return null;

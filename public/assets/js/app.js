@@ -1680,15 +1680,16 @@ if (!response.ok || !result.valid) {
                     const answer = data && data.data ? data.data.answer : '';
                     const handoff = data && data.data ? !!data.data.handoff : false;
 
-                    if (answer) {
-                        renderMessage('assistant', answer);
-                    } else {
-                        renderMessage('assistant', 'Mình chưa nhận được phản hồi từ AI. Bạn thử lại sau vài giây nhé.');
+                    // Gộp câu trả lời + lời mời liên hệ thành MỘT tin nhắn
+                    // duy nhất (trước đây handoff gửi thêm 1 tin rời → 2 tin cùng lúc).
+                    let replyText = answer;
+                    if (!replyText) {
+                        replyText = 'Mình chưa nhận được phản hồi từ AI. Bạn thử lại sau vài giây nhé.';
                     }
-
                     if (handoff) {
-                        renderMessage('assistant', 'Nếu cần người hỗ trợ trực tiếp, bạn để lại email/SĐT hoặc nhắn fanpage giúp mình.');
+                        replyText += ' Nếu cần người hỗ trợ trực tiếp, bạn để lại email/SĐT hoặc nhắn fanpage giúp mình.';
                     }
+                    renderMessage('assistant', replyText);
 
                     // AI đã trả lời mà khách không phản hồi trong 5 phút → tự đóng.
                     startIdleCloseTimer();
