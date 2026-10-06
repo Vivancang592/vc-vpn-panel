@@ -29,7 +29,7 @@ ob_start();
     <div>
         <h1 style="font-size: 1.5rem; font-weight: 700; word-break: break-word;">Hồ Sơ: <?= htmlspecialchars($user['username']) ?></h1>
     </div>
-    <a href="/admin/users/edit?id=<?= $user['id'] ?>" class="glass-btn" style="text-decoration: none; white-space: nowrap; flex-shrink: 0;">✏️ Chỉnh Sửa</a>
+    <a href="/admin/users/edit?id=<?= $user['id'] ?>" class="glass-btn" style="text-decoration: none; white-space: nowrap; flex-shrink: 0;">Sửa</a>
 </div>
 
 <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1.25rem;">

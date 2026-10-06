@@ -59,7 +59,7 @@ if (($article['post_status'] ?? '') === 'scheduled' && !empty($article['schedule
                 <button type="button" class="js-copy-prompt" title="Copy prompt tạo ảnh" aria-label="Copy prompt tạo ảnh"
                         style="background: none; border: none; box-shadow: none; padding: 0.15rem 0.25rem; margin: 0; cursor: pointer; font-size: 1.1rem; line-height: 1; color: var(--ios-text-secondary); flex-shrink: 0;"
                         data-copy-value="<?= htmlspecialchars((string) $article['image_prompt'], ENT_QUOTES) ?>"
-                        data-copy-label="📋">📋</button>
+                        data-copy-label="📋">⧉</button>
             <?php endif; ?>
         </div>
 

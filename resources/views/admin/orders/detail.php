@@ -62,7 +62,7 @@ ob_start();
                 <?php if (!empty($order['plan_id'])): ?>
                     <span style="font-weight: 700;"><?= htmlspecialchars($order['plan_name'] ?? 'Gói cước VPN') ?></span>
                 <?php else: ?>
-                    <span style="color: var(--ios-blue); font-weight: 700;">💰 Nạp tiền vào ví</span>
+                    <span style="color: var(--ios-blue); font-weight: 700;">Nạp ví</span>
                 <?php endif; ?>
             </div>
             <div><strong>Mã Gói Cước:</strong> <code style="background: rgba(0,122,255,0.1); padding: 0.2rem 0.4rem; border-radius: var(--radius-sm); font-weight: 700;"><?= htmlspecialchars($order['plan_code'] ?? 'N/A') ?></code></div>

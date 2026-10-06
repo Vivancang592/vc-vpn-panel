@@ -10,7 +10,7 @@ ob_start();
     <div>
         <h1 style="font-size: 1.5rem; font-weight: 700; word-break: break-word;">Hồ Sơ: <?= htmlspecialchars($server['name'] ?? 'N/A') ?></h1>
     </div>
-    <a href="/admin/servers/edit?id=<?= $server['id'] ?>" class="glass-btn" style="text-decoration: none; white-space: nowrap; flex-shrink: 0;">✏️ Chỉnh Sửa</a>
+    <a href="/admin/servers/edit?id=<?= $server['id'] ?>" class="glass-btn" style="text-decoration: none; white-space: nowrap; flex-shrink: 0;">Sửa</a>
 </div>
 
 <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1.25rem;">
@@ -62,7 +62,7 @@ ob_start();
                 <div style="display: flex; gap: 0.4rem; margin-top: 0.25rem;">
                     <input type="text" id="node_api_detail_url" class="glass-input" value="<?= htmlspecialchars($serverApiUrl) ?>" readonly style="flex: 1; min-width: 0; font-family: monospace; font-size: 0.82rem; font-weight: 600; background: rgba(0,0,0,0.15);">
                     <button type="button" class="glass-btn" onclick="navigator.clipboard.writeText(document.getElementById('node_api_detail_url').value); alert('Đã sao chép Link API Máy Chủ!');" style="padding: 0 0.75rem; white-space: nowrap; cursor: pointer; font-size: 0.8rem;">
-                        📋 Sao chép
+                        Copy
                     </button>
                 </div>
             </div>
@@ -78,7 +78,7 @@ ob_start();
                 <div style="display: flex; gap: 0.4rem; margin-top: 0.25rem;">
                     <input type="text" id="server_token_input" class="glass-input" value="<?= htmlspecialchars($server['api_token'] ?? '') ?>" readonly style="flex: 1; min-width: 0; font-family: monospace; font-size: 0.82rem; background: rgba(0,0,0,0.15);">
                     <button type="button" class="glass-btn" onclick="navigator.clipboard.writeText(document.getElementById('server_token_input').value); alert('Đã sao chép API Token!');" style="padding: 0 0.75rem; white-space: nowrap; cursor: pointer; font-size: 0.8rem;">
-                        📋 Sao chép Token
+                        Copy Token
                     </button>
                 </div>
             </div>

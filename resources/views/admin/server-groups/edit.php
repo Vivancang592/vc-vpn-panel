@@ -46,7 +46,7 @@ ob_start();
         </div>
 
         <div style="display: flex; justify-content: flex-end; margin-top: 0.5rem;">
-            <button type="submit" class="glass-btn" style="padding: 0.65rem 1.75rem; font-size: 0.9rem;">💾 Cập Nhật Thông Tin</button>
+            <button type="submit" class="glass-btn" style="padding: 0.65rem 1.75rem; font-size: 0.9rem;">Lưu</button>
         </div>
     </form>
 </div>

@@ -27,7 +27,7 @@ ob_start();
         <p style="color: var(--ios-text-secondary); font-size: 0.85rem;">Quản lý và phân loại các cụm server cho người dùng</p>
     </div>
     <div style="display: flex; justify-content: flex-end; margin-top: 0.75rem;">
-        <a href="/admin/server-groups/create" class="glass-btn" style="text-decoration: none; white-space: nowrap;">+ Thêm Nhóm Mới</a>
+        <a href="/admin/server-groups/create" class="glass-btn" style="text-decoration: none; white-space: nowrap;">+ Thêm</a>
     </div>
 </div>
 
@@ -71,12 +71,12 @@ ob_start();
                                     <button type="button" class="action-btn" title="Thao tác">⋮</button>
                                     <div class="action-menu">
                                         <a href="/admin/server-groups/edit?id=<?= $group['id'] ?>" class="action-item">
-                                            <span>✏️</span> Chỉnh sửa
+                                            <span>✎</span> Sửa
                                         </a>
                                         <form method="POST" action="/admin/server-groups/delete" onsubmit="return confirm('Bạn có chắc chắn muốn xóa nhóm máy chủ này?');" style="margin: 0;">
                                             <input type="hidden" name="id" value="<?= $group['id'] ?>">
                                             <button type="submit" class="action-item delete" style="background: none; border: none; width: 100%; text-align: left; cursor: pointer; color: var(--ios-danger); padding: 0.5rem 1rem; font-size: 0.85rem; display: flex; align-items: center; gap: 0.5rem;">
-                                                <span>🗑️</span> Xóa nhóm
+                                                <span>✕</span> Xóa
                                             </button>
                                         </form>
                                     </div>

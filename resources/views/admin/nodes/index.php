@@ -37,7 +37,7 @@ ob_start();
         </div>
         <div style="display: flex; justify-content: flex-end; margin-top: 0.75rem;">
             <button type="button" onclick="confirmBulkDeleteNodes()" class="glass-btn" style="background: rgba(255, 59, 48, 0.12); color: var(--ios-danger); border-color: rgba(255, 59, 48, 0.2); white-space: nowrap;">
-                🗑️ Xóa các mục đã chọn
+                Purge
             </button>
         </div>
     </div>
@@ -85,7 +85,7 @@ ob_start();
                                     <?php if (!empty($node['tls'])): ?>
                                         <span style="color: var(--ios-success); font-weight: 700; font-size: 0.85rem;">✓ Bật</span>
                                     <?php else: ?>
-                                        <span style="color: var(--ios-text-secondary); font-size: 0.85rem;">✕ Tắt</span>
+                                        <span style="color: var(--ios-text-secondary); font-size: 0.85rem;">Tắt</span>
                                     <?php endif; ?>
                                 </td>
                                 <td style="text-align: center;">
@@ -107,10 +107,10 @@ ob_start();
                                         <button type="button" class="action-btn" title="Thao tác">⋮</button>
                                         <div class="action-menu" style="min-width: 175px; white-space: nowrap;">
                                             <a href="/admin/nodes/detail?id=<?= $node['id'] ?>" class="action-item" style="white-space: nowrap; display: flex; align-items: center; gap: 0.5rem;">
-                                                <span>👁️</span> Xem chi tiết
+                                                <span>◉</span> Xem
                                             </a>
                                             <button type="submit" form="delete-node-form-<?= $node['id'] ?>" class="action-item delete" style="background: none; border: none; width: 100%; text-align: left; cursor: pointer; color: var(--ios-danger); padding: 0.5rem 1rem; font-size: 0.85rem; display: flex; align-items: center; gap: 0.5rem; white-space: nowrap;">
-                                                <span>🗑️</span> Xóa nút kết nối
+                                                <span>✕</span> Xóa
                                             </button>
                                         </div>
                                     </div>

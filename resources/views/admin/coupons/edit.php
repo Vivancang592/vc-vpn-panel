@@ -34,7 +34,7 @@ ob_start();
     .ms-toggle .ms-summary { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
     .ms-caret { flex-shrink: 0; transition: transform 160ms ease; opacity: 0.6; }
     .ms-toggle[aria-expanded="true"] .ms-caret { transform: rotate(180deg); }
-    .ms-menu { position: absolute; z-index: 50; top: calc(100% + 6px); left: 0; right: 0; max-height: 260px; overflow-y: auto; padding: 0.35rem; border: 1px solid var(--glass-border); border-radius: var(--radius-md); background: rgba(255, 255, 255, 0.97); box-shadow: var(--shadow-lg); }
+    .ms-menu { position: absolute; z-index: 50; top: calc(100% + 6px); left: 0; right: 0; max-height: 260px; overflow-y: auto; padding: 0.35rem; border: 1px solid var(--glass-border); border-radius: var(--radius-md); background: rgba(8, 13, 22, 0.98); box-shadow: var(--shadow-lg); }
     .ms-menu[hidden] { display: none; }
     .ms-item { display: flex; align-items: center; gap: 0.55rem; padding: 0.55rem 0.6rem; border-radius: var(--radius-sm); font-size: 0.82rem; color: var(--ios-text); cursor: pointer; }
     .ms-item:hover { background: rgba(127, 127, 127, 0.14); }
@@ -161,7 +161,7 @@ ob_start();
         </div>
 
         <div style="display: flex; justify-content: flex-end; margin-top: 0.5rem;">
-            <button type="submit" class="glass-btn" style="padding: 0.65rem 1.75rem; font-size: 0.9rem;">💾 Cập Nhật Thông Tin</button>
+            <button type="submit" class="glass-btn" style="padding: 0.65rem 1.75rem; font-size: 0.9rem;">Lưu</button>
         </div>
     </form>
 </div>

@@ -77,15 +77,15 @@ $activityMeta = static function ($meta): string {
         </p>
         <?php if ($isWriteTask): ?>
             <p style="font-size: 0.85rem; color: var(--ios-text-secondary); margin-top: 0.3rem;">
-                ✍️ Viết bài:
+                ✎ Viết bài:
                 <strong style="color: <?= $statusColor ?>;">● <?= htmlspecialchars($aiLabels['map']['task_status'][$status] ?? $status) ?></strong>
                 <?php if (is_array($article)): ?>
-                    · 📢 Đăng bài:
+                    · Đăng bài:
                     <strong style="color: <?= $postStatusInfo[1] ?>;">● <?= htmlspecialchars($postStatusInfo[0]) ?></strong><?= htmlspecialchars($scheduleNote) ?>
                 <?php endif; ?>
             </p>
             <p style="font-size: 0.75rem; color: var(--ios-text-secondary); margin-top: 0.3rem;">
-                Task theo dõi việc <strong>viết bài</strong> - việc <strong>đăng bài</strong> theo lịch quản lý ở <a href="/admin/ai/fanpage" style="color: var(--ios-blue); text-decoration: none;">Nội Dung Fanpage › Danh Sách Bài Viết</a>.
+                Task theo dõi việc <strong>viết bài</strong> - việc <strong>đăng bài</strong> theo lịch quản lý ở <a href="/admin/ai/fanpage" style="color: var(--ios-blue); text-decoration: none;">Fanpage › DS</a>.
             </p>
         <?php else: ?>
             <p style="color: var(--ios-text-secondary); font-size: 0.85rem;">
@@ -98,12 +98,12 @@ $activityMeta = static function ($meta): string {
             <form method="POST" action="/admin/ai/tasks/run" style="margin: 0;">
                 <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrf_token ?? '') ?>">
                 <input type="hidden" name="id" value="<?= (int) $task['id'] ?>">
-                <button type="submit" class="glass-btn" style="white-space: nowrap;">▶ Chạy Ngay</button>
+                <button type="submit" class="glass-btn" style="white-space: nowrap;">Chạy</button>
             </form>
             <form method="POST" action="/admin/ai/tasks/cancel" style="margin: 0;" onsubmit="return confirm('Bạn có chắc muốn huỷ tác vụ này?');">
                 <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrf_token ?? '') ?>">
                 <input type="hidden" name="id" value="<?= (int) $task['id'] ?>">
-                <button type="submit" class="glass-btn" style="white-space: nowrap;">✕ Huỷ Tác Vụ</button>
+                <button type="submit" class="glass-btn" style="white-space: nowrap;">Hủy</button>
             </form>
         <?php endif; ?>
     </div>

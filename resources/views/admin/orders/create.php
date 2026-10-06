@@ -107,7 +107,7 @@ ob_start();
 
         <div style="background: rgba(0, 122, 255, 0.05); border: 1px solid rgba(0, 122, 255, 0.2); border-radius: var(--radius-md, 10px); padding: 1.25rem; display: flex; flex-direction: column; gap: 1.15rem;">
             <div style="font-weight: 700; font-size: 0.95rem; color: var(--ios-blue, #007aff); display: flex; align-items: center; gap: 0.4rem; padding-bottom: 0.5rem; border-bottom: 1px solid rgba(0, 122, 255, 0.15);">
-                <span>⚙️</span> Tùy Chỉnh Thời Hạn, Thiết Bị & Data Cấp Phát
+                <span>CFG</span> Tùy Chỉnh Thời Hạn, Thiết Bị & Data Cấp Phát
             </div>
 
             <div class="admin-order-form-group">
@@ -136,7 +136,7 @@ ob_start();
         </div>
 
         <div style="display: flex; justify-content: flex-end; margin-top: 0.5rem;">
-            <button type="submit" class="glass-btn" style="padding: 0.65rem 1.75rem; font-size: 0.9rem; font-weight: 700;">🛒 Khởi Tạo Đơn Hàng</button>
+            <button type="submit" class="glass-btn" style="padding: 0.65rem 1.75rem; font-size: 0.9rem; font-weight: 700;">Tạo đơn</button>
         </div>
     </form>
 </div>

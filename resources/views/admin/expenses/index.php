@@ -32,7 +32,7 @@ $totalExpenseAmount = array_sum(array_column($expenses ?? [], 'amount'));
         <div class="glass-card" style="padding: 0.5rem 1rem; font-size: 0.85rem;">
             Tổng chi: <strong style="color: var(--ios-danger); font-size: 1rem;"><?= isset($formatMoney) ? $formatMoney($totalExpenseAmount) : number_format($totalExpenseAmount, 2) ?></strong>
         </div>
-        <a href="/admin/expenses/create" class="glass-btn" style="text-decoration: none; white-space: nowrap;">+ Thêm Khoản Chi</a>
+        <a href="/admin/expenses/create" class="glass-btn" style="text-decoration: none; white-space: nowrap;">+ Thêm</a>
     </div>
 </div>
 
@@ -78,12 +78,12 @@ $totalExpenseAmount = array_sum(array_column($expenses ?? [], 'amount'));
                                     <button type="button" class="action-btn" title="Thao tác">⋮</button>
                                     <div class="action-menu">
                                         <a href="/admin/expenses/edit?id=<?= $expense['id'] ?>" class="action-item">
-                                            <span>✏️</span> Chỉnh sửa
+                                            <span>✎</span> Sửa
                                         </a>
                                         <form method="POST" action="/admin/expenses/delete" onsubmit="return confirm('Bạn có chắc chắn muốn xóa khoản chi này?');" style="margin: 0;">
                                             <input type="hidden" name="id" value="<?= $expense['id'] ?>">
                                             <button type="submit" class="action-item delete" style="background: none; border: none; width: 100%; text-align: left; cursor: pointer; color: var(--ios-danger); padding: 0.5rem 1rem; font-size: 0.85rem; display: flex; align-items: center; gap: 0.5rem;">
-                                                <span>🗑️</span> Xóa khoản chi
+                                                <span>✕</span> Xóa
                                             </button>
                                         </form>
                                     </div>

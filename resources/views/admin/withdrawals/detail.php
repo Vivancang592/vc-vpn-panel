@@ -74,14 +74,14 @@ ob_start();
                     <form method="POST" action="/admin/withdrawals/detail?id=<?= $withdrawal['id'] ?>" style="margin: 0;">
                         <input type="hidden" name="action" value="approved">
                         <button type="submit" onclick="return confirm('Xác nhận đã chuyển khoản và DUYỆT yêu cầu này?');" class="glass-btn" style="background: var(--ios-success); color: #fff; border: none; padding: 0.6rem 1.25rem; font-weight: 600;">
-                            ✓ Duyệt Yêu Cầu
+                            Duyệt
                         </button>
                     </form>
 
                     <form method="POST" action="/admin/withdrawals/detail?id=<?= $withdrawal['id'] ?>" style="margin: 0;">
                         <input type="hidden" name="action" value="rejected">
                         <button type="submit" onclick="return confirm('Bạn có chắc chắn muốn TỪ CHỐI yêu cầu này?');" class="glass-btn" style="background: var(--ios-danger); color: #fff; border: none; padding: 0.6rem 1.25rem; font-weight: 600;">
-                            ✕ Từ Chối
+                            Từ chối
                         </button>
                     </form>
                 </div>

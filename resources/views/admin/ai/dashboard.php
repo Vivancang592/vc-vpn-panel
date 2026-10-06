@@ -30,7 +30,7 @@ $statusColor = static function (string $status): string {
     <strong style="font-size: 0.9rem;">Chưa cấu hình khoá Kira API.</strong>
     <span style="font-size: 0.85rem; color: var(--ios-text-secondary);">
         Hệ thống có thể tạo tác vụ nhưng tiến trình nền sẽ không gọi được nhà cung cấp thật.
-        <a href="/admin/ai/settings" style="color: var(--ios-blue);">Vào Cấu Hình AI</a> để thiết lập.
+        <a href="/admin/ai/settings" style="color: var(--ios-blue);">AI</a> để thiết lập.
     </span>
 </div>
 <?php endif; ?>
@@ -96,7 +96,7 @@ $statusColor = static function (string $status): string {
             </form>
         </div>
         <div style="font-size: 0.75rem; color: var(--ios-text-secondary); margin-bottom: 0.75rem;">
-            Hàng đợi <strong>TASK AI</strong> — chủ yếu là <strong>viết bài</strong>; việc <strong>đăng bài</strong> theo lịch quản lý riêng ở <a href="/admin/ai/fanpage" style="color: var(--ios-blue); text-decoration: none;">Nội Dung Fanpage › Danh Sách Bài Viết</a>.
+            Hàng đợi <strong>TASK AI</strong> — chủ yếu là <strong>viết bài</strong>; việc <strong>đăng bài</strong> theo lịch quản lý riêng ở <a href="/admin/ai/fanpage" style="color: var(--ios-blue); text-decoration: none;">Fanpage › DS</a>.
         </div>
         <div style="display: flex; flex-direction: column; gap: 0.5rem; font-size: 0.85rem;">
             <div style="display: flex; justify-content: space-between;"><span style="color: var(--ios-text-secondary);">Tổng tác vụ</span><strong><?= (int) $taskCounts['total'] ?></strong></div>
@@ -141,7 +141,7 @@ $modelIdleCount = max(0, count($models) - $modelUsedCount);
             <?php endif; ?>
             <form method="POST" action="/admin/ai/models/sync" style="margin: 0;">
                 <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrf_token ?? '') ?>">
-                <button type="submit" class="glass-btn" style="font-size: 0.82rem; white-space: nowrap;">⟳ Đồng Bộ</button>
+                <button type="submit" class="glass-btn" style="font-size: 0.82rem; white-space: nowrap;">Sync</button>
             </form>
         </div>
     </div>
@@ -155,7 +155,7 @@ $modelIdleCount = max(0, count($models) - $modelUsedCount);
     <div style="padding: 0.75rem 1rem; margin-bottom: 0.75rem; border-left: 4px solid var(--ios-warning, #ff9f0a); background: rgba(255, 159, 10, 0.06); border-radius: var(--radius-sm);">
         <strong style="font-size: 0.85rem;">Chưa cấu hình khoá API.</strong>
         <span style="font-size: 0.82rem; color: var(--ios-text-secondary);">
-            Không thể đồng bộ từ nhà cung cấp. <a href="/admin/ai/settings" style="color: var(--ios-blue);">Vào Cấu Hình AI</a>
+            Không thể đồng bộ từ nhà cung cấp. <a href="/admin/ai/settings" style="color: var(--ios-blue);">AI</a>
             rồi bấm nút Đồng Bộ phía trên.
         </span>
     </div>
@@ -262,11 +262,11 @@ $modelIdleCount = max(0, count($models) - $modelUsedCount);
     // Cột "Số Phân Hệ Dùng": cộng thêm các tab chọn model ở localStorage
     // (4 tab lưu model đang chọn, value = model_key).
     var TABS = [
-        { key: 'vc_ai_model_image',   label: '🖼️ Tạo Ảnh' },
-        { key: 'vc_ai_model_video',   label: '🎬 Tạo Video' },
-        { key: 'vc_ai_model_dubbing', label: '🗣️ Lời Thoại' },
-        { key: 'vc_ai_model_fanpage', label: '📰 Nội Dung Fanpage' },
-        { key: 'vcAsstModel',         label: '💬 Trợ Lý Admin' }
+        { key: 'vc_ai_model_image',   label: 'Ảnh' },
+        { key: 'vc_ai_model_video',   label: 'Video' },
+        { key: 'vc_ai_model_dubbing', label: 'Lời Thoại' },
+        { key: 'vc_ai_model_fanpage', label: 'Fanpage' },
+        { key: 'vcAsstModel',         label: 'Admin' }
     ];
     var chosen = {}; // model_key -> [label]
     TABS.forEach(function (t) {
@@ -359,7 +359,7 @@ $modelIdleCount = max(0, count($models) - $modelUsedCount);
                 <?php else: ?>
                     <tr>
                         <td colspan="7" style="text-align: center; padding: 2rem; color: var(--ios-text-secondary);">
-                            Chưa có tác vụ nào. Tác vụ được tạo tự động khi bạn nhập chủ đề ở tab <a href="/admin/ai/fanpage" style="color: var(--ios-blue);">Nội Dung Fanpage</a>.
+                            Chưa có tác vụ nào. Tác vụ được tạo tự động khi bạn nhập chủ đề ở tab <a href="/admin/ai/fanpage" style="color: var(--ios-blue);">Fanpage</a>.
                         </td>
                     </tr>
                 <?php endif; ?>

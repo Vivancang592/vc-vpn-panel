@@ -10,7 +10,7 @@ ob_start();
         <h1 style="font-size: 1.5rem; font-weight: 700; word-break: break-word;"><?= htmlspecialchars($post['title'] ?? 'N/A') ?></h1>
     </div>
     <div style="display: flex; gap: 0.5rem; flex-shrink: 0;">
-        <a href="/admin/posts/edit?id=<?= $post['id'] ?>" class="glass-btn" style="text-decoration: none; white-space: nowrap;">✏️ Chỉnh Sửa</a>
+        <a href="/admin/posts/edit?id=<?= $post['id'] ?>" class="glass-btn" style="text-decoration: none; white-space: nowrap;">Sửa</a>
     </div>
 </div>
 

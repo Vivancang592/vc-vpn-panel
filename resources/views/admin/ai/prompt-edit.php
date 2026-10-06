@@ -55,7 +55,7 @@ $tplUser   = (string) ($defaultTemplate['user'] ?? '');
 
 <!-- Soạn thảo prompt (lưu vào FILE — nguồn duy nhất) -->
 <div class="glass-card" style="padding: 1.25rem; width: 100%; box-sizing: border-box; margin-bottom: 1rem; border-left: 4px solid var(--ios-blue);">
-    <h2 style="font-size: 1rem; font-weight: 700; margin-bottom: 0.35rem;">📄 Soạn Thảo Prompt</h2>
+    <h2 style="font-size: 1rem; font-weight: 700; margin-bottom: 0.35rem;">Prompt</h2>
     <div style="font-size: 0.78rem; color: var(--ios-text-secondary); margin-bottom: 0.75rem; word-break: break-all;">
         <div>Đường dẫn file: <code><?= htmlspecialchars((string) ($filePath ?? '')) ?></code></div>
         <div>
@@ -91,7 +91,7 @@ $tplUser   = (string) ($defaultTemplate['user'] ?? '');
         </div>
 
         <div style="display: flex; justify-content: flex-end;">
-            <button type="submit" class="glass-btn" style="white-space: nowrap;">💾 Lưu Prompt</button>
+            <button type="submit" class="glass-btn" style="white-space: nowrap;">Lưu</button>
         </div>
     </form>
 </div>

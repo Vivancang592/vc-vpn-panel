@@ -36,7 +36,7 @@ $loggedIn = $uid > 0;
             </form>
         <?php endif; ?>
         <a href="/admin/ai/reply#cab-conversations" style="text-decoration: none; padding: 0.4rem 0.8rem; border-radius: var(--radius-sm); font-size: 0.82rem; font-weight: 600; border: 1px solid var(--ios-border, rgba(255,255,255,0.15)); color: var(--ios-blue);">
-            ← Danh sách
+            Danh sách
         </a>
     </div>
 </div>
@@ -46,7 +46,7 @@ $loggedIn = $uid > 0;
         <div>
             <div style="color: var(--ios-text-secondary); font-size: 0.75rem; text-transform: uppercase; letter-spacing: .04em;">Nguồn hội thoại</div>
             <div style="font-weight: 700; color: <?= $sourceColor ?>; margin-top: 0.2rem;">
-                <?= $source === 'fanpage' ? '📘' : '🌐' ?> <?= htmlspecialchars($sourceLabel) ?>
+                <?= $source === 'fanpage' ? 'FB' : 'WEB' ?> <?= htmlspecialchars($sourceLabel) ?>
             </div>
             <div style="color: var(--ios-text-secondary); font-size: 0.75rem; margin-top: 0.2rem;">
                 <?= $source === 'fanpage' ? 'Facebook (Messenger / bình luận)' : 'Khung chat trên website' ?>
@@ -55,7 +55,7 @@ $loggedIn = $uid > 0;
         <div>
             <div style="color: var(--ios-text-secondary); font-size: 0.75rem; text-transform: uppercase; letter-spacing: .04em;">Người dùng</div>
             <?php if ($loggedIn): ?>
-                <div style="font-weight: 700; color: var(--ios-success); margin-top: 0.2rem;">👤 <?= htmlspecialchars((string) ($userName !== null && $userName !== '' ? $userName : ('User #' . $uid))) ?></div>
+                <div style="font-weight: 700; color: var(--ios-success); margin-top: 0.2rem;">USR <?= htmlspecialchars((string) ($userName !== null && $userName !== '' ? $userName : ('User #' . $uid))) ?></div>
                 <div style="color: var(--ios-text-secondary); font-size: 0.75rem; margin-top: 0.2rem;">
                     Đã đăng nhập<?= ($userEmail ?? '') !== '' ? ' • ' . htmlspecialchars((string) $userEmail) : '' ?>
                 </div>
@@ -105,7 +105,7 @@ $loggedIn = $uid > 0;
                 <div style="background: <?= $bg ?>; border: 1px solid <?= $border ?>; border-radius: 10px; padding: 0.65rem 0.85rem;">
                     <div style="display: flex; justify-content: space-between; align-items: center; gap: 0.5rem; margin-bottom: 0.35rem; flex-wrap: wrap;">
                         <span style="font-weight: 700; font-size: 0.8rem;">
-                            <?= $isUser ? '👤' : ($isSystem ? '⚙️' : '🤖') ?>
+                            <?= $isUser ? 'USR' : ($isSystem ? 'SYS' : 'AI') ?>
                             <?= htmlspecialchars($roleLabels[$role] ?? $role) ?>
                         </span>
                         <span style="color: var(--ios-text-secondary); font-size: 0.72rem;">

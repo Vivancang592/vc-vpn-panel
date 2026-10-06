@@ -36,7 +36,7 @@ require __DIR__ . '/_tab-header.php';
                         <option value="<?= htmlspecialchars((string) $key) ?>" <?= $key === 'alloy' ? 'selected' : '' ?>><?= htmlspecialchars((string) $key) ?> - <?= htmlspecialchars((string) $label) ?></option>
                     <?php endforeach; ?>
                 </select>
-                <button type="button" id="dubbing-voice-preview" title="Nghe thử giọng này" aria-label="Nghe thử giọng này" style="flex: 0 0 auto; width: 2.2rem; border: none; background: transparent; color: var(--ios-blue, #0a84ff); cursor: pointer; font-size: 1rem; display: flex; align-items: center; justify-content: center; transition: filter .15s ease, transform .15s ease;">🔊</button>
+                <button type="button" id="dubbing-voice-preview" title="Nghe thử giọng này" aria-label="Nghe thử giọng này" style="flex: 0 0 auto; width: 2.2rem; border: none; background: transparent; color: var(--ios-blue, #0a84ff); cursor: pointer; font-size: 1rem; display: flex; align-items: center; justify-content: center; transition: filter .15s ease, transform .15s ease;">▶</button>
             </div>
             <audio id="dubbing-voice-audio" style="display: none;"></audio>
         </div>
@@ -49,7 +49,7 @@ require __DIR__ . '/_tab-header.php';
                 <?php endforeach; ?>
             </select>
         </div>
-        <button type="submit" class="glass-btn" data-busy-label="Đang tạo lời thoại..." style="justify-self: start; justify-content: center; font-weight: 700; background: var(--ios-blue); color: #fff; white-space: nowrap;">🎙️ Tạo Lời Thoại</button>
+        <button type="submit" class="glass-btn" data-busy-label="Đang tạo lời thoại..." style="justify-self: start; justify-content: center; font-weight: 700; background: var(--ios-blue); color: var(--soc-ink); white-space: nowrap;">Tạo</button>
     </div>
 </form>
 
@@ -86,8 +86,8 @@ require __DIR__ . '/_tab-header.php';
     var audio = document.getElementById('dubbing-voice-audio');
     if (!sel || !btn || !audio) return;
 
-    var ICON       = '🔊';
-    var ICON_PAUSE = '⏸';
+    var ICON       = '▶';
+    var ICON_PAUSE = '||';
     var current    = '';
     var flashTimer = null;
 
@@ -101,7 +101,7 @@ require __DIR__ . '/_tab-header.php';
     }
     function showErr(text) {
         if (flashTimer) clearTimeout(flashTimer);
-        setIcon('⚠️', text);
+        setIcon('▲', text);
         flashTimer = setTimeout(resetIcon, 3000);
     }
 

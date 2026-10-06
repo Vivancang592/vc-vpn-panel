@@ -24,19 +24,19 @@ ob_start();
 
 <div style="margin-bottom: 1.5rem; width: 100%; box-sizing: border-box;">
     <div>
-        <h1 style="font-size: 1.5rem; font-weight: 700; word-break: break-word;">Cài Đặt Hệ Thống</h1>
+        <h1 style="font-size: 1.5rem; font-weight: 700; word-break: break-word;">Cài Đặt</h1>
         <p style="color: var(--ios-text-secondary); font-size: 0.85rem;">Quản lý toàn diện các thông số của hệ thống VPN</p>
     </div>
 </div>
 
 <!-- Nút chuyển Tab -->
 <div class="settings-tabs">
-    <button class="settings-tab-btn active" data-target="tab-general">⚙️ Cấu Hình Chung</button>
-    <button class="settings-tab-btn" data-target="tab-finance">💰 Tài Chính & Ưu Đãi</button>
-    <button class="settings-tab-btn" data-target="tab-trial">🎁 Dùng Thử</button>
-    <button class="settings-tab-btn" data-target="tab-bank">🏦 Đa Cổng Thanh Toán</button>
-    <button class="settings-tab-btn" data-target="tab-email">📧 Cấu Hình Email</button>
-    <button class="settings-tab-btn" data-target="tab-ai">🔵 Fanpage</button>
+    <button class="settings-tab-btn active" data-target="tab-general">Chung</button>
+    <button class="settings-tab-btn" data-target="tab-finance">Tài Chính</button>
+    <button class="settings-tab-btn" data-target="tab-trial">Thử</button>
+    <button class="settings-tab-btn" data-target="tab-bank">Thanh Toán</button>
+    <button class="settings-tab-btn" data-target="tab-email">Email</button>
+    <button class="settings-tab-btn" data-target="tab-ai">Fanpage</button>
 </div>
 
 <div class="settings-content">
@@ -90,8 +90,8 @@ ob_start();
             </div>
 
             <div style="display: flex; justify-content: flex-end; margin-top: 0.5rem;">
-                <button type="submit" class="glass-btn" style="padding: 0.75rem 2rem; background: var(--ios-blue); color: #fff; border: none; font-weight: 600; cursor: pointer;">
-                    💾 Lưu Cấu Hình Chung
+                <button type="submit" class="glass-btn" style="padding: 0.75rem 2rem; background: var(--ios-blue); color: var(--soc-ink); border: none; font-weight: 600; cursor: pointer;">
+                    Lưu
                 </button>
             </div>
         </form>
@@ -166,7 +166,7 @@ ob_start();
 
             <div style="display: flex; justify-content: flex-end; margin-top: 0.5rem;">
                 <button type="submit" class="glass-btn" style="padding: 0.75rem 2rem; background: var(--ios-success); color: #fff; border: none; font-weight: 600; cursor: pointer;">
-                    💾 Lưu Tài Chính & Ưu Đãi
+                    Lưu
                 </button>
             </div>
         </form>
@@ -176,7 +176,7 @@ ob_start();
     <div id="tab-trial" class="settings-tab-pane">
         <form method="POST" action="/admin/settings/save" class="glass-card settings-form" style="padding: 1.5rem; width: 100%; display: flex; flex-direction: column; gap: 1.25rem;">
             <h2 style="font-size: 1.1rem; font-weight: 700; margin-bottom: 0.5rem; border-bottom: 1px solid var(--glass-border); padding-bottom: 0.5rem; color: #af52de;">
-                🎁 Cấu Hình Gói Dùng Thử Cho Tài Khoản Mới
+                Gói Dùng Thử
             </h2>
 
             <div class="settings-field-list" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1.25rem;">
@@ -208,7 +208,7 @@ ob_start();
 
             <div style="display: flex; justify-content: flex-end; margin-top: 0.5rem;">
                 <button type="submit" class="glass-btn" style="padding: 0.75rem 2rem; background: #af52de; color: #fff; border: none; font-weight: 600; cursor: pointer;">
-                    💾 Lưu Cấu Hình Dùng Thử
+                    Lưu
                 </button>
             </div>
         </form>
@@ -218,7 +218,7 @@ ob_start();
     <div id="tab-bank" class="settings-tab-pane">
         <form method="POST" action="/admin/settings/save" enctype="multipart/form-data" class="glass-card settings-form" style="padding: 1.5rem; width: 100%; display: flex; flex-direction: column; gap: 1.5rem;">
             <h2 style="font-size: 1.1rem; font-weight: 700; margin-bottom: 0; border-bottom: 1px solid var(--glass-border); padding-bottom: 0.5rem; color: #ff9500;">
-                🏦 Cấu Hình Đa Cổng Thanh Toán
+                Cổng TT
             </h2>
 
             <div class="settings-payment-list" style="display: flex; flex-direction: column; gap: 1rem; width: 100%; overflow-x: auto;">
@@ -257,7 +257,7 @@ ob_start();
                         <div style="display: flex; gap: 0.4rem;">
                             <input type="text" id="payment_webhook_url_input" class="glass-input" value="<?= htmlspecialchars($paymentWebhookUrl) ?>" readonly style="flex: 1; min-width: 0; background: rgba(0,0,0,0.15); color: var(--ios-blue); font-weight: 600; font-family: monospace;">
                             <button type="button" class="glass-btn" onclick="navigator.clipboard.writeText(document.getElementById('payment_webhook_url_input').value); alert('Đã sao chép Payment Webhook URL: <?= htmlspecialchars($paymentWebhookUrl) ?>');" title="Sao chép Webhook URL" style="padding: 0 0.85rem; white-space: nowrap; cursor: pointer; font-size: 0.8rem;">
-                                📋 Sao chép
+                                Copy
                             </button>
                         </div>
                     </div>
@@ -266,7 +266,7 @@ ob_start();
                         <div style="display: flex; gap: 0.4rem;">
                             <input type="text" id="sepay_api_key_input" name="settings[sepay_api_key]" class="glass-input" value="<?= htmlspecialchars($settings['sepay_api_key'] ?? $settings['webhook_api_key'] ?? $settings['macrodroid_secret'] ?? '') ?>" placeholder="API Key / Secret Webhook" style="flex: 1; min-width: 0;">
                             <button type="button" class="glass-btn" onclick="generateRandomApiKey('sepay_api_key_input')" title="Tạo key ngẫu nhiên" style="padding: 0 0.75rem; white-space: nowrap; cursor: pointer; background: rgba(255,255,255,0.08);">
-                                🎲
+                                ⟳
                             </button>
                         </div>
                     </div>
@@ -291,7 +291,7 @@ ob_start();
 
             <div style="display: flex; justify-content: flex-end; margin-top: 0.5rem;">
                 <button type="submit" class="glass-btn" style="padding: 0.75rem 2rem; background: #ff9500; color: #fff; border: none; font-weight: 600; cursor: pointer;">
-                    💾 Lưu Cấu Hình Đa Cổng
+                    Lưu
                 </button>
             </div>
         </form>
@@ -351,7 +351,7 @@ ob_start();
 
             <div style="display: flex; justify-content: flex-end; margin-top: 0.5rem;">
                 <button type="submit" class="glass-btn" style="padding: 0.75rem 2rem; background: var(--ios-danger); color: #fff; border: none; font-weight: 600; cursor: pointer;">
-                    💾 Lưu Cấu Hình Email
+                    Lưu
                 </button>
             </div>
         </form>
@@ -362,15 +362,15 @@ ob_start();
         <form method="POST" action="/admin/settings/save" class="glass-card settings-form" style="padding: 1.5rem; width: 100%; display: flex; flex-direction: column; gap: 1.25rem;">
 
             <div style="padding: 0.9rem 1rem; border-radius: 8px; background: rgba(10,132,255,0.07); border: 1px solid rgba(10,132,255,0.25); font-size: 0.85rem; line-height: 1.65;">
-                <strong>ℹ️ Cấu hình AI đã chuyển sang TRUNG TÂM AI.</strong><br>
+                <strong>Cấu hình AI đã chuyển sang TRUNG TÂM AI.</strong><br>
                 Nhà cung cấp AI, API key, model, prompt và nhật ký hội thoại được quản lý duy nhất tại:
-                <a href="/admin/ai/settings" style="color: var(--ios-blue); font-weight: 600;">Cấu Hình AI (phân hệ + nội quy prompt)</a> ·
+                <a href="/admin/ai/settings" style="color: var(--ios-blue); font-weight: 600;">AI</a> ·
                 <a href="/admin/ai#ai-models-catalog" style="color: var(--ios-blue); font-weight: 600;">Model</a>.
                 Tab này chỉ còn cấu hình kết nối Facebook Fanpage.
             </div>
 
             <h2 style="font-size: 1.1rem; font-weight: 700; margin-bottom: 0.5rem; border-bottom: 1px solid var(--glass-border); padding-bottom: 0.5rem; color: #1877f2;">
-                🔵 Facebook Fanpage Webhook & Graph API
+                Facebook Fanpage Webhook & Graph API
             </h2>
 
             <div class="settings-field-list">
@@ -384,7 +384,7 @@ ob_start();
                     <div style="display: flex; gap: 0.4rem; width: 100%;">
                         <input type="text" id="fanpage_webhook_url" class="glass-input" value="<?= htmlspecialchars($webhookUrl) ?>" readonly style="flex: 1; min-width: 0; background: rgba(0,0,0,0.1); color: var(--ios-blue); font-weight: 600;">
                         <button type="button" class="glass-btn" onclick="navigator.clipboard.writeText(document.getElementById('fanpage_webhook_url').value); alert('Đã sao chép Webhook URL!');" style="padding: 0 0.85rem; white-space: nowrap; cursor: pointer; font-size: 0.8rem;">
-                            📋 Sao chép
+                            Copy
                         </button>
                     </div>
                 </div>
@@ -394,7 +394,7 @@ ob_start();
                     <div style="display: flex; gap: 0.4rem; width: 100%;">
                         <input type="text" id="fanpage_verify_token_input" name="settings[fanpage_verify_token]" class="glass-input" value="<?= htmlspecialchars($settings['fanpage_verify_token'] ?? '') ?>" placeholder="token xác thực webhook" style="flex: 1; min-width: 0;">
                         <button type="button" class="glass-btn" onclick="generateRandomApiKey('fanpage_verify_token_input')" title="Tạo token ngẫu nhiên" style="padding: 0 0.75rem; white-space: nowrap; cursor: pointer; background: rgba(255,255,255,0.08); font-size: 0.85rem;">
-                            🎲 Tạo mã
+                            Tạo
                         </button>
                     </div>
                 </div>
@@ -411,7 +411,7 @@ ob_start();
             </div>
 
             <div style="background: rgba(24, 119, 242, 0.05); border: 1px solid rgba(24, 119, 242, 0.2); border-radius: 8px; padding: 0.85rem 1rem; margin-top: 0.25rem; font-size: 0.8rem; line-height: 1.5; color: var(--ios-text-secondary);">
-                <strong style="color: #1877f2;">💡 Yêu cầu trên Meta for Developers để AI nhận & trả lời bình luận:</strong>
+                <strong style="color: #1877f2;">Yêu cầu trên Meta for Developers để AI nhận & trả lời bình luận:</strong>
                 <ul style="margin: 0.35rem 0 0 1.2rem; padding: 0;">
                     <li>Trong mục <strong>Webhooks &gt; Page</strong>: Bấm <em>Subscribe to this object</em> và tích chọn trường <code>feed</code> (để nhận bình luận) và <code>messages</code> (để nhận tin nhắn).</li>
                     <li>Page Access Token cần các quyền tối thiểu: <code>pages_manage_posts</code>, <code>pages_manage_engagement</code>, <code>pages_read_user_content</code>, <code>pages_messaging</code>.</li>
@@ -419,7 +419,7 @@ ob_start();
             </div>
 
             <h2 style="font-size: 1.1rem; font-weight: 700; margin-top: 0.5rem; margin-bottom: 0.5rem; border-bottom: 1px solid var(--glass-border); padding-bottom: 0.5rem; color: #ff9500;">
-                💬 Tự Động Trả Lời Bình Luận Fanpage
+                Tự Trả Lời
             </h2>
 
             <div class="settings-field-list">
@@ -439,7 +439,7 @@ ob_start();
 
             <div style="display: flex; justify-content: flex-end; margin-top: 0.5rem;">
                 <button type="submit" class="glass-btn" style="padding: 0.75rem 2rem; background: #0f6bf2; color: #fff; border: none; font-weight: 600; cursor: pointer;">
-                    💾 Lưu Cấu Hình Fanpage
+                    Lưu
                 </button>
             </div>
         </form>

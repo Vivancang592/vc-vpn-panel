@@ -96,7 +96,7 @@ ob_start();
         </div>
         <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrf_token ?? '') ?>">
         <input type="hidden" name="payment_id" value="<?= (int) $payment['id'] ?>">
-        <button type="submit" class="glass-btn" style="border: 0; cursor: pointer; background: var(--ios-success);">Duyệt và cộng ví</button>
+        <button type="submit" class="glass-btn" style="border: 0; cursor: pointer; background: var(--ios-success);">Duyệt</button>
     </form>
 <?php elseif (($payment['type'] ?? '') === 'deposit' && ($payment['status'] ?? '') === 'failed'): ?>
     <form method="POST" action="/admin/payments/delete-cancelled-deposit" class="glass-card" style="padding: 1.25rem; margin-top: 1.25rem; display: flex; justify-content: space-between; align-items: center; gap: 1rem; flex-wrap: wrap;">
@@ -106,7 +106,7 @@ ob_start();
         </div>
         <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrf_token ?? '') ?>">
         <input type="hidden" name="payment_id" value="<?= (int) $payment['id'] ?>">
-        <button type="submit" class="glass-btn" style="border: 0; cursor: pointer; background: var(--ios-danger);">Xóa giao dịch</button>
+        <button type="submit" class="glass-btn" style="border: 0; cursor: pointer; background: var(--ios-danger);">Purge</button>
     </form>
 <?php endif; ?>
 

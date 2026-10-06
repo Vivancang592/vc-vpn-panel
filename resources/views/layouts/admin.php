@@ -1,6 +1,11 @@
 <?php
 $extraCss = 'admin';
 $extraJs = 'admin';
+// Đánh dấu shell Admin → header.php thêm body class `admin-area`.
+// admin.css scope `body.admin-area:has(.admin-app)` chỉ match trang Admin;
+// trang user/public (layouts/app.php cũng dùng wrapper .admin-app) KHÔNG có
+// class này → theme SOC không rò rỉ sang khu user.
+$vcAdminShell = true;
 
 /* --- Nhóm tab admin + trang hiện tại (tính TRƯỚC khi render) --- */
 $adminGroups = [
@@ -8,22 +13,22 @@ $adminGroups = [
         'menus' => ['server-groups', 'servers', 'nodes', 'plans'],
         'label' => 'Quản Lý Hạ Tầng VPN',
         'tabs' => [
-            'server-groups' => ['label' => 'Nhóm Máy Chủ', 'icon' => '📁', 'url' => '/admin/server-groups'],
-            'servers' => ['label' => 'Máy Chủ', 'icon' => '🖥️', 'url' => '/admin/servers'],
-            'nodes' => ['label' => 'Node Inbound', 'icon' => '🌐', 'url' => '/admin/nodes'],
-            'plans' => ['label' => 'Gói Cước', 'icon' => '💎', 'url' => '/admin/plans']
+            'server-groups' => ['label' => 'Nhóm Máy Chủ', 'icon' => 'GRP', 'url' => '/admin/server-groups'],
+            'servers' => ['label' => 'Máy Chủ', 'icon' => 'SRV', 'url' => '/admin/servers'],
+            'nodes' => ['label' => 'Node Inbound', 'icon' => 'NOD', 'url' => '/admin/nodes'],
+            'plans' => ['label' => 'Gói Cước', 'icon' => 'PLN', 'url' => '/admin/plans']
         ]
     ],
     'business' => [
         'menus' => ['coupons', 'orders', 'payments', 'subscriptions', 'referrals', 'withdrawals'],
         'label' => 'Quản Lý Kinh Doanh',
         'tabs' => [
-            'coupons' => ['label' => 'Mã Giảm Giá', 'icon' => '🏷️', 'url' => '/admin/coupons'],
-            'orders' => ['label' => 'Đơn Hàng', 'icon' => '🧾', 'url' => '/admin/orders'],
-            'payments' => ['label' => 'Thanh Toán', 'icon' => '💵', 'url' => '/admin/payments'],
-            'subscriptions' => ['label' => 'Đăng Ký VPN', 'icon' => '🔑', 'url' => '/admin/subscriptions'],
-            'referrals' => ['label' => 'Hoa Hồng', 'icon' => '🤝', 'url' => '/admin/referrals'],
-            'withdrawals' => ['label' => 'Rút Tiền', 'icon' => '🏦', 'url' => '/admin/withdrawals']
+            'coupons' => ['label' => 'Mã Giảm Giá', 'icon' => 'CPN', 'url' => '/admin/coupons'],
+            'orders' => ['label' => 'Đơn Hàng', 'icon' => 'ORD', 'url' => '/admin/orders'],
+            'payments' => ['label' => 'Thanh Toán', 'icon' => 'PAY', 'url' => '/admin/payments'],
+            'subscriptions' => ['label' => 'Đăng Ký VPN', 'icon' => 'SUB', 'url' => '/admin/subscriptions'],
+            'referrals' => ['label' => 'Hoa Hồng', 'icon' => 'REF', 'url' => '/admin/referrals'],
+            'withdrawals' => ['label' => 'Rút Tiền', 'icon' => 'WDR', 'url' => '/admin/withdrawals']
         ]
     ],
     'ai' => [
@@ -36,13 +41,13 @@ $adminGroups = [
         'label' => 'Trung Tâm AI',
         // 8 tab chức năng — trang kỹ thuật truy cập từ dashboard.
         'tabs' => [
-            'ai-dashboard' => ['label' => 'Tổng Quan Hệ Thống AI', 'icon' => '📊', 'url' => '/admin/ai'],
-            'ai-image'     => ['label' => 'Tạo Ảnh', 'icon' => '🖼️', 'url' => '/admin/ai/image'],
-            'ai-video'     => ['label' => 'Tạo Video', 'icon' => '🎬', 'url' => '/admin/ai/video'],
-            'ai-dubbing'   => ['label' => 'Lời Thoại', 'icon' => '🗣️', 'url' => '/admin/ai/dubbing'],
-            'ai-fanpage'   => ['label' => 'Nội Dung Fanpage', 'icon' => '📰', 'url' => '/admin/ai/fanpage'],
-            'ai-reply'     => ['label' => 'Trả Lời Tự Động', 'icon' => '💬', 'url' => '/admin/ai/reply'],
-            'ai-settings'  => ['label' => 'Cấu Hình AI', 'icon' => '⚙️', 'url' => '/admin/ai/settings']
+            'ai-dashboard' => ['label' => 'Tổng Quan Hệ Thống AI', 'icon' => 'OVW', 'url' => '/admin/ai'],
+            'ai-image'     => ['label' => 'Tạo Ảnh', 'icon' => 'IMG', 'url' => '/admin/ai/image'],
+            'ai-video'     => ['label' => 'Tạo Video', 'icon' => 'VID', 'url' => '/admin/ai/video'],
+            'ai-dubbing'   => ['label' => 'Lời Thoại', 'icon' => 'DUB', 'url' => '/admin/ai/dubbing'],
+            'ai-fanpage'   => ['label' => 'Nội Dung Fanpage', 'icon' => 'FPG', 'url' => '/admin/ai/fanpage'],
+            'ai-reply'     => ['label' => 'Trả Lời Tự Động', 'icon' => 'RPL', 'url' => '/admin/ai/reply'],
+            'ai-settings'  => ['label' => 'Cấu Hình AI', 'icon' => 'CFG', 'url' => '/admin/ai/settings']
         ]
     ]
 ];

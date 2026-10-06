@@ -30,7 +30,7 @@ ob_start();
     </div>
     <?php if (!empty($userId)): ?>
         <div>
-            <a href="/admin/orders" class="glass-btn" style="text-decoration: none; white-space: nowrap; background: rgba(255, 59, 48, 0.1); color: var(--ios-danger);">✕ Xóa lọc tài khoản</a>
+            <a href="/admin/orders" class="glass-btn" style="text-decoration: none; white-space: nowrap; background: rgba(255, 59, 48, 0.1); color: var(--ios-danger);">Xóa lọc</a>
         </div>
     <?php endif; ?>
 </div>
@@ -69,7 +69,7 @@ ob_start();
                                 <?php if (!empty($order['plan_id'])): ?>
                                     <?= htmlspecialchars($order['plan_name'] ?? ('Gói #' . $order['plan_id'])) ?>
                                 <?php else: ?>
-                                    <span style="color: var(--ios-blue); font-weight: 700;">💰 Nạp tiền vào ví</span>
+                                    <span style="color: var(--ios-blue); font-weight: 700;">Nạp ví</span>
                                 <?php endif; ?>
                             </td>
                             <td style="font-weight: 700; color: var(--ios-success);">
@@ -96,23 +96,23 @@ ob_start();
                                     <button type="button" class="action-btn" title="Thao tác">⋮</button>
                                     <div class="action-menu" style="min-width: 175px; white-space: nowrap;">
                                         <a href="/admin/orders/detail?id=<?= $order['id'] ?>" class="action-item" style="white-space: nowrap; display: flex; align-items: center; gap: 0.5rem;">
-                                            <span>👁️</span> Xem chi tiết
+                                            <span>◉</span> Xem
                                         </a>
 
                                         <?php if (($order['payment_status'] ?? '') === 'pending'): ?>
                                             <button type="submit" form="approve-order-form-<?= $order['id'] ?>" class="action-item" style="background: none; border: none; width: 100%; text-align: left; cursor: pointer; color: var(--ios-success); padding: 0.5rem 1rem; font-size: 0.85rem; display: flex; align-items: center; gap: 0.5rem; white-space: nowrap;">
-                                                <span>✅</span> Duyệt (Hoàn tất)
+                                                <span>✓</span> Duyệt (Hoàn tất)
                                             </button>
                                         <?php endif; ?>
 
                                         <?php if (($order['payment_status'] ?? '') === 'pending'): ?>
                                             <button type="submit" form="cancel-order-form-<?= $order['id'] ?>" class="action-item" style="background: none; border: none; width: 100%; text-align: left; cursor: pointer; color: var(--ios-warning); padding: 0.5rem 1rem; font-size: 0.85rem; display: flex; align-items: center; gap: 0.5rem; white-space: nowrap;">
-                                                <span>❌</span> Hủy đơn hàng
+                                                <span>✕</span> Hủy
                                             </button>
                                         <?php endif; ?>
 
                                         <button type="submit" form="delete-order-form-<?= $order['id'] ?>" class="action-item delete" style="background: none; border: none; width: 100%; text-align: left; cursor: pointer; color: var(--ios-danger); padding: 0.5rem 1rem; font-size: 0.85rem; display: flex; align-items: center; gap: 0.5rem; white-space: nowrap;">
-                                            <span>🗑️</span> Xóa đơn hàng
+                                            <span>✕</span> Xóa
                                         </button>
                                     </div>
                                 </div>

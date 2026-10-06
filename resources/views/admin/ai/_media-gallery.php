@@ -40,7 +40,7 @@ $mediaTag = static function (string $kind, string $url): string {
         'image' => '<img src="' . $u . '" alt="Kết quả AI" style="width: 100%; height: 100%; object-fit: cover; display: block;">',
         'video' => '<video src="' . $u . '" controls preload="metadata" style="width: 100%; height: 100%; display: block; background: #000;"></video>',
         'audio' => '<audio src="' . $u . '" controls preload="metadata" style="width: 100%;"></audio>',
-        default => '<a href="' . $u . '" target="_blank" rel="noopener" style="color: var(--ios-blue); font-size: 0.8rem;">Mở file</a>',
+        default => '<a href="' . $u . '" target="_blank" rel="noopener" style="color: var(--ios-blue); font-size: 0.8rem;">Mở</a>',
     };
 };
 
@@ -94,7 +94,7 @@ $formatBytes = static function (int $bytes): string {
 
 <div class="glass-card" id="ai-media-gallery" style="padding: 1.25rem; margin-bottom: 1rem; width: 100%; box-sizing: border-box;">
     <div style="display: flex; justify-content: space-between; align-items: center; gap: 0.75rem; flex-wrap: wrap; margin-bottom: 0.75rem;">
-        <h2 style="font-size: 1.05rem; font-weight: 700; margin: 0;">📁 Thư Mục Tab<?= $mediaTab !== '' ? ' - ' . htmlspecialchars($mediaTab) : '' ?></h2>
+        <h2 style="font-size: 1.05rem; font-weight: 700; margin: 0;">Thư Mục<?= $mediaTab !== '' ? ' - ' . htmlspecialchars($mediaTab) : '' ?></h2>
         <span style="font-size: 0.78rem; color: var(--ios-text-secondary);"><?= count($gallery) ?> file</span>
     </div>
 
@@ -132,7 +132,7 @@ $formatBytes = static function (int $bytes): string {
                                       onsubmit="return confirm('Xoá file #<?= $id ?> khỏi thư mục tab <?= htmlspecialchars($mediaTab) ?>? Hành động không thể hoàn tác.');">
                                     <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($mediaCsrf) ?>">
                                     <input type="hidden" name="id" value="<?= $id ?>">
-                                    <button type="submit" class="glass-btn" style="font-size: 0.74rem; padding: 0.35rem 0.7rem; color: var(--ios-danger);">🗑️ Xoá</button>
+                                    <button type="submit" class="glass-btn" style="font-size: 0.74rem; padding: 0.35rem 0.7rem; color: var(--ios-danger);">Xóa</button>
                                 </form>
                             <?php endif; ?>
                         </div>

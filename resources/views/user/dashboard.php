@@ -174,6 +174,18 @@ function getNoticeFallbackThumb($id) {
         min-width: 0;
     }
 
+    /* Không có thông báo → khối Thống Kê trải hết 2 cột, 4 thẻ về một hàng.
+       Pure CSS (:has) — không đụng markup hay logic PHP. */
+    @media (min-width: 901px) {
+        .dashboard-overview:not(:has(.dashboard-notices)) .dashboard-statistics {
+            grid-column: 1 / -1;
+        }
+
+        .dashboard-overview:not(:has(.dashboard-notices)) .dashboard-statistics .dashboard-grid-4 {
+            grid-template-columns: repeat(4, minmax(0, 1fr));
+        }
+    }
+
     .dashboard-pricing-retired {
         display: none;
     }
@@ -589,45 +601,27 @@ function getNoticeFallbackThumb($id) {
                         <ul class="info-list" style="list-style: none; padding: 0; margin: 0 0 0.75rem 0; display: flex; flex-direction: column; gap: 0.4rem; text-align: left !important; width: 100%;">
                             <?php if (!empty($plan['description'])): ?>
                                 <?php 
-                                $lines = explode("\n", trim($plan['description'])); 
-                                foreach ($lines as $line):
-                                    if (trim($line) === '') continue;
-                                    $parts = explode(':', $line, 2);
-                                    $label = trim($parts[0]);
-                                    $value = isset($parts[1]) ? ': ' . trim($parts[1]) : '';
-                                    $lowerLabel = mb_strtolower($label);
-                                    
-                                    // Icon mặc định (Check)
-                                    $iconSvg = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#007aff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="u-fig-icon"><polyline points="20 6 9 17 4 12"></polyline></svg>';
+                                $lines = explode("\n", trim($plan['description']));
+foreach ($lines as $line):
+    if (trim($line) === '') continue;
+    $line = trim($line);
 
-                                    // Quét từ khóa từ mô tả gói
-                                    if (strpos($lowerLabel, 'server') !== false || strpos($lowerLabel, 'severs') !== false || strpos($lowerLabel, 'máy chủ') !== false) {
-                                        $iconSvg = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#007aff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="u-fig-icon"><rect x="2" y="2" width="20" height="8" rx="2" ry="2"></rect><rect x="2" y="14" width="20" height="8" rx="2" ry="2"></rect><line x1="6" y1="6" x2="6.01" y2="6"></line><line x1="6" y1="18" x2="6.01" y2="18"></line></svg>';
-                                    } elseif (strpos($lowerLabel, 'tốc độ') !== false || strpos($lowerLabel, 'speed') !== false) {
-                                        $iconSvg = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#007aff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="u-fig-icon"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon></svg>';
-                                    } elseif (strpos($lowerLabel, 'hỗ trợ') !== false || strpos($lowerLabel, 'support') !== false) {
-                                        $iconSvg = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#007aff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="u-fig-icon"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>';
-                                    } elseif (strpos($lowerLabel, 'giao thức') !== false || strpos($lowerLabel, 'protocol') !== false) {
-                                        $iconSvg = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#007aff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="u-fig-icon"><rect x="2" y="14" width="20" height="8" rx="2"></rect><line x1="6" y1="6" x2="6" y2="14"></line><line x1="18" y1="6" x2="18" y2="14"></line><line x1="12" y1="2" x2="12" y2="14"></line></svg>';
-                                    } elseif (strpos($lowerLabel, 'thanh toán') !== false || strpos($lowerLabel, 'payment') !== false) {
-                                        $iconSvg = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#007aff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="u-fig-icon"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"></rect><line x1="1" y1="10" x2="23" y2="10"></line></svg>';
-                                    } elseif (strpos($lowerLabel, 'hoàn tiền') !== false || strpos($lowerLabel, 'refund') !== false) {
-                                        $iconSvg = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#007aff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="u-fig-icon"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"></path><path d="M3 3v5h5"></path></svg>';
-                                    } elseif (strpos($lowerLabel, 'bảo mật') !== false || strpos($lowerLabel, 'mã hóa') !== false) {
-                                        $iconSvg = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#007aff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="u-fig-icon"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>';
-                                    } elseif (strpos($lowerLabel, 'game') !== false) {
-                                        $iconSvg = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#007aff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="u-fig-icon"><line x1="6" y1="12" x2="10" y2="12"></line><line x1="8" y1="10" x2="8" y2="14"></line><circle cx="15" cy="13" r="1"></circle><circle cx="18" cy="11" r="1"></circle><rect x="2" y="6" width="20" height="12" rx="6"></rect></svg>';
-                                    } elseif (strpos($lowerLabel, 'thiết bị') !== false) {
-                                        $iconSvg = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#007aff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="u-fig-icon"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect><line x1="8" y1="21" x2="16" y2="21"></line><line x1="12" y1="17" x2="12" y2="21"></line></svg>';
-                                    } elseif (strpos($lowerLabel, 'dung lượng') !== false || strpos($lowerLabel, 'băng thông') !== false) {
-                                        $iconSvg = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#007aff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="u-fig-icon"><ellipse cx="12" cy="5" rx="9" ry="3"></ellipse><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"></path><path d="M21 19c0 1.66-4 3-9 3s-9-1.34-9-3"></path><path d="M3 5v14"></path><path d="M21 5v14"></path></svg>';
-                                    } elseif (strpos($lowerLabel, 'dịch vụ') !== false || strpos($lowerLabel, 'tương thích') !== false) {
-                                        $iconSvg = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#007aff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="u-fig-icon"><circle cx="12" cy="12" r="10"></circle><line x1="2" y1="12" x2="22" y2="12"></line><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path></svg>';
-                                    } elseif (strpos($lowerLabel, 'đặc quyền') !== false) {
-                                        $iconSvg = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#007aff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="u-fig-icon"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>';
-                                    } elseif (strpos($lowerLabel, 'tiết kiệm') !== false) {
-                                        $iconSvg = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#007aff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="u-fig-icon"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"></path><line x1="7" y1="7" x2="7.01" y2="7"></line></svg>';
-                                    }
+    // Icon admin tự gõ đầu dòng (VD: "⚡ Tốc độ: 1000 Mbps") — không tự bắt từ khóa
+    $iconToken = '';
+    if (preg_match('/^([^\p{L}\p{N}]+)\s*/u', $line, $iconMatch)) {
+        $iconToken = trim($iconMatch[1]);
+        $line = substr($line, strlen($iconMatch[0]));
+    }
+
+    $parts = explode(':', $line, 2);
+    $label = trim($parts[0]);
+    $value = isset($parts[1]) ? ': ' . trim($parts[1]) : '';
+
+    // Icon mặc định (Check) khi admin chưa gõ icon đầu dòng
+    $iconSvg = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#007aff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="u-fig-icon"><polyline points="20 6 9 17 4 12"></polyline></svg>';
+    if ($iconToken !== '') {
+        $iconSvg = '<span aria-hidden="true" class="u-fig-icon" style="display: inline-flex; align-items: center; justify-content: center; width: 16px; height: 16px; font-size: 13px; line-height: 1;">' . htmlspecialchars($iconToken) . '</span>';
+    }
                                 ?>
                                     <li style="display: flex !important; align-items: flex-start !important; justify-content: flex-start !important; gap: 0.5rem; font-size: 0.88rem; color: var(--ios-text-secondary, #636366); text-align: left !important;">
                                         <?= $iconSvg ?>
@@ -768,12 +762,20 @@ if (!empty($noticePosts)): ?>
                     <ul class="info-list" style="list-style: none; padding: 0; margin: 0 0 0.75rem 0; display: flex; flex-direction: column; gap: 0.4rem; text-align: left !important; width: 100%;">
                         <?php foreach ($featureLines as $featureLine): ?>
                             <?php
+                            $featureIconToken = '';
+                            if (preg_match('/^([^\p{L}\p{N}]+)\s*/u', $featureLine, $fIconMatch)) {
+                                $featureIconToken = trim($fIconMatch[1]);
+                                $featureLine = substr($featureLine, strlen($fIconMatch[0]));
+                            }
+                            $featureIconSvg = $featureIconToken !== ''
+                                ? '<span aria-hidden="true" class="u-fig-icon" style="display: inline-flex; align-items: center; justify-content: center; width: 16px; height: 16px; font-size: 13px; line-height: 1;">' . htmlspecialchars($featureIconToken) . '</span>'
+                                : '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#007aff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="u-fig-icon"><polyline points="20 6 9 17 4 12"></polyline></svg>';
                             $featureParts = explode(':', $featureLine, 2);
                             $featureLabel = trim($featureParts[0]);
                             $featureValue = isset($featureParts[1]) ? ': ' . trim($featureParts[1]) : '';
                             ?>
                             <li style="display: flex !important; align-items: flex-start !important; justify-content: flex-start !important; gap: 0.5rem; font-size: 0.88rem; color: var(--ios-text-secondary, #636366); text-align: left !important; width: 100%;">
-                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#007aff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="u-fig-icon"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                                <?= $featureIconSvg ?>
                                 <span style="text-align: left !important; flex: 1;"><strong style="color: var(--ios-text, #1c1c1e);"><?= htmlspecialchars($featureLabel) ?></strong><?= htmlspecialchars($featureValue) ?></span>
                             </li>
                         <?php endforeach; ?>

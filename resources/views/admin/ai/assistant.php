@@ -26,7 +26,7 @@ ob_start();
     .va-landing code { background: rgba(0, 122, 255, 0.12); padding: 0.08em 0.35em; border-radius: 4px; }
     .va-open {
         padding: 0.65rem 1.5rem; border: none; border-radius: var(--radius-sm);
-        background: var(--ios-blue); color: #fff; font-size: 0.92rem; font-weight: 700;
+        background: var(--ios-blue); color: var(--soc-ink); font-size: 0.92rem; font-weight: 700;
         cursor: pointer;
     }
     .va-open:hover { filter: brightness(1.1); }
@@ -38,7 +38,7 @@ ob_start();
 </style>
 
 <div class="va-landing">
-    <div class="va-ico">🤖</div>
+    <div class="va-ico">AI</div>
     <h1>Trợ Lý Admin</h1>
     <p>
         Trợ lý giờ là <b>bong bóng nổi toàn trang admin</b> — xuất hiện ở góc dưới phải
@@ -46,13 +46,13 @@ ob_start();
         bạn đang ở trang nào và có thể đọc/sửa nội dung trang theo yêu cầu của bạn
         (riêng phần key, mật khẩu, bảo mật thì tuyệt đối không đụng tới).
     </p>
-    <button type="button" class="va-open" id="va-open-asst">Mở Trợ Lý Admin</button>
+    <button type="button" class="va-open" id="va-open-asst">Trợ Lý</button>
     <div class="va-feats">
-        <span class="va-feat">💬 Lịch sử chat riêng</span>
-        <span class="va-feat">📅 Tạo kế hoạch</span>
-        <span class="va-feat">📊 Báo cáo Excel</span>
-        <span class="va-feat">📝 Đăng bài phân loại</span>
-        <span class="va-feat">🧠 Biết trang đang mở</span>
+        <span class="va-feat">Lịch sử</span>
+        <span class="va-feat">Kế hoạch</span>
+        <span class="va-feat">Export</span>
+        <span class="va-feat">Phân loại</span>
+        <span class="va-feat">▸ Biết trang đang mở</span>
     </div>
     <p class="va-note">
         Lịch sử lưu trong <code>storage/assistant/</code> · Model do API key mở khóa ·

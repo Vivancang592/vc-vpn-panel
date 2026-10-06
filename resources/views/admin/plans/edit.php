@@ -340,7 +340,7 @@ ob_start();
                 class="glass-btn"
                 style="padding: 0.65rem 1.75rem; font-size: 0.9rem;"
             >
-                💾 Cập Nhật Thông Tin
+                Lưu
             </button>
 
         </div>

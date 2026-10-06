@@ -88,7 +88,7 @@ ob_start();
                         class="glass-btn"
                         style="white-space: nowrap; padding: 0.5rem 0.85rem; font-size: 0.8rem;"
                     >
-                        🎲 Tạo mã
+                        Tạo
                     </button>
                 </div>
             </div>
@@ -251,7 +251,7 @@ ob_start();
                 class="glass-btn"
                 style="padding: 0.65rem 1.75rem; font-size: 0.9rem;"
             >
-                ➕ Tạo Gói Cước
+                Tạo
             </button>
         </div>
 

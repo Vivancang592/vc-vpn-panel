@@ -26,7 +26,7 @@ ob_start();
 <div style="margin-bottom: 1.25rem; width: 100%; box-sizing: border-box; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.75rem;">
     <div>
         <h1 style="font-size: 1.5rem; font-weight: 700; word-break: break-word; display: flex; align-items: center; gap: 0.5rem; margin: 0;">
-            <span>🔔 Thông Báo Quản Trị</span>
+            <span>Thông Báo</span>
             <?php if ($unreadCount > 0): ?>
                 <span style="font-size: 0.75rem; background: var(--ios-danger, #ff3b30); color: #fff; padding: 0.2rem 0.6rem; border-radius: 9999px; font-weight: 700;">
                     <?= $unreadCount ?> mới
@@ -49,7 +49,7 @@ ob_start();
             <?php endif; ?>
             <form method="POST" action="/admin/notifications/clear" onsubmit="return confirm('Bạn có chắc muốn xóa tất cả thông báo?');" style="margin: 0;">
                 <button type="submit" class="glass-btn" style="font-size: 0.8rem; padding: 0.4rem 0.8rem; background: rgba(255, 59, 48, 0.1); border: 1px solid rgba(255, 59, 48, 0.3); color: var(--ios-danger, #ff3b30); border-radius: var(--radius-sm, 8px); cursor: pointer; font-weight: 600;">
-                    🗑️ Xóa tất cả
+                    Purge
                 </button>
             </form>
         </div>
@@ -81,7 +81,7 @@ ob_start();
                     default      => '#5856d6',
                 };
             ?>
-            <article class="glass-card user-notification-item" style="position: relative; padding: 1rem 2.25rem 1rem 1.25rem; border-left: 4px solid <?= $borderLeftColor ?>; <?= !$isRead ? 'background: rgba(255, 255, 255, 0.35); box-shadow: 0 4px 15px rgba(0, 122, 255, 0.1);' : 'opacity: 0.85;' ?> border-radius: var(--radius-md, 12px);">
+            <article class="glass-card user-notification-item" style="position: relative; padding: 1rem 2.25rem 1rem 1.25rem; border-left: 4px solid <?= $borderLeftColor ?>; <?= !$isRead ? 'background: rgba(34, 211, 238, 0.07); box-shadow: 0 4px 15px rgba(0, 0, 0, 0.25);' : 'opacity: 0.85;' ?> border-radius: var(--radius-md, 12px);">
                 <!-- Nút X xóa thông báo ở góc phải trên -->
                 <a href="/admin/notifications/delete?id=<?= urlencode($item['id']) ?>" onclick="return confirm('Xóa thông báo này?');" title="Xóa thông báo" style="position: absolute; top: 0.6rem; right: 0.75rem; width: 22px; height: 22px; display: flex; align-items: center; justify-content: center; color: var(--ios-text-secondary); text-decoration: none; font-size: 1.2rem; line-height: 1; border-radius: 50%; background: transparent; transition: all 0.2s;" onmouseover="this.style.color='var(--ios-danger, #ff3b30)'; this.style.background='rgba(255,59,48,0.1)';" onmouseout="this.style.color='var(--ios-text-secondary)'; this.style.background='transparent';">
                     &times;
@@ -90,7 +90,7 @@ ob_start();
                 <div>
                     <div style="display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; margin-bottom: 0.35rem; padding-right: 1.5rem;">
                         <?php if (!$isRead): ?>
-                            <span style="font-size: 0.65rem; background: var(--ios-blue, #007aff); color: #fff; padding: 0.15rem 0.45rem; border-radius: 4px; font-weight: 700; text-transform: uppercase;">
+                            <span style="font-size: 0.65rem; background: var(--ios-blue, #007aff); color: var(--soc-ink); padding: 0.15rem 0.45rem; border-radius: 4px; font-weight: 700; text-transform: uppercase;">
                                 Mới
                             </span>
                         <?php endif; ?>
@@ -108,7 +108,7 @@ ob_start();
                     </p>
                     <div style="display: flex; align-items: center; justify-content: space-between; gap: 0.85rem; margin-top: 0.5rem; flex-wrap: wrap;">
                         <time style="color: var(--ios-text-secondary); font-size: 0.78rem;">
-                            🕒 <?= !empty($item['created_at']) ? date('d/m/Y H:i', strtotime($item['created_at'])) : '-' ?>
+                            ◷ <?= !empty($item['created_at']) ? date('d/m/Y H:i', strtotime($item['created_at'])) : '-' ?>
                         </time>
                         <?php if (!empty($item['link'])): ?>
                             <a href="<?= htmlspecialchars($item['link']) ?>" style="font-size: 0.8rem; color: var(--ios-blue, #007aff); text-decoration: none; font-weight: 600; display: inline-flex; align-items: center; gap: 0.2rem; margin-left: auto;">
@@ -122,7 +122,7 @@ ob_start();
     </div>
 <?php else: ?>
     <div class="glass-card user-record-empty" style="text-align: center; padding: 3rem 1.5rem; border-radius: var(--radius-md, 12px); width: 100%; box-sizing: border-box;">
-        <div style="font-size: 3rem; margin-bottom: 0.75rem;">🔕</div>
+        <div style="font-size: 3rem; margin-bottom: 0.75rem;">∅</div>
         <h2 style="font-size: 1.25rem; font-weight: 700; margin-bottom: 0.35rem; color: var(--ios-text);">Không có việc chờ xử lý</h2>
         <p style="color: var(--ios-text-secondary); font-size: 0.9rem; margin: 0;">
             Tất cả đơn hàng, ticket hỗ trợ và yêu cầu rút tiền đều đã được xử lý hoàn tất.

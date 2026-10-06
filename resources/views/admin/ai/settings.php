@@ -77,7 +77,7 @@ $cfgValue = static function ($value, string $key = '') use ($errLabels, $aiLabel
             Cấu hình nhà cung cấp AI, phân hệ và giới hạn chatbot. Các thông số hạ tầng còn lại do hệ thống quy định và chỉ xem.
         </p>
     </div>
-    <a href="/admin/ai/prompts/create" class="glass-btn" style="text-decoration: none; white-space: nowrap;">Nội Quy Hệ Thống</a>
+    <a href="/admin/ai/prompts/create" class="glass-btn" style="text-decoration: none; white-space: nowrap;">Nội Quy</a>
 </div>
 
 <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 1rem; width: 100%; box-sizing: border-box;">
@@ -138,7 +138,8 @@ $cfgValue = static function ($value, string $key = '') use ($errLabels, $aiLabel
             </div>
         <?php endif; ?>
 
-        <form method="POST" action="/admin/ai/settings/save" autocomplete="off">
+        <div style="display: flex; align-items: flex-end; gap: 0.5rem;">
+        <form method="POST" action="/admin/ai/settings/save" autocomplete="off" style="flex: 1; min-width: 0;">
             <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrf_token ?? '') ?>">
             <div style="margin-bottom: 0.75rem;">
                 <label style="display: block; font-size: 0.8rem; color: var(--ios-text-secondary); margin-bottom: 0.25rem;">
@@ -150,15 +151,16 @@ $cfgValue = static function ($value, string $key = '') use ($errLabels, $aiLabel
                     Giá trị được lưu an toàn trong bảng cài đặt. Hệ thống KHÔNG bao giờ hiển thị lại khoá.
                 </p>
             </div>
-            <div style="display: flex; gap: 0.5rem;">
-                <button type="submit" class="glass-btn" style="white-space: nowrap;">💾 Lưu Khoá</button>
+            <div style="display: flex; gap: 0.5rem; justify-content: flex-end;">
+                <button type="submit" class="glass-btn" style="white-space: nowrap;">Lưu</button>
             </div>
         </form>
 
-        <form method="POST" action="/admin/ai/settings/test" style="margin-top: 0.75rem;">
+        <form method="POST" action="/admin/ai/settings/test" style="margin: 0;">
             <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrf_token ?? '') ?>">
-            <button type="submit" class="glass-btn" style="white-space: nowrap;">🔌 Kiểm Tra Kết Nối</button>
+            <button type="submit" class="glass-btn" style="white-space: nowrap;">Test</button>
         </form>
+        </div>
     </div>
 </div>
 
@@ -200,7 +202,7 @@ $cfgValue = static function ($value, string $key = '') use ($errLabels, $aiLabel
             </div>
         </div>
         <div style="display: flex; justify-content: flex-end; margin-top: 1rem;">
-            <button type="submit" class="glass-btn" style="background: var(--ios-blue); color: #fff; border: 0; font-weight: 600;">Lưu Cấu Hình Chatbot</button>
+            <button type="submit" class="glass-btn" style="background: var(--ios-blue); color: var(--soc-ink); border: 0; font-weight: 600;">Lưu</button>
         </div>
     </form>
 </div>
@@ -209,7 +211,7 @@ $cfgValue = static function ($value, string $key = '') use ($errLabels, $aiLabel
 <div class="glass-card" style="padding: 1rem 1.25rem; margin-top: 1rem; border-left: 4px solid var(--ios-warning, #ff9f0a);">
     <strong style="font-size: 0.88rem;">Chưa có mô hình AI nào trong danh mục.</strong>
     <span style="font-size: 0.83rem; color: var(--ios-text-secondary);">
-        Hệ thống KHÔNG tự bịa mô hình Kira. Hãy <a href="/admin/ai#ai-models-catalog" style="color: var(--ios-blue);">đồng bộ từ nhà cung cấp</a>
+        Hệ thống KHÔNG tự bịa mô hình Kira. Hãy <a href="/admin/ai#ai-models-catalog" style="color: var(--ios-blue);">Sync</a>
         (cần API key) hoặc nhập model theo tài liệu chính thức của Kira.
     </span>
 </div>

@@ -63,4 +63,4 @@ if (!function_exists('vc_asset_ver')) {
         <link rel="stylesheet" href="/assets/css/user.css?v=<?= vc_asset_ver('css/user.css') ?>">
     <?php endif; ?>
 </head>
-<body class="vpn-theme user-festival<?= ($extraCss ?? '') === 'home' ? ' home-festival' : '' ?><?= ($pageArea ?? '') === 'user' ? ' user-area' : '' ?>">
+<body class="vpn-theme user-festival<?= ($extraCss ?? '') === 'home' ? ' home-festival' : '' ?><?= ($pageArea ?? '') === 'user' ? ' user-area' : '' ?><?= !empty($vcAdminShell) ? ' admin-area' : '' ?>">

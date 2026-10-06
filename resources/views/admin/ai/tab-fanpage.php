@@ -31,7 +31,7 @@ require __DIR__ . '/_tab-header.php';
 
 <!-- ============ CAB 1: FORM GIAO VIỆC (ở trên) ============ -->
 <div class="glass-card" style="padding: 1.25rem; margin-bottom: 1rem; width: 100%; box-sizing: border-box; border-left: 4px solid var(--ios-blue);">
-    <h2 style="font-size: 1.05rem; font-weight: 700; margin-bottom: 0.35rem;">✍️ Giao AI Viết Bài Theo Chủ Đề</h2>
+    <h2 style="font-size: 1.05rem; font-weight: 700; margin-bottom: 0.35rem;">Chủ Đề</h2>
     <p style="font-size: 0.8rem; color: var(--ios-text-secondary); margin-bottom: 0.9rem;">
         Nhập nhiều chủ đề, AI sẽ viết từng bài một theo Nội Quy AI. Bài hoàn tất sẽ chuyển sang Danh Sách Bài Viết — vào đó để xem, copy prompt tạo ảnh hoặc hẹn giờ đăng lên fanpage.
     </p>
@@ -56,7 +56,7 @@ require __DIR__ . '/_tab-header.php';
                     <?php endforeach; ?>
                 </select>
             </div>
-            <button type="submit" class="glass-btn" style="width: 100%; justify-content: center; font-weight: 700; background: var(--ios-blue); color: #fff;">🤖 Viết Bài</button>
+            <button type="submit" class="glass-btn" style="width: 100%; justify-content: center; font-weight: 700; background: var(--ios-blue); color: var(--soc-ink);">Tạo</button>
         </div>
     </form>
 </div><!-- /CAB 1 -->
@@ -87,7 +87,7 @@ require __DIR__ . '/_tab-header.php';
 <div id="fp-pane-progress">
     <div class="glass-card" style="padding: 1.25rem; margin-bottom: 1rem; width: 100%; box-sizing: border-box; border-left: 4px solid var(--ios-warning, #ff9f0a);">
         <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.75rem; margin-bottom: 0.5rem;">
-            <h2 style="font-size: 1.05rem; font-weight: 700;">📋 Tiến Trình Viết Bài</h2>
+            <h2 style="font-size: 1.05rem; font-weight: 700;">Tiến Trình</h2>
         </div>
         <div style="font-size: 0.78rem; margin-bottom: 0.85rem; color: var(--ios-text-secondary);">
             Trạng thái hàng đợi: Đang viết, Đang chờ, Lỗi. Bài đã hoàn tất sẽ tự biến khỏi hàng và chuyển sang Danh Sách Bài Viết.
@@ -104,7 +104,7 @@ require __DIR__ . '/_tab-header.php';
         <div id="fp-error" style="display: none; margin-top: 0.7rem; font-size: 0.82rem; color: var(--ios-danger); font-weight: 600;"></div>
 
         <div style="margin-top: 0.9rem; display: flex; gap: 0.6rem; flex-wrap: wrap;">
-            <button type="button" id="fp-start" class="glass-btn" style="font-weight: 700; background: var(--ios-blue); color: #fff; display: none;">▶️ Bắt Đầu Viết</button>
+            <button type="button" id="fp-start" class="glass-btn" style="font-weight: 700; background: var(--ios-blue); color: var(--soc-ink); display: none;">Chạy</button>
         </div>
     </div>
 </div><!-- /fp-pane-progress -->
@@ -113,7 +113,7 @@ require __DIR__ . '/_tab-header.php';
 <div id="fp-articles" style="margin-bottom: 1rem; width: 100%; box-sizing: border-box;">
     <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 1rem; margin-bottom: 0.85rem;">
         <div>
-            <h2 style="font-size: 1.05rem; font-weight: 700; word-break: break-word;">📚 Danh Sách Bài Viết</h2>
+            <h2 style="font-size: 1.05rem; font-weight: 700; word-break: break-word;">Bài Viết</h2>
             <p style="color: var(--ios-text-secondary); font-size: 0.82rem; margin-top: 0.2rem;">
                 Bài viết do AI Core sinh ra. Xem chi tiết, sao chép prompt tạo ảnh, lên lịch đăng lên fanpage hoặc xóa bài.
             </p>
@@ -122,7 +122,7 @@ require __DIR__ . '/_tab-header.php';
             <button type="button" id="fp-bulk-delete" disabled
                     style="text-decoration: none; padding: 0.35rem 0.7rem; border-radius: var(--radius-sm); font-size: 0.8rem; font-weight: 600; border: 1px solid var(--ios-danger, #ff453a); background: transparent; color: var(--ios-danger, #ff453a); cursor: pointer; opacity: 0.5;"
                     title="Xóa các bài viết đã chọn trong trang này">
-                🗑️ Xóa Đã Chọn (<span id="fp-bulk-count">0</span>)
+                Purge (<span id="fp-bulk-count">0</span>)
             </button>
         </div>
     </div>
@@ -154,7 +154,7 @@ require __DIR__ . '/_tab-header.php';
                         <th>Tên Bài Viết</th>
                         <th>Trạng Thái</th>
                         <th>Ngày Lên Lịch</th>
-                        <th>Cập Nhật</th>
+                        <th>Lưu</th>
                         <th style="text-align: right;">Thao Tác</th>
                     </tr>
                 </thead>
@@ -192,11 +192,11 @@ require __DIR__ . '/_tab-header.php';
                                         <button type="button" class="action-btn" title="Thao tác">⋮</button>
                                         <div class="action-menu" style="min-width: 210px; white-space: nowrap;">
                                             <a href="/admin/ai/outputs/detail?id=<?= (int) $article['id'] ?>" class="action-item">
-                                                <span>👁️</span> Xem bài viết
+                                                <span>◉</span> Xem
                                             </a>
                                             <?php if ((int) ($article['task_id'] ?? 0) > 0): ?>
                                                 <a href="/admin/ai/tasks/detail?id=<?= (int) $article['task_id'] ?>" class="action-item">
-                                                    <span>📋</span> Tác vụ #<?= (int) $article['task_id'] ?>
+                                                    <span>⧉</span> Tác vụ #<?= (int) $article['task_id'] ?>
                                                 </a>
                                             <?php endif; ?>
                                             <?php if ($hasPrompt): ?>
@@ -204,7 +204,7 @@ require __DIR__ . '/_tab-header.php';
                                                         data-copy-value="<?= htmlspecialchars((string) $article['image_prompt'], ENT_QUOTES) ?>"
                                                         data-copy-label="🖼️ Copy prompt"
                                                         style="font-family: inherit; width: 100%; text-align: left;">
-                                                    <span>🖼️</span> Copy prompt
+                                                    <span>⧉</span> Copy
                                                 </button>
                                             <?php endif; ?>
                                             <button type="button" class="action-item js-schedule-open"
@@ -212,7 +212,7 @@ require __DIR__ . '/_tab-header.php';
                                                     data-output-title="<?= htmlspecialchars((string) $article['title'], ENT_QUOTES) ?>"
                                                     data-output-image="<?= htmlspecialchars((string) ($article['scheduled_image_url'] ?? ''), ENT_QUOTES) ?>"
                                                     style="font-family: inherit; width: 100%; text-align: left;">
-                                                <span>🗓️</span> Lên lịch
+                                                <span>◷</span> Lịch
                                             </button>
                                             <form method="POST" action="/admin/ai/outputs/delete" style="margin: 0;"
                                                   onsubmit="return confirm('Xóa bài viết này? Toàn bộ phiên bản và lịch đăng liên quan sẽ bị xóa.');">
@@ -221,7 +221,7 @@ require __DIR__ . '/_tab-header.php';
                                                 <input type="hidden" name="tab" value="<?= htmlspecialchars($filter) ?>">
                                                 <input type="hidden" name="page" value="<?= (int) $page ?>">
                                                 <button type="submit" class="action-item" style="font-family: inherit; width: 100%; text-align: left; color: var(--ios-danger);">
-                                                    <span>🗑️</span> Xóa
+                                                    <span>✕</span> Xóa
                                                 </button>
                                             </form>
                                         </div>
@@ -402,16 +402,16 @@ require __DIR__ . '/_tab-header.php';
 
             var chip, rowBg;
             if (it.status === 'cancelled') {
-                chip = '<span style="color: var(--ios-text-secondary); font-weight: 700;">❌ Đã huỷ</span>';
+                chip = '<span style="color: var(--ios-text-secondary); font-weight: 700;">✕ Đã huỷ</span>';
                 rowBg = 'rgba(142, 142, 147, 0.10);';
             } else if (it.status === 'failed') {
-                chip = '<span style="color: var(--ios-danger); font-weight: 700;">❌ Lỗi</span>';
+                chip = '<span style="color: var(--ios-danger); font-weight: 700;">✕ Lỗi</span>';
                 rowBg = 'rgba(255, 69, 58, 0.08);';
             } else if (isWriting) {
-                chip = '<span style="color: var(--ios-blue); font-weight: 700;">🖊️ <span class="fp-blink">Đang viết…</span></span>';
+                chip = '<span style="color: var(--ios-blue); font-weight: 700;">✎ <span class="fp-blink">Đang viết…</span></span>';
                 rowBg = 'rgba(10, 132, 255, 0.10);';
             } else {
-                chip = '<span style="color: var(--ios-warning, #ff9f0a); font-weight: 600;">⏳ Đang chờ</span>';
+                chip = '<span style="color: var(--ios-warning, #ff9f0a); font-weight: 600;">◷ Đang chờ</span>';
                 rowBg = 'transparent;';
             }
 
@@ -439,10 +439,10 @@ require __DIR__ . '/_tab-header.php';
         emptyEl.style.display = items.length ? 'none' : '';
         summaryEl.style.display = (items.length && (doneCount > 0 || failed.length || cancelled.length)) ? '' : 'none';
         if (summaryEl.style.display === '') {
-            summaryEl.innerHTML = '✅ <strong>' + doneCount + '</strong> bài đã hoàn tất' +
-                (failed.length ? ' · ❌ <strong style="color: var(--ios-danger);">' + failed.length + '</strong> bài lỗi' : '') +
-                (cancelled.length ? ' · ❌ <strong style="color: var(--ios-text-secondary);">' + cancelled.length + '</strong> bài đã huỷ' : '') +
-                ' · ⏳ <strong>' + pending.filter(function (x) { return x.status === 'waiting'; }).length + '</strong> bài chờ';
+            summaryEl.innerHTML = '✓ <strong>' + doneCount + '</strong> bài đã hoàn tất' +
+                (failed.length ? ' · ✕ <strong style="color: var(--ios-danger);">' + failed.length + '</strong> bài lỗi' : '') +
+                (cancelled.length ? ' · ✕ <strong style="color: var(--ios-text-secondary);">' + cancelled.length + '</strong> bài đã huỷ' : '') +
+                ' · ◷ <strong>' + pending.filter(function (x) { return x.status === 'waiting'; }).length + '</strong> bài chờ';
         }
     }
 
@@ -477,12 +477,12 @@ require __DIR__ . '/_tab-header.php';
                 items[idx].status = 'cancelled';
                 items[idx].error = '';
             } else {
-                errorEl.textContent = '⚠️ ' + ((res && res.message) ? res.message : 'Không huỷ được bài này.');
+                errorEl.textContent = '▲ ' + ((res && res.message) ? res.message : 'Không huỷ được bài này.');
                 errorEl.style.display = '';
             }
             renderRows();
         }).catch(function () {
-            errorEl.textContent = '⚠️ Mất kết nối — không huỷ được bài.';
+            errorEl.textContent = '▲ Mất kết nối — không huỷ được bài.';
             errorEl.style.display = '';
         });
     }
@@ -584,7 +584,7 @@ require __DIR__ . '/_tab-header.php';
 
             if (!res || !res.ok) {
                 markWaiting();
-                errorEl.textContent = '⚠️ ' + ((res && res.message) ? res.message : 'Không gọi được write-next.');
+                errorEl.textContent = '▲ ' + ((res && res.message) ? res.message : 'Không gọi được write-next.');
                 errorEl.style.display = '';
                 startBtn.style.display = '';   // pump đứng → cho phép bấm Bắt Đầu lại
                 renderRows();
@@ -631,7 +631,7 @@ require __DIR__ . '/_tab-header.php';
         }).catch(function () {
             running = false;
             markWaiting();
-            errorEl.textContent = '⚠️ Mất kết nối tới máy chủ — bấm "▶️ Bắt Đầu Viết" để tiếp tục.';
+            errorEl.textContent = '▲ Mất kết nối tới máy chủ — bấm "▶️ Bắt Đầu Viết" để tiếp tục.';
             errorEl.style.display = '';
             startBtn.style.display = '';
             renderRows();
@@ -712,7 +712,7 @@ require __DIR__ . '/_tab-header.php';
             </div>
             <div style="display: flex; gap: 0.6rem; justify-content: flex-end;">
                 <button type="button" class="glass-btn" id="schedule-popup-cancel" style="font-size: 0.82rem; cursor: pointer;">Hủy</button>
-                <button type="submit" class="glass-btn glass-btn-primary" style="font-size: 0.82rem; cursor: pointer;">Lưu bài viết</button>
+                <button type="submit" class="glass-btn glass-btn-primary" style="font-size: 0.82rem; cursor: pointer;">Lưu</button>
             </div>
         </form>
     </div>

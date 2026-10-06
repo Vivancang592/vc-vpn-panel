@@ -83,7 +83,7 @@ ob_start();
             <label style="display: block; font-weight: 600; font-size: 0.85rem; margin-bottom: 0.4rem;">API Token Kết Nối</label>
             <div style="position: relative; display: flex; align-items: center;">
                 <input type="text" id="api_token" name="api_token" class="glass-input" value="<?= htmlspecialchars($server['api_token'] ?? '') ?>" style="width: 100%; font-family: monospace; padding-right: 2.75rem;">
-                <button type="button" onclick="generateApiToken()" title="Tạo token ngẫu nhiên" style="position: absolute; right: 0.5rem; width: 32px; height: 32px; border-radius: 50%; border: 1px solid var(--glass-border); background: rgba(255, 255, 255, 0.1); color: var(--ios-text); display: flex; align-items: center; justify-content: center; cursor: pointer; transition: all 0.2s;" onmouseover="this.style.background='rgba(255, 255, 255, 0.2)'" onmouseout="this.style.background='rgba(255, 255, 255, 0.1)'">
+                <button type="button" onclick="generateApiToken()" title="Tạo token ngẫu nhiên" style="position: absolute; right: 0.5rem; width: 32px; height: 32px; border-radius: 50%; border: 1px solid var(--glass-border); background: rgba(34, 211, 238, 0.08); color: var(--ios-text); display: flex; align-items: center; justify-content: center; cursor: pointer; transition: all 0.2s;" onmouseover="this.style.background='rgba(34, 211, 238, 0.2)'" onmouseout="this.style.background='rgba(34, 211, 238, 0.08)'">
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                         <polyline points="23 4 23 10 17 10"></polyline>
                         <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path>
@@ -93,7 +93,7 @@ ob_start();
         </div>
 
         <div style="display: flex; justify-content: flex-end; margin-top: 0.5rem;">
-            <button type="submit" class="glass-btn" style="padding: 0.65rem 1.75rem; font-size: 0.9rem;">💾 Cập Nhật Thông Tin</button>
+            <button type="submit" class="glass-btn" style="padding: 0.65rem 1.75rem; font-size: 0.9rem;">Lưu</button>
         </div>
     </form>
 </div>

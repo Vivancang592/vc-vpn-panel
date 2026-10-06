@@ -43,7 +43,7 @@ $buildUrl = static function (array $extra) use ($queryBase): string {
     <?php if (($sourceFilter ?? '') !== ''): ?>
         <input type="hidden" name="source" value="<?= htmlspecialchars((string) $sourceFilter) ?>">
     <?php endif; ?>
-    <button type="submit" style="padding: 0.45rem 0.9rem; border-radius: var(--radius-sm); border: none; background: var(--ios-blue); color: #fff; font-weight: 600; font-size: 0.85rem; cursor: pointer;">Tìm</button>
+    <button type="submit" style="padding: 0.45rem 0.9rem; border-radius: var(--radius-sm); border: none; background: var(--ios-blue); color: var(--soc-ink); font-weight: 600; font-size: 0.85rem; cursor: pointer;">Tìm</button>
     <?php if (($keyword ?? '') !== ''): ?>
         <a href="<?= htmlspecialchars($buildUrl(['q' => null])) ?>" style="text-decoration: none; padding: 0.45rem 0.9rem; border-radius: var(--radius-sm); border: 1px solid var(--ios-border, rgba(255,255,255,0.15)); color: var(--ios-text-secondary); font-size: 0.85rem;">Xoá lọc</a>
     <?php endif; ?>
@@ -56,11 +56,11 @@ $buildUrl = static function (array $extra) use ($queryBase): string {
     </a>
     <a href="<?= htmlspecialchars($buildUrl(['source' => 'web', 'page' => null])) ?>"
        style="text-decoration: none; padding: 0.35rem 0.7rem; border-radius: var(--radius-sm); font-size: 0.8rem; font-weight: 600; border: 1px solid <?= ($sourceFilter ?? '') === 'web' ? 'var(--ios-blue)' : 'var(--ios-border, rgba(255,255,255,0.15))' ?>; color: <?= ($sourceFilter ?? '') === 'web' ? 'var(--ios-blue)' : 'var(--ios-text-secondary)' ?>;">
-        🌐 Website
+        Website
     </a>
     <a href="<?= htmlspecialchars($buildUrl(['source' => 'fanpage', 'page' => null])) ?>"
        style="text-decoration: none; padding: 0.35rem 0.7rem; border-radius: var(--radius-sm); font-size: 0.8rem; font-weight: 600; border: 1px solid <?= ($sourceFilter ?? '') === 'fanpage' ? '#1877F2' : 'var(--ios-border, rgba(255,255,255,0.15))' ?>; color: <?= ($sourceFilter ?? '') === 'fanpage' ? '#1877F2' : 'var(--ios-text-secondary)' ?>;">
-        📘 Facebook
+        Facebook
     </a>
 </div>
 
@@ -78,7 +78,7 @@ $buildUrl = static function (array $extra) use ($queryBase): string {
                     <th>Số Tin</th>
                     <th>Tin Cuối</th>
                     <th>Trạng Thái</th>
-                    <th>Cập Nhật</th>
+                    <th>Lưu</th>
                     <th style="text-align: right;">Thao Tác</th>
                 </tr>
             </thead>
@@ -100,12 +100,12 @@ $buildUrl = static function (array $extra) use ($queryBase): string {
                             <td style="font-weight: 700;">#<?= (int) $s['id'] ?></td>
                             <td>
                                 <span style="font-weight: 600; font-size: 0.82rem; color: <?= $sourceColor($src) ?>;">
-                                    <?= $src === 'fanpage' ? '📘' : '🌐' ?> <?= htmlspecialchars($sourceLabels[$src] ?? $src) ?>
+                                    <?= $src === 'fanpage' ? 'FB' : 'WEB' ?> <?= htmlspecialchars($sourceLabels[$src] ?? $src) ?>
                                 </span>
                             </td>
                             <td style="font-size: 0.82rem;">
                                 <?php if ($uid > 0): ?>
-                                    <span style="color: var(--ios-success); font-weight: 600;">👤 <?= htmlspecialchars($uname !== '' ? $uname : ('User #' . $uid)) ?></span>
+                                    <span style="color: var(--ios-success); font-weight: 600;">USR <?= htmlspecialchars($uname !== '' ? $uname : ('User #' . $uid)) ?></span>
                                     <div style="color: var(--ios-text-secondary); font-size: 0.72rem;">Đã đăng nhập<?= $uemail !== '' ? ' · ' . htmlspecialchars($uemail) : '' ?></div>
                                 <?php else: ?>
                                     <span style="color: var(--ios-text-secondary);">Khách vãng lai</span>
@@ -115,7 +115,7 @@ $buildUrl = static function (array $extra) use ($queryBase): string {
                             <td style="font-size: 0.82rem;"><?= (int) ($s['message_count'] ?? 0) ?></td>
                             <td style="font-size: 0.8rem; max-width: 320px;">
                                 <?php if ($lastMsg !== ''): ?>
-                                    <span style="color: var(--ios-text-secondary); font-size: 0.72rem;"><?= $lastRole === 'assistant' ? '🤖 AI:' : ($lastRole === 'user' ? '👤 Khách:' : '') ?></span>
+                                    <span style="color: var(--ios-text-secondary); font-size: 0.72rem;"><?= $lastRole === 'assistant' ? 'AI:' : ($lastRole === 'user' ? 'USR:' : '') ?></span>
                                     <?= htmlspecialchars($lastMsg) ?>
                                 <?php else: ?>
                                     <span style="color: var(--ios-text-secondary);">—</span>

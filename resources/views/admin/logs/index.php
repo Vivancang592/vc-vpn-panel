@@ -7,35 +7,35 @@ $activeLogTab = $activeLogTab ?? 'system';
 $logTabs = [
     'system' => [
         'label'       => 'Hoạt động hệ thống',
-        'icon'        => '📝',
+        'icon'        => 'TXT',
         'url'         => '/admin/logs/system',
         'title'       => 'Nhật Ký Hoạt Động Hệ Thống',
         'description' => 'Theo dõi các hành động quản trị và thao tác thay đổi cấu hình trong hệ thống.'
     ],
     'access' => [
         'label'       => 'Truy cập',
-        'icon'        => '🔐',
+        'icon'        => 'AUT',
         'url'         => '/admin/logs/access',
         'title'       => 'Nhật Ký Truy Cập & Đăng Nhập',
         'description' => 'Lịch sử đăng ký, đăng nhập, thiết bị và nguồn truy cập đầu tiên của các thành viên.'
     ],
     'email' => [
         'label'       => 'Email',
-        'icon'        => '📧',
+        'icon'        => 'EML',
         'url'         => '/admin/logs/email',
         'title'       => 'Nhật Ký Gửi Email Hệ Thống',
         'description' => 'Theo dõi trạng thái gửi email thông báo, khôi phục mật khẩu và hóa đơn.'
     ],
     'chatbot' => [
         'label'       => 'Chatbot AI',
-        'icon'        => '🤖',
+        'icon'        => 'AI',
         'url'         => '/admin/logs/chatbot',
         'title'       => 'Nhật Ký Chatbot Và Chuyển Đổi',
         'description' => 'Theo dõi sự kiện chat web/fanpage, hành vi chuyển đổi và tình trạng chuyển người thật.'
     ],
     'macrodroid' => [
         'label'       => 'Webhook',
-        'icon'        => '📲',
+        'icon'        => 'MSG',
         'url'         => '/admin/logs/macrodroid',
         'title'       => 'Nhật Ký Webhook Thanh Toán',
         'description' => 'Kiểm tra dữ liệu phản hồi từ thiết bị hoặc webhook ngân hàng tự động.'
@@ -70,7 +70,7 @@ ob_start();
         <div class="logs-page-actions">
             <form method="POST" action="/admin/logs/macrodroid/clear" onsubmit="return confirm('Bạn có chắc chắn muốn xóa toàn bộ nội dung nhật ký này?');">
                 <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrf_token) ?>">
-                <button type="submit" class="logs-clear-btn">🗑️ Xóa log</button>
+                <button type="submit" class="logs-clear-btn">Purge</button>
             </form>
         </div>
     <?php endif; ?>
@@ -93,7 +93,7 @@ ob_start();
             <div class="logs-bulk-actions">
                 <label class="logs-select-all-label"><input type="checkbox" class="logs-select-all"> Chọn tất cả trang này</label>
                 <div class="logs-delete-actions">
-                    <button type="submit" class="logs-delete-selected" onclick="return confirm('Bạn có chắc chắn muốn xóa các bản ghi đã chọn?');">Xóa mục đã chọn</button>
+                    <button type="submit" class="logs-delete-selected" onclick="return confirm('Bạn có chắc chắn muốn xóa các bản ghi đã chọn?');">Purge</button>
                 </div>
             </div>
             <div class="table-responsive">
@@ -137,7 +137,7 @@ ob_start();
             <div class="logs-bulk-actions">
                 <label class="logs-select-all-label"><input type="checkbox" class="logs-select-all"> Chọn tất cả trang này</label>
                 <div class="logs-delete-actions">
-                    <button type="submit" class="logs-delete-selected" onclick="return confirm('Bạn có chắc chắn muốn xóa các bản ghi đã chọn?');">Xóa mục đã chọn</button>
+                    <button type="submit" class="logs-delete-selected" onclick="return confirm('Bạn có chắc chắn muốn xóa các bản ghi đã chọn?');">Purge</button>
                 </div>
             </div>
             <div class="table-responsive">
@@ -204,7 +204,7 @@ ob_start();
             <div class="logs-bulk-actions">
                 <label class="logs-select-all-label"><input type="checkbox" class="logs-select-all"> Chọn tất cả trang này</label>
                 <div class="logs-delete-actions">
-                    <button type="submit" class="logs-delete-selected" onclick="return confirm('Bạn có chắc chắn muốn xóa các bản ghi đã chọn?');">Xóa mục đã chọn</button>
+                    <button type="submit" class="logs-delete-selected" onclick="return confirm('Bạn có chắc chắn muốn xóa các bản ghi đã chọn?');">Purge</button>
                 </div>
             </div>
             <div class="table-responsive">
@@ -254,7 +254,7 @@ ob_start();
             <div class="logs-bulk-actions">
                 <label class="logs-select-all-label"><input type="checkbox" class="logs-select-all"> Chọn tất cả trang này</label>
                 <div class="logs-delete-actions">
-                    <button type="submit" class="logs-delete-selected" onclick="return confirm('Bạn có chắc chắn muốn xóa các bản ghi đã chọn?');">Xóa mục đã chọn</button>
+                    <button type="submit" class="logs-delete-selected" onclick="return confirm('Bạn có chắc chắn muốn xóa các bản ghi đã chọn?');">Purge</button>
                 </div>
             </div>
             <div class="table-responsive">
@@ -290,12 +290,12 @@ ob_start();
                                 };
 
                                 $eventLabel = match($eventName) {
-                                    'fanpage_comment_reply'  => '💬 Bình luận Fanpage',
-                                    'fanpage_comment_failed' => '❌ Lỗi Comment',
-                                    'fanpage_comment_skipped'=> '⏭️ Bỏ qua Comment',
-                                    'fanpage_inbound'        => '📩 Messenger 1-1',
-                                    'ai_reply'               => '🤖 AI Trả lời',
-                                    'ai_failed'              => '⚠️ AI Lỗi',
+                                    'fanpage_comment_reply'  => 'Bình luận Fanpage',
+                                    'fanpage_comment_failed' => '✕ Lỗi Comment',
+                                    'fanpage_comment_skipped'=> '» Bỏ qua Comment',
+                                    'fanpage_inbound'        => 'Messenger 1-1',
+                                    'ai_reply'               => 'AI Trả Lời',
+                                    'ai_failed'              => '▲ AI Lỗi',
                                     default                  => $eventName
                                 };
 
@@ -328,12 +328,12 @@ ob_start();
                                 </td>
                                 <td class="logs-truncate" style="max-width: 480px; white-space: normal;">
                                     <?php if ($eventName === 'fanpage_comment_reply' && is_array($decoded)): ?>
-                                        <div style="font-weight: 600; color: var(--ios-blue); font-size: 0.82rem; margin-bottom: 0.2rem;">👤 <?= htmlspecialchars((string)($decoded['from_name'] ?? 'Khách')) ?>: &ldquo;<?= htmlspecialchars((string)($decoded['user_message'] ?? '')) ?>&rdquo;</div>
-                                        <div style="font-size: 0.82rem; color: var(--ios-text-primary); background: rgba(255,255,255,0.05); padding: 0.35rem 0.5rem; border-radius: 6px;">🤖 <strong>Bot:</strong> <?= htmlspecialchars((string)($decoded['ai_reply'] ?? '')) ?></div>
+                                        <div style="font-weight: 600; color: var(--ios-blue); font-size: 0.82rem; margin-bottom: 0.2rem;">USR <?= htmlspecialchars((string)($decoded['from_name'] ?? 'Khách')) ?>: &ldquo;<?= htmlspecialchars((string)($decoded['user_message'] ?? '')) ?>&rdquo;</div>
+                                        <div style="font-size: 0.82rem; color: var(--ios-text-primary); background: rgba(255,255,255,0.05); padding: 0.35rem 0.5rem; border-radius: 6px;">AI <strong>Bot:</strong> <?= htmlspecialchars((string)($decoded['ai_reply'] ?? '')) ?></div>
                                     <?php elseif ($eventName === 'fanpage_comment_skipped' && is_array($decoded)): ?>
-                                        <div style="font-size: 0.82rem; color: var(--ios-text-secondary);">⏭️ Bỏ qua bình luận của <strong><?= htmlspecialchars((string)($decoded['from_name'] ?? 'Khách')) ?></strong> (Lý do: <?= htmlspecialchars((string)($decoded['reason'] ?? $decoded['keyword'] ?? '')) ?>)</div>
+                                        <div style="font-size: 0.82rem; color: var(--ios-text-secondary);">» Bỏ qua bình luận của <strong><?= htmlspecialchars((string)($decoded['from_name'] ?? 'Khách')) ?></strong> (Lý do: <?= htmlspecialchars((string)($decoded['reason'] ?? $decoded['keyword'] ?? '')) ?>)</div>
                                     <?php elseif ($eventName === 'fanpage_comment_failed' && is_array($decoded)): ?>
-                                        <div style="font-size: 0.82rem; color: var(--ios-danger);">❌ Lỗi phản hồi: <?= htmlspecialchars((string)($decoded['error'] ?? '')) ?></div>
+                                        <div style="font-size: 0.82rem; color: var(--ios-danger);>✕ Lỗi phản hồi: <?= htmlspecialchars((string)($decoded['error'] ?? '')) ?></div>
                                     <?php else: ?>
                                         <?= htmlspecialchars(is_array($decoded) ? json_encode($decoded, JSON_UNESCAPED_UNICODE) : ($rawData !== '' ? $rawData : '-')) ?>
                                     <?php endif; ?>

@@ -95,8 +95,8 @@ ob_start();
                 </select>
             </div>
 
-            <button type="submit" class="glass-btn" style="padding: 0.65rem 1.75rem; font-size: 0.9rem; background: var(--ios-blue); color: #fff; border: none; font-weight: 600;">
-                💬 Gửi Phản Hồi
+            <button type="submit" class="glass-btn" style="padding: 0.65rem 1.75rem; font-size: 0.9rem; background: var(--ios-blue); color: var(--soc-ink); border: none; font-weight: 600;">
+                Gửi
             </button>
         </div>
     </form>

@@ -12,10 +12,10 @@ $plans = $plans ?? [];
 // Model list KHÔNG nhúng ở đây — select được populate trong bootstrap() khi mở bong bóng.
 
 $planKindIcons = [
-    'general' => '📋',
-    'sales'   => '💰',
-    'content' => '📝',
-    'other'   => '📌',
+    'general' => 'GEN',
+    'sales'   => 'BIZ',
+    'content' => 'CNT',
+    'other'   => 'OTH',
 ];
 $suggestions = [
     'Doanh thu tháng này bao nhiêu?',
@@ -43,7 +43,7 @@ $suggestions = [
     .asst-tools { display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap; }
     .asst-tools select {
         padding: 0.45rem 0.6rem; border-radius: var(--radius-sm);
-        border: 1px solid var(--glass-border); background: rgba(255, 255, 255, 0.75);
+        border: 1px solid var(--glass-border); background: rgba(255, 255, 255, 0.2);
         color: var(--ios-text, #132238); font-size: 0.85rem; max-width: 220px;
     }
 
@@ -287,7 +287,7 @@ $suggestions = [
     .asst-btn {
         padding: 0.5rem 1rem; border-radius: var(--radius-sm); font-size: 0.85rem;
         font-weight: 600; cursor: pointer; border: 1px solid var(--glass-border);
-        background: rgba(255, 255, 255, 0.6); color: var(--ios-text, #132238);
+        background: rgba(255, 255, 255, 0.18); color: var(--ios-text, #132238);
     }
     .asst-btn:hover { border-color: var(--ios-text-secondary); }
     .asst-btn.primary { background: var(--ios-blue); border-color: var(--ios-blue); color: #fff; }
@@ -385,13 +385,13 @@ $suggestions = [
 </style>
 
 <!-- Bong bóng nổi toàn trang admin → nhấp vào mở popup toàn màn hình -->
-<button type="button" class="vc-asst-fab" id="vc-asst-fab" title="Mở Trợ Lý Admin">🤖</button>
+<button type="button" class="vc-asst-fab" id="vc-asst-fab" title="Mở Trợ Lý Admin">AI</button>
 <div class="vc-asst-popup" id="vc-asst-popup" aria-hidden="true">
 <div class="vc-asst-popup-inner">
 
 <div class="asst-head">
     <div class="asst-head-info">
-        <span class="asst-head-icon" aria-hidden="true">🤖</span>
+        <span class="asst-head-icon" aria-hidden="true">AI</span>
         <div>
             <h1>Trợ Lý Admin</h1>
             <p>Trợ lý AI của admin — tra cứu số liệu, khách hàng, chi phí &amp; soạn kế hoạch. Lịch sử lưu tại <code>storage/assistant/</code>.</p>
@@ -407,7 +407,7 @@ $suggestions = [
 
 <div class="glass-alert" id="vc-asst-nomodel" hidden
      style="padding: 0.8rem 1rem; margin-bottom: 1rem; border-left: 4px solid var(--ios-warning, #ff9f0a); font-size: 0.85rem;">
-    ⚠️ Không có model chat nào được API key mở khóa — hãy kiểm tra khóa ở trang Cấu Hình AI.
+    ▲ Không có model chat nào được API key mở khóa — hãy kiểm tra khóa ở trang Cấu Hình AI.
 </div>
 
 <div class="asst-wrap">
@@ -415,7 +415,7 @@ $suggestions = [
     <aside class="asst-panel asst-side">
         <div class="asst-side-top">
             <button type="button" class="asst-new-btn" id="asst-new">＋ Đoạn Chat Mới</button>
-            <button type="button" class="asst-new-btn asst-plan-btn" id="asst-plan-new">📅 Thêm Kế Hoạch</button>
+            <button type="button" class="asst-new-btn asst-plan-btn" id="asst-plan-new">+ Kế Hoạch</button>
         </div>
         <div class="asst-sec-label"><span>Lịch Sử Chat</span><span id="asst-count"><?= count($conversations) ?></span></div>
         <div class="asst-list" id="asst-conv-list"></div>
@@ -435,8 +435,8 @@ $suggestions = [
             <div class="asst-input-row">
                 <button type="button" class="asst-ico-btn" id="asst-attach" title="Thêm ảnh / file (tối đa 5)">＋</button>
                 <div class="asst-attach-menu" id="asst-attach-menu" hidden>
-                    <button type="button" data-attach="device">💻 Chọn ảnh / file từ máy</button>
-                    <button type="button" data-attach="ai">🎨 Chọn ảnh do AI tạo</button>
+                    <button type="button" data-attach="device">▣ Chọn ảnh / file từ máy</button>
+                    <button type="button" data-attach="ai">AI Chọn ảnh do AI tạo</button>
                 </div>
                 <textarea class="asst-input" id="asst-input" rows="1" placeholder="Nhập câu hỏi cho trợ lý... (Enter gửi, Shift+Enter xuống dòng)"></textarea>
                 <button type="submit" class="asst-send" id="asst-send" title="Gửi">➤</button>
@@ -451,7 +451,7 @@ $suggestions = [
 <!-- Modal: tạo kế hoạch -->
 <div class="asst-modal" id="asst-modal-new" role="dialog" aria-modal="true" aria-labelledby="asst-modal-new-title">
     <div class="asst-modal-box">
-        <h3 id="asst-modal-new-title">📅 Kế Hoạch Mới
+        <h3 id="asst-modal-new-title">Kế Hoạch Mới
             <button type="button" class="asst-modal-close" data-close aria-label="Đóng">&times;</button>
         </h3>
         <div class="asst-modal-scroll">
@@ -462,9 +462,9 @@ $suggestions = [
         <div class="asst-field">
             <label for="asst-plan-kind">Loại kế hoạch</label>
             <select id="asst-plan-kind">
-                <option value="general">📋 Tổng quát / vận hành</option>
-                <option value="sales">💰 Kinh doanh / bán hàng</option>
-                <option value="content">📝 Nội dung / truyền thông</option>
+                <option value="general"> Tổng quát / vận hành</option>
+                <option value="sales">Kinh doanh / bán hàng</option>
+                <option value="content">Nội dung / truyền thông</option>
             </select>
         </div>
         <div class="asst-field">
@@ -474,7 +474,7 @@ $suggestions = [
         </div><!-- /.asst-modal-scroll -->
         <div class="asst-modal-actions">
             <button type="button" class="asst-btn" data-close>Huỷ</button>
-            <button type="button" class="asst-btn primary" id="asst-plan-submit">✨ Tạo Kế Hoạch</button>
+            <button type="button" class="asst-btn primary" id="asst-plan-submit">Tạo Kế Hoạch</button>
         </div>
     </div>
 </div>
@@ -482,7 +482,7 @@ $suggestions = [
 <!-- Modal: chọn ảnh từ thư mục AI tạo ra (public/uploads/ai/image/) -->
 <div class="asst-modal" id="asst-modal-aiimg" role="dialog" aria-modal="true" aria-labelledby="asst-modal-aiimg-title">
     <div class="asst-modal-box">
-        <h3 id="asst-modal-aiimg-title">🖼️ Ảnh Do AI Tạo
+        <h3 id="asst-modal-aiimg-title">Ảnh Do AI Tạo
             <button type="button" class="asst-modal-close" data-close aria-label="Đóng">&times;</button>
         </h3>
         <div class="asst-modal-scroll">
@@ -498,7 +498,7 @@ $suggestions = [
 
 <template id="asst-welcome-tpl">
     <div class="asst-welcome">
-        <div class="asst-welcome-icon">🤖</div>
+        <div class="asst-welcome-icon">AI</div>
         <h3>Trợ lý admin sẵn sàng</h3>
         <p>Hỏi bất cứ điều gì về số liệu bán hàng, khách hàng, gói cước, chi phí — hoặc nhờ soạn thông báo, kế hoạch. Nếu chưa có hướng dẫn sẵn, trợ lý sẽ tự tra số liệu mới nhất để trả lời.</p>
         <div class="asst-sugs">
@@ -675,7 +675,7 @@ $suggestions = [
             return '';
         });
         rest = rest.replace(/\[FILE "([^"]+)"\]/g, function (m, name) {
-            extra += '<span class="asst-file-chip">📄 ' + esc(name) + '</span>';
+            extra += '<span class="asst-file-chip">▣ ' + esc(name) + '</span>';
             return '';
         });
         var body = rest.trim() ? '<div>' + md(rest) + '</div>' : '';
@@ -697,7 +697,7 @@ $suggestions = [
             : '<button type="button" class="asst-btn primary" data-post-save="' + escAttr(p.preview_id) + '">Lưu Bài</button>'
                 + '<span class="asst-post-hint">Bài CHƯA lưu — bấm "Lưu Bài" để vào Danh Sách Bài Viết.</span>';
         return '<div class="asst-plan-card asst-post-card" data-post-card="' + escAttr(p.preview_id) + '">'
-            + '<div class="asst-post-head"><span style="font-size:16px">📝</span>'
+            + '<div class="asst-post-head"><span style="font-size:16px">▣</span>'
             + '<span class="asst-post-title">' + esc(p.title || '(không có tiêu đề)') + '</span>'
             + '<span class="asst-post-chip">' + esc(typeLabels[p.type] || p.type || 'news') + '</span>'
             + (saved
@@ -791,7 +791,7 @@ $suggestions = [
             return;
         }
         planListEl.innerHTML = PLANS.map(function (p) {
-            var icon = KIND_ICONS[p.kind] || '📌';
+            var icon = KIND_ICONS[p.kind] || 'OTH';
             return '<div class="asst-item" data-plan="' + escAttr(p.id) + '" title="' + escAttr(p.title || '') + '">'
                 + '<div class="asst-item-main">'
                 + '<div class="asst-item-title">' + icon + ' ' + esc(p.title || 'Kế hoạch') + '</div>'
@@ -817,7 +817,7 @@ $suggestions = [
     function bubble(role, html, ts, failed) {
         var row = document.createElement('div');
         row.className = 'asst-row ' + role;
-        row.innerHTML = '<div class="asst-avatar">' + (role === 'user' ? '🧑' : '🤖') + '</div>'
+        row.innerHTML = '<div class="asst-avatar">' + (role === 'user' ? 'USR' : 'AI') + '</div>'
             + '<div class="asst-bubble' + (failed ? ' failed' : '') + '">' + html
             + (ts ? '<div class="asst-ts">' + esc(ts) + '</div>' : '')
             + '</div>';
@@ -917,7 +917,7 @@ $suggestions = [
     function renderChips() {
         chipsEl.innerHTML = pending.map(function (f, i) {
             var isImg = IMG_EXT.indexOf(extOf(f.name)) > -1;
-            var thumb = isImg ? '<img src="' + URL.createObjectURL(f) + '" alt="">' : '📄';
+            var thumb = isImg ? '<img src="' + URL.createObjectURL(f) + '" alt="">' : '▣';
             return '<span class="asst-chip">' + thumb + '<span>' + esc(f.name) + ' (' + humanSize(f.size) + ')</span>'
                 + '<button type="button" data-rm="' + i + '" title="Bỏ file">✕</button></span>';
         }).join('');
@@ -984,7 +984,7 @@ $suggestions = [
         var row = document.createElement('div');
         row.className = 'asst-row assistant asst-typing';
         row.id = 'asst-typing';
-        row.innerHTML = '<div class="asst-avatar">🤖</div><div class="asst-bubble">'
+        row.innerHTML = '<div class="asst-avatar">AI</div><div class="asst-bubble">'
             + '<span class="asst-dot">●</span> <span class="asst-dot">●</span> <span class="asst-dot">●</span></div>';
         msgsEl.appendChild(row);
         scrollBottom();
@@ -997,7 +997,7 @@ $suggestions = [
             if (IMG_EXT.indexOf(extOf(f.name)) > -1) {
                 html += '<img class="asst-img" src="' + URL.createObjectURL(f) + '" alt="' + esc(f.name) + '">';
             } else {
-                html += '<span class="asst-file-chip">📄 ' + esc(f.name) + '</span>';
+                html += '<span class="asst-file-chip">▣ ' + esc(f.name) + '</span>';
             }
         });
         if (text.trim()) html += '<div>' + md(text) + '</div>';
@@ -1012,7 +1012,7 @@ $suggestions = [
         row.querySelector('.asst-bubble').classList.add('failed');
         var err = document.createElement('div');
         err.className = 'asst-ts';
-        err.textContent = '⚠ ' + (lastError || 'Gửi thất bại.');
+        err.textContent = '▲ ' + (lastError || 'Gửi thất bại.');
         var btn = document.createElement('button');
         btn.type = 'button';
         btn.className = 'asst-retry';
@@ -1153,7 +1153,7 @@ $suggestions = [
         if (!HAS_MODEL) { toast('warning', 'Không có model chat khả dụng.'); return; }
         var btn = $('asst-plan-submit');
         btn.disabled = true;
-        btn.textContent = '⏳ Đang tạo...';
+        btn.textContent = '◷ Đang tạo...';
         planCtrl = new AbortController();
         var reqId = planReqId = 'r' + Date.now().toString(36) + Math.random().toString(36).slice(2, 10);
         post('/admin/assistant/plan/new', {
@@ -1167,7 +1167,7 @@ $suggestions = [
             planCtrl = null;
             planReqId = null;
             btn.disabled = false;
-            btn.textContent = '✨ Tạo Kế Hoạch';
+            btn.textContent = 'Tạo Kế Hoạch';
             if (!res.ok) { toast('danger', res.error || 'Không tạo được kế hoạch.'); return; }
             closeModal(modalNew);
             $('asst-plan-title').value = '';
@@ -1179,7 +1179,7 @@ $suggestions = [
         }).catch(function (err) {
             planCtrl = null;
             btn.disabled = false;
-            btn.textContent = '✨ Tạo Kế Hoạch';
+            btn.textContent = 'Tạo Kế Hoạch';
             if (err && err.name === 'AbortError') {
                 planReqId = null;
                 sendPlanCancel(reqId);
@@ -1211,7 +1211,7 @@ $suggestions = [
             var old = msgsEl.querySelector('[data-plan-card]');
             if (old && old.parentNode) old.parentNode.removeChild(old);
             var html = '<div data-plan-card>'
-                + '<div class="asst-plan-card-head">' + (KIND_ICONS[p.kind] || '📌')
+                + '<div class="asst-plan-card-head">' + (KIND_ICONS[p.kind] || 'OTH')
                 + ' <strong>' + esc(p.title || 'Kế hoạch') + '</strong>'
                 + '<span class="asst-plan-card-meta">' + esc(p.created_at || '') + '</span></div>'
                 + '<div class="asst-plan-body">' + md(res.content || '') + '</div>'

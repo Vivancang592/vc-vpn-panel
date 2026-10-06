@@ -81,7 +81,7 @@ ob_start();
                                     <button type="button" class="action-btn" title="Thao tác">⋮</button>
                                     <div class="action-menu">
                                         <a href="/admin/withdrawals/detail?id=<?= $w['id'] ?>" class="action-item">
-                                            <span>👁️</span> Xem chi tiết
+                                            <span>◉</span> Xem
                                         </a>
                                     </div>
                                 </div>

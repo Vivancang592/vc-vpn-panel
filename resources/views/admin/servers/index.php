@@ -41,18 +41,18 @@ $serverApiUrl = $protocol . $host . '/api/server/checkin';
         <p style="color: var(--ios-text-secondary); font-size: 0.85rem;">Quản lý hạ tầng máy chủ và thông số API kết nối node VPS</p>
     </div>
     <div style="display: flex; gap: 0.5rem; align-items: center;">
-        <a href="/admin/servers/create" class="glass-btn" style="text-decoration: none; white-space: nowrap;">+ Thêm Máy Chủ Mới</a>
+        <a href="/admin/servers/create" class="glass-btn" style="text-decoration: none; white-space: nowrap;">+ Thêm</a>
     </div>
 </div>
 
 <!-- Khung Link API Node Check-in để Copy Nhanh -->
 <div class="glass-card" style="padding: 0.9rem 1.25rem; margin-bottom: 1rem; width: 100%; box-sizing: border-box; display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 0.75rem; background: rgba(0, 122, 255, 0.05); border: 1px solid rgba(0, 122, 255, 0.2);">
     <div style="display: flex; align-items: center; gap: 0.5rem; flex: 1; min-width: 260px;">
-        <span style="font-weight: 700; font-size: 0.85rem; color: var(--ios-blue); white-space: nowrap;">⚡ Node API URL:</span>
+        <span style="font-weight: 700; font-size: 0.85rem; color: var(--ios-blue); white-space: nowrap;">» Node API URL:</span>
         <input type="text" id="node_api_url_input" class="glass-input" value="<?= htmlspecialchars($serverApiUrl) ?>" readonly style="flex: 1; min-width: 0; background: rgba(0,0,0,0.15); color: var(--ios-text); font-family: monospace; font-size: 0.82rem; font-weight: 600;">
     </div>
     <button type="button" class="glass-btn" onclick="navigator.clipboard.writeText(document.getElementById('node_api_url_input').value); alert('Đã sao chép Link API Máy Chủ: <?= htmlspecialchars($serverApiUrl) ?>');" style="padding: 0.5rem 1rem; white-space: nowrap; cursor: pointer; font-size: 0.82rem;">
-        📋 Sao Chép Link API
+        Copy Link
     </button>
 </div>
 
@@ -108,21 +108,21 @@ $serverApiUrl = $protocol . $host . '/api/server/checkin';
                                     <button type="button" class="action-btn" title="Thao tác">⋮</button>
                                     <div class="action-menu">
                                         <a href="/admin/servers/detail?id=<?= $server['id'] ?>" class="action-item">
-                                            <span>👁️</span> Xem chi tiết
+                                            <span>◉</span> Xem
                                         </a>
                                         <form method="POST" action="/admin/servers/sync" onsubmit="return confirm('Xác nhận tạo task đồng bộ tất cả gói active thuộc nhóm này sang máy chủ?');" style="margin: 0;">
                                             <input type="hidden" name="id" value="<?= $server['id'] ?>">
                                             <button type="submit" class="action-item" style="background: none; border: none; width: 100%; text-align: left; cursor: pointer; color: var(--ios-blue); padding: 0.5rem 1rem; font-size: 0.85rem; display: flex; align-items: center; gap: 0.5rem;">
-                                                <span>🔄</span> Đồng bộ
+                                                <span>⟳</span> Sync
                                             </button>
                                         </form>
                                         <a href="/admin/servers/edit?id=<?= $server['id'] ?>" class="action-item">
-                                            <span>✏️</span> Chỉnh sửa
+                                            <span>✎</span> Sửa
                                         </a>
                                         <form method="POST" action="/admin/servers/delete" onsubmit="return confirm('Bạn có chắc chắn muốn xóa máy chủ này?');" style="margin: 0;">
                                             <input type="hidden" name="id" value="<?= $server['id'] ?>">
                                             <button type="submit" class="action-item delete" style="background: none; border: none; width: 100%; text-align: left; cursor: pointer; color: var(--ios-danger); padding: 0.5rem 1rem; font-size: 0.85rem; display: flex; align-items: center; gap: 0.5rem;">
-                                                <span>🗑️</span> Xóa máy chủ
+                                                <span>✕</span> Xóa máy chủ
                                             </button>
                                         </form>
                                     </div>

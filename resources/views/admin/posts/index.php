@@ -27,7 +27,7 @@ ob_start();
         <p style="color: var(--ios-text-secondary); font-size: 0.85rem;">Danh sách bài viết tin tức, hướng dẫn và câu hỏi thường gặp</p>
     </div>
     <div style="display: flex; justify-content: flex-end; margin-top: 0.75rem;">
-        <a href="/admin/posts/create" class="glass-btn" style="text-decoration: none; white-space: nowrap;">+ Thêm Bài Viết</a>
+        <a href="/admin/posts/create" class="glass-btn" style="text-decoration: none; white-space: nowrap;">+ Thêm</a>
     </div>
 </div>
 
@@ -92,15 +92,15 @@ ob_start();
                                     <button type="button" class="action-btn" title="Thao tác">⋮</button>
                                     <div class="action-menu">
                                         <a href="/admin/posts/detail?id=<?= $post['id'] ?>" class="action-item">
-                                            <span>👁️</span> Xem chi tiết
+                                            <span>◉</span> Xem
                                         </a>
                                         <a href="/admin/posts/edit?id=<?= $post['id'] ?>" class="action-item">
-                                            <span>✏️</span> Chỉnh sửa
+                                            <span>✎</span> Sửa
                                         </a>
                                         <form method="POST" action="/admin/posts/delete" onsubmit="return confirm('Bạn có chắc chắn muốn xóa bài viết này?');" style="margin: 0;">
                                             <input type="hidden" name="id" value="<?= $post['id'] ?>">
                                             <button type="submit" class="action-item delete" style="background: none; border: none; width: 100%; text-align: left; cursor: pointer; color: var(--ios-danger); padding: 0.5rem 1rem; font-size: 0.85rem; display: flex; align-items: center; gap: 0.5rem;">
-                                                <span>🗑️</span> Xóa bài viết
+                                                <span>✕</span> Xóa
                                             </button>
                                         </form>
                                     </div>

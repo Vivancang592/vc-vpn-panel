@@ -52,7 +52,7 @@ require __DIR__ . '/_tab-header.php';
             <label style="display: block; font-weight: 600; font-size: 0.82rem; margin-bottom: 0.3rem;">Ảnh minh hoạ</label>
             <input type="file" name="reference_image" accept="image/*" class="glass-input" style="width: 100%; padding: 0.3rem;">
         </div>
-        <button type="submit" class="glass-btn" data-busy-label="Đang tạo video..." style="justify-self: start; justify-content: center; font-weight: 700; background: var(--ios-blue); color: #fff; white-space: nowrap;">🎬 Tạo Video</button>
+        <button type="submit" class="glass-btn" data-busy-label="Đang tạo video..." style="justify-self: start; justify-content: center; font-weight: 700; background: var(--ios-blue); color: var(--soc-ink); white-space: nowrap;">Tạo</button>
     </div>
 </form>
 
@@ -88,7 +88,7 @@ require __DIR__ . '/_media-gallery.php';
 <?php if ($job !== null): ?>
 <div class="glass-card" style="padding: 1rem 1.25rem; margin-bottom: 1rem; width: 100%; box-sizing: border-box; border-left: 4px solid var(--ios-warning, #ff9f0a);" id="video-job-box">
     <div style="display: flex; gap: 0.75rem; align-items: center; flex-wrap: wrap;">
-        <span style="font-size: 1rem;">⏳</span>
+        <span style="font-size: 1rem;">◷</span>
         <strong style="font-size: 0.9rem;">Video đang được nhà cung cấp xử lý (LRO)</strong>
         <span style="font-size: 0.78rem; color: var(--ios-text-secondary);">
             op <code><?= htmlspecialchars((string) ($job['operation_id'] ?? '')) ?></code> · bắt đầu <?= htmlspecialchars((string) ($job['started_at'] ?? '')) ?>

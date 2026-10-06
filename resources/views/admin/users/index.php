@@ -19,7 +19,7 @@ ob_start();
         <p style="color: var(--ios-text-secondary); font-size: 0.85rem;">Danh sách tất cả tài khoản thành viên trong hệ thống</p>
     </div>
     <div style="display: flex; justify-content: flex-end; margin-top: 0.75rem;">
-        <a href="/admin/users/create" class="glass-btn" style="text-decoration: none; white-space: nowrap;">+ Thêm Người Dùng</a>
+        <a href="/admin/users/create" class="glass-btn" style="text-decoration: none; white-space: nowrap;">+ Thêm</a>
     </div>
 </div>
 
@@ -41,7 +41,7 @@ ob_start();
             <option value="banned" <?= ($status ?? '') === 'banned' ? 'selected' : '' ?>>Khóa (Banned)</option>
         </select>
 
-        <button type="submit" class="glass-btn" style="white-space: nowrap;">🔍 Tìm kiếm</button>
+        <button type="submit" class="glass-btn" style="white-space: nowrap;">Tìm</button>
         <?php if (!empty($search) || !empty($role) || !empty($status)): ?>
             <a href="/admin/users" style="color: var(--ios-danger); font-size: 0.85rem; text-decoration: none; font-weight: 600; white-space: nowrap;">Xóa lọc</a>
         <?php endif; ?>
@@ -110,25 +110,25 @@ ob_start();
                                     <button type="button" class="action-btn" title="Thao tác">⋮</button>
                                     <div class="action-menu" style="min-width: 175px; white-space: nowrap;">
                                         <a href="/admin/users/detail?id=<?= $u['id'] ?>" class="action-item" style="white-space: nowrap; display: flex; align-items: center; gap: 0.5rem;">
-                                            <span>👁️</span> Xem chi tiết
+                                            <span>◉</span> Xem
                                         </a>
                                         <a href="/admin/users/edit?id=<?= $u['id'] ?>" class="action-item" style="white-space: nowrap; display: flex; align-items: center; gap: 0.5rem;">
-                                            <span>✏️</span> Chỉnh sửa
+                                            <span>✎</span> Sửa
                                         </a>
                                         <a href="/admin/orders/create?user_id=<?= $u['id'] ?>" class="action-item" style="white-space: nowrap; display: flex; align-items: center; gap: 0.5rem;">
-                                            <span>🛒</span> Tạo đơn hàng
+                                            <span>+</span> Đơn
                                         </a>
                                         <a href="/admin/orders?user_id=<?= $u['id'] ?>" class="action-item" style="white-space: nowrap; display: flex; align-items: center; gap: 0.5rem;">
-                                            <span>📦</span> Xem đơn hàng
+                                            <span>⧉</span> Đơn
                                         </a>
                                         <a href="/admin/subscriptions?user_id=<?= $u['id'] ?>" class="action-item" style="white-space: nowrap; display: flex; align-items: center; gap: 0.5rem;">
-                                            <span>🔑</span> Xem gói đăng ký
+                                            <span>⧉</span> Gói
                                         </a>
                                         <?php if ($u['role'] !== 'admin'): ?>
                                             <form method="POST" action="/admin/users/delete" onsubmit="return confirm('Bạn có chắc chắn muốn xóa thành viên này?');" style="margin: 0;">
                                                 <input type="hidden" name="id" value="<?= $u['id'] ?>">
                                                 <button type="submit" class="action-item delete" style="background: none; border: none; width: 100%; text-align: left; cursor: pointer; color: var(--ios-danger); padding: 0.5rem 1rem; font-size: 0.85rem; display: flex; align-items: center; gap: 0.5rem; white-space: nowrap;">
-                                                    <span>🗑️</span> Xóa tài khoản
+                                                    <span>✕</span> Xóa tài khoản
                                                 </button>
                                             </form>
                                         <?php endif; ?>

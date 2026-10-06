@@ -14,83 +14,83 @@ ob_start();
     </div>
 <?php endif; ?>
 
-<div style="display: flex; flex-direction: column; gap: 0.25rem; margin-bottom: 0.5rem;">
-    <h1 style="font-size: 1.6rem; font-weight: 700; letter-spacing: -0.5px;">Tổng Quan Hệ Thống</h1>
-    <p style="color: var(--ios-text-secondary); font-size: 0.875rem;">Theo dõi chỉ số hoạt động real-time của VPN Service</p>
+<div class="page-header">
+    <h1 class="page-title">Tổng Quan Hệ Thống</h1>
+    <p class="page-subtitle">Chỉ số real-time · VPN Service</p>
 </div>
 
 <!-- Stats Grid -->
 <div class="stats-grid">
     <div class="glass-card stat-card">
         <div style="display: flex; justify-content: space-between; align-items: center;">
-            <span class="title">Tổng Người Dùng</span>
-            <span style="font-size: 1.25rem;">👥</span>
+            <span class="title">Người Dùng</span>
+            <span class="mono stat-icon">USR</span>
         </div>
         <div class="value"><?= number_format($stats['total_users'] ?? 0) ?></div>
-        <div style="font-size: 0.8rem; color: var(--ios-success); font-weight: 600;">+<?= number_format($stats['new_users_today'] ?? 0) ?> hôm nay</div>
+        <div style="font-size: 0.75rem; color: var(--soc-green); font-weight: 600;">+<?= number_format($stats['new_users_today'] ?? 0) ?> hôm nay</div>
     </div>
 
     <div class="glass-card stat-card">
         <div style="display: flex; justify-content: space-between; align-items: center;">
-            <span class="title">Gói Dịch Vụ Active</span>
-            <span style="font-size: 1.25rem;">🔑</span>
+            <span class="title">Gói Hoạt Động</span>
+            <span class="mono stat-icon">SUB</span>
         </div>
-        <div class="value" style="color: var(--ios-success);"><?= number_format($stats['active_subscriptions'] ?? 0) ?></div>
-        <div style="font-size: 0.8rem; color: var(--ios-text-secondary);">Đang hoạt động</div>
+        <div class="value" style="color: var(--soc-green);"><?= number_format($stats['active_subscriptions'] ?? 0) ?></div>
+        <div style="font-size: 0.75rem; color: var(--ios-text-secondary);">đang chạy</div>
     </div>
 
     <div class="glass-card stat-card">
         <div style="display: flex; justify-content: space-between; align-items: center;">
-            <span class="title">Doanh Thu Tháng <?= htmlspecialchars($selectedMonth ?? date('n')) ?></span>
-            <span style="font-size: 1.25rem;">💴</span>
+            <span class="title">Doanh Thu T<?= (int)($selectedMonth ?? date('n')) ?></span>
+            <span class="mono stat-icon">REV</span>
         </div>
-        <div class="value" style="color: var(--ios-success);"><?= isset($formatMoney) ? $formatMoney($stats['monthly_revenue'] ?? 0) : number_format($stats['monthly_revenue'] ?? 0, 2) ?></div>
-        <div style="font-size: 0.8rem; color: var(--ios-text-secondary);">Tổng đơn đã thanh toán</div>
+        <div class="value" style="color: var(--soc-green);"><?= isset($formatMoney) ? $formatMoney($stats['monthly_revenue'] ?? 0) : number_format($stats['monthly_revenue'] ?? 0, 2) ?></div>
+        <div style="font-size: 0.75rem; color: var(--ios-text-secondary);">đã thanh toán</div>
     </div>
 
     <div class="glass-card stat-card">
         <div style="display: flex; justify-content: space-between; align-items: center;">
-            <span class="title">Cổng Inbound Active</span>
-            <span style="font-size: 1.25rem;">🌐</span>
+            <span class="title">Inbound</span>
+            <span class="mono stat-icon">NET</span>
         </div>
-        <div class="value" style="color: #5856D6;"><?= (int)($stats['connected_inbounds'] ?? 0) ?> / <?= (int)($stats['active_inbounds'] ?? 0) ?></div>
-        <div style="font-size: 0.8rem; color: var(--ios-text-secondary);">Đang có người kết nối</div>
+        <div class="value" style="color: #8ab4ff;"><?= (int)($stats['connected_inbounds'] ?? 0) ?> / <?= (int)($stats['active_inbounds'] ?? 0) ?></div>
+        <div style="font-size: 0.75rem; color: var(--ios-text-secondary);">đang kết nối</div>
     </div>
 
     <div class="glass-card stat-card">
         <div style="display: flex; justify-content: space-between; align-items: center;">
-            <span class="title">Chat Mở Hôm Nay</span>
-            <span style="font-size: 1.25rem;">🤖</span>
+            <span class="title">Chat Hôm Nay</span>
+            <span class="mono stat-icon">BOT</span>
         </div>
-        <div class="value" style="color: #0a84ff;"><?= number_format($stats['chat_started_today'] ?? 0) ?></div>
-        <div style="font-size: 0.8rem; color: var(--ios-text-secondary);">Số phiên chat người dùng khởi tạo</div>
+        <div class="value" style="color: var(--soc-cyan);"><?= number_format($stats['chat_started_today'] ?? 0) ?></div>
+        <div style="font-size: 0.75rem; color: var(--ios-text-secondary);">phiên mới</div>
     </div>
 
     <div class="glass-card stat-card">
         <div style="display: flex; justify-content: space-between; align-items: center;">
             <span class="title">Chờ Nhân Viên</span>
-            <span style="font-size: 1.25rem;">🧑</span>
+            <span class="mono stat-icon">NV</span>
         </div>
-        <div class="value" style="color: #ff9500;"><?= number_format($stats['chat_handoff_pending'] ?? 0) ?></div>
-        <div style="font-size: 0.8rem; color: var(--ios-text-secondary);">Yêu cầu AI chuyển tiếp đang chờ</div>
+        <div class="value" style="color: var(--soc-amber);"><?= number_format($stats['chat_handoff_pending'] ?? 0) ?></div>
+        <div style="font-size: 0.75rem; color: var(--ios-text-secondary);">chờ xử lý</div>
     </div>
 
     <div class="glass-card stat-card">
         <div style="display: flex; justify-content: space-between; align-items: center;">
-            <span class="title">CTA Chatbot Được Click</span>
-            <span style="font-size: 1.25rem;">🎯</span>
+            <span class="title">CTA Click</span>
+            <span class="mono stat-icon">CTA</span>
         </div>
-        <div class="value" style="color: #34c759;"><?= number_format($stats['chat_cta_clicked_today'] ?? 0) ?></div>
-        <div style="font-size: 0.8rem; color: var(--ios-text-secondary);">Tương tác chuyển đổi trong ngày</div>
+        <div class="value" style="color: var(--soc-green);"><?= number_format($stats['chat_cta_clicked_today'] ?? 0) ?></div>
+        <div style="font-size: 0.75rem; color: var(--ios-text-secondary);">tương tác hôm nay</div>
     </div>
 
     <div class="glass-card stat-card">
         <div style="display: flex; justify-content: space-between; align-items: center;">
-            <span class="title">Click Vào Checkout</span>
-            <span style="font-size: 1.25rem;">🛒</span>
+            <span class="title">Checkout</span>
+            <span class="mono stat-icon">PAY</span>
         </div>
-        <div class="value" style="color: #0a84ff;"><?= number_format($stats['chat_checkout_clicked_today'] ?? 0) ?></div>
-        <div style="font-size: 0.8rem; color: var(--ios-text-secondary);">Số click CTA đi tới bước mua</div>
+        <div class="value" style="color: var(--soc-cyan);"><?= number_format($stats['chat_checkout_clicked_today'] ?? 0) ?></div>
+        <div style="font-size: 0.75rem; color: var(--ios-text-secondary);">tới thanh toán</div>
     </div>
 </div>
 
@@ -99,8 +99,8 @@ ob_start();
     <!-- Đơn Hàng Mới -->
     <div class="glass-card" style="padding: 1.25rem;">
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
-            <h2 style="font-size: 1.1rem; font-weight: 700;">Đơn Hàng Gần Đây</h2>
-            <a href="/admin/orders" style="font-size: 0.85rem; color: var(--ios-blue); text-decoration: none; font-weight: 600;">Xem tất cả</a>
+            <h2 style="font-size: 0.95rem; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase;">Đơn Hàng Gần Đây</h2>
+            <a href="/admin/orders" style="font-size: 0.75rem; color: var(--soc-cyan); text-decoration: none; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase;">Xem</a>
         </div>
         <div class="table-responsive">
             <table class="glass-table">
@@ -135,7 +135,7 @@ ob_start();
                             </tr>
                         <?php endforeach; ?>
                     <?php else: ?>
-                        <tr><td colspan="4" style="text-align: center; color: var(--ios-text-secondary);">Chưa có đơn hàng mới</td></tr>
+                        <tr><td colspan="4" class="logs-empty">Chưa có đơn hàng</td></tr>
                     <?php endif; ?>
                 </tbody>
             </table>
@@ -145,13 +145,13 @@ ob_start();
     <!-- Trạng Thái Máy Chủ -->
     <div class="glass-card" style="padding: 1.25rem;">
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
-            <h2 style="font-size: 1.1rem; font-weight: 700;">Hạ Tầng VPN</h2>
-            <a href="/admin/servers" style="font-size: 0.85rem; color: var(--ios-blue); text-decoration: none; font-weight: 600;">Quản lý</a>
+            <h2 style="font-size: 0.95rem; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase;">Hạ Tầng VPN</h2>
+            <a href="/admin/servers" style="font-size: 0.75rem; color: var(--soc-cyan); text-decoration: none; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase;">Mở</a>
         </div>
         <div style="display: flex; flex-direction: column; gap: 0.75rem;">
             <?php if (!empty($servers)): ?>
                 <?php foreach ($servers as $server): ?>
-                    <div style="display: flex; justify-content: space-between; align-items: center; gap: 0.75rem; padding: 0.75rem 1rem; background: rgba(255, 255, 255, 0.2); border: 1px solid var(--glass-border); border-radius: var(--radius-md);">
+                    <div style="display: flex; justify-content: space-between; align-items: center; gap: 0.75rem; padding: 0.75rem 1rem; background: rgba(34, 211, 238, 0.05); border: 1px solid var(--soc-line); border-radius: var(--radius-md);">
                         <div style="font-weight: 600; font-size: 0.9rem; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;"><?= htmlspecialchars($server['name']) ?></div>
                         <div style="display: flex; align-items: center; gap: 0.5rem; flex-shrink: 0;">
                             <span style="font-size: 0.75rem; color: var(--ios-text-secondary); white-space: nowrap;"><?= htmlspecialchars($server['ip_address']) ?> (<?= htmlspecialchars($server['location']) ?>)</span>
@@ -160,7 +160,7 @@ ob_start();
                     </div>
                 <?php endforeach; ?>
             <?php else: ?>
-                <div style="text-align: center; color: var(--ios-text-secondary); padding: 1rem;">Chưa có máy chủ nào</div>
+                <div class="logs-empty">Chưa có máy chủ</div>
             <?php endif; ?>
         </div>
     </div>
@@ -170,23 +170,23 @@ ob_start();
 <div class="glass-card" style="padding: 1.25rem;">
     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; flex-wrap: wrap; gap: 0.75rem;">
         <div>
-            <h2 style="font-size: 1.1rem; font-weight: 700;">So Sánh Doanh Thu (<?= htmlspecialchars($currencyCode) ?>)</h2>
-            <p style="font-size: 0.8rem; color: var(--ios-text-secondary);">Đối soát tăng trưởng doanh thu theo từng ngày giữa tháng đã chọn và tháng liền trước</p>
+            <h2 style="font-size: 0.95rem; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase;">Doanh Thu (<?= htmlspecialchars($currencyCode) ?>)</h2>
+            <p style="font-size: 0.78rem; color: var(--ios-text-secondary);">So sánh theo ngày · tháng hiện tại ↔ tháng trước</p>
         </div>
 
         <!-- Dropdown Bộ Lọc Thời Gian -->
         <form method="GET" action="/admin" style="display: flex; gap: 0.5rem; align-items: center;">
-            <select name="month" onchange="this.form.submit()" style="padding: 0.45rem 0.75rem; border-radius: var(--radius-sm); border: 1px solid var(--glass-border); background: rgba(255, 255, 255, 0.4); color: var(--ios-text); font-weight: 600; font-size: 0.85rem; outline: none; cursor: pointer;">
+            <select name="month" onchange="this.form.submit()" class="glass-input" style="padding: 0.45rem 0.75rem; border-radius: var(--radius-sm); border: 1px solid var(--glass-border); background: rgba(5, 9, 16, 0.75); color: var(--ios-text); font-weight: 600; font-size: 0.85rem; outline: none; cursor: pointer;">
                 <?php for ($m = 1; $m <= 12; $m++): ?>
-                    <option value="<?= $m ?>" <?= ($m == ($selectedMonth ?? date('n'))) ? 'selected' : '' ?>>Tháng <?= $m ?></option>
+                    <option value="<?= $m ?>" <?= ($m == ($selectedMonth ?? date('n'))) ? 'selected' : '' ?>>T<?= $m ?></option>
                 <?php endfor; ?>
             </select>
 
-            <select name="year" onchange="this.form.submit()" style="padding: 0.45rem 0.75rem; border-radius: var(--radius-sm); border: 1px solid var(--glass-border); background: rgba(255, 255, 255, 0.4); color: var(--ios-text); font-weight: 600; font-size: 0.85rem; outline: none; cursor: pointer;">
+            <select name="year" onchange="this.form.submit()" class="glass-input" style="padding: 0.45rem 0.75rem; border-radius: var(--radius-sm); border: 1px solid var(--glass-border); background: rgba(5, 9, 16, 0.75); color: var(--ios-text); font-weight: 600; font-size: 0.85rem; outline: none; cursor: pointer;">
                 <?php
                 $currentY = (int)date('Y');
                 for ($y = $currentY; $y >= $currentY - 3; $y--): ?>
-                    <option value="<?= $y ?>" <?= ($y == ($selectedYear ?? $currentY)) ? 'selected' : '' ?>>Năm <?= $y ?></option>
+                    <option value="<?= $y ?>" <?= ($y == ($selectedYear ?? $currentY)) ? 'selected' : '' ?>><?= $y ?></option>
                 <?php endfor; ?>
             </select>
         </form>

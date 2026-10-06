@@ -70,7 +70,7 @@ $_catalogKeys = array_map(static fn ($m): string => (string) ($m['model_key'] ??
         <input type="hidden" name="back" value="/admin/ai/reply">
         <input type="hidden" name="module_key" value="support_chat,fanpage_comment">
         <div style="flex: 1 1 280px; min-width: 220px;">
-            <label style="display: block; font-weight: 700; font-size: 0.85rem; margin-bottom: 0.35rem;">🤖 Model Trả Lời Tự Động <span style="color: var(--ios-danger);">*</span></label>
+            <label style="display: block; font-weight: 700; font-size: 0.85rem; margin-bottom: 0.35rem;">Model <span style="color: var(--ios-danger);">*</span></label>
             <select name="model_override" class="glass-input" style="width: 100%;" required>
                 <option value="">— Chọn model trả lời —</option>
                 <?php if ($_currentModel !== '' && !in_array($_currentModel, $_catalogKeys, true)): ?>
@@ -81,13 +81,13 @@ $_catalogKeys = array_map(static fn ($m): string => (string) ($m['model_key'] ??
                 <?php endforeach; ?>
             </select>
         </div>
-        <button type="submit" class="glass-btn" style="font-weight: 700; background: var(--ios-blue); color: #fff;">💾 Lưu Model Trả Lời</button>
+        <button type="submit" class="glass-btn" style="font-weight: 700; background: var(--ios-blue); color: var(--soc-ink);">Lưu</button>
     </form>
     <?php if ($_currentModel === ''): ?>
-        <div style="margin-top: 0.7rem; font-size: 0.85rem; color: var(--ios-danger); font-weight: 700;">⚠ Chưa chọn Model — Chatbot và Comment AI CHƯA TRẢ LỜI được. Chọn model rồi bấm Lưu ngay.</div>
+        <div style="margin-top: 0.7rem; font-size: 0.85rem; color: var(--ios-danger); font-weight: 700;">▲ Chưa chọn Model — Chatbot và Comment AI CHƯA TRẢ LỜI được. Chọn model rồi bấm Lưu ngay.</div>
     <?php endif; ?>
     <?php if ($_modelMismatch): ?>
-        <div style="margin-top: 0.7rem; font-size: 0.83rem; color: var(--ios-danger);">⚠ Fanpage Comment đang dùng <b><?= htmlspecialchars($_fpModel) ?></b> khác model tab này — bấm Lưu để đồng bộ cả 2 kênh.</div>
+        <div style="margin-top: 0.7rem; font-size: 0.83rem; color: var(--ios-danger);">▲ Fanpage Comment đang dùng <b><?= htmlspecialchars($_fpModel) ?></b> khác model tab này — bấm Lưu để đồng bộ cả 2 kênh.</div>
     <?php endif; ?>
     <div style="margin-top: 0.6rem; font-size: 0.78rem; color: var(--text-muted);">Áp dụng CẢ Trả Lời Web + Fanpage Comment — model lấy trực tiếp từ đây, không còn model mặc định ngầm.</div>
 </div>
@@ -97,7 +97,7 @@ $_catalogKeys = array_map(static fn ($m): string => (string) ($m['model_key'] ??
     <!-- Kênh 1: Chat website -->
     <div class="glass-card" style="padding: 1.25rem; width: 100%; box-sizing: border-box; border-left: 4px solid <?= ($chatEnabled ?? false) ? 'var(--ios-success)' : 'var(--ios-danger)' ?>;">
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
-            <h2 style="font-size: 1.05rem; font-weight: 700;">💬 Chat Website</h2>
+            <h2 style="font-size: 1.05rem; font-weight: 700;">Chat Web</h2>
             <span style="font-size: 0.8rem; font-weight: 700; color: <?= ($chatEnabled ?? false) ? 'var(--ios-success)' : 'var(--ios-danger)' ?>;">
                 <?= ($chatEnabled ?? false) ? '● ĐANG BẬT' : '○ ĐANG TẮT' ?>
             </span>
@@ -115,7 +115,7 @@ $_catalogKeys = array_map(static fn ($m): string => (string) ($m['model_key'] ??
     <!-- Kênh 2: Bình luận + Messenger Fanpage -->
     <div class="glass-card" style="padding: 1.25rem; width: 100%; box-sizing: border-box; border-left: 4px solid <?= ($commentEnabled ?? false) ? 'var(--ios-success)' : 'var(--ios-danger)' ?>;">
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
-            <h2 style="font-size: 1.05rem; font-weight: 700;">📢 Bình Luận Fanpage</h2>
+            <h2 style="font-size: 1.05rem; font-weight: 700;">Bình Luận</h2>
             <span style="font-size: 0.8rem; font-weight: 700; color: <?= ($commentEnabled ?? false) ? 'var(--ios-success)' : 'var(--ios-danger)' ?>;">
                 <?= ($commentEnabled ?? false) ? '● ĐANG BẬT' : '○ ĐANG TẮT' ?>
             </span>
@@ -123,7 +123,7 @@ $_catalogKeys = array_map(static fn ($m): string => (string) ($m['model_key'] ??
         <p style="font-size: 0.82rem; color: var(--ios-text-secondary); margin-bottom: 0.75rem;">
             AI tự trả lời bình luận bài viết fanpage (1–2 câu) qua module <code>fanpage_comment</code>,
             cùng nội quy đã gộp sẵn trong prompt. Bật/tắt từng kênh tại
-            <a href="/admin/settings" style="color: var(--ios-blue);">Cài Đặt Hệ Thống</a>.
+            <a href="/admin/settings" style="color: var(--ios-blue);">Cài Đặt</a>.
         </p>
         <div style="font-size: 0.8rem; color: var(--ios-text-secondary);">
             Hội thoại nguồn <strong>Facebook</strong>: <strong style="color: var(--ios-text);"><?= (int) ($convStats['fanpage'] ?? 0) ?></strong>
@@ -134,7 +134,7 @@ $_catalogKeys = array_map(static fn ($m): string => (string) ($m['model_key'] ??
 <!-- Tổng quan hội thoại AI đã trả lời -->
 <div class="glass-card" style="padding: 1.25rem; margin-bottom: 1rem; width: 100%; box-sizing: border-box;">
     <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.75rem; margin-bottom: 0.9rem;">
-        <h2 style="font-size: 1.05rem; font-weight: 700;">🗨️ Hội Thoại AI Đã Trả Lời <span style="font-size: 0.75rem; font-weight: 400; color: var(--ios-text-secondary);">— tổng <?= (int) ($convStats['total'] ?? 0) ?> phiên</span></h2>
+        <h2 style="font-size: 1.05rem; font-weight: 700;">Hội Thoại <span style="font-size: 0.75rem; font-weight: 400; color: var(--ios-text-secondary);">— tổng <?= (int) ($convStats['total'] ?? 0) ?> phiên</span></h2>
     </div>
     <div style="display: flex; gap: 0.5rem; flex-wrap: wrap; font-size: 0.8rem;">
         <?php
@@ -151,7 +151,7 @@ $_catalogKeys = array_map(static fn ($m): string => (string) ($m['model_key'] ??
             </span>
         <?php endforeach; ?>
         <span style="display: inline-flex; align-items: center; gap: 0.35rem; padding: 0.3rem 0.65rem; border-radius: 999px; border: 1px solid var(--ios-border, rgba(255,255,255,0.15)); color: var(--ios-text-secondary);">
-            🌐 Web: <?= (int) ($convStats['web'] ?? 0) ?> · 📘 FB: <?= (int) ($convStats['fanpage'] ?? 0) ?>
+            WEB: <?= (int) ($convStats['web'] ?? 0) ?> · FB: <?= (int) ($convStats['fanpage'] ?? 0) ?>
         </span>
     </div>
     <p style="font-size: 0.78rem; color: var(--ios-text-secondary); margin-top: 0.6rem;">
@@ -163,12 +163,12 @@ $_catalogKeys = array_map(static fn ($m): string => (string) ($m['model_key'] ??
 <!-- CAB: Danh sách hội thoại (gộp từ trang /admin/ai/conversations) -->
 <div id="cab-conversations" class="glass-card" style="padding: 1.25rem; margin-bottom: 1rem; width: 100%; box-sizing: border-box; scroll-margin-top: 1rem;">
     <div style="display: flex; justify-content: space-between; align-items: center; gap: 0.75rem; flex-wrap: wrap; margin-bottom: 0.9rem;">
-        <h2 style="font-size: 1.05rem; font-weight: 700; margin: 0;">📋 Danh Sách Hội Thoại</h2>
+        <h2 style="font-size: 1.05rem; font-weight: 700; margin: 0;">Hội Thoại</h2>
         <form method="POST" action="/admin/ai/conversations/delete-closed" style="margin: 0;" onsubmit="return confirm('Xóa vĩnh viễn tất cả hội thoại đã đóng và toàn bộ tin nhắn trong đó? Thao tác này không thể hoàn tác.');">
             <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrf_token ?? '') ?>">
             <input type="hidden" name="back" value="<?= htmlspecialchars($convBack) ?>">
             <button type="submit" title="Xóa vĩnh viễn tất cả hội thoại đã đóng" style="padding: 0.4rem 0.75rem; border-radius: var(--radius-sm); border: 1px solid var(--ios-danger); background: transparent; color: var(--ios-danger); font-size: 0.8rem; font-weight: 700; cursor: pointer;">
-                🗑️ Xóa tất cả
+                Purge
             </button>
         </form>
     </div>
@@ -179,7 +179,7 @@ $_catalogKeys = array_map(static fn ($m): string => (string) ($m['model_key'] ??
         <?php if ($convSource !== ''): ?>
             <input type="hidden" name="source" value="<?= htmlspecialchars($convSource) ?>">
         <?php endif; ?>
-        <button type="submit" style="padding: 0.45rem 0.9rem; border-radius: var(--radius-sm); border: none; background: var(--ios-blue); color: #fff; font-weight: 600; font-size: 0.85rem; cursor: pointer;">Tìm</button>
+        <button type="submit" style="padding: 0.45rem 0.9rem; border-radius: var(--radius-sm); border: none; background: var(--ios-blue); color: var(--soc-ink); font-weight: 600; font-size: 0.85rem; cursor: pointer;">Tìm</button>
         <?php if ($convKeyword !== ''): ?>
             <a href="<?= htmlspecialchars($convBuildUrl(['q' => null])) ?>" style="text-decoration: none; padding: 0.45rem 0.9rem; border-radius: var(--radius-sm); border: 1px solid var(--ios-border, rgba(255,255,255,0.15)); color: var(--ios-text-secondary); font-size: 0.85rem;">Xoá lọc</a>
         <?php endif; ?>
@@ -190,8 +190,8 @@ $_catalogKeys = array_map(static fn ($m): string => (string) ($m['model_key'] ??
         <?php
         $convPills = [
             ''         => ['Tất cả nguồn', 'var(--ios-blue)'],
-            'web'      => ['🌐 Website', 'var(--ios-blue)'],
-            'fanpage'  => ['📘 Facebook', '#1877F2'],
+            'web'      => ['Web', 'var(--ios-blue)'],
+            'fanpage'  => ['FB', '#1877F2'],
         ];
         foreach ($convPills as $pillSource => $pillMeta):
             $isActive = $convSource === $pillSource;
@@ -218,7 +218,7 @@ $_catalogKeys = array_map(static fn ($m): string => (string) ($m['model_key'] ??
                     <th>Số Tin</th>
                     <th>Tin Cuối</th>
                     <th>Trạng Thái</th>
-                    <th>Cập Nhật</th>
+                    <th>Lưu</th>
                     <th style="text-align: right;">Thao Tác</th>
                 </tr>
             </thead>
@@ -245,12 +245,12 @@ $_catalogKeys = array_map(static fn ($m): string => (string) ($m['model_key'] ??
                             <td style="font-weight: 700;">#<?= (int) $s['id'] ?></td>
                             <td>
                                 <span style="font-weight: 600; font-size: 0.82rem; color: <?= $sourceColor($src) ?>;">
-                                    <?= $src === 'fanpage' ? '📘' : '🌐' ?> <?= htmlspecialchars($sourceLabels[$src] ?? $src) ?>
+                                    <?= $src === 'fanpage' ? 'FB' : 'WEB' ?> <?= htmlspecialchars($sourceLabels[$src] ?? $src) ?>
                                 </span>
                             </td>
                             <td style="font-size: 0.82rem;">
                                 <?php if ($uid > 0): ?>
-                                    <span style="color: var(--ios-success); font-weight: 600;">👤 <?= htmlspecialchars($uname !== '' ? $uname : ('User #' . $uid)) ?></span>
+                                    <span style="color: var(--ios-success); font-weight: 600;">USR <?= htmlspecialchars($uname !== '' ? $uname : ('User #' . $uid)) ?></span>
                                     <div style="color: var(--ios-text-secondary); font-size: 0.72rem;">Đã đăng nhập<?= $uemail !== '' ? ' · ' . htmlspecialchars($uemail) : '' ?></div>
                                 <?php else: ?>
                                     <span style="color: var(--ios-text-secondary);">Khách vãng lai</span>
@@ -260,7 +260,7 @@ $_catalogKeys = array_map(static fn ($m): string => (string) ($m['model_key'] ??
                             <td style="font-size: 0.82rem;"><?= (int) ($s['message_count'] ?? 0) ?></td>
                             <td style="font-size: 0.8rem; max-width: 300px;">
                                 <?php if ($lastMsg !== ''): ?>
-                                    <span style="color: var(--ios-text-secondary); font-size: 0.72rem;"><?= $lastRole === 'assistant' ? '🤖 AI:' : ($lastRole === 'user' ? '👤 Khách:' : '') ?></span>
+                                    <span style="color: var(--ios-text-secondary); font-size: 0.72rem;"><?= $lastRole === 'assistant' ? 'AI:' : ($lastRole === 'user' ? 'USR:' : '') ?></span>
                                     <?= htmlspecialchars($lastMsg) ?>
                                 <?php else: ?>
                                     <span style="color: var(--ios-text-secondary);">—</span>
@@ -275,7 +275,7 @@ $_catalogKeys = array_map(static fn ($m): string => (string) ($m['model_key'] ??
                                     <button type="button" class="action-btn" title="Thao tác" aria-label="Thao tác hội thoại">⋮</button>
                                     <div class="action-menu" style="min-width: 185px; white-space: nowrap;">
                                         <a href="/admin/ai/conversations/detail?id=<?= (int) $s['id'] ?>" class="action-item">
-                                            <span>👁️</span> Xem hội thoại
+                                            <span>◉</span> Xem
                                         </a>
                                         <?php if ($canClose): ?>
                                             <form method="POST" action="/admin/ai/conversations/close" style="margin: 0;">
@@ -283,7 +283,7 @@ $_catalogKeys = array_map(static fn ($m): string => (string) ($m['model_key'] ??
                                                 <input type="hidden" name="id" value="<?= (int) $s['id'] ?>">
                                                 <input type="hidden" name="back" value="<?= htmlspecialchars($convBack) ?>">
                                                 <button type="submit" class="action-item" style="font-family: inherit;">
-                                                    <span>✅</span> Đã xử lý
+                                                    <span>✓</span> Đã xử lý
                                                 </button>
                                             </form>
                                         <?php else: ?>
@@ -292,7 +292,7 @@ $_catalogKeys = array_map(static fn ($m): string => (string) ($m['model_key'] ??
                                                 <input type="hidden" name="id" value="<?= (int) $s['id'] ?>">
                                                 <input type="hidden" name="back" value="<?= htmlspecialchars($convBack) ?>">
                                                 <button type="submit" class="action-item delete" style="font-family: inherit;">
-                                                    <span>🗑️</span> Xóa hội thoại
+                                                    <span>✕</span> Xóa
                                                 </button>
                                             </form>
                                         <?php endif; ?>
@@ -326,9 +326,9 @@ $_catalogKeys = array_map(static fn ($m): string => (string) ($m['model_key'] ??
 
 <div class="glass-card" style="padding: 1rem 1.25rem; width: 100%; box-sizing: border-box; border-left: 3px solid var(--ios-blue);">
     <div style="font-size: 0.8rem; color: var(--ios-text-secondary); line-height: 1.7;">
-        💡 Nội dung trả lời được điều khiển bởi prompt <code>support_chat</code> / <code>fanpage_comment</code> và
+        Nội dung trả lời được điều khiển bởi prompt <code>support_chat</code> / <code>fanpage_comment</code> và
         Nội quy đã được gộp sẵn trong prompt. Sửa tại
-        <a href="/admin/ai/settings" style="color: var(--ios-blue);">Cấu Hình AI → Nội Quy Hệ Thống</a>.
+        <a href="/admin/ai/settings" style="color: var(--ios-blue);">AI</a>.
         Tab này chỉ theo dõi — không gửi tin nhắn thử theo đúng thiết kế D7.
     </div>
 </div>

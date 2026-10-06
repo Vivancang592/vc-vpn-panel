@@ -54,7 +54,7 @@ require __DIR__ . '/_tab-header.php';
                 <?php endforeach; ?>
             </select>
         </div>
-        <button type="submit" class="glass-btn" data-busy-label="Đang tạo ảnh..." style="justify-self: start; justify-content: center; font-weight: 700; background: var(--ios-blue); color: #fff; white-space: nowrap;">🖼️ Tạo Ảnh Ngay</button>
+        <button type="submit" class="glass-btn" data-busy-label="Đang tạo ảnh..." style="justify-self: start; justify-content: center; font-weight: 700; background: var(--ios-blue); color: var(--soc-ink); white-space: nowrap;">Tạo</button>
     </div>
 </form>
 

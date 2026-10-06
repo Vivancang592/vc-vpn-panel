@@ -30,7 +30,7 @@ ob_start();
     </div>
     <?php if (!empty($userId)): ?>
         <div>
-            <a href="/admin/subscriptions" class="glass-btn" style="text-decoration: none; white-space: nowrap; background: rgba(255, 59, 48, 0.1); color: var(--ios-danger);">✕ Xóa lọc tài khoản</a>
+            <a href="/admin/subscriptions" class="glass-btn" style="text-decoration: none; white-space: nowrap; background: rgba(255, 59, 48, 0.1); color: var(--ios-danger);">Xóa lọc</a>
         </div>
     <?php endif; ?>
 </div>
@@ -86,7 +86,7 @@ ob_start();
                             </td>
                             <td style="text-align: center;">
                                 <span style="padding: 0.15rem 0.5rem; border-radius: var(--radius-sm); font-size: 0.78rem; font-weight: 700; <?= $onlineDevices > 0 ? 'background: rgba(52, 199, 89, 0.15); color: var(--ios-success);' : 'background: rgba(142, 142, 147, 0.12); color: var(--ios-text-secondary);' ?>">
-                                     <?= $onlineDevices ?> 📱
+                                     <?= $onlineDevices ?> DEV
                                 </span>
                             </td>
                             <td style="font-size: 0.85rem;">
@@ -114,48 +114,48 @@ ob_start();
                                     <button type="button" class="action-btn" title="Thao tác">⋮</button>
                                     <div class="action-menu" style="min-width: 185px; white-space: nowrap;">
                                         <a href="/admin/subscriptions/detail?id=<?= $sub['id'] ?>" class="action-item" style="white-space: nowrap; display: flex; align-items: center; gap: 0.5rem;">
-                                            <span>👁️</span> Xem chi tiết
+                                            <span>◉</span> Xem
                                         </a>
                                         <a href="javascript:void(0)" onclick="copySubLink('<?= htmlspecialchars($sub['uuid']) ?>')" class="action-item" style="white-space: nowrap; display: flex; align-items: center; gap: 0.5rem;">
-                                            <span>📋</span> Sao chép Link
+                                            <span>⧉</span> Sao chép Link
                                         </a>
                                         <a href="javascript:void(0)" onclick="openQrModal('<?= htmlspecialchars($sub['uuid']) ?>')" class="action-item" style="white-space: nowrap; display: flex; align-items: center; gap: 0.5rem;">
-                                            <span>📱</span> Mã QR
+                                            <span>◇</span> QR
                                         </a>
 
                                         <div style="border-top: 1px solid rgba(0, 0, 0, 0.08); margin: 0.25rem 0;"></div>
 
                                         <!-- Reset Token (UUID) -->
                                         <button type="submit" form="reset-token-sub-form-<?= $sub['id'] ?>" class="action-item" style="background: none; border: none; width: 100%; text-align: left; cursor: pointer; color: #FF9500; padding: 0.5rem 1rem; font-size: 0.85rem; display: flex; align-items: center; gap: 0.5rem; white-space: nowrap;">
-                                            <span>🔑</span> Reset Token
+                                            <span>◇</span> Token
                                         </button>
 
                                         <!-- Gia hạn gói -->
                                         <button type="submit" form="renew-sub-form-<?= $sub['id'] ?>" class="action-item" style="background: none; border: none; width: 100%; text-align: left; cursor: pointer; color: var(--ios-blue); padding: 0.5rem 1rem; font-size: 0.85rem; display: flex; align-items: center; gap: 0.5rem; white-space: nowrap;">
-                                            <span>🔄</span> Gia hạn gói
+                                            <span>⟳</span> Gia hạn
                                         </button>
 
                                         <!-- Reset lưu lượng -->
                                         <button type="submit" form="reset-traffic-sub-form-<?= $sub['id'] ?>" class="action-item" style="background: none; border: none; width: 100%; text-align: left; cursor: pointer; color: #5856D6; padding: 0.5rem 1rem; font-size: 0.85rem; display: flex; align-items: center; gap: 0.5rem; white-space: nowrap;">
-                                            <span>⚡</span> Reset lưu lượng
+                                            <span>»</span> Reset lưu lượng
                                         </button>
 
                                         <!-- Thay đổi trạng thái -->
                                         <?php if (($sub['status'] ?? '') !== 'active'): ?>
                                             <button type="submit" form="status-active-sub-form-<?= $sub['id'] ?>" class="action-item" style="background: none; border: none; width: 100%; text-align: left; cursor: pointer; color: var(--ios-success); padding: 0.5rem 1rem; font-size: 0.85rem; display: flex; align-items: center; gap: 0.5rem; white-space: nowrap;">
-                                                <span>✅</span> Kích hoạt gói
+                                                <span>✓</span> Kích hoạt gói
                                             </button>
                                         <?php endif; ?>
 
                                         <?php if (($sub['status'] ?? '') === 'active'): ?>
                                             <button type="submit" form="status-suspended-sub-form-<?= $sub['id'] ?>" class="action-item" style="background: none; border: none; width: 100%; text-align: left; cursor: pointer; color: var(--ios-warning); padding: 0.5rem 1rem; font-size: 0.85rem; display: flex; align-items: center; gap: 0.5rem; white-space: nowrap;">
-                                                <span>⏸️</span> Tạm dừng gói
+                                                <span>||</span> Tạm dừng gói
                                             </button>
                                         <?php endif; ?>
 
                                         <?php if (($sub['status'] ?? '') !== 'cancelled'): ?>
                                             <button type="submit" form="status-cancelled-sub-form-<?= $sub['id'] ?>" class="action-item" style="background: none; border: none; width: 100%; text-align: left; cursor: pointer; color: var(--ios-danger); padding: 0.5rem 1rem; font-size: 0.85rem; display: flex; align-items: center; gap: 0.5rem; white-space: nowrap;">
-                                                <span>❌</span> Hủy đăng ký
+                                                <span>✕</span> Hủy đăng ký
                                             </button>
                                         <?php endif; ?>
 
@@ -163,7 +163,7 @@ ob_start();
 
                                         <!-- Xóa gói đăng ký -->
                                         <button type="submit" form="delete-sub-form-<?= $sub['id'] ?>" class="action-item delete" style="background: none; border: none; width: 100%; text-align: left; cursor: pointer; color: var(--ios-danger); padding: 0.5rem 1rem; font-size: 0.85rem; display: flex; align-items: center; gap: 0.5rem; white-space: nowrap;">
-                                            <span>🗑️</span> Xóa gói
+                                            <span>✕</span> Xóa gói
                                         </button>
                                     </div>
                                 </div>
@@ -252,7 +252,7 @@ ob_start();
 
 <!-- Modal Hiển Thị Mã QR -->
 <div id="qrModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); backdrop-filter: blur(5px); z-index: 9999; align-items: center; justify-content: center;">
-    <div class="glass-card" style="padding: 1.5rem; max-width: 320px; width: 90%; text-align: center; position: relative; background: rgba(255, 255, 255, 0.95);">
+    <div class="glass-card" style="padding: 1.5rem; max-width: 320px; width: 90%; text-align: center; position: relative; background: rgba(8, 13, 22, 0.98);">
         <h3 style="margin-top: 0; font-size: 1.1rem; font-weight: 700;">Quét Mã QR Đăng Ký</h3>
         <div style="margin: 1rem 0; padding: 0.75rem; background: #fff; border-radius: var(--radius-sm); display: inline-block;">
             <img id="qrCodeImg" src="" alt="QR Code" style="width: 200px; height: 200px; display: block;">

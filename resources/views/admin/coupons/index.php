@@ -38,7 +38,7 @@ ob_start();
         <p style="color: var(--ios-text-secondary); font-size: 0.85rem;">Danh sách tất cả mã khuyến mãi và ưu đãi trong hệ thống</p>
     </div>
     <div style="display: flex; justify-content: flex-end; margin-top: 0.75rem;">
-        <a href="/admin/coupons/create" class="glass-btn" style="text-decoration: none; white-space: nowrap;">+ Thêm Mã Giảm Giá</a>
+        <a href="/admin/coupons/create" class="glass-btn" style="text-decoration: none; white-space: nowrap;">+ Thêm</a>
     </div>
 </div>
 
@@ -125,12 +125,12 @@ ob_start();
                                         <button type="button" class="action-btn" title="Thao tác">⋮</button>
                                         <div class="action-menu">
                                             <a href="/admin/coupons/edit?id=<?= $coupon['id'] ?>" class="action-item">
-                                                <span>✏️</span> Chỉnh sửa
+                                                <span>✎</span> Sửa
                                             </a>
                                             <form method="POST" action="/admin/coupons/delete" onsubmit="return confirm('Bạn có chắc chắn muốn xóa mã giảm giá này?');" style="margin: 0;">
                                                 <input type="hidden" name="id" value="<?= $coupon['id'] ?>">
                                                 <button type="submit" class="action-item delete" style="background: none; border: none; width: 100%; text-align: left; cursor: pointer; color: var(--ios-danger); padding: 0.5rem 1rem; font-size: 0.85rem; display: flex; align-items: center; gap: 0.5rem;">
-                                                    <span>🗑️</span> Xóa mã
+                                                    <span>✕</span> Xóa
                                                 </button>
                                             </form>
                                         </div>
