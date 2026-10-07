@@ -166,7 +166,25 @@ crontab -e
 ```bash
 #?key=YOUR_CRON_SECRET_KEY — lấy giá trị CRON_SECRET_KEY trong file .env
 */5 * * * * curl -s "https://vpn2s.linksub24h.com/api/cron/check-subscriptions?key=YOUR_CRON_SECRET_KEY" > /dev/null 2>&1
+
+# Worker AI nền — xử lý task AI còn xếp hàng (không dùng AI nền thì bỏ dòng này)
+*/1 * * * * cd /www/wwwroot/vpn2s.linksub24h.com && php tools/ai_worker.php > /dev/null 2>&1
 ```
+
+---
+
+## 🤖 Cấu Hình AI Tự Động (Lần Đầu)
+
+* **Module AI:** bản SQL hiện tại đã seed sẵn 6 module trong bảng `vc_ai_modules`. Nếu bạn đang dùng bản SQL cũ và gặp lỗi *"Module ... chưa được đăng ký trong cơ sở dữ liệu"*, hãy chạy một lần:
+
+```bash
+php tools/ai_worker.php --sync-modules
+```
+
+* **Bước 1 — Nhập khoá Kira API:** Đăng nhập Admin → **Trung Tâm AI** → **Cài đặt** → thẻ **Khoá API** → dán khoá → bấm **Lưu**.
+* **Bước 2 — Đồng bộ danh sách model:** **Trung Tâm AI** → **Tổng Quan** → mục **Danh Sách Model AI** → bấm **Sync** (mới cài danh sách đang rỗng — hệ thống sẽ lấy catalog từ Kira).
+* **Bước 3 — Chọn model cho phân hệ:** mở **Trả Lời Tự Động** (và các tab phân hệ khác) → chọn model muốn dùng cho trả lời tự động.
+
 ---
 
 * ##cấu trúc dự án:
