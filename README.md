@@ -294,20 +294,7 @@ vc-vpn-2027/
 │   ├── app.php
 │   └── database.php
 ├── database/
-│   ├── migrations/
-│   │   ├── 20260927_add_ai_core_tables.sql
-│   │   ├── 20260928_drop_prompt_tables.sql
-│   │   ├── 20260928_drop_unused_ai_tables.sql
-│   │   ├── 20260929_p12_drop_content_prompt.sql
-│   │   ├── 20260930_add_output_id_scheduled_posts.sql
-│   │   ├── 20261002_add_vpn_plan_stock.sql
-│   │   ├── 20261002_retain_outputs_when_pruning_ai_tasks.sql
-│   │   ├── 20261005_add_network_locked_until.sql
-│   │   ├── 20261006_add_connected_devices.sql
-│   │   └── 20261006_add_task_error_msg.sql
 │   └── vpn_service.sql
-├── docs/
-│   └── task-contract.md
 ├── public/
 │   ├── assets/
 │   │   ├── audio/
@@ -511,31 +498,22 @@ vc-vpn-2027/
 │   ├── logs/
 │   │   └── .gitkeep
 │   ├── prompts/
+│   │   ├── admin_assistant.txt
 │   │   ├── audio_tts.txt
 │   │   ├── content_article.txt
 │   │   ├── fanpage_comment.txt
 │   │   ├── image_generation.txt
-│   │   ├── rules_auto_reply.txt
-│   │   ├── rules_fanpage_content.txt
-│   │   ├── rules_image.txt
-│   │   ├── rules_video.txt
-│   │   ├── rules_video_dubbing.txt
 │   │   ├── support_chat.txt
 │   │   └── video_generation.txt
 │   └── tmp/
 ├── tools/
-│   ├── ai_core_selftest.php
-│   ├── ai_worker.php
-│   ├── kira_probe.php
-│   ├── seed_prompts.php
-│   └── verify_phase2_ai_flow.php
+│   └── ai_worker.php
 ├── .env.example
 ├── .gitignore
 ├── .htaccess
 ├── composer.json
 ├── composer.lock
 ├── README.md
-├── SKILL.md
 ├── vc_install.sh
 └── vc_update.sh
 ```

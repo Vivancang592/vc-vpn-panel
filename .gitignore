@@ -8,3 +8,12 @@
 .claude/
 /public/uploads/*
 !/public/uploads/.htaccess
+# File dev/test — không đưa lên release
+/SECURITY_FIX_PLAN.md
+/SKILL.md
+/docs/task-contract.md
+/tools/ai_core_selftest.php
+/tools/kira_probe.php
+/tools/seed_prompts.php
+/tools/verify_phase2_ai_flow.php
+/public/assets/images/logo.png
