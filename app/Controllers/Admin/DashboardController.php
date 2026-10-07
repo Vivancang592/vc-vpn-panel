@@ -48,8 +48,14 @@ class DashboardController extends BaseController
 
     public function deleteNotification(): void
     {
+        if (!$this->validateCsrfToken($_POST['csrf_token'] ?? '')) {
+            $_SESSION['flash_message'] = 'Phiên làm việc không hợp lệ. Vui lòng tải lại trang.';
+            $_SESSION['flash_type'] = 'danger';
+            $this->redirect('/admin/notifications');
+        }
+
         $adminId = (int) $_SESSION['user_id'];
-        $id = trim((string) ($_REQUEST['id'] ?? ''));
+        $id = trim((string) ($_POST['id'] ?? ''));
         if ($id !== '') {
             NotificationService::deleteAdminNotification($adminId, $id);
             $_SESSION['flash_message'] = 'Đã xóa thông báo.';

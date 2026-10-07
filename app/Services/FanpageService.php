@@ -605,7 +605,8 @@ class FanpageService
     {
         $appSecret = trim((string) ($this->settings['fanpage_app_secret'] ?? getenv('FANPAGE_APP_SECRET') ?: ''));
         if ($appSecret === '') {
-            return true;
+            // Fail-closed: chưa cấu hình secret thì từ chối mọi webhook (không xác thực được).
+            return false;
         }
 
         $signatureHeader = trim($signatureHeader);

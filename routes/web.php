@@ -91,7 +91,6 @@ return [
     'GET /admin'                          => ['Admin\DashboardController', 'index'],
     'GET /admin/notifications'            => ['Admin\DashboardController', 'notifications'],
     'POST /admin/notifications/read-all'  => ['Admin\DashboardController', 'markAllNotificationsAsRead'],
-    'GET /admin/notifications/delete'     => ['Admin\DashboardController', 'deleteNotification'],
     'POST /admin/notifications/delete'    => ['Admin\DashboardController', 'deleteNotification'],
     'POST /admin/notifications/clear'     => ['Admin\DashboardController', 'clearAllNotifications'],
     

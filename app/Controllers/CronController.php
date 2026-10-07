@@ -48,12 +48,13 @@ class CronController extends BaseController
      */
     public function checkSubscriptions(): void
     {
-        // 1. Kiểm tra Secret Key từ tham số URL (?key=VC_VPN_CRON_2027_SECRET)
+        // 1. Kiểm tra Secret Key từ header X-Cron-Key hoặc tham số URL (?key=CRON_SECRET_KEY)
         $settingModel = new Setting();
-        $cronSecret = $settingModel->get('cron_secret_key', 'VC_VPN_CRON_2027_SECRET');
-        $providedKey = $_GET['key'] ?? '';
+        $cronSecret = trim((string) ($settingModel->get('cron_secret_key', '') ?: getenv('CRON_SECRET_KEY')));
+        $providedKey = $_SERVER['HTTP_X_CRON_KEY'] ?? $_GET['key'] ?? '';
+        $providedKey = is_string($providedKey) ? trim($providedKey) : '';
 
-        if (!hash_equals($cronSecret, $providedKey)) {
+        if ($cronSecret === '' || !hash_equals($cronSecret, $providedKey)) {
             $this->json(['status' => false, 'message' => 'Truy cập không hợp lệ.'], 403);
             return;
         }
@@ -308,10 +309,11 @@ class CronController extends BaseController
     public function autoPostFanpage(): void
     {
         $settingModel = new Setting();
-        $cronSecret = $settingModel->get('cron_secret_key', 'VC_VPN_CRON_2027_SECRET');
-        $providedKey = $_GET['key'] ?? '';
+        $cronSecret = trim((string) ($settingModel->get('cron_secret_key', '') ?: getenv('CRON_SECRET_KEY')));
+        $providedKey = $_SERVER['HTTP_X_CRON_KEY'] ?? $_GET['key'] ?? '';
+        $providedKey = is_string($providedKey) ? trim($providedKey) : '';
 
-        if (!hash_equals($cronSecret, $providedKey)) {
+        if ($cronSecret === '' || !hash_equals($cronSecret, $providedKey)) {
             $this->json(['status' => false, 'message' => 'Truy cập không hợp lệ.'], 403);
             return;
         }

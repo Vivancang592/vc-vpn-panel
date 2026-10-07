@@ -123,6 +123,10 @@ final class AiVideoController extends AiBaseController
                 $this->flash('File tải lên không phải ảnh (phát hiện: ' . ($mime !== '' ? $mime : 'không rõ') . ').', 'danger', $back);
                 return;
             }
+            if (@getimagesize($tmpPath) === false) {
+                $this->flash('File tải lên không phải ảnh hợp lệ.', 'danger', $back);
+                return;
+            }
 
             try {
                 (new \App\AI\Assets\AssetManager($this->aiConfig))->saveContent(

@@ -6,3 +6,5 @@
 /storage/_legacy_backup/
 /storage/assistant/
 .claude/
+/public/uploads/*
+!/public/uploads/.htaccess

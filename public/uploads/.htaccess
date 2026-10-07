@@ -1,0 +1,13 @@
+# Chặn thực thi mã trong thư mục tải lên (chống webshell / upload RCE)
+<IfModule mod_php.c>
+    php_flag engine off
+</IfModule>
+<IfModule mod_php7.c>
+    php_flag engine off
+</IfModule>
+
+<IfModule mod_authz_core.c>
+    <FilesMatch "(?i)\.(php|phtml|php\d|phar|cgi|pl|py|asp|aspx|jsp|sh)$">
+        Require all denied
+    </FilesMatch>
+</IfModule>

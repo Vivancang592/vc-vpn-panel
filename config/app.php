@@ -25,5 +25,5 @@ return [
     | Cấu hình Webhook MacroDroid / SePay
     |--------------------------------------------------------------------------
     */
-    'macrodroid_secret' => getenv('MACRODROID_SECRET') ?: 'vc_vpn_macrodroid_secret_2027',
+    'macrodroid_secret' => getenv('MACRODROID_SECRET') ?: '',
 ];

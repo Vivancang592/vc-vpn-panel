@@ -114,6 +114,16 @@ DB_PASS_ESCAPED="$(escape_sed_replacement "$DB_PASS")"
 DOMAIN_ESCAPED="$(escape_sed_replacement "$DOMAIN")"
 sed -i "s|^DB_DRIVER=.*|DB_DRIVER=mysql|; s|^DB_HOST=.*|DB_HOST=127.0.0.1|; s|^DB_PORT=.*|DB_PORT=3306|; s|^DB_DATABASE=.*|DB_DATABASE=$DB_NAME_ESCAPED|; s|^DB_USERNAME=.*|DB_USERNAME=$DB_USER_ESCAPED|; s|^DB_PASSWORD=.*|DB_PASSWORD=$DB_PASS_ESCAPED|; s|^APP_URL=.*|APP_URL=https://$DOMAIN_ESCAPED|" "$APP_PATH/.env"
 unset DB_PASS
+
+# Sinh secret Webhook thanh toán ngẫu nhiên (bắt buộc để xác thực webhook)
+MACRODROID_SECRET_VALUE="$(php -r 'echo bin2hex(random_bytes(32));')"
+sed -i "s|^MACRODROID_SECRET=.*|MACRODROID_SECRET=$MACRODROID_SECRET_VALUE|" "$APP_PATH/.env"
+unset MACRODROID_SECRET_VALUE
+
+# Sinh secret CronJob ngẫu nhiên (bắt buộc để gọi endpoint cron)
+CRON_SECRET_KEY_VALUE="$(php -r 'echo bin2hex(random_bytes(32));')"
+sed -i "s|^CRON_SECRET_KEY=.*|CRON_SECRET_KEY=$CRON_SECRET_KEY_VALUE|" "$APP_PATH/.env"
+unset CRON_SECRET_KEY_VALUE
 echo -e " ${GREEN}✔ Cấu hình .env hoàn tất.${NC}"
 
 # 5. Cài đặt thư viện qua Composer

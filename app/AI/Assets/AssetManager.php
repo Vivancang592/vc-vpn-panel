@@ -59,7 +59,7 @@ final class AssetManager
         $this->assertKind($kind);
 
         $mimeType = $mimeType ?? $this->detectMimeTypeFromBinary($binary);
-        $extension = $this->extensionFor($kind, $mimeType, $originalName);
+        $extension = $this->extensionFor($kind, $mimeType);
 
         $relativePath = $this->buildRelativePath($kind, $extension, $subdir);
         $absolutePath = $this->absolutePath($relativePath);
@@ -353,15 +353,9 @@ final class AssetManager
         return is_string($mime) && $mime !== '' ? $mime : null;
     }
 
-    private function extensionFor(string $kind, ?string $mimeType, ?string $originalName): string
+    private function extensionFor(string $kind, ?string $mimeType): string
     {
-        if ($originalName !== null && str_contains($originalName, '.')) {
-            $ext = strtolower(pathinfo($originalName, PATHINFO_EXTENSION));
-            if ($ext !== '' && preg_match('/^[a-z0-9]{1,5}$/', $ext) === 1) {
-                return $ext;
-            }
-        }
-
+        // Chỉ suy extension từ MIME map — không tin tên file gốc để tránh lưu script vào webroot.
         $map = [
             'image/jpeg'      => 'jpg',
             'image/png'       => 'png',

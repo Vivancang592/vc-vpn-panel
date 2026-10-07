@@ -65,6 +65,14 @@ if ! composer install --no-dev --optimize-autoloader --working-dir="$APP_PATH"; 
 fi
 echo -e " ${GREEN}✔ Hoàn tất cập nhật thư viện PHP.${NC}"
 
+# 3.0. Sinh CRON_SECRET_KEY nếu chưa có (thay thế secret mặc định đã bị loại bỏ vì công khai)
+if [ -f "$APP_PATH/.env" ] && ! grep -q "^CRON_SECRET_KEY=..*" "$APP_PATH/.env"; then
+    CRON_SECRET_KEY_VALUE="$(php -r 'echo bin2hex(random_bytes(32));')"
+    printf '\n# Secret xác thực CronJob (cập nhật URL crontab cho khớp)\nCRON_SECRET_KEY=%s\n' "$CRON_SECRET_KEY_VALUE" >> "$APP_PATH/.env"
+    unset CRON_SECRET_KEY_VALUE
+    echo -e " ${GREEN}✔ Đã sinh CRON_SECRET_KEY trong .env — hãy cập nhật URL crontab cho khớp.${NC}"
+fi
+
 # 3.1. Áp dụng migration audit đơn hàng (an toàn khi chạy lại nhiều lần)
 ORDER_AUDIT_MIGRATION="$APP_PATH/database/migrations/20260918_add_order_audit_users.sql"
 if [ -f "$ORDER_AUDIT_MIGRATION" ] && [ -f "$APP_PATH/.env" ]; then

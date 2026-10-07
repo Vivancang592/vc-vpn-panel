@@ -82,10 +82,14 @@ ob_start();
                 };
             ?>
             <article class="glass-card user-notification-item" style="position: relative; padding: 1rem 2.25rem 1rem 1.25rem; border-left: 4px solid <?= $borderLeftColor ?>; <?= !$isRead ? 'background: rgba(34, 211, 238, 0.07); box-shadow: 0 4px 15px rgba(0, 0, 0, 0.25);' : 'opacity: 0.85;' ?> border-radius: var(--radius-md, 12px);">
-                <!-- Nút X xóa thông báo ở góc phải trên -->
-                <a href="/admin/notifications/delete?id=<?= urlencode($item['id']) ?>" onclick="return confirm('Xóa thông báo này?');" title="Xóa thông báo" style="position: absolute; top: 0.6rem; right: 0.75rem; width: 22px; height: 22px; display: flex; align-items: center; justify-content: center; color: var(--ios-text-secondary); text-decoration: none; font-size: 1.2rem; line-height: 1; border-radius: 50%; background: transparent; transition: all 0.2s;" onmouseover="this.style.color='var(--ios-danger, #ff3b30)'; this.style.background='rgba(255,59,48,0.1)';" onmouseout="this.style.color='var(--ios-text-secondary)'; this.style.background='transparent';">
-                    &times;
-                </a>
+                <!-- Nút X xóa thông báo ở góc phải trên (POST + CSRF để tránh mutating qua GET) -->
+                <form method="POST" action="/admin/notifications/delete" onsubmit="return confirm('Xóa thông báo này?');" style="margin: 0; position: absolute; top: 0.6rem; right: 0.75rem;">
+                    <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrf_token ?? '') ?>">
+                    <input type="hidden" name="id" value="<?= htmlspecialchars($item['id']) ?>">
+                    <button type="submit" title="Xóa thông báo" style="width: 22px; height: 22px; padding: 0; display: flex; align-items: center; justify-content: center; color: var(--ios-text-secondary); text-decoration: none; font-size: 1.2rem; line-height: 1; border: 0; border-radius: 50%; background: transparent; cursor: pointer; transition: all 0.2s;" onmouseover="this.style.color='var(--ios-danger, #ff3b30)'; this.style.background='rgba(255,59,48,0.1)';" onmouseout="this.style.color='var(--ios-text-secondary)'; this.style.background='transparent';">
+                        &times;
+                    </button>
+                </form>
 
                 <div>
                     <div style="display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; margin-bottom: 0.35rem; padding-right: 1.5rem;">

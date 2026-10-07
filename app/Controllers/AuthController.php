@@ -487,6 +487,11 @@ class AuthController extends BaseController
             return;
         }
 
+        if (isset($_SESSION['forgot_otp_lockout']) && $now < $_SESSION['forgot_otp_lockout']) {
+            $this->json(['success' => false, 'message' => 'Quá nhiều lần thử sai. Vui lòng thử lại sau 15 phút.'], 429);
+            return;
+        }
+
         if (class_exists('App\Models\User')) {
             $userModel = new User();
             $user = $userModel->findByUsernameOrEmailStrict($email);
@@ -500,9 +505,11 @@ class AuthController extends BaseController
             $_SESSION['forgot_otp'] = [
                 'email'      => $user['email'],
                 'code'       => $otpCode,
-                'expires_at' => $now + 300
+                'expires_at' => $now + 300,
+                'attempts'   => 0
             ];
             $_SESSION['forgot_otp_cooldown'] = $now;
+            unset($_SESSION['forgot_otp_lockout']);
 
             $mailService = new MailService();
             $sent = $mailService->send($user['email'], 'Mã xác thực khôi phục mật khẩu', 'auth.reset-password', [
@@ -536,11 +543,27 @@ class AuthController extends BaseController
             $this->redirect('/forgot-password');
         }
 
+        if (isset($_SESSION['forgot_otp_lockout']) && time() < $_SESSION['forgot_otp_lockout']) {
+            $_SESSION['error'] = 'Quá nhiều lần thử sai. Vui lòng thử lại sau 15 phút.';
+            $this->redirect('/forgot-password');
+        }
+
         $sessionOtp = $_SESSION['forgot_otp'] ?? null;
         if (!$sessionOtp || 
             !hash_equals($sessionOtp['email'], $email) || 
             !hash_equals($sessionOtp['code'], $otpCode) || 
             time() > ($sessionOtp['expires_at'] ?? 0)) {
+            // Chống brute force: tối đa 5 lần sai → hủy OTP và khóa 15 phút.
+            if (is_array($sessionOtp)) {
+                $attempts = (int) ($sessionOtp['attempts'] ?? 0) + 1;
+                if ($attempts >= 5) {
+                    unset($_SESSION['forgot_otp'], $_SESSION['forgot_otp_cooldown']);
+                    $_SESSION['forgot_otp_lockout'] = time() + 900;
+                    $_SESSION['error'] = 'Quá nhiều lần thử sai. Vui lòng thử lại sau 15 phút.';
+                    $this->redirect('/forgot-password');
+                }
+                $_SESSION['forgot_otp']['attempts'] = $attempts;
+            }
             $_SESSION['error'] = 'Mã xác thực OTP không chính xác hoặc đã hết hạn.';
             $this->redirect('/forgot-password');
         }
@@ -554,7 +577,7 @@ class AuthController extends BaseController
                 $userModel->update($user['id'], [
                     'password_hash' => $hashedPassword
                 ]);
-                unset($_SESSION['forgot_otp'], $_SESSION['forgot_otp_cooldown']);
+                unset($_SESSION['forgot_otp'], $_SESSION['forgot_otp_cooldown'], $_SESSION['forgot_otp_lockout']);
 
                 $_SESSION['success'] = 'Mật khẩu đã được cập nhật thành công. Vui lòng đăng nhập.';
                 $this->redirect('/login');
