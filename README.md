@@ -48,7 +48,7 @@ URL=https://www.aapanel.com/script/install_panel_en.sh && if [ -f /usr/bin/curl 
 2. **Cấu hình bảo mật trong file `php.ini`:** Vào **aaPanel > App Store > PHP 8.4 > Configuration / Disabled functions**:
    * **Tắt các hàm nguy hiểm (Disabled functions):**
      ```ini
-     disable_functions = exec, system, passthru, shell_exec, proc_open, popen
+     disable_functions = exec, system, passthru, shell_exec, proc_open, popen, putenv
      ```
    * **Tắt hiển thị lỗi trực tiếp (Configuration > display_errors):**
      ```ini
@@ -61,7 +61,16 @@ URL=https://www.aapanel.com/script/install_panel_en.sh && if [ -f /usr/bin/curl 
 
 ---
 
-### Bước 5: Di chuyển vào thư mục cài đặt
+### Bước 5: Tạo Website & Database trên aaPanel
+* **Mục đích:** Tạo tên miền (thư mục chứa mã nguồn) và cơ sở dữ liệu trước khi cài — script `vc_install.sh` chỉ import dữ liệu vào database có sẵn, **không tự tạo database**.
+
+1. **Tạo Website:** Vào **aaPanel > Website > Add Website**, nhập tên miền (ví dụ `vpn2s.linksub24h.com`). aaPanel sẽ tạo thư mục gốc `/www/wwwroot/vpn2s.linksub24h.com`.
+2. **Tạo Database:** Vào **aaPanel > Database > Add Database**, tạo database + user/password (vd. database `vpn2s`) rồi **ghi nhớ lại** — bước chạy script ở cuối sẽ hỏi thông tin này để import dữ liệu.
+3. **Gán PHP 8.4** cho website vừa tạo: vào trang Website đó > **PHP Version** > chọn **PHP-8.4**.
+
+---
+
+### Bước 6: Di chuyển vào thư mục cài đặt
 * **Mục đích:** Truy cập đúng thư mục gốc của trang web trên Server.
 
 ```bash
@@ -70,7 +79,7 @@ cd /www/wwwroot/vpn2s.linksub24h.com
 
 ---
 
-### Bước 6: Tải mã nguồn từ GitHub
+### Bước 7: Tải mã nguồn từ GitHub
 * **Mục đích:** Clone toàn bộ mã nguồn của dự án về thư mục hiện tại (Lưu ý dấu chấm ` .` ở cuối lệnh).
 
 ```bash
@@ -79,7 +88,7 @@ git clone https://github.com/Vivancang592/vc-vpn-panel.git .
 
 ---
 
-### Bước 7: Phân quyền file cài đặt
+### Bước 8: Phân quyền file cài đặt
 * **Mục đích:** Cấp quyền thực thi (`+x`) cho file script `vc_install.sh`.
 
 ```bash
@@ -88,7 +97,7 @@ chmod +x vc_install.sh
 
 ---
 
-### Bước 8: Chạy Script cài đặt tự động
+### Bước 9: Chạy Script cài đặt tự động
 * **Mục đích:** Khởi chạy quá trình tự động thiết lập hệ thống, cơ sở dữ liệu và cấu hình ban đầu.
 
 ```bash
@@ -99,9 +108,9 @@ chmod +x vc_install.sh
 
 ## 🌐 Cấu Hình Web Server & Điều Hướng (Apache / `.htaccess`)
 
-* **Mục đích:** Cấu hình tệp `.htaccess` tại thư mục gốc của dự án (`vc_public/` hoặc thư mục web root) để chặn duyệt thư mục trái phép và chuyển hướng tất cả Request về tệp `index.php` phục vụ cơ chế Router.
+* **Mục đích:** Cấu hình tệp `.htaccess` — mã nguồn đã bao gồm sẵn 2 tệp: `.htaccess` ở thư mục gốc dự án (tự chuyển mọi request vào `public/`) và `public/.htaccess` (chặn duyệt thư mục, xử lý Authorization Header và điều hướng toàn bộ URL về `index.php` phục vụ Router). Trong aaPanel, **Site Root** của website trỏ về thư mục gốc dự án (mặc định `/www/wwwroot/<tên-miền>`).
 
-Tạo hoặc chỉnh sửa tệp `.htaccess` với nội dung sau:
+Nội dung phần điều hướng của `public/.htaccess` (đã đi kèm sẵn trong mã nguồn):
 
 ```apache
 <IfModule mod_rewrite.c>
@@ -125,6 +134,7 @@ Tạo hoặc chỉnh sửa tệp `.htaccess` với nội dung sau:
   * `RewriteCond %{REQUEST_FILENAME} !-f`: Kiểm tra nếu đường dẫn KHÔNG trỏ tới một tệp tin thực tế.
   * `RewriteCond %{REQUEST_FILENAME} !-d`: Kiểm tra nếu đường dẫn KHÔNG trỏ tới một thư mục thực tế.
   * `RewriteRule ^ index.php [L]`: Chuyển hướng toàn bộ yêu cầu còn lại vào file `index.php` làm lối vào duy nhất (Single Entry Point).
+  * **Cache tĩnh:** `public/.htaccess` còn cấu hình cache CSS/JS/hình/font 1 năm (`mod_expires` + `mod_headers`) — đã đi kèm sẵn trong mã nguồn, không cần thao tác thêm.
 
 ---
 
@@ -154,7 +164,8 @@ crontab -e
 ```
 
 ```bash
-*/5 * * * * curl -s "https://vpn2s.linksub24h.com/api/cron/check-subscriptions?key=VC_VPN_CRON_2027_SECRET" > /dev/null 2>&1
+#?key=YOUR_CRON_SECRET_KEY — lấy giá trị CRON_SECRET_KEY trong file .env
+*/5 * * * * curl -s "https://vpn2s.linksub24h.com/api/cron/check-subscriptions?key=YOUR_CRON_SECRET_KEY" > /dev/null 2>&1
 ```
 ---
 
