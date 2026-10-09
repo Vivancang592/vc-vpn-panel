@@ -7,6 +7,12 @@ $extraJs = 'admin';
 // class này → theme SOC không rò rỉ sang khu user.
 $vcAdminShell = true;
 
+// Icon Lucide nội tuyến cho khu Admin. BaseController đã nạp khi render view
+// 'admin.*'; require_once ở đây giữ layout an toàn nếu được require trực tiếp.
+if (!function_exists('vc_admin_icon')) {
+    require_once BASE_PATH . '/resources/views/components/admin-icons.php';
+}
+
 /* --- Nhóm tab admin + trang hiện tại (tính TRƯỚC khi render) --- */
 $adminGroups = [
     'infrastructure' => [
@@ -73,7 +79,7 @@ $renderGroupTabs = function () use ($activeAdminGroup, $activeMenu) {
     <nav class="admin-group-tabs" aria-label="<?= htmlspecialchars($activeAdminGroup['label']) ?>">
         <?php foreach ($activeAdminGroup['tabs'] as $tabMenu => $tab): ?>
             <a href="<?= $tab['url'] ?>" class="admin-group-tab <?= $activeMenu === $tabMenu ? 'active' : '' ?>" <?= $activeMenu === $tabMenu ? 'aria-current="page"' : '' ?>>
-                <span><?= $tab['icon'] ?></span> <?= htmlspecialchars($tab['label']) ?>
+                <?= vc_admin_icon($tab['icon'], 15) ?> <?= htmlspecialchars($tab['label']) ?>
             </a>
         <?php endforeach; ?>
     </nav>

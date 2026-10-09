@@ -38,7 +38,7 @@ ob_start();
 </style>
 
 <div class="va-landing">
-    <div class="va-ico">AI</div>
+    <div class="va-ico"><?= vc_admin_icon_svg('bot', 40) ?></div>
     <h1>Trợ Lý Admin</h1>
     <p>
         Trợ lý giờ là <b>bong bóng nổi toàn trang admin</b> — xuất hiện ở góc dưới phải

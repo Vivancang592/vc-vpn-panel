@@ -89,7 +89,7 @@ ob_start();
                                     <button type="button" class="action-btn" title="Thao tác">⋮</button>
                                     <div class="action-menu">
                                         <a href="/admin/tickets/detail?id=<?= $ticket['id'] ?>" class="action-item">
-                                            <span>AI</span> Xem & Phản hồi
+                                            <span><?= vc_admin_icon('RPL', 15) ?></span> Xem & Phản hồi
                                         </a>
                                         <?php if (($ticket['status'] ?? '') === 'closed'): ?>
                                             <form method="POST" action="/admin/tickets/delete" onsubmit="return confirm('Bạn có chắc chắn muốn xóa ticket đã đóng này? Hành động này không thể hoàn tác!');">

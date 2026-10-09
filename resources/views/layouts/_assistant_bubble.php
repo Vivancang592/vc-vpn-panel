@@ -12,10 +12,10 @@ $plans = $plans ?? [];
 // Model list KHÔNG nhúng ở đây — select được populate trong bootstrap() khi mở bong bóng.
 
 $planKindIcons = [
-    'general' => 'GEN',
-    'sales'   => 'BIZ',
-    'content' => 'CNT',
-    'other'   => 'OTH',
+    'general' => vc_admin_icon('GEN', 14),
+    'sales'   => vc_admin_icon('BIZ', 14),
+    'content' => vc_admin_icon('CNT', 14),
+    'other'   => vc_admin_icon('OTH', 14),
 ];
 $suggestions = [
     'Doanh thu tháng này bao nhiêu?',
@@ -354,14 +354,14 @@ $suggestions = [
 
     /* ================= Bong bóng nổi + popup toàn màn hình ================= */
     .vc-asst-fab {
-        position: fixed; right: 22px; bottom: 22px; width: 64px; height: 64px; border-radius: 50%;
+        position: fixed; right: 22px; bottom: 22px; width: 50px; height: 50px; border-radius: 50%;
         border: none; cursor: pointer; z-index: 10035;
-        background: transparent; font-size: 2rem; /* bỏ nền — chỉ hiển thị icon */
+        background: #02f7f7; font-size: 2rem; /* bỏ nền — chỉ hiển thị icon */
         display: flex; align-items: center; justify-content: center;
         filter: drop-shadow(0 4px 10px rgba(0, 0, 0, 0.45));
         transition: transform 0.15s ease;
     }
-    .vc-asst-fab:hover { transform: scale(1.12); }
+    .vc-asst-fab:hover { transform: scale(1.12); border: 1px solid rgba(2, 96, 247, 0.8); }
     .vc-asst-popup {
         position: fixed; inset: 0; z-index: 10038; display: none;
         background: rgba(7, 11, 20, 0.97);
@@ -385,13 +385,13 @@ $suggestions = [
 </style>
 
 <!-- Bong bóng nổi toàn trang admin → nhấp vào mở popup toàn màn hình -->
-<button type="button" class="vc-asst-fab" id="vc-asst-fab" title="Mở Trợ Lý Admin">AI</button>
+<button type="button" class="vc-asst-fab" id="vc-asst-fab" title="Mở Trợ Lý Admin"><?= vc_admin_icon_svg('bot', 34, 'asst-fab-icon') ?></button>
 <div class="vc-asst-popup" id="vc-asst-popup" aria-hidden="true">
 <div class="vc-asst-popup-inner">
 
 <div class="asst-head">
     <div class="asst-head-info">
-        <span class="asst-head-icon" aria-hidden="true">AI</span>
+        <span class="asst-head-icon" aria-hidden="true"><?= vc_admin_icon_svg('bot', 27) ?></span>
         <div>
             <h1>Trợ Lý Admin</h1>
             <p>Trợ lý AI của admin — tra cứu số liệu, khách hàng, chi phí &amp; soạn kế hoạch. Lịch sử lưu tại <code>storage/assistant/</code>.</p>
@@ -498,7 +498,7 @@ $suggestions = [
 
 <template id="asst-welcome-tpl">
     <div class="asst-welcome">
-        <div class="asst-welcome-icon">AI</div>
+        <div class="asst-welcome-icon"><?= vc_admin_icon_svg('bot', 40) ?></div>
         <h3>Trợ lý admin sẵn sàng</h3>
         <p>Hỏi bất cứ điều gì về số liệu bán hàng, khách hàng, gói cước, chi phí — hoặc nhờ soạn thông báo, kế hoạch. Nếu chưa có hướng dẫn sẵn, trợ lý sẽ tự tra số liệu mới nhất để trả lời.</p>
         <div class="asst-sugs">
@@ -524,6 +524,9 @@ $suggestions = [
     var HAS_MODEL = false;
     var booted    = false;   // true sau khi bootstrap xong
     var KIND_ICONS = <?= json_encode($planKindIcons, JSON_UNESCAPED_UNICODE) ?>;
+    // Avatar bong bóng chat: trợ lý AI = icon Bot, admin = icon Users (Lucide inline <svg>).
+    var AVATAR_AI   = <?= json_encode(vc_admin_icon_svg('bot', 17, 'asst-avatar-icon'), JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) ?>;
+    var AVATAR_USER = <?= json_encode(vc_admin_icon_svg('users', 17, 'asst-avatar-icon'), JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) ?>;
 
     var STORE_CONV  = 'vcAsstConv';
     var STORE_MODEL = 'vcAsstModel';
@@ -791,7 +794,7 @@ $suggestions = [
             return;
         }
         planListEl.innerHTML = PLANS.map(function (p) {
-            var icon = KIND_ICONS[p.kind] || 'OTH';
+            var icon = KIND_ICONS[p.kind] || KIND_ICONS.other;
             return '<div class="asst-item" data-plan="' + escAttr(p.id) + '" title="' + escAttr(p.title || '') + '">'
                 + '<div class="asst-item-main">'
                 + '<div class="asst-item-title">' + icon + ' ' + esc(p.title || 'Kế hoạch') + '</div>'
@@ -817,7 +820,7 @@ $suggestions = [
     function bubble(role, html, ts, failed) {
         var row = document.createElement('div');
         row.className = 'asst-row ' + role;
-        row.innerHTML = '<div class="asst-avatar">' + (role === 'user' ? 'USR' : 'AI') + '</div>'
+        row.innerHTML = '<div class="asst-avatar">' + (role === 'user' ? AVATAR_USER : AVATAR_AI) + '</div>'
             + '<div class="asst-bubble' + (failed ? ' failed' : '') + '">' + html
             + (ts ? '<div class="asst-ts">' + esc(ts) + '</div>' : '')
             + '</div>';
@@ -984,7 +987,7 @@ $suggestions = [
         var row = document.createElement('div');
         row.className = 'asst-row assistant asst-typing';
         row.id = 'asst-typing';
-        row.innerHTML = '<div class="asst-avatar">AI</div><div class="asst-bubble">'
+        row.innerHTML = '<div class="asst-avatar">' + AVATAR_AI + '</div><div class="asst-bubble">'
             + '<span class="asst-dot">●</span> <span class="asst-dot">●</span> <span class="asst-dot">●</span></div>';
         msgsEl.appendChild(row);
         scrollBottom();
@@ -1211,7 +1214,7 @@ $suggestions = [
             var old = msgsEl.querySelector('[data-plan-card]');
             if (old && old.parentNode) old.parentNode.removeChild(old);
             var html = '<div data-plan-card>'
-                + '<div class="asst-plan-card-head">' + (KIND_ICONS[p.kind] || 'OTH')
+                + '<div class="asst-plan-card-head">' + (KIND_ICONS[p.kind] || KIND_ICONS.other)
                 + ' <strong>' + esc(p.title || 'Kế hoạch') + '</strong>'
                 + '<span class="asst-plan-card-meta">' + esc(p.created_at || '') + '</span></div>'
                 + '<div class="asst-plan-body">' + md(res.content || '') + '</div>'

@@ -55,7 +55,7 @@ $loggedIn = $uid > 0;
         <div>
             <div style="color: var(--ios-text-secondary); font-size: 0.75rem; text-transform: uppercase; letter-spacing: .04em;">Người dùng</div>
             <?php if ($loggedIn): ?>
-                <div style="font-weight: 700; color: var(--ios-success); margin-top: 0.2rem;">USR <?= htmlspecialchars((string) ($userName !== null && $userName !== '' ? $userName : ('User #' . $uid))) ?></div>
+                <div style="font-weight: 700; color: var(--ios-success); margin-top: 0.2rem;"><?= vc_admin_icon('USR', 14) ?> <?= htmlspecialchars((string) ($userName !== null && $userName !== '' ? $userName : ('User #' . $uid))) ?></div>
                 <div style="color: var(--ios-text-secondary); font-size: 0.75rem; margin-top: 0.2rem;">
                     Đã đăng nhập<?= ($userEmail ?? '') !== '' ? ' • ' . htmlspecialchars((string) $userEmail) : '' ?>
                 </div>

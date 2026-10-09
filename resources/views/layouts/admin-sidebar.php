@@ -34,15 +34,15 @@ if (isset($_SESSION['user_id'])) {
     </div>
     <hr class="sidebar-divider">
     <?php if ($userRole === 'admin'): ?>
-    <a href="/admin" class="nav-item <?= $activeMenu === 'dashboard' ? 'active' : '' ?>"><span class="sidebar-nav-icon" aria-hidden="true">DSH</span>Tổng Quan</a>
-    <a href="/admin/settings" class="nav-item <?= $activeMenu === 'settings' ? 'active' : '' ?>"><span class="sidebar-nav-icon" aria-hidden="true">CFG</span>Cài Đặt</a>
-    <a href="/admin/server-groups" class="nav-item <?= in_array($activeMenu, $infrastructureMenus, true) ? 'active' : '' ?>"><span class="sidebar-nav-icon" aria-hidden="true">INF</span>Hạ Tầng</a>
-    <a href="/admin/users" class="nav-item <?= $activeMenu === 'users' ? 'active' : '' ?>"><span class="sidebar-nav-icon" aria-hidden="true">USR</span>Người Dùng</a>    
-    <a href="/admin/coupons" class="nav-item <?= in_array($activeMenu, $businessMenus, true) ? 'active' : '' ?>"><span class="sidebar-nav-icon" aria-hidden="true">BIZ</span>Kinh Doanh</a>
-    <a href="/admin/tickets" class="nav-item <?= $activeMenu === 'tickets' ? 'active' : '' ?>"><span class="sidebar-nav-icon" aria-hidden="true">TKT</span>Ticket</a>
-    <a href="/admin/ai" class="nav-item <?= in_array($activeMenu, $aiMenus, true) ? 'active' : '' ?>"><span class="sidebar-nav-icon" aria-hidden="true">AI</span>Trung Tâm AI</a>
-    <a href="/admin/posts" class="nav-item <?= $activeMenu === 'posts' ? 'active' : '' ?>"><span class="sidebar-nav-icon" aria-hidden="true">PST</span>Bài Viết</a>
-    <a href="/admin/expenses" class="nav-item <?= $activeMenu === 'expenses' ? 'active' : '' ?>"><span class="sidebar-nav-icon" aria-hidden="true">CST</span>Chi Phí</a>    
-    <a href="/admin/logs" class="nav-item <?= $activeMenu === 'logs' ? 'active' : '' ?>"><span class="sidebar-nav-icon" aria-hidden="true">LOG</span>Nhật Ký</a>
+    <a href="/admin" class="nav-item <?= $activeMenu === 'dashboard' ? 'active' : '' ?>"><span class="sidebar-nav-icon" aria-hidden="true"><?= vc_admin_icon('DSH') ?></span>Tổng Quan</a>
+    <a href="/admin/settings" class="nav-item <?= $activeMenu === 'settings' ? 'active' : '' ?>"><span class="sidebar-nav-icon" aria-hidden="true"><?= vc_admin_icon('CFG') ?></span>Cài Đặt</a>
+    <a href="/admin/server-groups" class="nav-item <?= in_array($activeMenu, $infrastructureMenus, true) ? 'active' : '' ?>"><span class="sidebar-nav-icon" aria-hidden="true"><?= vc_admin_icon('INF') ?></span>Hạ Tầng</a>
+    <a href="/admin/users" class="nav-item <?= $activeMenu === 'users' ? 'active' : '' ?>"><span class="sidebar-nav-icon" aria-hidden="true"><?= vc_admin_icon('USR') ?></span>Người Dùng</a>    
+    <a href="/admin/coupons" class="nav-item <?= in_array($activeMenu, $businessMenus, true) ? 'active' : '' ?>"><span class="sidebar-nav-icon" aria-hidden="true"><?= vc_admin_icon('BIZ') ?></span>Kinh Doanh</a>
+    <a href="/admin/tickets" class="nav-item <?= $activeMenu === 'tickets' ? 'active' : '' ?>"><span class="sidebar-nav-icon" aria-hidden="true"><?= vc_admin_icon('TKT') ?></span>Ticket</a>
+    <a href="/admin/ai" class="nav-item <?= in_array($activeMenu, $aiMenus, true) ? 'active' : '' ?>"><span class="sidebar-nav-icon" aria-hidden="true"><?= vc_admin_icon('RPL') ?></span>Trung Tâm AI</a>
+    <a href="/admin/posts" class="nav-item <?= $activeMenu === 'posts' ? 'active' : '' ?>"><span class="sidebar-nav-icon" aria-hidden="true"><?= vc_admin_icon('PST') ?></span>Bài Viết</a>
+    <a href="/admin/expenses" class="nav-item <?= $activeMenu === 'expenses' ? 'active' : '' ?>"><span class="sidebar-nav-icon" aria-hidden="true"><?= vc_admin_icon('CST') ?></span>Chi Phí</a>    
+    <a href="/admin/logs" class="nav-item <?= $activeMenu === 'logs' ? 'active' : '' ?>"><span class="sidebar-nav-icon" aria-hidden="true"><?= vc_admin_icon('LOG') ?></span>Nhật Ký</a>
     <?php endif; ?>
 </aside>

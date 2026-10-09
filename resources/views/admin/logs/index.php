@@ -79,7 +79,7 @@ ob_start();
 <nav class="logs-tabs" aria-label="Các loại nhật ký">
     <?php foreach ($logTabs as $tabKey => $tab): ?>
         <a href="<?= $tab['url'] ?>" class="logs-tab <?= $activeLogTab === $tabKey ? 'active' : '' ?>" <?= $activeLogTab === $tabKey ? 'aria-current="page"' : '' ?>>
-            <span><?= $tab['icon'] ?></span> <?= htmlspecialchars($tab['label']) ?>
+            <span><?= vc_admin_icon($tab['icon'], 14) ?></span> <?= htmlspecialchars($tab['label']) ?>
         </a>
     <?php endforeach; ?>
 </nav>
@@ -314,10 +314,10 @@ ob_start();
                                 <td><span class="logs-badge logs-badge-green"><?= htmlspecialchars((string)($log['source'] ?? $log['session_source'] ?? 'web')) ?></span></td>
                                 <td>
                                     <?php if (!empty($log['session_id'])): ?>
-                                        <div class="logs-user-name">SID: <?= (int)$log['session_id'] ?></div>
+                                        <div class="logs-user-name"><?= vc_admin_icon('SID', 13) ?>: <?= (int)$log['session_id'] ?></div>
                                         <div class="logs-user-email"><?= htmlspecialchars((string)($log['external_id'] ?? $log['visitor_token'] ?? '-')) ?></div>
                                     <?php elseif (is_array($decoded) && !empty($decoded['comment_id'])): ?>
-                                        <div class="logs-user-name">CMT: <?= htmlspecialchars((string)$decoded['comment_id']) ?></div>
+                                        <div class="logs-user-name"><?= vc_admin_icon('CMT', 13) ?>: <?= htmlspecialchars((string)$decoded['comment_id']) ?></div>
                                     <?php else: ?>
                                         <div class="logs-user-email">-</div>
                                     <?php endif; ?>
@@ -328,8 +328,8 @@ ob_start();
                                 </td>
                                 <td class="logs-truncate" style="max-width: 480px; white-space: normal;">
                                     <?php if ($eventName === 'fanpage_comment_reply' && is_array($decoded)): ?>
-                                        <div style="font-weight: 600; color: var(--ios-blue); font-size: 0.82rem; margin-bottom: 0.2rem;">USR <?= htmlspecialchars((string)($decoded['from_name'] ?? 'Khách')) ?>: &ldquo;<?= htmlspecialchars((string)($decoded['user_message'] ?? '')) ?>&rdquo;</div>
-                                        <div style="font-size: 0.82rem; color: var(--ios-text-primary); background: rgba(255,255,255,0.05); padding: 0.35rem 0.5rem; border-radius: 6px;">AI <strong>Bot:</strong> <?= htmlspecialchars((string)($decoded['ai_reply'] ?? '')) ?></div>
+                                        <div style="font-weight: 600; color: var(--ios-blue); font-size: 0.82rem; margin-bottom: 0.2rem;"><?= vc_admin_icon('USR', 13) ?> <?= htmlspecialchars((string)($decoded['from_name'] ?? 'Khách')) ?>: &ldquo;<?= htmlspecialchars((string)($decoded['user_message'] ?? '')) ?>&rdquo;</div>
+                                        <div style="font-size: 0.82rem; color: var(--ios-text-primary); background: rgba(255,255,255,0.05); padding: 0.35rem 0.5rem; border-radius: 6px;"><?= vc_admin_icon('RPL', 13) ?> <strong>Bot:</strong> <?= htmlspecialchars((string)($decoded['ai_reply'] ?? '')) ?></div>
                                     <?php elseif ($eventName === 'fanpage_comment_skipped' && is_array($decoded)): ?>
                                         <div style="font-size: 0.82rem; color: var(--ios-text-secondary);">» Bỏ qua bình luận của <strong><?= htmlspecialchars((string)($decoded['from_name'] ?? 'Khách')) ?></strong> (Lý do: <?= htmlspecialchars((string)($decoded['reason'] ?? $decoded['keyword'] ?? '')) ?>)</div>
                                     <?php elseif ($eventName === 'fanpage_comment_failed' && is_array($decoded)): ?>

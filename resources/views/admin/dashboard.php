@@ -24,7 +24,7 @@ ob_start();
     <div class="glass-card stat-card">
         <div style="display: flex; justify-content: space-between; align-items: center;">
             <span class="title">Người Dùng</span>
-            <span class="mono stat-icon">USR</span>
+            <span class="mono stat-icon"><?= vc_admin_icon('USR', 18) ?></span>
         </div>
         <div class="value"><?= number_format($stats['total_users'] ?? 0) ?></div>
         <div style="font-size: 0.75rem; color: var(--soc-green); font-weight: 600;">+<?= number_format($stats['new_users_today'] ?? 0) ?> hôm nay</div>
@@ -33,7 +33,7 @@ ob_start();
     <div class="glass-card stat-card">
         <div style="display: flex; justify-content: space-between; align-items: center;">
             <span class="title">Gói Hoạt Động</span>
-            <span class="mono stat-icon">SUB</span>
+            <span class="mono stat-icon"><?= vc_admin_icon('SUB', 18) ?></span>
         </div>
         <div class="value" style="color: var(--soc-green);"><?= number_format($stats['active_subscriptions'] ?? 0) ?></div>
         <div style="font-size: 0.75rem; color: var(--ios-text-secondary);">đang chạy</div>
@@ -42,7 +42,7 @@ ob_start();
     <div class="glass-card stat-card">
         <div style="display: flex; justify-content: space-between; align-items: center;">
             <span class="title">Doanh Thu T<?= (int)($selectedMonth ?? date('n')) ?></span>
-            <span class="mono stat-icon">REV</span>
+            <span class="mono stat-icon"><?= vc_admin_icon('REV', 18) ?></span>
         </div>
         <div class="value" style="color: var(--soc-green);"><?= isset($formatMoney) ? $formatMoney($stats['monthly_revenue'] ?? 0) : number_format($stats['monthly_revenue'] ?? 0, 2) ?></div>
         <div style="font-size: 0.75rem; color: var(--ios-text-secondary);">đã thanh toán</div>
@@ -51,7 +51,7 @@ ob_start();
     <div class="glass-card stat-card">
         <div style="display: flex; justify-content: space-between; align-items: center;">
             <span class="title">Inbound</span>
-            <span class="mono stat-icon">NET</span>
+            <span class="mono stat-icon"><?= vc_admin_icon('NET', 18) ?></span>
         </div>
         <div class="value" style="color: #8ab4ff;"><?= (int)($stats['connected_inbounds'] ?? 0) ?> / <?= (int)($stats['active_inbounds'] ?? 0) ?></div>
         <div style="font-size: 0.75rem; color: var(--ios-text-secondary);">đang kết nối</div>
@@ -60,7 +60,7 @@ ob_start();
     <div class="glass-card stat-card">
         <div style="display: flex; justify-content: space-between; align-items: center;">
             <span class="title">Chat Hôm Nay</span>
-            <span class="mono stat-icon">BOT</span>
+            <span class="mono stat-icon"><?= vc_admin_icon('BOT', 18) ?></span>
         </div>
         <div class="value" style="color: var(--soc-cyan);"><?= number_format($stats['chat_started_today'] ?? 0) ?></div>
         <div style="font-size: 0.75rem; color: var(--ios-text-secondary);">phiên mới</div>
@@ -69,7 +69,7 @@ ob_start();
     <div class="glass-card stat-card">
         <div style="display: flex; justify-content: space-between; align-items: center;">
             <span class="title">Chờ Nhân Viên</span>
-            <span class="mono stat-icon">NV</span>
+            <span class="mono stat-icon"><?= vc_admin_icon('NV', 18) ?></span>
         </div>
         <div class="value" style="color: var(--soc-amber);"><?= number_format($stats['chat_handoff_pending'] ?? 0) ?></div>
         <div style="font-size: 0.75rem; color: var(--ios-text-secondary);">chờ xử lý</div>
@@ -78,7 +78,7 @@ ob_start();
     <div class="glass-card stat-card">
         <div style="display: flex; justify-content: space-between; align-items: center;">
             <span class="title">CTA Click</span>
-            <span class="mono stat-icon">CTA</span>
+            <span class="mono stat-icon"><?= vc_admin_icon('CTA', 18) ?></span>
         </div>
         <div class="value" style="color: var(--soc-green);"><?= number_format($stats['chat_cta_clicked_today'] ?? 0) ?></div>
         <div style="font-size: 0.75rem; color: var(--ios-text-secondary);">tương tác hôm nay</div>
@@ -87,7 +87,7 @@ ob_start();
     <div class="glass-card stat-card">
         <div style="display: flex; justify-content: space-between; align-items: center;">
             <span class="title">Checkout</span>
-            <span class="mono stat-icon">PAY</span>
+            <span class="mono stat-icon"><?= vc_admin_icon('PAY', 18) ?></span>
         </div>
         <div class="value" style="color: var(--soc-cyan);"><?= number_format($stats['chat_checkout_clicked_today'] ?? 0) ?></div>
         <div style="font-size: 0.75rem; color: var(--ios-text-secondary);">tới thanh toán</div>

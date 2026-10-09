@@ -250,7 +250,7 @@ $_catalogKeys = array_map(static fn ($m): string => (string) ($m['model_key'] ??
                             </td>
                             <td style="font-size: 0.82rem;">
                                 <?php if ($uid > 0): ?>
-                                    <span style="color: var(--ios-success); font-weight: 600;">USR <?= htmlspecialchars($uname !== '' ? $uname : ('User #' . $uid)) ?></span>
+                                    <span style="color: var(--ios-success); font-weight: 600;"><?= vc_admin_icon('USR', 13) ?> <?= htmlspecialchars($uname !== '' ? $uname : ('User #' . $uid)) ?></span>
                                     <div style="color: var(--ios-text-secondary); font-size: 0.72rem;">Đã đăng nhập<?= $uemail !== '' ? ' · ' . htmlspecialchars($uemail) : '' ?></div>
                                 <?php else: ?>
                                     <span style="color: var(--ios-text-secondary);">Khách vãng lai</span>
@@ -260,7 +260,7 @@ $_catalogKeys = array_map(static fn ($m): string => (string) ($m['model_key'] ??
                             <td style="font-size: 0.82rem;"><?= (int) ($s['message_count'] ?? 0) ?></td>
                             <td style="font-size: 0.8rem; max-width: 300px;">
                                 <?php if ($lastMsg !== ''): ?>
-                                    <span style="color: var(--ios-text-secondary); font-size: 0.72rem;"><?= $lastRole === 'assistant' ? 'AI:' : ($lastRole === 'user' ? 'USR:' : '') ?></span>
+                                    <span style="color: var(--ios-text-secondary); font-size: 0.72rem;"><?= $lastRole === 'assistant' ? vc_admin_icon('RPL', 12) . ':' : ($lastRole === 'user' ? vc_admin_icon('USR', 12) . ':' : '') ?></span>
                                     <?= htmlspecialchars($lastMsg) ?>
                                 <?php else: ?>
                                     <span style="color: var(--ios-text-secondary);">—</span>

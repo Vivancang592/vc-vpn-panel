@@ -1819,3 +1819,57 @@ body.admin-area:has(.admin-app) .stat-icon {
   border-radius: 4px;
   line-height: 1;
 }
+
+
+/* ---------- 27. ICON LUCIDE THAY MÃ MONO (chỉ khu Admin) ----------
+   Helper resources/views/components/admin-icons.php render inline <svg
+   class="vc-admin-icon">. Khu user không nạp helper -> không có class này. */
+body.admin-area:has(.admin-app) .vc-admin-icon {
+  display: inline-block;
+  vertical-align: -0.18em;
+  flex: 0 0 auto;
+}
+/* Tab nhóm: icon đứng trước nhãn, thẳng hàng với chữ */
+body.admin-area:has(.admin-app) .admin-group-tab {
+  align-items: center;
+}
+body.admin-area:has(.admin-app) .admin-group-tab .vc-admin-icon {
+  opacity: 0.85;
+}
+body.admin-area:has(.admin-app) .admin-group-tab.active .vc-admin-icon { opacity: 1; }
+/* Sidebar: pill giữ nền/viền, vừa khung để icon nằm giữa */
+body.admin-area:has(.admin-app) .admin-sidebar .sidebar-nav-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 1.6rem;
+  height: 1.5rem;
+  padding: 0 0.25rem;
+}
+body.admin-area:has(.admin-app) .admin-sidebar .sidebar-nav-icon .vc-admin-icon {
+  vertical-align: middle;
+}
+/* Stat card: bỏ letter-spacing/mono của nhãn chữ, giữ nền pill */
+body.admin-area:has(.admin-app) .stat-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.28rem;
+  letter-spacing: 0;
+}
+/* Fallback: nếu thiếu icon thì vẫn hiện mã chữ, không vỡ ô */
+body.admin-area:has(.admin-app) .stat-icon:empty,
+body.admin-area:has(.admin-app) .sidebar-nav-icon:empty { display: none; }
+
+
+/* Tab nhật ký: icon Lucide thay mã chữ (TXT/AUT/EML/AI/MSG) */
+body.admin-area:has(.admin-app) .logs-tab span {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 1rem;
+  filter: none;
+}
+body.admin-area:has(.admin-app) .logs-tab .vc-admin-icon { vertical-align: middle; }
+/* Nhãn SID:/CMT: trong bảng nhật ký chatbot */
+body.admin-area:has(.admin-app) .logs-user-name .vc-admin-icon { vertical-align: -0.15em; }

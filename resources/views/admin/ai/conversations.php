@@ -105,7 +105,7 @@ $buildUrl = static function (array $extra) use ($queryBase): string {
                             </td>
                             <td style="font-size: 0.82rem;">
                                 <?php if ($uid > 0): ?>
-                                    <span style="color: var(--ios-success); font-weight: 600;">USR <?= htmlspecialchars($uname !== '' ? $uname : ('User #' . $uid)) ?></span>
+                                    <span style="color: var(--ios-success); font-weight: 600;"><?= vc_admin_icon('USR', 13) ?> <?= htmlspecialchars($uname !== '' ? $uname : ('User #' . $uid)) ?></span>
                                     <div style="color: var(--ios-text-secondary); font-size: 0.72rem;">Đã đăng nhập<?= $uemail !== '' ? ' · ' . htmlspecialchars($uemail) : '' ?></div>
                                 <?php else: ?>
                                     <span style="color: var(--ios-text-secondary);">Khách vãng lai</span>

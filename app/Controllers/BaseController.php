@@ -188,6 +188,11 @@ abstract class BaseController
         // sau mỗi thao tác, với màu viền theo trạng thái (success/danger/warning/info)
         // và không còn phụ thuộc đoạn code flash copy trong từng view.
         if (strpos($view, 'admin.') === 0) {
+            // Icon Lucide cho khu vực ADMIN (inline <svg>, không đụng sprite
+            // vc-i-* của khu user). Nạp TRƯỚC khi require view vì view được
+            // render trước layouts/admin.php.
+            require_once BASE_PATH . '/resources/views/components/admin-icons.php';
+
             $vcToasts = [];
 
             if (!empty($_SESSION['flash_message'])) {
