@@ -400,7 +400,7 @@ class ChatbotService
         $contactEmail = $this->settings['contact_email'] ?? '';
         $fanpageUrl = $this->settings['fanpage_url'] ?? '';
         $zaloUrl = $this->settings['zalo_url'] ?? '';
-        $minDeposit = number_format((float) ($this->settings['min_deposit_amount'] ?? $this->settings['min_deposit'] ?? 10000), 0, '.', ',') . ' đ';
+        $minDeposit = number_format((float) ($this->settings['min_deposit_amount'] ?? 10000), 0, '.', ',') . ' đ';
         $minWithdrawal = number_format((float) ($this->settings['min_withdrawal'] ?? 50000), 0, '.', ',') . ' đ';
         $commissionRate = ($this->settings['commission_rate'] ?? '30') . '%';
         $referralBonus = number_format((float) ($this->settings['referral_bonus'] ?? 10000), 0, '.', ',') . ' đ';

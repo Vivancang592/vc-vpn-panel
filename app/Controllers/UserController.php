@@ -231,7 +231,6 @@ class UserController extends BaseController
         if ($checkoutType === 'deposit') {
             $minDeposit = (float) (
                 $this->settings['min_deposit_amount'] ??
-                $this->settings['min_deposit'] ??
                 10000
             );
             $depositAmount = max(0, (float) ($_GET['amount'] ?? 0));
@@ -1122,7 +1121,6 @@ $_SESSION['success'] = 'Đã tạo đơn hàng ' . $orderCode . ' thành công. 
     {
         $minDeposit = (float) (
             $this->settings['min_deposit_amount'] ??
-            $this->settings['min_deposit'] ??
             10000
         );
         $depositAmount = max(0, (float) ($_GET['amount'] ?? 0));
@@ -1153,7 +1151,6 @@ $_SESSION['success'] = 'Đã tạo đơn hàng ' . $orderCode . ' thành công. 
 
         $minDeposit = (float) (
             $this->settings['min_deposit_amount'] ??
-            $this->settings['min_deposit'] ??
             10000
         );
 

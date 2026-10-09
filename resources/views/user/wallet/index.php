@@ -1,6 +1,6 @@
 <?php
 $currency = 'VND';
-$minimumDeposit = (float)($settings['min_deposit_amount'] ?? $settings['min_deposit'] ?? 10000);
+$minimumDeposit = (float)($settings['min_deposit_amount'] ?? 10000);
 $quickAmountDefaults = [20000, 50000, 100000, 200000, 500000];
 $quickAmounts = array_values(array_unique(array_merge(
 	[$minimumDeposit],

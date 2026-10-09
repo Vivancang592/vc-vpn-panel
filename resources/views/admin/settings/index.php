@@ -130,7 +130,7 @@ ob_start();
 
                 <div>
                     <label data-hint="Số tiền nạp tối thiểu vào ví (VND)." style="display: block; font-weight: 600; font-size: 0.85rem; margin-bottom: 0.4rem;">Nạp Tối Thiểu Vào Ví (VND)</label>
-                    <input type="number" name="settings[min_deposit_amount]" class="glass-input" value="<?= htmlspecialchars($settings['min_deposit_amount'] ?? $settings['min_deposit'] ?? '10000') ?>" min="1000" step="1000" style="width: 100%;">
+                    <input type="number" name="settings[min_deposit_amount]" class="glass-input" value="<?= htmlspecialchars($settings['min_deposit_amount'] ?? '10000') ?>" min="1000" step="1000" style="width: 100%;">
                 </div>
 
                 <div>
@@ -141,11 +141,6 @@ ob_start();
                 <div>
                     <label data-hint="Số dư tặng cho tài khoản đăng ký bằng mã giới thiệu." style="display: block; font-weight: 600; font-size: 0.85rem; margin-bottom: 0.4rem;">Thưởng Khi Đăng Ký Có Mã Giới Thiệu (VND)</label>
                     <input type="number" name="settings[referral_bonus]" class="glass-input" value="<?= htmlspecialchars($settings['referral_bonus'] ?? '10000') ?>" min="0" step="any" style="width: 100%;">
-                </div>
-
-                <div>
-                    <label data-hint="Giá trị nhỏ nhất người dùng được phép nạp vào ví." style="display: block; font-weight: 600; font-size: 0.85rem; margin-bottom: 0.4rem;">Số Tiền Nạp Tối Thiểu</label>
-                    <input type="number" name="settings[min_deposit]" class="glass-input" value="<?= htmlspecialchars($settings['min_deposit'] ?? '10000') ?>" min="0" step="any" style="width: 100%;">
                 </div>
 
                 <div>

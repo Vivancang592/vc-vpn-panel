@@ -26,7 +26,6 @@ class PaymentService
 
         $minDeposit = (float) (
             $settings['min_deposit_amount']
-            ?? $settings['min_deposit']
             ?? 10000
         );
 
