@@ -1,5 +1,5 @@
 /* ===== GIỮ VỊ TRÍ CUỘN QUA POST → REDIRECT + ĐỔI FILTER =====
- * Nút không đổi tab/trang (Tạo ảnh/video/lời thoại, Xóa, Lưu lịch...)
+ * Nút không đổi tab/trang (Tạo ảnh, Xóa, Lưu lịch...)
  * đều POST rồi redirect về đúng URL → trang load lại đúng vị trí cũ,
  * không nhảy vọt lên đầu. Nút LỌC / TÌM / PHÂN TRANG (GET đổi query)
  * cũng giữ chỗ: key chỉ theo pathname nên trang đích khác search vẫn
@@ -682,7 +682,7 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     });
 
-    // Nút "Tạo" của form AI (ảnh/video/lời thoại): bấm là hiện spinner +
+    // Nút "Tạo" của form AI (ảnh): bấm là hiện spinner +
     // "Đang tạo..." và khóa nút — có phản hồi ngay, chống bấm đôi.
     document.addEventListener('submit', function (e) {
         if (e.defaultPrevented) return;

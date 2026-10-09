@@ -51,12 +51,6 @@ final class TaskRunner
     /** Trạng thái task được coi là "đến hạn xử lý" trong hàng đợi. */
     private const DUE_STATUSES = ['pending', 'queued', 'retrying'];
 
-    /**
-     * Trạng thái LRO của provider coi là "CHƯA XONG" (chờ poll tiếp).
-     * Ngoài danh sách này (và không có file) → chờ tới khi timeout tổng.
-     */
-    private const VIDEO_LRO_FAILED = ['failed', 'error', 'cancelled', 'canceled', 'expired'];
-
     /** @var array<string, mixed> */
     private array $config;
 
@@ -66,7 +60,6 @@ final class TaskRunner
     private RetryPolicy $retry;
     private ErrorHandler $errors;
     private ModuleRegistry $modules;
-    private ResponseParser $responses;
 
     /**
      * @param array<string, mixed> $config Config AI (config/ai.php)
@@ -85,7 +78,6 @@ final class TaskRunner
         $this->retry     = new RetryPolicy($config);
         $this->errors    = new ErrorHandler();
         $this->modules   = $modules ?? new ModuleRegistry();
-        $this->responses = new ResponseParser();
     }
 
     public function dispatcher(): TaskDispatcher
@@ -210,21 +202,12 @@ final class TaskRunner
             return $this->outcome(self::RESULT_FAILED, $taskId, 'Không xác định được module.');
         }
 
-        // VIDEO LRO — lần POLL (params đã có operation id từ lượt trước): gọi
-        // videoStatus() thay vì chạy lại pipeline (tránh tạo trùng video mới).
-        $isVideoLroPoll = $moduleKey === 'video_generation'
-            && isset($options['kira_operation_id'])
-            && is_string($options['kira_operation_id'])
-            && $options['kira_operation_id'] !== '';
-
         // PROCESS → PROVIDER (toàn bộ pipeline nằm trong AICore; lỗi đã được
         // ErrorHandler chuẩn hoá thành AIResult nên hiếm khi ném ra ngoài).
         $runStarted = microtime(true);
 
         try {
-            $result = $isVideoLroPoll
-                ? $this->core()->videoStatus((string) $options['kira_operation_id'], ['module' => $moduleKey])
-                : $this->core()->run($moduleKey, $payload, $options);
+            $result = $this->core()->run($moduleKey, $payload, $options);
         } catch (\Throwable $e) {
             $result = $this->errors->handle($e, ['module' => $moduleKey]);
         }
@@ -248,73 +231,6 @@ final class TaskRunner
 
         if (!$result->isOk()) {
             return $this->handleFailure($taskId, $token, $attempt, $result);
-        }
-
-        // VIDEO LRO (Long-Running Operation): provider trả HTTP 200 nhưng media
-        // CHƯA xong (raw.status chưa 'completed' hoặc chưa có file). Phân xử:
-        //  - pending  → requeue về 'queued' (retry_after = +poll_seconds), lần
-        //    claim sau sẽ poll videoStatus(operation_id). KHÔNG tính retry_count.
-        //  - timeout  → vượt video_lro_timeout_seconds → finish('failed', TIMEOUT).
-        //  - xong     → đi tiếp ghi output như mọi module khác.
-        if ($moduleKey === 'video_generation') {
-            $lro = $this->resolveVideoLro($result, $options, (string) ($claimed['started_at'] ?? ''));
-
-            if ($lro['action'] === 'wait') {
-                $ok = $this->tasks->requeue(
-                    $taskId,
-                    $token,
-                    (int) ($this->config['task']['video_poll_seconds'] ?? 60),
-                    $lro['params']
-                );
-
-                return $ok
-                    ? $this->outcome(
-                        self::RESULT_SKIPPED,
-                        $taskId,
-                        'Video đang được provider xử lý (LRO) — task về hàng đợi chờ poll.',
-                        ['operation_id' => $lro['params']['kira_operation_id'], 'polls' => $lro['params']['lro_polls']]
-                    )
-                    : $this->outcome(
-                        self::RESULT_SKIPPED,
-                        $taskId,
-                        'Mất lock khi requeue LRO — bỏ qua để bảo toàn dữ liệu.'
-                    );
-            }
-
-            if ($lro['action'] === 'timeout') {
-                $this->tasks->finish($taskId, 'failed', [
-                    'lock_token'    => $token,
-                    'attempt_no'    => $attempt,
-                    'error_code'    => AIException::TIMEOUT,
-                    'error_message' => 'Video LRO vượt thời gian chờ tối đa ('
-                        . (int) ($this->config['task']['video_lro_timeout_seconds'] ?? 1800) . 's).',
-                    'message'       => 'Provider chưa trả video xong trong thời hạn cho phép.',
-                ]);
-
-                return $this->outcome(
-                    self::RESULT_FAILED,
-                    $taskId,
-                    'Video LRO vượt thời gian chờ tối đa.',
-                    ['operation_id' => (string) ($options['kira_operation_id'] ?? '')]
-                );
-            }
-
-            if ($lro['action'] === 'fail') {
-                $this->tasks->finish($taskId, 'failed', [
-                    'lock_token'    => $token,
-                    'attempt_no'    => $attempt,
-                    'error_code'    => AIException::CLIENT_ERROR,
-                    'error_message' => 'Provider báo LRO thất bại: status="' . $lro['status'] . '"',
-                    'message'       => 'Provider báo tác vụ video thất bại (không thể retry).',
-                ]);
-
-                return $this->outcome(
-                    self::RESULT_FAILED,
-                    $taskId,
-                    'Provider báo tác vụ video thất bại (status=' . $lro['status'] . ').',
-                    ['operation_id' => (string) ($options['kira_operation_id'] ?? '')]
-                );
-            }
         }
 
         // OUTPUT → ASSET (media đi qua AssetManager; text lưu content_snapshot).
@@ -422,78 +338,6 @@ final class TaskRunner
     // -----------------------------------------------------------------
 
     /**
-     * Phân xử kết quả video bất đồng bộ (LRO) từ provider.
-     *
-     * Provider trả HTTP 200 ngay nhưng media có thể CHƯA xong:
-     *  - Lượt đầu (chưa có operation id trong params): trích id từ raw
-     *    (ResponseParser::extractOperationId). Không trích được → coi như kết quả
-     *    đồng bộ ("done") — đi tiếp ghi output như module thường.
-     *  - Đã có id + chưa xong: 'wait' (requeue poll) nếu còn trong hạn tổng,
-     *    'timeout' nếu vượt hạn; provider báo thất bại rõ ràng → 'fail'.
-     *  - Có file media (url/b64) HOẶC raw.status = 'completed' → 'done'.
-     *
-     * @param array<string, mixed> $options      Params (JSON cột `params`) của task.
-     * @param string|int|null     $startedAt    Thời điểm task bắt đầu xử lý LẦN ĐẦU
-     *                                          (cột started_at, do claim() ghi 1 lần).
-     * @return array{action: 'wait'|'done'|'timeout'|'fail', status: string, params: array<string, mixed>}
-     */
-    private function resolveVideoLro(AIResult $result, array $options, int|string|null $startedAt): array
-    {
-        $raw          = is_array($result->raw) ? $result->raw : [];
-        $rawStatus    = strtolower(trim((string) ($raw['status'] ?? '')));
-        $operationId  = isset($options['kira_operation_id']) && is_string($options['kira_operation_id'])
-            ? $options['kira_operation_id']
-            : ($this->responses->extractOperationId($result) ?? '');
-        $hasMedia     = $result->files !== [];
-
-        // Không xác định được trạng thái bất đồng bộ → kết quả đồng bộ, đi tiếp.
-        if ($operationId === '' && $rawStatus === '') {
-            return ['action' => 'done', 'status' => '', 'params' => []];
-        }
-
-        if ($operationId !== '') {
-            $params = $options;
-            $params['kira_operation_id'] = $operationId;
-            $params['lro_polls'] = (int) ($options['lro_polls'] ?? 0);
-        } else {
-            // Không có operation id nhưng có raw.status → chỉ quyết định bằng status.
-            $params = [];
-        }
-
-        // Provider báo THẤT BẠI rõ ràng → kết thúc vĩnh viễn (không retry, không poll).
-        if (in_array($rawStatus, self::VIDEO_LRO_FAILED, true)) {
-            return ['action' => 'fail', 'status' => $rawStatus, 'params' => $params];
-        }
-
-        // Provider báo HOÀN TẤT hoặc đã trả media → xong.
-        if ($rawStatus === 'completed' || $hasMedia) {
-            return ['action' => 'done', 'status' => $rawStatus, 'params' => $params];
-        }
-
-        // CHƯA XONG nhưng KHÔNG có operation id → không thể poll. Coi như kết quả
-        // đồng bộ để đi tiếp ghi output (tránh requeue chạy lại pipeline tạo
-        // video trùng lặp). KHÔNG fail — provider vẫn trả HTTP 200.
-        if ($operationId === '') {
-            return ['action' => 'done', 'status' => $rawStatus, 'params' => []];
-        }
-
-        // CHƯA XONG (queued/running/processing/...) → kiểm tra hạn tổng rồi requeue.
-        $timeout   = (int) ($this->config['task']['video_lro_timeout_seconds'] ?? 1800);
-        $startedTs = $startedAt !== '' && $startedAt !== 0 ? strtotime((string) $startedAt) : false;
-
-        // started_at phải được claim() ghi; nếu lạ (false/0) thì coi như vừa bắt đầu.
-        $elapsed = $startedTs === false || $startedTs === 0 ? 0 : (time() - $startedTs);
-
-        if ($elapsed > $timeout) {
-            return ['action' => 'timeout', 'status' => $rawStatus, 'params' => $params];
-        }
-
-        $params['lro_polls'] = (int) ($params['lro_polls'] ?? 0) + 1;
-
-        return ['action' => 'wait', 'status' => $rawStatus, 'params' => $params];
-    }
-
-    /**
      * Ghi output + version (append-only) cho một task đã có kết quả AI.
      *
      * Idempotent với crash recovery: nếu output của task đã tồn tại (lượt trước
@@ -512,7 +356,7 @@ final class TaskRunner
             $outputId = $this->output->createOutput($taskId, $moduleId, $outputType, null);
         }
 
-        $assetKind = in_array($outputType, ['image', 'video', 'audio'], true) ? $outputType : 'other';
+        $assetKind = $outputType === 'image' ? 'image' : 'other';
 
         $version = $this->output->addVersionFromResult($outputId, $result, $assetKind);
 

@@ -6,10 +6,9 @@ $siteTitle = $settings['site_title'] ?? 'VC VPN PANEL';
 $activeMenu = $activeMenu ?? '';
 $infrastructureMenus = ['server-groups', 'servers', 'nodes', 'plans'];
 $businessMenus = ['coupons', 'orders', 'payments', 'subscriptions', 'referrals', 'withdrawals'];
-// 6 tab Phase C + id trang kỹ thuật (tasks/models/conversations/outputs)
+// 5 tab Phase C + id trang kỹ thuật (tasks/models/conversations/outputs)
 // để group "Trung Tâm AI" luôn highlight đúng activeMenu.
-// ai-modules/ai-prompts đã gộp vào ai-settings; ai-assets đã XOÁ (trang + route).
-$aiMenus = ['ai-dashboard', 'ai-image', 'ai-tasks', 'ai-video', 'ai-dubbing', 'ai-fanpage', 'ai-reply', 'ai-settings', 'ai-models', 'ai-conversations', 'ai-outputs'];
+$aiMenus = ['ai-dashboard', 'ai-image', 'ai-tasks', 'ai-fanpage', 'ai-reply', 'ai-settings', 'ai-models', 'ai-conversations', 'ai-outputs'];
 
 $logoHref = '/';
 if (isset($_SESSION['user_id'])) {

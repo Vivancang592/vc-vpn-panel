@@ -29,8 +29,6 @@ final class RequestBuilder
             AICapability::TEXT, AICapability::COMMENT, AICapability::CHAT, AICapability::PUBLISH
                 => $this->buildChatPayload($prompt, $model, $options),
             AICapability::IMAGE => $this->buildImagePayload($prompt, $model, $options),
-            AICapability::VIDEO => $this->buildVideoPayload($prompt, $model, $options),
-            AICapability::AUDIO => $this->buildAudioPayload($prompt, $model, $options),
             default => throw new AIException(
                 'Capability không được hỗ trợ: ' . $capability,
                 AIException::VALIDATION,
@@ -112,62 +110,8 @@ final class RequestBuilder
     }
 
     /**
-     * Video: chỉ dùng tham số đã xác minh. KHÔNG thêm video-reference/edit.
-     *
-     * System prompt (đã gộp nội quy AI) được nối vào prompt để model video
-     * tuân thủ quy định ngay cả khi không có channel system riêng.
-     *
-     * @param array{system: string, user: string} $prompt
-     * @param array{model_key: string} $model
-     * @param array<string, mixed> $options
-     * @return array<string, mixed>
-     */
-    private function buildVideoPayload(array $prompt, array $model, array $options): array
-    {
-        $payload = [
-            'prompt' => $this->withSystemPrompt((string) $prompt['user'], $prompt),
-            // SKILL.md (đã xác minh): POST /videos/generations cần "model".
-            'model'  => $model['model_key'],
-        ];
-
-        // 'duration_seconds' khớp contract Kira đã xác minh (SKILL.md):
-        // POST /videos/generations {prompt, aspect_ratio, duration_seconds, model}.
-        foreach (['duration_seconds', 'aspect_ratio', 'resolution', 'fps', 'seed'] as $key) {
-            if (array_key_exists($key, $options)) {
-                $payload[$key] = $options[$key];
-            }
-        }
-
-        return $payload;
-    }
-
-    /**
-     * @param array{system: string, user: string} $prompt
-     * @param array{model_key: string} $model
-     * @param array<string, mixed> $options
-     * @return array<string, mixed>
-     */
-    private function buildAudioPayload(array $prompt, array $model, array $options): array
-    {
-        $payload = [
-            'input' => $this->withSystemPrompt((string) $prompt['user'], $prompt),
-            // SKILL.md (đã xác minh): POST /audio/speech cần "model" bắt buộc.
-            'model' => $model['model_key'],
-        ];
-
-        // voice bắt buộc thuộc tầng caller (không hard-code ở đây).
-        foreach (['voice', 'format', 'speed'] as $key) {
-            if (array_key_exists($key, $options)) {
-                $payload[$key] = $options[$key];
-            }
-        }
-
-        return $payload;
-    }
-
-    /**
-     * Gắn system prompt vào payload một-kênh (image/video/audio): chỉ nối
-     * khi có system thật; giữ văn bản gốc khi không có gì để thêm.
+     * Gắn system prompt vào payload một-kênh (image): chỉ nối khi có system
+     * thật; giữ văn bản gốc khi không có gì để thêm.
      *
      * @param array{system: string, user: string} $prompt
      */

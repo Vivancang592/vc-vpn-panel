@@ -174,19 +174,6 @@ final class AICore
         ]), ['capability' => null, 'module' => null, 'provider' => $this->defaultProviderKey()]);
     }
 
-    /**
-     * Kiểm tra trạng thái tác vụ video bất đồng bộ.
-     *
-     * @param array<string, mixed> $options
-     */
-    public function videoStatus(string $operationId, array $options = []): AIResult
-    {
-        return $this->errors->guard(fn(): AIResult => $this->resolveProvider()->videoStatus($operationId, array_merge($options, [
-            'capability' => AICapability::VIDEO,
-            'retry'      => $this->retryPolicy->default(),
-        ])), ['capability' => AICapability::VIDEO, 'module' => $options['module'] ?? 'video_generation', 'provider' => $this->defaultProviderKey()]);
-    }
-
     // -----------------------------------------------------------------
     // Pipeline
     // -----------------------------------------------------------------
@@ -289,10 +276,6 @@ final class AICore
             AICapability::PUBLISH => $provider->chat($payload['messages'] ?? [], $options),
 
             AICapability::IMAGE => $provider->image($payload, $options),
-
-            AICapability::VIDEO => $provider->videoCreate($payload, $options),
-
-            AICapability::AUDIO => $provider->speech($payload, $options),
 
             default => AIResult::failure(
                 AIException::VALIDATION,

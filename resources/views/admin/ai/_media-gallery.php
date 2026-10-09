@@ -1,11 +1,11 @@
 <?php
 /**
  * Partial: khối "Thư mục tab" (gallery) — dạng lưới — dùng chung
- * cho 3 tab media trực tiếp: Tạo Ảnh / Tạo Video / Lồng Tiếng.
+ * cho tab media trực tiếp: Tạo Ảnh.
  *
  * Biến:
  *  - $gallery         : array<int, array> file thuộc thư mục tab (listByTab).
- *  - $mediaTab        : tên tab ('image'|'video'|'dubbing') — chỉ để hiển thị.
+ *  - $mediaTab        : tên tab ('image') — chỉ để hiển thị.
  *  - $mediaDeleteUrl  : URL POST xoá (vd: /admin/ai/image/delete).
  *  - $csrf_token      : inject bởi BaseController::render().
  *
@@ -20,17 +20,11 @@ $mediaCsrf      = (string) ($csrf_token ?? '');
 /** Nhận diện loại media từ mime_type (fallback: asset_kind). */
 $mediaKind = static function (array $item): string {
     $mime = strtolower((string) ($item['mime_type'] ?? ''));
-    if (str_starts_with($mime, 'video/')) {
-        return 'video';
-    }
-    if (str_starts_with($mime, 'audio/')) {
-        return 'audio';
-    }
     if (str_starts_with($mime, 'image/')) {
         return 'image';
     }
     $kind = strtolower((string) ($item['asset_kind'] ?? ''));
-    return in_array($kind, ['image', 'video', 'audio'], true) ? $kind : 'file';
+    return in_array($kind, ['image'], true) ? $kind : 'file';
 };
 
 /** Render 1 file media trong card gallery. */
@@ -38,8 +32,6 @@ $mediaTag = static function (string $kind, string $url): string {
     $u = htmlspecialchars($url, ENT_QUOTES);
     return match ($kind) {
         'image' => '<img src="' . $u . '" alt="Kết quả AI" style="width: 100%; height: 100%; object-fit: cover; display: block;">',
-        'video' => '<video src="' . $u . '" controls preload="metadata" style="width: 100%; height: 100%; display: block; background: #000;"></video>',
-        'audio' => '<audio src="' . $u . '" controls preload="metadata" style="width: 100%;"></audio>',
         default => '<a href="' . $u . '" target="_blank" rel="noopener" style="color: var(--ios-blue); font-size: 0.8rem;">Mở</a>',
     };
 };
@@ -66,17 +58,10 @@ $formatBytes = static function (int $bytes): string {
             if (card.getAttribute('data-ai-bound') === '1') return;
             card.setAttribute('data-ai-bound', '1');
             card.addEventListener('click', function (e) {
-                /* Bỏ qua khi chạm vào nút trong overlay / link / audio player —
+                /* Bỏ qua khi chạm vào nút trong overlay / link —
                    để trên điện thoại (không hover) tap vào ảnh vẫn mở được overlay. */
-                if (e.target.closest('.ai-media-actions') || e.target.closest('a, button, input, select, textarea, audio')) {
+                if (e.target.closest('.ai-media-actions') || e.target.closest('a, button, input, select, textarea')) {
                     return;
-                }
-                /* Video full-thumb: vùng controls native ~48px dưới cùng bấm được
-                   mà không bị coi là thao tác mở overlay. */
-                var vid = e.target.closest('video');
-                if (vid) {
-                    var vr = vid.getBoundingClientRect();
-                    if (e.clientY > vr.bottom - 48) return;
                 }
                 var wasOpen = card.classList.contains('is-open');
                 document.querySelectorAll('.ai-media-card.is-open').forEach(function (c) { c.classList.remove('is-open'); });
@@ -114,16 +99,11 @@ $formatBytes = static function (int $bytes): string {
                     $when   = (string) ($item['created_at'] ?? '');
                     $meta   = is_array($item['_meta'] ?? null) ? $item['_meta'] : [];
                     $aspect = (string) ($meta['aspect_ratio'] ?? '');
-                    $voice  = (string) ($meta['voice'] ?? '');
                 ?>
                 <div class="ai-media-card" style="border: 1px solid var(--ios-border, rgba(255,255,255,0.12)); border-radius: var(--radius-sm); overflow: hidden; background: rgba(255,255,255,0.03); display: flex; flex-direction: column;">
                     <div class="ai-media-thumb" style="height: 9.5rem; background: rgba(0,0,0,0.35); display: flex; align-items: center; justify-content: center; overflow: hidden;">
-                        <?php if ($kind === 'audio'): ?>
-                            <div style="width: 100%; padding: 0 0.6rem; box-sizing: border-box;"><?= $mediaTag('audio', $url) ?></div>
-                        <?php else: ?>
-                            <?= $mediaTag($kind, $url) ?>
-                        <?php endif; ?>
-                        <!-- Nút Xem/Xoá: phủ ĐÚNG GIỮA vùng ảnh/video, chỉ hiện khi rê chuột -->
+                        <?= $mediaTag($kind, $url) ?>
+                        <!-- Nút Xem/Xoá: phủ ĐÚNG GIỮA vùng ảnh, chỉ hiện khi rê chuột -->
                         <div class="ai-media-actions">
                             <a href="<?= htmlspecialchars($url) ?>" target="_blank" rel="noopener"
                                class="glass-btn" style="font-size: 0.74rem; padding: 0.35rem 0.7rem; text-decoration: none;">Xem ↗</a>
@@ -144,7 +124,6 @@ $formatBytes = static function (int $bytes): string {
                         <div style="font-size: 0.72rem; color: var(--ios-text-secondary);">
                             <?= htmlspecialchars($when) ?>
                             <?php if ($aspect !== ''): ?> · <?= htmlspecialchars($aspect) ?><?php endif; ?>
-                            <?php if ($voice !== ''): ?> · <?= htmlspecialchars($voice) ?><?php endif; ?>
                         </div>
                     </div>
                 </div>

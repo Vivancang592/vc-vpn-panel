@@ -260,11 +260,9 @@ $modelIdleCount = max(0, count($models) - $modelUsedCount);
     }
 
     // Cột "Số Phân Hệ Dùng": cộng thêm các tab chọn model ở localStorage
-    // (4 tab lưu model đang chọn, value = model_key).
+    // (3 tab lưu model đang chọn, value = model_key).
     var TABS = [
         { key: 'vc_ai_model_image',   label: 'Ảnh' },
-        { key: 'vc_ai_model_video',   label: 'Video' },
-        { key: 'vc_ai_model_dubbing', label: 'Lời Thoại' },
         { key: 'vc_ai_model_fanpage', label: 'Fanpage' },
         { key: 'vcAsstModel',         label: 'Admin' }
     ];

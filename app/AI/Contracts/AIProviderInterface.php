@@ -56,29 +56,6 @@ interface AIProviderInterface
     public function image(array $payload, array $options = []): AIResult;
 
     /**
-     * Tạo video (bất đồng bộ — trả về operation id).
-     *
-     * @param array<string, mixed> $payload
-     * @param array<string, mixed> $options
-     */
-    public function videoCreate(array $payload, array $options = []): AIResult;
-
-    /**
-     * Kiểm tra trạng thái tác vụ video bất đồng bộ.
-     *
-     * @param array<string, mixed> $options
-     */
-    public function videoStatus(string $operationId, array $options = []): AIResult;
-
-    /**
-     * Text-to-speech (TTS).
-     *
-     * @param array<string, mixed> $payload
-     * @param array<string, mixed> $options
-     */
-    public function speech(array $payload, array $options = []): AIResult;
-
-    /**
      * Liệt kê model khả dụng.
      *
      * @param array<string, mixed> $options

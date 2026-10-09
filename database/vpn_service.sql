@@ -456,13 +456,11 @@ CREATE TABLE IF NOT EXISTS `vc_ai_modules` (
     KEY `idx_ai_modules_capability` (`capability`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- Seed 6 module AI (khớp ModuleRegistry) — bắt buộc để chọn model và giao task
+-- Seed 4 module AI (khớp ModuleRegistry) — bắt buộc để chọn model và giao task
 INSERT INTO `vc_ai_modules` (`module_key`, `module_name`, `capability`, `is_enabled`, `config`, `sort_order`)
 VALUES
     ('content_article', 'Tạo Bài Viết', 'text', 1, NULL, 10),
     ('image_generation', 'Tạo Hình Ảnh AI', 'image', 1, NULL, 20),
-    ('video_generation', 'Tạo Video AI', 'video', 1, NULL, 30),
-    ('audio_tts', 'Chuyển Văn Bản Thành Giọng Nói', 'audio', 1, NULL, 40),
     ('fanpage_comment', 'Trả Lời Bình Luận Fanpage', 'comment', 1, NULL, 50),
     ('support_chat', 'Hội Thoại Hỗ Trợ', 'chat', 1, NULL, 60)
 ON DUPLICATE KEY UPDATE 

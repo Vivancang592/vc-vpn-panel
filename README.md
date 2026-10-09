@@ -175,7 +175,7 @@ crontab -e
 
 ## 🤖 Cấu Hình AI Tự Động (Lần Đầu)
 
-* **Module AI:** bản SQL hiện tại đã seed sẵn 6 module trong bảng `vc_ai_modules`. Nếu bạn đang dùng bản SQL cũ và gặp lỗi *"Module ... chưa được đăng ký trong cơ sở dữ liệu"*, hãy chạy một lần:
+* **Module AI:** bản SQL hiện tại đã seed sẵn 4 module trong bảng `vc_ai_modules`. Nếu bạn đang dùng bản SQL cũ và gặp lỗi *"Module ... chưa được đăng ký trong cơ sở dữ liệu"*, hãy chạy một lần:
 
 ```bash
 php tools/ai_worker.php --sync-modules
@@ -223,7 +223,6 @@ vc-vpn-2027/
 │   │   │   ├── AiBaseController.php
 │   │   │   ├── AiConversationController.php
 │   │   │   ├── AiDashboardController.php
-│   │   │   ├── AiDubbingController.php
 │   │   │   ├── AiFanpageController.php
 │   │   │   ├── AiImageController.php
 │   │   │   ├── AiModelController.php
@@ -233,7 +232,6 @@ vc-vpn-2027/
 │   │   │   ├── AiReplyController.php
 │   │   │   ├── AiSettingController.php
 │   │   │   ├── AiTaskController.php
-│   │   │   ├── AiVideoController.php
 │   │   │   ├── CouponController.php
 │   │   │   ├── DashboardController.php
 │   │   │   ├── ExpenseController.php
@@ -315,13 +313,6 @@ vc-vpn-2027/
 │   └── vpn_service.sql
 ├── public/
 │   ├── assets/
-│   │   ├── audio/
-│   │   │   └── voice-samples/
-│   │   │       ├── Aoede.wav
-│   │   │       ├── Charon.wav
-│   │   │       ├── Fenrir.wav
-│   │   │       ├── Kore.wav
-│   │   │       └── Puck.wav
 │   │   ├── css/
 │   │   │   ├── admin.css
 │   │   │   ├── app.css
@@ -359,11 +350,9 @@ vc-vpn-2027/
 │       │   │   ├── output-detail.php
 │       │   │   ├── prompt-edit.php
 │       │   │   ├── settings.php
-│       │   │   ├── tab-dubbing.php
 │       │   │   ├── tab-fanpage.php
 │       │   │   ├── tab-image.php
 │       │   │   ├── tab-reply.php
-│       │   │   ├── tab-video.php
 │       │   │   └── task-detail.php
 │       │   ├── coupons/
 │       │   │   ├── create.php
@@ -517,12 +506,10 @@ vc-vpn-2027/
 │   │   └── .gitkeep
 │   ├── prompts/
 │   │   ├── admin_assistant.txt
-│   │   ├── audio_tts.txt
 │   │   ├── content_article.txt
 │   │   ├── fanpage_comment.txt
 │   │   ├── image_generation.txt
-│   │   ├── support_chat.txt
-│   │   └── video_generation.txt
+│   │   └── support_chat.txt
 │   └── tmp/
 ├── tools/
 │   └── ai_worker.php

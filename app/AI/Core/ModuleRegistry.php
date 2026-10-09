@@ -35,20 +35,6 @@ final class ModuleRegistry
             'output_kind' => 'image',
             'enabled'     => true,
         ],
-        'video_generation' => [
-            'label'       => 'Tạo Video AI',
-            'capability'  => AICapability::VIDEO,
-            'prompt_key'  => 'video_generation',
-            'output_kind' => 'video',
-            'enabled'     => true,
-        ],
-        'audio_tts' => [
-            'label'       => 'Chuyển Văn Bản Thành Giọng Nói',
-            'capability'  => AICapability::AUDIO,
-            'prompt_key'  => 'audio_tts',
-            'output_kind' => 'audio',
-            'enabled'     => true,
-        ],
         'fanpage_comment' => [
             'label'       => 'Trả Lời Bình Luận Fanpage',
             'capability'  => AICapability::COMMENT,

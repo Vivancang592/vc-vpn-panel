@@ -43,14 +43,12 @@ $adminGroups = [
         // ai-modules/ai-prompts đã gộp/bỏ, ai-assets đã XOÁ, xem
         // /admin/ai/settings) để group highlight đúng activeMenu khi Admin
         // truy cập từ dashboard. KHÔNG dùng để hiển thị tab.
-        'menus' => ['ai-dashboard', 'ai-image', 'ai-tasks', 'ai-video', 'ai-dubbing', 'ai-fanpage', 'ai-reply', 'ai-settings', 'ai-models', 'ai-conversations', 'ai-outputs', 'ai-assistant'],
+        'menus' => ['ai-dashboard', 'ai-image', 'ai-tasks', 'ai-fanpage', 'ai-reply', 'ai-settings', 'ai-models', 'ai-conversations', 'ai-outputs', 'ai-assistant'],
         'label' => 'Trung Tâm AI',
-        // 8 tab chức năng — trang kỹ thuật truy cập từ dashboard.
+        // 5 tab chức năng — trang kỹ thuật truy cập từ dashboard.
         'tabs' => [
             'ai-dashboard' => ['label' => 'Tổng Quan Hệ Thống AI', 'icon' => 'OVW', 'url' => '/admin/ai'],
             'ai-image'     => ['label' => 'Tạo Ảnh', 'icon' => 'IMG', 'url' => '/admin/ai/image'],
-            'ai-video'     => ['label' => 'Tạo Video', 'icon' => 'VID', 'url' => '/admin/ai/video'],
-            'ai-dubbing'   => ['label' => 'Lời Thoại', 'icon' => 'DUB', 'url' => '/admin/ai/dubbing'],
             'ai-fanpage'   => ['label' => 'Nội Dung Fanpage', 'icon' => 'FPG', 'url' => '/admin/ai/fanpage'],
             'ai-reply'     => ['label' => 'Trả Lời Tự Động', 'icon' => 'RPL', 'url' => '/admin/ai/reply'],
             'ai-settings'  => ['label' => 'Cấu Hình AI', 'icon' => 'CFG', 'url' => '/admin/ai/settings']

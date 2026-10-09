@@ -94,20 +94,6 @@ final class ResponseParser
     }
 
     /**
-     * Trích xuất operation id (video bất đồng bộ).
-     */
-    public function extractOperationId(AIResult $result): ?string
-    {
-        foreach (['id', 'operation_id', 'task_id'] as $key) {
-            if (!empty($result->raw[$key]) && is_string($result->raw[$key])) {
-                return $result->raw[$key];
-            }
-        }
-
-        return null;
-    }
-
-    /**
      * Chuẩn hoá kết quả lỗi để ghi log / activity (đã lọc secret).
      *
      * @return array<string, mixed>

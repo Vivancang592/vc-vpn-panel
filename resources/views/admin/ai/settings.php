@@ -239,23 +239,19 @@ $cfgValue = static function ($value, string $key = '') use ($errLabels, $aiLabel
         </div>
 
         <div class="ai-operational-media" style="min-width: 0;">
-            <div style="font-weight: 700; margin-bottom: 0.25rem;">Tạo Ảnh, Video & Lời Thoại</div>
-            <p style="font-size: 0.76rem; color: var(--ios-text-secondary); margin: 0 0 0.55rem;">Ba chức năng này chạy ngay khi bấm nút, không phải chờ trong danh sách viết bài.</p>
+            <div style="font-weight: 700; margin-bottom: 0.25rem;">Tạo Ảnh</div>
+            <p style="font-size: 0.76rem; color: var(--ios-text-secondary); margin: 0 0 0.55rem;">Chức năng này chạy ngay khi bấm nút, không phải chờ trong danh sách viết bài.</p>
             <div style="border-top: 1px solid var(--ios-border, rgba(128,128,128,.18));">
                 <div style="display: flex; justify-content: space-between; align-items: baseline; gap: 0.75rem; padding: 0.48rem 0; border-bottom: 1px solid var(--ios-border, rgba(128,128,128,.18));">
-                    <span style="color: var(--ios-text-secondary);">Tạo Ảnh & Lời Thoại</span>
+                    <span style="color: var(--ios-text-secondary);">Tạo Ảnh</span>
                     <strong style="color: var(--ios-text); text-align: right;">Có kết quả ngay</strong>
-                </div>
-                <div style="display: flex; justify-content: space-between; align-items: baseline; gap: 0.75rem; padding: 0.48rem 0; border-bottom: 1px solid var(--ios-border, rgba(128,128,128,.18));">
-                    <span style="color: var(--ios-text-secondary);">Tạo Video</span>
-                    <strong style="color: var(--ios-text); text-align: right;">Tự kiểm tra kết quả mỗi 5 giây</strong>
                 </div>
             </div>
         </div>
 
         <div class="ai-operational-fanpage" style="min-width: 0;">
             <div style="font-weight: 700; margin-bottom: 0.25rem;">Danh Sách Viết Bài Fanpage</div>
-            <p style="font-size: 0.76rem; color: var(--ios-text-secondary); margin: 0 0 0.55rem;">Chỉ dùng khi viết bài Fanpage: AI hoàn thành từng bài rồi mới chuyển sang bài tiếp theo. Ảnh, video và lời thoại không vào danh sách này.</p>
+            <p style="font-size: 0.76rem; color: var(--ios-text-secondary); margin: 0 0 0.55rem;">Chỉ dùng khi viết bài Fanpage: AI hoàn thành từng bài rồi mới chuyển sang bài tiếp theo. Ảnh không vào danh sách này.</p>
             <div style="border-top: 1px solid var(--ios-border, rgba(128,128,128,.18));">
                 <?php foreach (['default_max_retries', 'lock_stale_seconds', 'default_priority'] as $key): ?>
                     <?php if (!array_key_exists($key, $task)) continue; ?>
@@ -271,7 +267,7 @@ $cfgValue = static function ($value, string $key = '') use ($errLabels, $aiLabel
         </div>
 
         <div class="ai-operational-storage">
-            <div style="font-weight: 700; margin-bottom: 0.25rem;">Nơi Lưu Ảnh, Video & Lời Thoại</div>
+            <div style="font-weight: 700; margin-bottom: 0.25rem;">Nơi Lưu Ảnh</div>
             <p style="font-size: 0.76rem; color: var(--ios-text-secondary); margin: 0 0 0.55rem;">File được lưu trên máy chủ; cơ sở dữ liệu chỉ lưu thông tin để tìm lại file.</p>
             <?php foreach ($assets as $key => $value): ?>
                 <div style="display: flex; justify-content: space-between; gap: 0.5rem; color: var(--ios-text-secondary);">

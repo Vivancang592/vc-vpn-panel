@@ -14,8 +14,6 @@ final class AICapability
 {
     public const TEXT = 'text';
     public const IMAGE = 'image';
-    public const VIDEO = 'video';
-    public const AUDIO = 'audio';
     public const COMMENT = 'comment';
     public const PUBLISH = 'publish';
     public const CHAT = 'chat';
@@ -24,8 +22,6 @@ final class AICapability
     public const ALL = [
         self::TEXT,
         self::IMAGE,
-        self::VIDEO,
-        self::AUDIO,
         self::COMMENT,
         self::PUBLISH,
         self::CHAT,

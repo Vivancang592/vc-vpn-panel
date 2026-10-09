@@ -43,14 +43,6 @@ final class PromptRegistry
             'system' => 'Bạn là chuyên gia tạo prompt hình ảnh.',
             'user'   => "Tạo ảnh minh hoạ cho: {{prompt}}",
         ],
-        'video_generation' => [
-            'system' => 'Bạn là chuyên gia tạo prompt video ngắn.',
-            'user'   => "Tạo video cho: {{prompt}}",
-        ],
-        'audio_tts' => [
-            'system' => 'Chuyển văn bản thành giọng nói tiếng Việt tự nhiên.',
-            'user'   => '{{text}}',
-        ],
         'fanpage_comment' => [
             'system' => "Bạn là nhân viên chăm sóc khách hàng Fanpage của dịch vụ VPN.\n"
                 . "Bình luận này đến từ FACEBOOK, KHÔNG phải khung chat trên website.\n"

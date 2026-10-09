@@ -34,9 +34,6 @@ return [
             'endpoints'      => [
                 'chat'          => 'POST /chat/completions',
                 'image'         => 'POST /images/generations',
-                'video_create'  => 'POST /videos/generations',
-                'video_status'  => 'GET /videos/operations/{id}',
-                'audio_speech'  => 'POST /audio/speech',
                 'models'        => 'GET /models',
             ],
         ],
@@ -60,9 +57,6 @@ return [
         'default_max_retries'  => (int) (getenv('AI_TASK_MAX_RETRIES') ?: 3),
         'lock_stale_seconds'   => (int) (getenv('AI_TASK_LOCK_STALE_SECONDS') ?: 900),
         'default_priority'     => 5,
-        // Video LRO (Long-Running Operation): provider trả operation id → poll định kỳ.
-        'video_poll_seconds'        => (int) (getenv('AI_VIDEO_POLL_SECONDS') ?: 60),
-        'video_lro_timeout_seconds' => (int) (getenv('AI_VIDEO_LRO_TIMEOUT_SECONDS') ?: 1800),
     ],
 
     // Asset storage (AssetManager dùng). Không lưu blob/base64 vào DB.
@@ -70,7 +64,7 @@ return [
         'disk'          => 'public',
         'base_path'     => 'public/uploads/ai',
         'base_url'      => '/uploads/ai',
-        'allowed_kinds' => ['image', 'video', 'audio', 'other'],
+        'allowed_kinds' => ['image', 'other'],
     ],
 
     // Logging — metadata only, không log media/secret.

@@ -66,7 +66,7 @@ final class AiFanpageController extends AiBaseController
         $articles   = array_slice($articles, ($page - 1) * $pageSize, $pageSize);
 
         // Model cho form giao việc viết bài (lọc theo capability hợp lệ của content_article
-        // + ẩn model bị API key chặn — đồng bộ với tab Ảnh/Video/Lồng giọng).
+        // + ẩn model bị API key chặn — đồng bộ với tab Ảnh).
         $tabConfig = $this->tabConfig();
         $fpModels  = $this->filterUnlockedModels($this->filterModelsForModule(
             is_array($tabConfig['models'] ?? null) ? $tabConfig['models'] : [],

@@ -24,10 +24,6 @@ use App\Models\Setting;
  *
  * KHÔNG biết: ModuleRegistry, PromptRegistry, business prompt, AssetManager,
  * FFmpeg, STT, business workflow.
- *
- * Contract chưa xác minh: video-edit / video-input tham chiếu
- * (KIRA_VIDEO_EDIT_API_CONTRACT_UNVERIFIED) → KHÔNG được tự tạo parameter.
- * STT: Kira chưa xác minh có endpoint STT → KHÔNG tạo.
  */
 final class KiraProvider implements AIProviderInterface
 {
@@ -73,23 +69,6 @@ final class KiraProvider implements AIProviderInterface
     public function image(array $payload, array $options = []): AIResult
     {
         return $this->call('image', $payload, $options);
-    }
-
-    public function videoCreate(array $payload, array $options = []): AIResult
-    {
-        // Chỉ dùng các tham số đã được xác minh ở Phase 2.
-        // KHÔNG thêm parameter video-reference/edit chưa xác minh.
-        return $this->call('video_create', $payload, $options);
-    }
-
-    public function videoStatus(string $operationId, array $options = []): AIResult
-    {
-        return $this->call('video_status', null, $options, ['id' => rawurlencode($operationId)]);
-    }
-
-    public function speech(array $payload, array $options = []): AIResult
-    {
-        return $this->call('audio_speech', $payload, $options);
     }
 
     public function models(array $options = []): AIResult
@@ -197,24 +176,6 @@ final class KiraProvider implements AIProviderInterface
             ], $meta);
         }
 
-        // Audio speech trả về BODY NHỊ PHÂN (MP3), không phải JSON. CHỈ phân xử
-        // khi HTTP 2xx: nếu không lỗi 4xx/5xx (body JSON chứa error) sẽ bị gói
-        // thành "audio" giả thành công. Lỗi đi đường parse JSON chuẩn bên dưới.
-        if ($status >= 200 && $status < 300 && $this->isAudioResponse($meta)) {
-            if (trim($raw) === '') {
-                return AIResult::failure(AIException::MALFORMED, 'Phản hồi audio rỗng.', [
-                    'http_status' => $status,
-                    'duration_ms' => $durationMs,
-                ], $meta);
-            }
-
-            return $this->mapSuccess([
-                'audio' => [
-                    'b64_json' => base64_encode($raw),
-                ],
-            ], $meta, $durationMs, $status);
-        }
-
         $decoded = $this->decode($raw);
 
         if ($status < 200 || $status >= 300) {
@@ -235,18 +196,6 @@ final class KiraProvider implements AIProviderInterface
         }
 
         return $this->mapSuccess(is_array($decoded) ? $decoded : [], $meta, $durationMs, $status);
-    }
-
-    /**
-     * Phản hồi AUDIO là body nhị phân (MP3) — KHÔNG phải JSON. Endpoint
-     * audio_speech (capability AUDIO) là endpoint duy nhất trả nhị phân;
-     * STT/video-edit KHÔNG tồn tại (chưa xác minh) nên không đụng tới.
-     *
-     * @param array<string, mixed> $meta
-     */
-    private function isAudioResponse(array $meta): bool
-    {
-        return (string) ($meta['capability'] ?? '') === AICapability::AUDIO;
     }
 
     /**
@@ -279,12 +228,6 @@ final class KiraProvider implements AIProviderInterface
             $files[] = [
                 'b64_json' => (string) $data['data'][0]['b64_json'],
                 'kind'     => 'image',
-            ];
-        } elseif (isset($data['audio']['b64_json'])) {
-            // TTS nhị phân đã được base64 hoá ở send(): file audio thật.
-            $files[] = [
-                'b64_json' => (string) $data['audio']['b64_json'],
-                'kind'     => 'audio',
             ];
         }
 
@@ -551,8 +494,6 @@ final class KiraProvider implements AIProviderInterface
         return match ($endpointKey) {
             'chat' => AICapability::TEXT,
             'image' => AICapability::IMAGE,
-            'video_create', 'video_status' => AICapability::VIDEO,
-            'audio_speech' => AICapability::AUDIO,
             default => null,
         };
     }

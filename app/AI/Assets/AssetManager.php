@@ -10,7 +10,7 @@ use App\Models\AIAsset;
 /**
  * AssetManager — quản lý file vật lý TẬP TRUNG cho toàn bộ AI Core.
  *
- * Mọi file do AI sinh ra (ảnh/video/audio/khác) BẮT BUỘC đi qua đây.
+ * Mọi file do AI sinh ra (ảnh/khác) BẮT BUỘC đi qua đây.
  * Không module nào được tự ghi file vào public/uploads.
  *
  * Nguyên tắc:
@@ -40,7 +40,7 @@ final class AssetManager
      * Lưu nội dung binary thô thành asset.
      *
      * @param array<string, mixed> $meta
-     * @param string $subdir Thư mục con riêng (vd: tab 'dubbing') — chỉ [a-z0-9_-].
+     * @param string $subdir Thư mục con riêng (vd: tab 'image') — chỉ [a-z0-9_-].
      * @return array<string, mixed> Thông tin asset (id, relative_path, url, ...)
      */
     public function saveContent(
@@ -135,7 +135,7 @@ final class AssetManager
     }
 
     /**
-     * Tăng ref_count khi asset được tham chiếu (output/video/post...).
+     * Tăng ref_count khi asset được tham chiếu (output/post...).
      */
     public function attach(int $assetId): void
     {
@@ -288,7 +288,7 @@ final class AssetManager
 
     private function assertKind(string $kind): void
     {
-        $allowed = (array) ($this->config['assets']['allowed_kinds'] ?? ['image', 'video', 'audio', 'other']);
+        $allowed = (array) ($this->config['assets']['allowed_kinds'] ?? ['image', 'other']);
 
         if (!in_array($kind, $allowed, true)) {
             throw new AIException(
@@ -361,14 +361,6 @@ final class AssetManager
             'image/png'       => 'png',
             'image/webp'      => 'webp',
             'image/gif'       => 'gif',
-            'video/mp4'       => 'mp4',
-            'video/webm'      => 'webm',
-            'video/quicktime' => 'mov',
-            'audio/mpeg'      => 'mp3',
-            'audio/mp3'       => 'mp3',
-            'audio/wav'       => 'wav',
-            'audio/ogg'       => 'ogg',
-            'audio/aac'       => 'aac',
         ];
 
         if ($mimeType !== null && isset($map[strtolower($mimeType)])) {
@@ -377,8 +369,6 @@ final class AssetManager
 
         return match ($kind) {
             'image' => 'png',
-            'video' => 'mp4',
-            'audio' => 'mp3',
             default => 'bin',
         };
     }

@@ -25,7 +25,7 @@ use App\Models\Setting;
  *    dùng lại session sẵn có — KHÔNG tạo hệ authentication mới).
  *  - Nạp `config/ai.php` (config thuần, không secret).
  *  - Cung cấp TaskRunner / AICore / DirectMediaService / ModuleSynchronizer
- *    dùng chung (3 tab media — ảnh/video/lời thoại — chạy TRỰC TIẾP qua
+ *    dùng chung (tab media — ảnh — chạy TRỰC TIẾP qua
  *    DirectMediaService khi admin bấm nút, không xếp hàng đợi).
  *
  * KHÔNG chứa business logic của module nào, KHÔNG gọi provider trực tiếp.
@@ -40,21 +40,18 @@ abstract class AiBaseController extends BaseController
     protected string $activeMenu = 'ai-dashboard';
 
     /**
-     * Cấu hình 7 tab AI — khớp menu group 'ai' trong layouts/admin.php.
+     * Cấu hình 5 tab AI — khớp menu group 'ai' trong layouts/admin.php.
      *
      * Bố cục chức năng:
      *   1. Tổng Quan   (ai-dashboard) — điều phối task/model/output.
      *   2. Tạo Ảnh     (ai-image)     — image_generation, chạy TRỰC TIẾP khi
      *                                   bấm nút (không xếp hàng), thư mục riêng.
-     *   3. Tạo Video   (ai-video)     — video_generation, chạy trực tiếp + poll
-     *                                   LRO inline, thư mục riêng.
-     *   4. Lời Thoại   (ai-dubbing)   — audio_tts, chạy trực tiếp, thư mục riêng.
-     *   5. Fanpage     (ai-fanpage)   — hợp nhất content_article + image_generation
+     *   3. Fanpage     (ai-fanpage)   — hợp nhất content_article + image_generation
      *                                   + lên lịch đăng (cron thuần snapshot, không AI).
-     *   6. Trả Lời TĐ  (ai-reply)     — auto-reply chat/bình luận (support_chat +
+     *   4. Trả Lời TĐ  (ai-reply)      — auto-reply chat/bình luận (support_chat +
      *                                   fanpage_comment) — chỉ trạng thái + Nội Quy
      *                                   + hội thoại (D7: KHÔNG form test chat).
-     *   7. Cấu Hình    (ai-settings)  — trang kỹ thuật.
+     *   5. Cấu Hình    (ai-settings)  — trang kỹ thuật.
      * Trang kỹ thuật (tasks/modules/models/prompts/conversations/outputs/assets)
      * không còn là tab nhưng vẫn truy cập được từ dashboard + menu ngang.
      *
@@ -78,20 +75,6 @@ abstract class AiBaseController extends BaseController
             'module_key'  => 'image_generation',
             'prompt_keys' => ['image_generation'],
             'capability'  => 'image',
-        ],
-        'ai-video' => [
-            'title'       => 'Tạo Video Bằng AI',
-            'subtitle'    => 'Nhập prompt mô tả video muốn tạo — kết quả hiển thị theo lưới ở Thư Mục Tab public/uploads/ai/video.',
-            'module_key'  => 'video_generation',
-            'prompt_keys' => ['video_generation'],
-            'capability'  => 'video',
-        ],
-        'ai-dubbing' => [
-            'title'       => 'Tạo Giọng Đọc Bằng AI',
-            'subtitle'    => 'Nhập lời thoại cần lồng tiếng, chọn giọng + model — file MP3 tạo xong hiển thị theo lưới ở Thư Mục Tab public/uploads/ai/audio.',
-            'module_key'  => 'audio_tts',
-            'prompt_keys' => ['audio_tts'],
-            'capability'  => 'audio',
         ],
         'ai-fanpage' => [
             'title'       => 'Nội Dung Fanpage',
@@ -181,7 +164,7 @@ abstract class AiBaseController extends BaseController
     }
 
     /**
-     * Dịch vụ chạy trực tiếp media (3 tab ảnh/video/lời thoại).
+     * Dịch vụ chạy trực tiếp media (tab ảnh).
      */
     protected function media(): DirectMediaService
     {
@@ -269,14 +252,14 @@ abstract class AiBaseController extends BaseController
     /**
      * Danh sách capability MODEL hợp lệ cho một module.
      *
-     * Catalog `vc_ai_models` CHỈ có 4 capability: chat / image / video / audio,
+     * Catalog `vc_ai_models` CHỈ có 2 capability: chat / image,
      * trong khi module có thêm text / comment / publish (đều chạy qua model chat).
      *
      *  - Module sinh văn bản (text/comment/publish/chat) → nhận model CHAT.
-     *  - Module ảnh / video / lời thoại → chỉ nhận ĐÚNG capability tương ứng.
+     *  - Module ảnh → chỉ nhận ĐÚNG capability image.
      *
      * Mục đích: chặn gán nhầm chat model (vd: gpt-oss-120b) làm model mặc định
-     * cho video_generation / audio_tts → gây lỗi "does not have permission".
+     * cho image_generation → gây lỗi "does not have permission".
      *
      * @return string[]
      */
@@ -690,8 +673,6 @@ abstract class AiBaseController extends BaseController
 
         $rules = [
             'image'   => ['image', 'img', 'vision', 'sd', 'diffusion'],
-            'video'   => ['video'],
-            'audio'   => ['audio', 'tts', 'speech', 'voice'],
             'comment' => ['comment'],
             'publish' => ['publish'],
             'chat'    => ['chat', 'dialog', 'conversation'],
@@ -804,8 +785,6 @@ abstract class AiBaseController extends BaseController
             'capability' => [
                 'text'    => 'Văn bản',
                 'image'   => 'Hình ảnh',
-                'video'   => 'Video',
-                'audio'   => 'Âm thanh',
                 'comment' => 'Bình luận',
                 'chat'    => 'Hội thoại',
                 'publish' => 'Đăng bài',
@@ -813,8 +792,6 @@ abstract class AiBaseController extends BaseController
             'task_type' => [
                 'text'    => 'Tạo bài viết',
                 'image'   => 'Tạo hình ảnh',
-                'video'   => 'Tạo video',
-                'audio'   => 'Tạo giọng nói',
                 'chat'    => 'Hội thoại hỗ trợ',
                 'comment' => 'Trả lời bình luận',
                 'publish' => 'Chuẩn bị đăng bài',
@@ -844,7 +821,6 @@ abstract class AiBaseController extends BaseController
                 'provider_error'      => 'Lỗi provider',
                 'retry_scheduled'     => 'Lên lịch thử lại',
                 'stale_write_blocked' => 'Chặn ghi cũ (fence)',
-                'video_lro_wait'      => 'Chờ video LRO',
             ],
             'provider' => [
                 'kira' => 'Kira AI',
@@ -886,8 +862,6 @@ abstract class AiBaseController extends BaseController
         $map = [
             'content_article'  => 'Tạo Bài Viết',
             'image_generation' => 'Tạo Hình Ảnh',
-            'video_generation' => 'Tạo Video',
-            'audio_tts'        => 'Tạo Giọng Nói',
             'fanpage_comment'  => 'Trả Lời Bình Luận Fanpage',
             'support_chat'     => 'Hội Thoại Hỗ Trợ Khách Hàng',
             'admin_assistant'  => 'Trợ Lý Admin',

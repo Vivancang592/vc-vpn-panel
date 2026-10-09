@@ -228,21 +228,14 @@ return [
     'GET /admin/ai'                     => ['Admin\AiDashboardController', 'index'],
 
     // =================================================================
-    // 7 TAB CHỨC NĂNG — ảnh / video / lời thoại chạy TRỰC TIẾP khi bấm
-    // nút (không xếp hàng đợi, thư mục lưu trữ riêng từng tab); fanpage /
-    // reply vẫn đi task. Trang kỹ thuật (tasks/models/conversations/
+    // 5 TAB CHỨC NĂNG — ảnh chạy TRỰC TIẾP khi bấm nút (không xếp hàng
+    // đợi, thư mục lưu trữ riêng từng tab); fanpage / reply vẫn đi task.
+    // Trang kỹ thuật (tasks/models/conversations/
     // outputs) giữ route truy cập trực tiếp — ĐÃ GỠ link từ UI.
     // =================================================================
     'GET /admin/ai/image'               => ['Admin\AiImageController', 'index'],
     'POST /admin/ai/image/generate'     => ['Admin\AiImageController', 'generate'],
     'POST /admin/ai/image/delete'       => ['Admin\AiImageController', 'delete'],
-    'GET /admin/ai/video'               => ['Admin\AiVideoController', 'index'],
-    'POST /admin/ai/video/generate'     => ['Admin\AiVideoController', 'generate'],
-    'POST /admin/ai/video/poll'         => ['Admin\AiVideoController', 'poll'],
-    'POST /admin/ai/video/delete'       => ['Admin\AiVideoController', 'delete'],
-    'GET /admin/ai/dubbing'             => ['Admin\AiDubbingController', 'index'],
-    'POST /admin/ai/dubbing/generate'   => ['Admin\AiDubbingController', 'generate'],
-    'POST /admin/ai/dubbing/delete'     => ['Admin\AiDubbingController', 'delete'],
     'GET /admin/ai/fanpage'             => ['Admin\AiFanpageController', 'index'],
     'GET /admin/ai/reply'               => ['Admin\AiReplyController', 'index'],
 

@@ -52,7 +52,7 @@ final class AiReplyController extends AiBaseController
         $fpModelOverride = $readOverride($moduleModel->findByKey('fanpage_comment'));
 
         // Danh sách model hợp lệ capability chat (bắt buộc chọn — thiếu báo ngay)
-        // + ẩn model bị API key chặn — đồng bộ với tab Ảnh/Video/Lồng giọng.
+        // + ẩn model bị API key chặn — đồng bộ với tab Ảnh).
         $replyTabConfig = $this->tabConfig();
         $replyModels = $this->filterUnlockedModels($this->filterModelsForModule(
             is_array($replyTabConfig['models'] ?? null) ? $replyTabConfig['models'] : [],

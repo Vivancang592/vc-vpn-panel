@@ -865,7 +865,7 @@ select.glass-input option {
 .ai-media-card:hover .ai-media-actions,
 .ai-media-card:focus-within .ai-media-actions,
 .ai-media-card.is-open .ai-media-actions { opacity: 1; visibility: visible; }
-/* Nút Xem/Xoá luôn ở GIỮA vùng ảnh/video (overlay), không nằm dưới card. */
+/* Nút Xem/Xoá luôn ở GIỮA vùng ảnh (overlay), không nằm dưới card. */
 .ai-media-thumb { position: relative; }
 .ai-media-thumb .ai-media-actions {
     position: absolute;
@@ -877,7 +877,7 @@ select.glass-input option {
     flex-wrap: wrap;
     background: rgba(0, 0, 0, 0.55);
     z-index: 2;
-    /* Backdrop không chặn nút play/seek của video/audio phía dưới;
+    /* Backdrop không chặn các thao tác trên ảnh phía dưới;
        chỉ 2 nút bấm thật sự nhận sự kiện chuột/chạm. */
     pointer-events: none;
 }
@@ -895,10 +895,6 @@ select.glass-input option {
 /* --- Tab Fanpage: chớp nháy nhãn "Đang viết…" --- */
 .fp-blink { animation: fpBlink 1.1s ease-in-out infinite; }
 @keyframes fpBlink { 0%, 100% { opacity: 1; } 50% { opacity: 0.35; } }
-
-/* --- Tab Lồng tiếng: nút nghe thử giọng phóng to khi bấm --- */
-#dubbing-voice-preview:hover { transform: scale(1.15); }
-#dubbing-voice-preview:active { transform: scale(0.92); }
 
 /* ============================================================
    TOAST THÔNG BÁO — toàn bộ trang Admin

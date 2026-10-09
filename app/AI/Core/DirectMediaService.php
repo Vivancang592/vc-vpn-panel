@@ -8,26 +8,16 @@ use App\AI\Assets\AssetManager;
 use App\AI\Contracts\AIResult;
 
 /**
- * DirectMediaService — chạy TRỰC TIẾP media (ảnh/video/audio) khi admin bấm
- * nút, KHÔNG đi qua hàng đợi vc_ai_tasks (TaskRunner chỉ dùng cho luồng
+ * DirectMediaService — chạy TRỰC TIẾP media (ảnh) khi admin bấm nút,
+ * KHÔNG đi qua hàng đợi vc_ai_tasks (TaskRunner chỉ dùng cho luồng
  * content/queue của Fanpage & tasks kỹ thuật).
  *
- * Ba tab dùng service này: Tạo Ảnh (image), Tạo Video (video), Lời Thoại
- * (dubbing). Mỗi tab có THƯ MỤC LƯU TRỮ RIÊNG dưới public/uploads/ai:
- *   image   → uploads/ai/image/image/<date>/  (kind=image, subdir=image)
- *   video   → uploads/ai/video/<date>/         (kind=video — đã tách sẵn)
- *   dubbing → uploads/ai/audio/dubbing/<date>/ (kind=audio, subdir=dubbing)
+ * Tab Tạo Ảnh dùng service này:
+ *   image → uploads/ai/image/image/<date>/  (kind=image, subdir=image)
  * (metadata['tab'] đánh dấu chủ sở hữu để lọc gallery trong từng tab).
- *
- * Video là LRO (asynchronous): start() trả operation id → poll() lặp tới khi
- * completed (giống resolveVideoLro của TaskRunner nhưng chạy đồng bộ trong
- * request của admin).
  */
 final class DirectMediaService
 {
-    /** Trạng thái LRO video coi là THẤT BẠI (khớp TaskRunner::VIDEO_LRO_FAILED). */
-    private const VIDEO_LRO_FAILED = ['failed', 'error', 'cancelled', 'canceled', 'expired'];
-
     /** @var array<string, mixed> */
     private array $config;
 
@@ -57,91 +47,6 @@ final class DirectMediaService
         $result = $this->core->run('image_generation', ['prompt' => $prompt], $options);
 
         return $this->persistResult($result, 'image', ['tab' => 'image', 'prompt' => $prompt], $userId, $options);
-    }
-
-    /**
-     * Tạo LỜI THOẠI (TTS) ngay khi bấm nút — module audio_tts (AUDIO).
-     *
-     * @param array<string, mixed> $options voice / model
-     * @return array{ok: bool, asset: ?array<string, mixed>, error: ?string, model: ?string}
-     */
-    public function generateDubbing(string $text, array $options = [], ?int $userId = null): array
-    {
-        $result = $this->core->run('audio_tts', ['text' => $text], $options);
-
-        return $this->persistResult($result, 'audio', ['tab' => 'dubbing', 'prompt' => $text], $userId, $options);
-    }
-
-    /**
-     * BẮT ĐẦU tạo VIDEO (LRO) — trả về operation id để poll.
-     *
-     * @param array<string, mixed> $options aspect_ratio / duration_seconds / model
-     * @return array{ok: bool, operation_id: ?string, pending: bool, asset: ?array<string, mixed>, error: ?string, model: ?string}
-     */
-    public function startVideo(string $prompt, array $options = [], ?int $userId = null): array
-    {
-        $result = $this->core->run('video_generation', ['prompt' => $prompt], $options);
-
-        if (!$result->isOk()) {
-            return [
-                'ok' => false, 'operation_id' => null, 'pending' => false,
-                'asset' => null, 'error' => $result->errorMessage() ?? 'Không khởi tạo được video.',
-                'model' => $result->model,
-            ];
-        }
-
-        // Đồng bộ (provider trả media ngay) → lưu luôn.
-        if ($result->files !== []) {
-            $saved = $this->saveResultFiles($result, 'video', ['tab' => 'video', 'prompt' => $prompt] + $this->metaFromOptions($options), $userId);
-            if ($saved !== null) {
-                return ['ok' => true, 'operation_id' => null, 'pending' => false, 'asset' => $saved, 'error' => null, 'model' => $result->model];
-            }
-        }
-
-        // LRO: trích operation id để admin poll (kết thúc ở poll()).
-        $opId = (new ResponseParser())->extractOperationId($result);
-        if ($opId === null || $opId === '') {
-            return [
-                'ok' => false, 'operation_id' => null, 'pending' => false,
-                'asset' => null, 'error' => 'Provider không trả về operation id (không poll được).',
-                'model' => $result->model,
-            ];
-        }
-
-        return ['ok' => true, 'operation_id' => $opId, 'pending' => true, 'asset' => null, 'error' => null, 'model' => $result->model];
-    }
-
-    /**
-     * POLL trạng thái video LRO → ['state' => running|done|failed, asset?, error?].
-     *
-     * @param array<string, mixed> $extraMeta metadata bổ sung khi lưu (prompt/options từ session job)
-     * @return array{state: string, asset: ?array<string, mixed>, error: ?string}
-     */
-    public function pollVideo(string $operationId, ?int $userId = null, array $extraMeta = []): array
-    {
-        $result = $this->core->videoStatus($operationId);
-        $raw = is_array($result->raw) ? $result->raw : [];
-        $status = strtolower(trim((string) ($raw['status'] ?? '')));
-
-        // Provider báo thất bại rõ ràng → dừng (không poll tiếp).
-        if (in_array($status, self::VIDEO_LRO_FAILED, true)) {
-            return ['state' => 'failed', 'asset' => null, 'error' => 'Provider báo video thất bại (' . $status . ').'];
-        }
-
-        // Đã có media hoặc báo completed → lưu file vào thư mục tab video.
-        if ($result->files !== [] || $status === 'completed') {
-            if ($result->files === []) {
-                return ['state' => 'failed', 'asset' => null, 'error' => 'Provider báo completed nhưng không trả file media.'];
-            }
-            $saved = $this->saveResultFiles($result, 'video', ['tab' => 'video'] + $extraMeta, $userId);
-            if ($saved !== null) {
-                return ['state' => 'done', 'asset' => $saved, 'error' => null];
-            }
-            return ['state' => 'failed', 'asset' => null, 'error' => 'Không lưu được file video.'];
-        }
-
-        // Chưa xong (queued/running/...) → poll tiếp.
-        return ['state' => 'running', 'asset' => null, 'error' => null];
     }
 
     // ------------------------------------------------------------------
@@ -235,7 +140,7 @@ final class DirectMediaService
         }
 
         $tab = (string) ($extraMeta['tab'] ?? '');
-        $subdir = preg_match('/^[a-z0-9_-]{1,24}$/', $tab) === 1 && $tab !== 'video' ? $tab : '';
+        $subdir = preg_match('/^[a-z0-9_-]{1,24}$/', $tab) === 1 ? $tab : '';
 
         foreach ($files as $file) {
             if (!is_array($file)) {
@@ -283,7 +188,7 @@ final class DirectMediaService
     }
 
     /**
-     * Ghi các option admin chọn vào metadata asset (size/voice/aspect...).
+     * Ghi các option admin chọn vào metadata asset (size/model...).
      *
      * @param array<string, mixed> $options
      * @return array<string, mixed>
@@ -291,7 +196,7 @@ final class DirectMediaService
     private function metaFromOptions(array $options): array
     {
         $meta = [];
-        foreach (['size', 'voice', 'aspect_ratio', 'duration_seconds', 'model'] as $key) {
+        foreach (['size', 'model'] as $key) {
             if (isset($options[$key]) && $options[$key] !== '' && $options[$key] !== null) {
                 $meta[$key] = $options[$key];
             }
@@ -302,11 +207,7 @@ final class DirectMediaService
 
     private static function kindForTab(string $tab): string
     {
-        return match ($tab) {
-            'image' => 'image',
-            'video' => 'video',
-            default => 'audio',
-        };
+        return $tab === 'image' ? 'image' : 'other';
     }
 
     private function rootPath(): string
