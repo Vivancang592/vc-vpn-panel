@@ -30,7 +30,7 @@ require __DIR__ . '/_tab-header.php';
 ?>
 
 <!-- ============ CAB 1: FORM GIAO VIỆC (ở trên) ============ -->
-<div class="glass-card" style="padding: 1.25rem; margin-bottom: 1rem; width: 100%; box-sizing: border-box; border-left: 4px solid var(--ios-blue);">
+<div class="glass-card" style="padding: 1.25rem; margin-bottom: 1rem; width: 100%; box-sizing: border-box;">
     <h2 style="font-size: 1.05rem; font-weight: 700; margin-bottom: 0.35rem;">Chủ Đề</h2>
     <p style="font-size: 0.8rem; color: var(--ios-text-secondary); margin-bottom: 0.9rem;">
         Nhập nhiều chủ đề, AI sẽ viết từng bài một theo Nội Quy AI. Bài hoàn tất sẽ chuyển sang Danh Sách Bài Viết — vào đó để xem, copy prompt tạo ảnh hoặc hẹn giờ đăng lên fanpage.
@@ -85,7 +85,7 @@ require __DIR__ . '/_tab-header.php';
 
 <!-- ============ CAB 2: TIẾN TRÌNH VIẾT TUẦN TỰ (phía dưới form) ============ -->
 <div id="fp-pane-progress">
-    <div class="glass-card" style="padding: 1.25rem; margin-bottom: 1rem; width: 100%; box-sizing: border-box; border-left: 4px solid var(--ios-warning, #ff9f0a);">
+    <div class="glass-card" style="padding: 1.25rem; margin-bottom: 1rem; width: 100%; box-sizing: border-box;">
         <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.75rem; margin-bottom: 0.5rem;">
             <h2 style="font-size: 1.05rem; font-weight: 700;">Tiến Trình</h2>
         </div>
@@ -142,7 +142,7 @@ require __DIR__ . '/_tab-header.php';
         return $postStatus[$status] ?? ['Bài viết', 'var(--ios-text-secondary)'];
     } ?>
 
-    <div class="glass-card" style="padding: 1.25rem; width: 100%; box-sizing: border-box; margin-bottom: 0; border-left: 4px solid var(--ios-success, #30d158);">
+    <div class="glass-card" style="padding: 1.25rem; width: 100%; box-sizing: border-box; margin-bottom: 0;">
         <div class="table-responsive">
             <table class="glass-table">
                 <thead>
@@ -807,7 +807,7 @@ require __DIR__ . '/_tab-header.php';
 </script>
 
 <!-- ============ CAB 4: GIÁM SÁT CHU KỲ REMARKETING (BƯỚC 5.8) ============ -->
-<div class="glass-card" style="padding: 1.25rem; margin-bottom: 1rem; width: 100%; box-sizing: border-box; border-left: 4px solid var(--ios-success, #30d158);">
+<div class="glass-card" style="padding: 1.25rem; margin-bottom: 1rem; width: 100%; box-sizing: border-box;">
     <h2 style="font-size: 1.05rem; font-weight: 700; margin-bottom: 0.35rem;">Tiến Độ Remarketing (Chu Kỳ Tháng)</h2>
     <p style="font-size: 0.8rem; color: var(--ios-text-secondary); margin-bottom: 0.9rem;">
         Giám sát các chiến dịch <b>lặp hằng tháng</b> và <b>khách hàng cũ</b>: chu kỳ hiện tại, ngày chạy kế tiếp, số tin đã gửi trong chu kỳ này.

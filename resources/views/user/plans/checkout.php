@@ -662,7 +662,6 @@ ob_start();
 
 
             <p class="user-checkout-legal">
-                Giá hiển thị đã bao gồm thuế VAT (nếu có).
                 Khi xác nhận, bạn đồng ý với
                 <a href="/terms">Điều khoản sử dụng</a>
                 và

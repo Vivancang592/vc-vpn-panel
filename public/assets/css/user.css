@@ -1120,6 +1120,38 @@ body.user-area .user-plan-price-duration strong {
   font-weight: 800;
 }
 body.user-area .user-plan-price-duration span { color: var(--u-text-3); }
+/* Lưới gói: laptop/PC tối đa 3 thẻ / hàng — thẻ tràn xuống hàng kế tiếp,
+   2 cột ở màn hình vừa, 1 cột ở mobile */
+body.user-area .user-plans-grid {
+  width: 100%;
+  max-width: 100%;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 1.25rem;
+}
+@media (max-width: 1180px) {
+  body.user-area .user-plans-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (max-width: 720px) {
+  body.user-area .user-plans-grid { grid-template-columns: 1fr; gap: 1rem; }
+}
+/* Gói hết hàng: viền thẻ xám + nút mua xám (không hover xanh, không nhấc thẻ) */
+body.user-area .user-plan-card.is-sold-out,
+body.user-area .user-plan-card.is-sold-out:hover {
+  border-color: rgba(142, 142, 147, .55);
+  border-top-color: #8e8e93 !important;
+  transform: none;
+  box-shadow: var(--u-shadow-soft);
+}
+body.user-area .user-plan-card.is-sold-out .glass-btn,
+body.user-area .user-plan-card.is-sold-out .glass-btn:hover {
+  border-color: rgba(142, 142, 147, .6);
+  background: #6c6c70;
+  color: #fff;
+  box-shadow: none;
+  transform: none;
+  cursor: not-allowed;
+}
 /* Ô rỗng */
 body.user-area .user-plans-empty {
   border: 1px dashed var(--u-border-strong);

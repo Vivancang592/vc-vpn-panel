@@ -86,7 +86,7 @@
 .home-security-notes strong { margin-bottom: .35rem; color: var(--color-text); }
 .home-security-notes span { color: var(--color-text-muted); font-size: .9rem; line-height: 1.5; }
 
-.home-faq { width: 100%; margin: 3.5rem auto var(--space-4); scroll-margin-top: var(--space-4); }
+.home-faq { width: 90%; margin: 3.5rem auto var(--space-4); scroll-margin-top: var(--space-4); }
 .home-faq-heading { margin-bottom: var(--space-5); }
 .home-faq-heading h2 { margin: var(--space-2) 0; }
 .home-faq-list { display: flex; flex-direction: column; gap: .85rem; }
@@ -597,6 +597,14 @@ body.vpn-theme.home-festival .guest-mobile-menu { background: rgba(10, 14, 23, .
 body.vpn-theme.home-festival .guest-mobile-menu .guest-nav-link { color: #9aa7bd; background: rgba(255, 255, 255, .04); border: 1px solid rgba(148, 163, 184, .18); font-size: .8rem; letter-spacing: .02em; text-transform: uppercase; }
 body.vpn-theme.home-festival .guest-mobile-menu .guest-nav-link:hover { background: rgba(0, 122, 255, .14); border-color: #007aff; color: #ffffff; }
 body.vpn-theme.home-festival .guest-mobile-menu .guest-auth-group { border-top-color: rgba(148, 163, 184, .18); }
+
+/* Gói hết hàng: viền + nút mua màu xám (đồng bộ trang Bảng giá) */
+.plan-card-vip.is-sold-out { border-color: rgba(142, 142, 147, .6) !important; border-top-color: rgba(142, 142, 147, .9) !important; box-shadow: 0 10px 24px rgba(108, 108, 112, .18) !important; }
+.plan-card-vip.is-sold-out::before { border-color: rgba(142, 142, 147, .32) !important; }
+.plan-card-vip.is-sold-out:hover { border-color: rgba(142, 142, 147, .75) !important; box-shadow: 0 10px 24px rgba(108, 108, 112, .22) !important; transform: none !important; }
+.plan-card-vip.is-sold-out:hover::after { opacity: 0 !important; box-shadow: none !important; }
+.plan-card-vip.is-sold-out .btn-buy,
+.plan-card-vip.is-sold-out .btn-buy:hover { background: #6c6c70 !important; color: #ffffff !important; border-color: #6c6c70 !important; box-shadow: none !important; transform: none !important; cursor: not-allowed; }
 
 /* Public subpages share the landing-page security operations system. */
 .home-subpage { width: min(100%, 1280px); margin: 0 auto; padding: clamp(1.5rem, 4vw, 3.5rem) clamp(1rem, 3vw, 2rem) 4rem; color: #e6ecf5; }

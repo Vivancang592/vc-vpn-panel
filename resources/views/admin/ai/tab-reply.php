@@ -95,7 +95,7 @@ $_catalogKeys = array_map(static fn ($m): string => (string) ($m['model_key'] ??
 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1rem; align-items: start;">
 
     <!-- Kênh 1: Chat website -->
-    <div class="glass-card" style="padding: 1.25rem; width: 100%; box-sizing: border-box; border-left: 4px solid <?= ($chatEnabled ?? false) ? 'var(--ios-success)' : 'var(--ios-danger)' ?>;">
+    <div class="glass-card" style="padding: 1.25rem; width: 100%; box-sizing: border-box;">
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
             <h2 style="font-size: 1.05rem; font-weight: 700;">Chat Web</h2>
             <span style="font-size: 0.8rem; font-weight: 700; color: <?= ($chatEnabled ?? false) ? 'var(--ios-success)' : 'var(--ios-danger)' ?>;">
@@ -113,7 +113,7 @@ $_catalogKeys = array_map(static fn ($m): string => (string) ($m['model_key'] ??
     </div>
 
     <!-- Kênh 2: Bình luận + Messenger Fanpage -->
-    <div class="glass-card" style="padding: 1.25rem; width: 100%; box-sizing: border-box; border-left: 4px solid <?= ($commentEnabled ?? false) ? 'var(--ios-success)' : 'var(--ios-danger)' ?>;">
+    <div class="glass-card" style="padding: 1.25rem; width: 100%; box-sizing: border-box;">
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
             <h2 style="font-size: 1.05rem; font-weight: 700;">Bình Luận</h2>
             <span style="font-size: 0.8rem; font-weight: 700; color: <?= ($commentEnabled ?? false) ? 'var(--ios-success)' : 'var(--ios-danger)' ?>;">
@@ -324,7 +324,7 @@ $_catalogKeys = array_map(static fn ($m): string => (string) ($m['model_key'] ??
     <?php endif; ?>
 </div>
 
-<div class="glass-card" style="padding: 1rem 1.25rem; width: 100%; box-sizing: border-box; border-left: 3px solid var(--ios-blue);">
+<div class="glass-card" style="padding: 1rem 1.25rem; width: 100%; box-sizing: border-box;">
     <div style="font-size: 0.8rem; color: var(--ios-text-secondary); line-height: 1.7;">
         Nội dung trả lời được điều khiển bởi prompt <code>support_chat</code> / <code>fanpage_comment</code> và
         Nội quy đã được gộp sẵn trong prompt. Sửa tại

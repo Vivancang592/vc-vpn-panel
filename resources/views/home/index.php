@@ -132,8 +132,12 @@ $loggedIn = !empty($_SESSION['user_id']);
             <div class="home-tab-panel" id="home-panel-<?= $i ?>" <?= $i ? 'hidden' : '' ?>>
                 <div class="home-plan-grid">
                     <?php foreach ($items as $plan): ?>
-                        <?php $checkout = '/checkout?id=' . (int) $plan['id']; ?>
-                        <article class="plan-card-vip">
+                        <?php
+                        $checkout = '/checkout?id=' . (int) $plan['id'];
+                        $stockQty = $plan['stock_quantity'] ?? null;
+                        $isSoldOut = $stockQty !== null && (int) $stockQty <= 0;
+                        ?>
+                        <article class="plan-card-vip<?= $isSoldOut ? ' is-sold-out' : '' ?>">
                             <header class="plan-header">
                                 <div class="plan-header-row">
                                     <div class="plan-identity">
@@ -145,7 +149,6 @@ $loggedIn = !empty($_SESSION['user_id']);
                                             </svg>
                                             <span><?= htmlspecialchars($plan['name']) ?></span>
                                         </h3>
-                                        <?php $stockQty = $plan['stock_quantity'] ?? null; $isSoldOut = $stockQty !== null && (int) $stockQty <= 0; ?>
                                         <span class="plan-stock-label<?= $stockQty === null ? '' : ($isSoldOut ? ' is-soldout' : ' is-available') ?>">
                                             <?= $stockQty === null ? 'Không giới hạn số lượng' : ($isSoldOut ? 'Đã hết hàng' : 'Còn ' . number_format((int) $stockQty) . ' suất') ?>
                                         </span>
@@ -154,7 +157,7 @@ $loggedIn = !empty($_SESSION['user_id']);
                                         <div class="price-val">
                                             <?= isset($formatMoney) ? $formatMoney($plan['price']) : number_format($plan['price'], 0, ',', '.') . ' đ' ?>
                                         </div>
-                                        <span class="plan-duration-label"><?= (int) $plan['duration_days'] ?> ngày</span>
+                                        <span class="plan-duration-label">Thời Hạn: <?= (int) $plan['duration_days'] ?> ngày</span>
                                     </div>
                                 </div>
                             </header>
@@ -231,7 +234,11 @@ foreach ($lines as $line):
                                 </div>
                             </div>
 
-                            <a class="btn-buy" href="<?= $loggedIn ? $checkout : '/login?redirect=' . urlencode($checkout) ?>">ĐĂNG KÝ GÓI NÀY</a>
+                            <?php if ($isSoldOut): ?>
+                                <span class="btn-buy" aria-disabled="true">ĐÃ HẾT HÀNG</span>
+                            <?php else: ?>
+                                <a class="btn-buy" href="<?= $loggedIn ? $checkout : '/login?redirect=' . urlencode($checkout) ?>">ĐĂNG KÝ GÓI NÀY</a>
+                            <?php endif; ?>
                         </article>
                     <?php endforeach; ?>
                 </div>

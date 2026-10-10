@@ -21,7 +21,7 @@ ob_start();
 <section class="user-plans-page" style="width: 100% !important; max-width: 100% !important; box-sizing: border-box;">
 	<header class="user-plans-header">
 		<h2 class="u-plans-title">CHỌN GÓI DỊCH VỤ PHÙ HỢP VỚI BẠN</h2>
-		<p>Kết nối ổn định, bảo mật và linh hoạt trên mọi thiết bị, Giá hiển thị đã bao gồm thuế VAT (nếu có).</p>
+		<p>Kết nối ổn định, bảo mật và linh hoạt trên mọi thiết bị, mọi lúc, mọi nơi.</p>
 	</header>
 
 	<?php if (!empty($_SESSION['error'])): ?>
@@ -37,7 +37,7 @@ ob_start();
 			<?php endforeach; ?>
 		</div>
 
-		<div class="user-plans-grid" data-plan-grid style="width: 100% !important; max-width: 100% !important; display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1.25rem;">
+		<div class="user-plans-grid" data-plan-grid style="width: 100% !important; max-width: 100% !important; display: grid; gap: 1.25rem;">
 			<?php foreach ($availablePlans as $plan): ?>
 				<?php
 				$planId = (int) ($plan['id'] ?? 0);
@@ -48,20 +48,22 @@ ob_start();
 				$isSoldOut = $stockQuantity !== null && (int) $stockQuantity <= 0;
 				$groupIds = isset($plan['group_ids']) && is_array($plan['group_ids']) ? array_map('intval', $plan['group_ids']) : [];
 				?>
-				<article class="glass-card user-plan-card" data-plan-group-ids="<?= htmlspecialchars(implode(',', $groupIds)) ?>" style="display: flex; flex-direction: column; justify-content: space-between; height: 100%; box-sizing: border-box; width: 100%;">
+				<article class="glass-card user-plan-card<?= $isSoldOut ? ' is-sold-out' : '' ?>" data-plan-group-ids="<?= htmlspecialchars(implode(',', $groupIds)) ?>" style="display: flex; flex-direction: column; justify-content: space-between; height: 100%; box-sizing: border-box; width: 100%;">
 					<div>
 						<!-- Tên gói & Giá cước -->
 						<div class="user-plan-card-heading" style="width: 100%; display: flex; justify-content: space-between; align-items: center; padding-bottom: 0.75rem; margin-bottom: 0.75rem; border-bottom: 1px solid var(--glass-border, rgba(255, 255, 255, 0.15));">
-							<div class="user-plan-name" style="margin: 0; display: flex; align-items: center; gap: 0.5rem;">
-								<span class="user-plan-title-icon" aria-hidden="true">&#128722;</span>
-								<div>
-									<h2 style="margin: 0; font-size: 1.1rem; font-weight: 600;"><?= htmlspecialchars($plan['name'] ?? 'Gói VPN') ?></h2>
-									<div style="margin-top: 0.25rem; color: <?= $isSoldOut ? 'var(--ios-danger)' : ($stockQuantity !== null ? 'var(--ios-success)' : 'var(--ios-text-secondary, #636366)') ?>; font-size: 0.82rem;">
+							<div class="user-plan-name" style="margin: 0; display: flex; align-items: center; gap: 0.5rem; min-width: 0;">
+								<div style="min-width: 0;">
+									<div class="user-plan-title-row" style="display: flex; align-items: center; gap: 0.5rem;">
+										<span class="user-plan-title-icon" aria-hidden="true">&#128722;</span>
+										<h2 style="margin: 0; font-size: 1.1rem; font-weight: 600;"><?= htmlspecialchars($plan['name'] ?? 'Gói VPN') ?></h2>
+									</div>
+									<div style="margin-top: 0.25rem; padding-left: 2.2rem; color: <?= $isSoldOut ? 'var(--ios-danger)' : ($stockQuantity !== null ? 'var(--ios-success)' : 'var(--ios-text-secondary, #636366)') ?>; font-size: 0.82rem;">
 										<?= $stockQuantity === null ? 'Không giới hạn số lượng' : ($isSoldOut ? 'Đã hết hàng' : 'Còn ' . number_format((int) $stockQuantity) . ' suất') ?>
 									</div>
 								</div>
 							</div>
-							<div class="user-plan-price-duration" style="display: flex; flex-direction: column; align-items: flex-end; gap: 0.1rem;"><strong><?= $formatPrice($plan['price'] ?? 0) ?></strong><span><?= $duration ?> ngày</span></div>
+							<div class="user-plan-price-duration" style="display: flex; flex-direction: column; align-items: flex-end; gap: 0.1rem;"><strong><?= $formatPrice($plan['price'] ?? 0) ?></strong><span>Thời Hạn: <?= $duration ?> ngày</span></div>
 						</div>
 
 						<!-- Danh sách Content mô tả -->
@@ -128,7 +130,7 @@ ob_start();
 						</div>
 
 						<?php if ($isSoldOut): ?>
-							<span class="glass-btn" aria-disabled="true" style="width: 100%; text-align: center; margin-top: 0.5rem; display: block; opacity: 0.55; cursor: not-allowed;">Đã hết hàng</span>
+							<span class="glass-btn" aria-disabled="true" style="width: 100%; text-align: center; margin-top: 0.5rem; display: block; cursor: not-allowed;">Đã hết hàng</span>
 						<?php else: ?>
 							<a href="/checkout?id=<?= (int)($plan['id'] ?? 0) ?>" class="glass-btn" style="width: 100%; text-align: center; text-decoration: none; margin-top: 0.5rem; display: block;">Chọn gói này</a>
 						<?php endif; ?>

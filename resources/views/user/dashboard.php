@@ -61,6 +61,14 @@ if (!empty($posts) && is_array($posts)) {
 }
 
 $dashboardPlans = is_array($plans ?? null) ? array_values($plans) : [];
+// Chỉ hiển thị gói còn hàng (không giới hạn số lượng hoặc còn suất > 0)
+$dashboardPlans = array_values(array_filter(
+    $dashboardPlans,
+    static function ($plan): bool {
+        $stock = $plan['stock_quantity'] ?? null;
+        return $stock === null || (int) $stock > 0;
+    }
+));
 if (!empty($dashboardPlans)) {
     shuffle($dashboardPlans);
     $dashboardPlans = array_slice($dashboardPlans, 0, 6);
@@ -735,7 +743,7 @@ if (!empty($noticePosts)): ?>
 <section class="dashboard-plan-section" aria-labelledby="dashboard-plan-heading">
     <div style="margin-bottom: 1.25rem; text-align: center;">
         <h3 class="u-section-title u-section-title--lg" id="dashboard-plan-heading">Bảng Giá Gói Dịch Vụ</h3>
-        <p style="margin: 0; color: var(--ios-text-secondary, #636366); font-size: 0.88rem;">Danh sách các gói dịch vụ đang mở đăng ký.</p>
+        <p style="margin: 0; color: var(--ios-text-secondary, #636366); font-size: 0.88rem;">Khám phá các gói dịch vụ VPN đang mở đăng ký, chọn gói phù hợp và xem toàn bộ bảng giá tại <a href="/user/plans" style="color: var(--ios-blue, #0a84ff); font-weight: 600; text-decoration: underline; text-underline-offset: 2px;">Cửa hàng</a>.</p>
     </div>
     <div class="dashboard-plan-grid">
         <?php foreach ($dashboardPlans as $plan): ?>
@@ -747,16 +755,18 @@ if (!empty($noticePosts)): ?>
             <article class="glass-card user-plan-card dashboard-plan-card" style="display: flex; flex-direction: column; justify-content: space-between; height: 100%; box-sizing: border-box; width: 100%;">
                 <div>
                     <div class="user-plan-card-heading" style="width: 100%; display: flex; justify-content: space-between; align-items: center; padding-bottom: 0.75rem; margin-bottom: 0.75rem; border-bottom: 1px solid var(--glass-border, rgba(255, 255, 255, 0.15));">
-                        <div class="user-plan-name" style="margin: 0; display: flex; align-items: center; gap: 0.5rem;">
-                            <span class="user-plan-title-icon" aria-hidden="true">&#128722;</span>
-                            <div>
-                                <h2 style="margin: 0; font-size: 1.1rem; font-weight: 600;"> <?= htmlspecialchars($plan['name'] ?? 'Gói VPN') ?></h2>
-                                <div class="dashboard-plan-stock <?= $isSoldOut ? 'is-sold-out' : ($stockQuantity !== null ? 'is-in-stock' : '') ?>" style="margin-top: 0.25rem;">
+                        <div class="user-plan-name" style="margin: 0; display: flex; align-items: center; gap: 0.5rem; min-width: 0;">
+                            <div style="min-width: 0;">
+                                <div class="user-plan-title-row" style="display: flex; align-items: center; gap: 0.5rem;">
+                                    <span class="user-plan-title-icon" aria-hidden="true">&#128722;</span>
+                                    <h2 style="margin: 0; font-size: 1.1rem; font-weight: 600;"> <?= htmlspecialchars($plan['name'] ?? 'Gói VPN') ?></h2>
+                                </div>
+                                <div class="dashboard-plan-stock <?= $isSoldOut ? 'is-sold-out' : ($stockQuantity !== null ? 'is-in-stock' : '') ?>" style="margin-top: 0.25rem; padding-left: 2.2rem;">
                                     <?= $stockQuantity === null ? 'Không giới hạn số lượng' : ($isSoldOut ? 'Đã hết hàng' : 'Còn ' . number_format((int) $stockQuantity) . ' suất') ?>
                                 </div>
                             </div>
                         </div>
-                        <div class="user-plan-price-duration" style="display: flex; flex-direction: column; align-items: flex-end; gap: 0.1rem;"><strong><?= $formatPrice($plan['price'] ?? 0) ?></strong><span><?= (int) ($plan['duration_days'] ?? 30) ?> ngày</span></div>
+                        <div class="user-plan-price-duration" style="display: flex; flex-direction: column; align-items: flex-end; gap: 0.1rem;"><strong><?= $formatPrice($plan['price'] ?? 0) ?></strong><span>Thời Hạn: <?= (int) ($plan['duration_days'] ?? 30) ?> ngày</span></div>
                     </div>
 
                     <ul class="info-list" style="list-style: none; padding: 0; margin: 0 0 0.75rem 0; display: flex; flex-direction: column; gap: 0.4rem; text-align: left !important; width: 100%;">
