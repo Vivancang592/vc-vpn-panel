@@ -26,11 +26,17 @@ final class AdminActionTools
     private const TOOLS = [
         'post_draft'      => 'Soạn bài viết CHƯA lưu: trả về bản xem trước hiển thị TRONG ĐOẠN CHAT cho admin xem trước, admin bấm "Lưu Bài" mới ghi thành bài nháp (tool KHÔNG ghi database). args: {title: string, content: string (Markdown/HTML), type: "news"|"tutorial"|"faq"|"popup", slug?: string}.',
         'user_lookup'     => 'Tìm tài khoản user (id, username, email) để chọn người nhận mail. args: {q?: string (tên hoặc email — để trống lấy tối đa 50).}',
-        'campaign_create' => 'Lập lịch chiến dịch gửi theo ngày (cron gửi dần, CHỐNG GỬI TRÙNG vĩnh viễn). args: {kind: "email"|"fb", title, subject (bắt buộc khi email), body (nội dung đã soạn), target_mode: "all_users"|"all_fans"|"specific", user_ids?: int[], emails?: string[], psids?: string[], daily_limit?: int (1-500, mặc định 50)}.',
+        'campaign_create' => 'Lập lịch chiến dịch gửi theo ngày (cron gửi dần, CHỐNG GỬI TRÙNG trong mỗi chu kỳ). args: {kind: "email"|"fb", title, subject (bắt buộc khi email), body (nội dung đã soạn), target_mode: "all_users"|"all_fans"|"specific"|"old_customers", user_ids?: int[], emails?: string[], psids?: string[], daily_limit?: int (1-500, mặc định 50), recurrence?: "once"|"monthly" (mặc định once), day_of_month?: int (1-31, ngày chạy khi monthly), personalize?: bool (true = AI soạn lại mỗi chu kỳ + điền {ten}/{goi_cu}/{uu_dai} thật)}.',
         'campaign_list'   => 'Liệt kê chiến dịch + trạng thái + số đã gửi. args: {}.',
         'campaign_status' => 'Tạm dừng/tiếp tục/hủy chiến dịch. args: {campaign_id: int, action: "pause"|"resume"|"cancel"}.',
         'revenue_report'  => 'Xuất báo cáo doanh thu tháng ra file Excel (.xlsx) tải về được. args: {year?: int, month?: int}.',
     ];
+
+    /** Danh sách tool + mô tả — nguồn duy nhất cho ToolRegistry. @return array<string,string> */
+    public static function toolDescriptions(): array
+    {
+        return self::TOOLS;
+    }
 
     /** Khối mô tả protocol nhúng vào system prompt lúc runtime. */
     public static function protocolBlock(): string
@@ -44,7 +50,7 @@ final class AdminActionTools
         foreach (self::TOOLS as $name => $desc) {
             $lines[] = "- {$name}: {$desc}";
         }
-        $lines[] = '- campaign_create KHÔNG gửi ngay: hệ thống cron gửi dần mỗi ngày tối đa daily_limit người, mỗi người chỉ nhận MỘT LẦN mỗi chiến dịch (chống trùng). Sau khi tạo, trả lời admin: số người nhận, daily_limit, số ngày dự kiến + link [Xem chiến dịch](/admin/assistant) không cần thiết — chỉ nêu tóm tắt.';
+        $lines[] = '- campaign_create KHÔNG gửi ngay: hệ thống cron gửi dần mỗi ngày tối đa daily_limit người, mỗi người chỉ nhận MỘT LẦN MỖI CHU KỲ (chống trùng theo cycle_no). recurrence="monthly" → lặp hằng tháng vào day_of_month (hệ thống tự gọn 31 về cuối tháng), KHÔNG BAO GIỜ tự done; target_mode="old_customers" → khách đã hết hạn/không hoạt động (remarketing FB), đã lọc opt-out + cửa sổ 7 ngày của Meta. Sau khi tạo, trả lời admin: tập khách, nhịp gửi, số người nhận, daily_limit, số ngày/ngày chạy dự kiến.';
         $lines[] = '- post_draft CHỈ soạn + hiển thị bài cho admin xem TRƯỚC trong đoạn chat (CHƯA ghi database). Khi tool trả preview=true → trả lời ĐÚNG MỘT CÂU: "Bài viết đã soạn xong và hiển thị ngay bên dưới — admin bấm **Lưu Bài** để lưu nháp." TUYỆT ĐỐI KHÔNG nói "đã lưu", KHÔNG chèn link, KHÔNG lặp lại nội dung bài.';
         $lines[] = '- revenue_report trả về link TƯƠNG ĐỐI dạng /admin/assistant/report?file=... — hãy chèn vào câu trả lời Markdown dạng [Tải file Excel](/admin/assistant/report?file=...) (KHÔNG ghép domain).';
         return implode("\n", $lines);

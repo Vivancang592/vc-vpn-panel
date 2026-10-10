@@ -23,6 +23,12 @@ final class AdminStatsTools
         'get_expense_summary'   => 'Tổng chi phí theo tháng và theo danh mục. args: {year?:int, month?:int}.',
     ];
 
+    /** Danh sách tool + mô tả — nguồn duy nhất cho ToolRegistry. @return array<string,string> */
+    public static function toolDescriptions(): array
+    {
+        return self::TOOLS;
+    }
+
     /**
      * Khối mô tả protocol nhúng vào system prompt lúc runtime.
      */

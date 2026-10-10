@@ -166,6 +166,125 @@ final class SiteKnowledge
     /** Menu thành viên (sidebar) — thấy trên MỌI trang sau đăng nhập. */
     private const MEMBER_NAV = 'Tổng quan /dashboard | Gói dịch vụ /user/plans | Đơn hàng /orders | Thanh toán /payments | Ví tiền /wallet | Giới thiệu bạn bè /referrals | Rút tiền /withdrawals | Hỗ trợ /tickets | Hướng dẫn /user/guides | Tải ứng dụng /user/downloads | Hồ sơ /profile';
 
+    /** Cache UI map trong 1 request (chat chỉ cần đọc 1 lần). */
+    private static ?array $pagesCache = null;
+
+    /**
+     * BƯỚC 4.1 — Bản đồ trang NGUỒN TỪ BẢNG `vc_ai_ui_map` (Admin sửa được,
+     * không còn hard-code). Bảng rỗng / chưa migrate / lỗi DB → tự giữ nguyên
+     * const PAGES nên chat không bao giờ chết vì thiếu dữ liệu.
+     *
+     * @return array<int, array{path: string, login: bool, title: string, actions: array<string, string>}>
+     */
+    public static function pages(): array
+    {
+        if (self::$pagesCache !== null) {
+            return self::$pagesCache;
+        }
+
+        $rows = [];
+        try {
+            if (class_exists(\App\Models\AiUiMap::class)) {
+                foreach ((new \App\Models\AiUiMap())->getActivePages() as $r) {
+                    $path = trim((string) ($r['page_path'] ?? ''));
+                    if ($path === '') {
+                        continue;
+                    }
+                    $decoded = json_decode((string) ($r['actions_json'] ?? '{}'), true);
+                    $actions = [];
+                    if (is_array($decoded)) {
+                        foreach ($decoded as $label => $action) {
+                            $label = trim((string) $label);
+                            if ($label !== '') {
+                                $actions[$label] = trim((string) $action);
+                            }
+                        }
+                    }
+                    $title = trim((string) ($r['title'] ?? ''));
+                    $rows[] = [
+                        'path'   => $path,
+                        'login'  => (int) ($r['requires_login'] ?? 0) === 1,
+                        'title'  => $title !== '' ? $title : $path,
+                        'actions' => $actions,
+                    ];
+                }
+            }
+        } catch (\Throwable $e) {
+            $rows = [];
+        }
+
+        self::$pagesCache = $rows !== [] ? $rows : self::PAGES;
+
+        return self::$pagesCache;
+    }
+
+    /** Bản seed hard-code — công cụ quét (tools/ai_ui_map_build.php) lấy từ đây. */
+    public static function constPages(): array
+    {
+        return self::PAGES;
+    }
+
+    /** Xóa cache UI map trong request hiện tại (dùng khi vừa sửa bản đồ). */
+    public static function resetPagesCache(): void
+    {
+        self::$pagesCache = null;
+    }
+
+    /**
+     * Mọi đường dẫn TRANG hợp lệ AI được phép nhắc tới (dùng cho AnswerGuard
+     * chặn câu trả lời bịa link). Kèm các tiền tố tài nguyên tĩnh vô hại.
+     *
+     * @return string[]
+     */
+    public static function allowedPaths(): array
+    {
+        $paths = [];
+        foreach (self::pages() as $p) {
+            $paths[] = self::normalizePath((string) $p['path']);
+        }
+        // Tài nguyên tĩnh / truy vấn chung không phải "trang" nhưng model hay ghé.
+        $paths = array_merge($paths, [
+            '/assets', '/public', '/storage', '/images', '/img', '/css', '/js', '/favicon.ico',
+            '/robots.txt', '/sitemap.xml', '/client', '/api', '/auth/google',
+        ]);
+
+        return array_values(array_unique($paths));
+    }
+
+    /**
+     * BƯỚC 4.1 — Khối "GIAO DIỆN TRANG NGƯỜI DÙNG" (từng nút + vị trí thật)
+     * dùng cho system prompt của AI Trợ lý Admin. Trước đây hard-code trong
+     * AdminAssistantService::userUiBlock(); chuyển về đây để AI chat khách &
+     * AI admin dùng chung MỘT nguồn kiến thức UI/UX.
+     */
+    public static function userUiBlock(): string
+    {
+        return <<<'MD'
+
+### GIAO DIỆN TRANG NGƯỜI DÙNG (USER) — từng nút & vị trí
+Khi admin hỏi về giao diện/trang khách hàng thấy (trang user), trả lời theo khối dưới đây:
+
+**Layout chung (resources/views/layouts/):**
+- navbar.php — đầu MỌI trang: trái — "Trang chủ"(/), "Sản phẩm"(#bang-gia), "Hướng dẫn"(/faq), "Câu hỏi thường gặp"(#cau-hoi-thuong-gap), "Tải ứng dụng"(/download); phải — đã đăng nhập: icon 🔔 → /notifications + dropdown hồ sơ có "Đăng xuất"(/logout), chưa đăng nhập: "Đăng nhập"(/login) + "Đăng ký"(/register); mobile: nút ☰ mở menu.
+- sidebar.php — menu trái khu vực khách (trang đã đăng nhập): Dashboard(/dashboard), Cửa Hàng(/user/plans), Gói Đăng Ký(/subscriptions), Đơn Hàng(/orders), Lịch Sử Giao Dịch(/payments), Ví Tiền(/wallet), Tiếp Thị Liên Kết(/referrals), Rút Hoa Hồng(/withdrawals), Ticket(/tickets), Thông Báo(/notifications), Hướng Dẫn(/user/guides), Tải Ứng Dụng(/user/downloads), Tài Khoản(/profile).
+- footer.php — chân trang: mạng xã hội (Facebook, Zalo, YouTube, Email); "Điều Khoản"(/terms), "Quyền Riêng Tư"(/privacy), "Chính Sách Hoàn Tiền"(/refund); chatbot 💬 neo góc dưới phải (ô "Nhập câu hỏi..." + nút "Gửi").
+
+**Trang chủ (/) — home/index.php:** hero "Bảo vệ kết nối ngay" (cuộn xuống #bang-gia) + nút "Bắt đầu ngay"/"Mở bảng điều khiển"; bảng giá giữa trang: tab nhóm gói (button lọc) + mỗi card gói có "ĐĂNG KÝ GÓI NÀY" → /checkout?id=... (chưa đăng nhập → /login); CTA cuối: "Tải ứng dụng VPN"(/download), "Hướng dẫn cài đặt"(/faq), "Xem gói VPN"(#bang-gia).
+
+**Auth:** /login — ô "Email hoặc Username", ô mật khẩu + nút 👁 hiện/ẩn, nút "ĐĂNG NHẬP", nút "Đăng nhập bằng Google"(/auth/google), link "Quên mật khẩu?"(/forgot-password), link "Đăng ký ngay". /register — ô "Email hoặc Username", ô Email, ô "Mã OTP" 6 số + nút "Gửi mã", ô mật khẩu + 👁, ô "Mã giới thiệu", checkbox đồng ý điều khoản (bắt buộc — thiếu là nút disabled), nút "ĐĂNG KÝ", link "Điều khoản"/"Riêng tư". /forgot-password — ô Email + "Gửi mã", ô OTP, ô mật khẩu mới, nút "CẬP NHẬT MẬT KHẨU".
+
+**Dashboard (/dashboard) — user/dashboard.php:** card gói gần nhất ("Kết nối" → /subscriptions/detail, "Gia hạn" → /checkout?type=renewal, "Tất cả gói của tôi" → /subscriptions); hàng quick-actions: "💳 Nạp tiền"(/payments/deposit), "🛒 Mua gói dịch vụ"(/user/plans), "🎫 Tạo ticket hỗ trợ"(/tickets/create); 4 card thống kê (gói/đơn/ticket/ví, mỗi card có "Xem chi tiết"); CTA "Cửa Hàng", "Đăng ký ngay", "Chọn gói này".
+
+**Mua gói:** /user/plans — tab lọc "Tất cả" + tên nhóm, mỗi card có "Chọn gói này" → /checkout?id=...; /checkout — (đơn chờ: "hoàn tất thanh toán" → /payment/checkout, "hủy đơn"), chọn nhanh số tiền (button), ô "Nhập số tiền", ô mã giảm giá + "Xác nhận mã", khu chọn phương thức thanh toán, link Điều khoản/Hoàn tiền, nút submit cuối form; /payment/checkout — thẻ tài khoản/nội dung CK + nút 📋 sao chép, link "Xem lịch sử giao dịch", "Xem gói dịch vụ", "Xem đơn gia hạn".
+
+**Ví & giao dịch:** /payments — nút "Nạp tiền", giao dịch chờ → menu ⋮ ("Thanh toán ngay"/"Hủy giao dịch"); /wallet — chọn nhanh số tiền (button), ô "Nhập số tiền", nút "Tiếp tục nạp tiền".
+
+**Gói & đơn:** /subscriptions — "Mua gói dịch vụ", mỗi dòng "Chi tiết"(→ /subscriptions/detail) + "Gia hạn"(→ /checkout?type=renewal); /subscriptions/detail — ô readonly chứa connection URL/key + nút "Sao chép", nút "Mở Karing" (deep link karing://), nút "Lấy mã QR" (modal QR); /orders — menu ⋮ (chi tiết, "Thanh toán ngay", "Hủy đơn"); /orders/detail — nút "Thanh toán ngay" cuối hóa đơn.
+
+**Khác:** /profile — username/email/ngày tạo/Google readonly + form đổi mật khẩu ("Mật khẩu hiện tại", "Mật khẩu mới", nút "Lưu thay đổi"); /download (công khai) & /user/downloads — lưới 5 card "iPhone & iPad, Android, Windows, macOS, Linux" → /client?tag=...; /user/guides (bài hướng dẫn), /tickets (tạo/chi tiết ticket), /referrals (form mời bạn + link giới thiệu), /withdrawals (rút hoa hồng), /notifications (danh sách + 🔔 navbar).
+MD;
+    }
+
     /**
      * BƯỚC 1 — dò bài hướng dẫn liên quan câu hỏi của khách.
      *
@@ -269,7 +388,7 @@ final class SiteKnowledge
 
         $group = $isFacebook ? 'CÔNG KHAI (Facebook được phép gửi)' : 'CÔNG KHAI';
         $lines[] = "\n-- NHÓM {$group} --";
-        foreach (self::PAGES as $page) {
+        foreach (self::pages() as $page) {
             if ($page['login']) {
                 continue;
             }
@@ -279,7 +398,7 @@ final class SiteKnowledge
         if (!$isFacebook) {
             if ($isLoggedIn) {
                 $lines[] = "\n-- NHÓM SAU ĐĂNG NHẬP (CHỈ dùng khi khách ĐÃ đăng nhập) --";
-                foreach (self::PAGES as $page) {
+                foreach (self::pages() as $page) {
                     if (!$page['login']) {
                         continue;
                     }

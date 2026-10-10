@@ -205,6 +205,62 @@ class ChatSession extends BaseModel
         return (int) $stmt->fetchColumn();
     }
 
+    /**
+     * Ngữ cảnh cuộn của phiên chat khách hàng (BƯỚC 3.1).
+     *
+     * Khi hội thoại vượt ngân sách token, phần tin CŨ NHẤT được tóm tắt lại
+     * và lưu ở đây → câu hỏi mới vẫn biết rõ "đầu cuộc trò chuyện nói gì".
+     * Đọc lỗi (migration chưa chạy) → coi như chưa có tóm tắt, không chặn chat.
+     *
+     * @return array{summary: string, covered_through: int}
+     */
+    public function contextState(int $id): array
+    {
+        $fallback = ['summary' => '', 'covered_through' => 0];
+        if ($id <= 0) {
+            return $fallback;
+        }
+
+        try {
+            $stmt = self::$db->prepare(
+                "SELECT `summary`, `covered_through` FROM `{$this->table}` WHERE `id` = :id LIMIT 1"
+            );
+            $stmt->execute(['id' => $id]);
+            $row = $stmt->fetch();
+            if (!$row) {
+                return $fallback;
+            }
+
+            return [
+                'summary' => (string) ($row['summary'] ?? ''),
+                'covered_through' => (int) ($row['covered_through'] ?? 0),
+            ];
+        } catch (\Throwable $e) {
+            return $fallback;
+        }
+    }
+
+    /** Ghi lại bản tóm tắt + mốc đã tóm tắt của phiên. */
+    public function saveContextState(int $id, string $summary, int $coveredThrough): bool
+    {
+        if ($id <= 0) {
+            return false;
+        }
+
+        try {
+            $stmt = self::$db->prepare(
+                "UPDATE `{$this->table}` SET `summary` = :summary, `covered_through` = :covered_through WHERE `id` = :id"
+            );
+            return $stmt->execute([
+                'summary' => $summary,
+                'covered_through' => max(0, $coveredThrough),
+                'id' => $id,
+            ]);
+        } catch (\Throwable $e) {
+            return false;
+        }
+    }
+
     public function getOrCreate(string $visitorToken, string $source = 'web', ?int $userId = null, ?string $externalId = null): ?array
     {
         $existing = $this->findByVisitor($visitorToken, $source);

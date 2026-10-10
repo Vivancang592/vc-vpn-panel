@@ -806,6 +806,74 @@ require __DIR__ . '/_tab-header.php';
     })();
 </script>
 
+<!-- ============ CAB 4: GIÁM SÁT CHU KỲ REMARKETING (BƯỚC 5.8) ============ -->
+<div class="glass-card" style="padding: 1.25rem; margin-bottom: 1rem; width: 100%; box-sizing: border-box; border-left: 4px solid var(--ios-success, #30d158);">
+    <h2 style="font-size: 1.05rem; font-weight: 700; margin-bottom: 0.35rem;">Tiến Độ Remarketing (Chu Kỳ Tháng)</h2>
+    <p style="font-size: 0.8rem; color: var(--ios-text-secondary); margin-bottom: 0.9rem;">
+        Giám sát các chiến dịch <b>lặp hằng tháng</b> và <b>khách hàng cũ</b>: chu kỳ hiện tại, ngày chạy kế tiếp, số tin đã gửi trong chu kỳ này.
+        Cron <code>/api/cron/monthly-remarketing</code> quay chu kỳ đến hạn rồi gửi bù mỗi ngày tối đa daily_limit — hàng rào tuân thủ Meta (opt-out + cửa sổ 7 ngày) luôn được kiểm tra trước khi gửi.
+    </p>
+    <?php $cpRows = is_array($cycleProgress ?? null) ? $cycleProgress : []; ?>
+    <?php if ($cpRows === []): ?>
+        <div style="font-size: 0.85rem; color: var(--ios-text-secondary); padding: 0.75rem 0;">
+            Chưa có chiến dịch monthly nào (tạo qua AI Trợ lý bằng công cụ <b>campaign_create</b> với <code>recurrence: "monthly"</code> và/hoặc <code>target_mode: "old_customers"</code>).
+        </div>
+    <?php else: ?>
+        <div style="overflow-x: auto;">
+            <table style="width: 100%; border-collapse: collapse; font-size: 0.8rem;">
+                <thead>
+                    <tr style="text-align: left; color: var(--ios-text-secondary); border-bottom: 1px solid var(--ios-border);">
+                        <th style="padding: 0.5rem 0.4rem;">Chiến dịch</th>
+                        <th style="padding: 0.5rem 0.4rem;">Kênh</th>
+                        <th style="padding: 0.5rem 0.4rem;">Nhịp</th>
+                        <th style="padding: 0.5rem 0.4rem;">Ngày chạy</th>
+                        <th style="padding: 0.5rem 0.4rem;">Chu kỳ</th>
+                        <th style="padding: 0.5rem 0.4rem;">Gửi chu kỳ này</th>
+                        <th style="padding: 0.5rem 0.4rem;">Giới hạn/ngày</th>
+                        <th style="padding: 0.5rem 0.4rem;">Trạng thái</th>
+                        <th style="padding: 0.5rem 0.4rem;">Lần gửi cuối</th>
+                        <th style="padding: 0.5rem 0.4rem;">Tổng đã gửi</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <?php foreach ($cpRows as $cp): ?>
+                        <?php
+                        $cpTitle = (string) ($cp['title'] ?? '');
+                        $cpKind  = (string) ($cp['kind'] ?? '');
+                        $cpNext  = trim((string) ($cp['next_run_at'] ?? ''));
+                        $cpCycle = (int) ($cp['cycle_no'] ?? 0);
+                        $cpSentC = (int) ($cp['sent_this_cycle'] ?? 0);
+                        $cpClaim = (int) ($cp['claimed_this_cycle'] ?? 0);
+                        $cpStat  = (string) ($cp['status'] ?? '');
+                        $cpLast  = trim((string) ($cp['last_sent_date'] ?? ''));
+                        ?>
+                        <tr style="border-bottom: 1px solid var(--ios-border);">
+                            <td style="padding: 0.5rem 0.4rem; font-weight: 600;"><?= htmlspecialchars($cpTitle) ?></td>
+                            <td style="padding: 0.5rem 0.4rem;"><?= $cpKind === 'fb' ? 'Fanpage' : 'Email' ?></td>
+                            <td style="padding: 0.5rem 0.4rem;"><?= (int) ($cp['day_of_month'] ?? 1) ?>/tháng<?= (int) ($cp['personalize'] ?? 0) === 1 ? ' · AI' : '' ?></td>
+                            <td style="padding: 0.5rem 0.4rem;"><?= $cpNext !== '' ? htmlspecialchars(substr($cpNext, 0, 10)) : '—' ?></td>
+                            <td style="padding: 0.5rem 0.4rem; font-weight: 700;">#<?= $cpCycle ?></td>
+                            <td style="padding: 0.5rem 0.4rem;"><?= $cpSentC ?> / <?= $cpClaim ?> đã nhận<?= $cpClaim > $cpSentC ? ' · ' . ($cpClaim - $cpSentC) . ' chờ/thất bại' : '' ?></td>
+                            <td style="padding: 0.5rem 0.4rem;"><?= (int) ($cp['daily_limit'] ?? 50) ?></td>
+                            <td style="padding: 0.5rem 0.4rem;">
+                                <?php if ($cpStat === 'active'): ?>
+                                    <span style="color: var(--ios-success, #30d158); font-weight: 700;">Đang chạy</span>
+                                <?php elseif ($cpStat === 'paused'): ?>
+                                    <span style="color: var(--ios-warning, #ff9f0a); font-weight: 700;">Tạm dừng</span>
+                                <?php else: ?>
+                                    <span style="color: var(--ios-text-secondary);"><?= htmlspecialchars($cpStat) ?></span>
+                                <?php endif; ?>
+                            </td>
+                            <td style="padding: 0.5rem 0.4rem;"><?= $cpLast !== '' ? htmlspecialchars($cpLast) : '—' ?></td>
+                            <td style="padding: 0.5rem 0.4rem;"><?= (int) ($cp['total_sent'] ?? 0) ?></td>
+                        </tr>
+                    <?php endforeach; ?>
+                </tbody>
+            </table>
+        </div>
+    <?php endif; ?>
+</div><!-- /CAB 4 remarketing -->
+
 <?php
 $content = ob_get_clean();
 require BASE_PATH . '/resources/views/layouts/admin.php';

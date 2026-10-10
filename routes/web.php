@@ -217,6 +217,8 @@ return [
     // Tự động quét gói cước & Đăng bài Fanpage (Cron Job)
     'GET /api/cron/check-subscriptions' => ['CronController', 'checkSubscriptions'],
     'GET /api/cron/auto-post'           => ['CronController', 'autoPostFanpage'],
+    // BƯỚC 5.7 — quay chu kỳ monthly + gửi remarketing (auth X-Cron-Key / ?key=)
+    'GET /api/cron/monthly-remarketing' => ['CronController', 'monthlyRemarketing'],
 
     // =================================================================
     // TRUNG TÂM AI (AI Core Admin) — /admin/ai/*
@@ -301,6 +303,12 @@ return [
     'GET /admin/assistant/history'         => ['Admin\AiAssistantController', 'history'],
     'GET /admin/assistant/attachment'      => ['Admin\AiAssistantController', 'attachment'],
     'GET /admin/assistant/plans'           => ['Admin\AiAssistantController', 'plans'],
+    // Hành động AI đang chờ admin xác nhận (thẻ action-confirm trong chat)
+    'GET /admin/assistant/action/pending'  => ['Admin\AiAssistantController', 'pendingActions'],
+    'POST /admin/assistant/action/confirm' => ['Admin\AiAssistantController', 'confirmAction'],
+    'POST /admin/assistant/action/cancel'  => ['Admin\AiAssistantController', 'cancelAction'],
+    // Nhật ký thao tác công cụ của một đoạn chat
+    'GET /admin/assistant/tool-calls'      => ['Admin\AiAssistantController', 'toolCalls'],
     // Ảnh do AI tạo (tab Tạo Ảnh) — chọn đính kèm vào tin nhắn chat
     'GET /admin/assistant/ai-images'       => ['Admin\AiAssistantController', 'aiImages'],
     'GET /admin/assistant/plan/view'       => ['Admin\AiAssistantController', 'planView'],

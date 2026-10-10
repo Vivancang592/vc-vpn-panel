@@ -90,9 +90,12 @@ class ChatbotController extends BaseController
         $sessionRow = $this->resolveSession($source, null, $userId);
 
         $history = [];
+        $historyOffset = 0;
+        $messageModel = new ChatMessage();
         if (!empty($sessionRow['id'])) {
-            $messageModel = new ChatMessage();
-            $historyRows = $messageModel->getRecentBySession((int) $sessionRow['id'], 20);
+            // BƯỚC 3.1: đưa tối đa 100 tin (model tự giữ trong ngân sách token)
+            // để AI nhớ toàn bộ cuộc hội thoại thay vì 8 tin × 500 ký tự như cũ.
+            $historyRows = $messageModel->getRecentBySession((int) $sessionRow['id'], 100);
             foreach ($historyRows as $row) {
                 $history[] = [
                     'role' => (string) ($row['role'] ?? 'user'),
@@ -100,12 +103,12 @@ class ChatbotController extends BaseController
                     'at' => (string) ($row['created_at'] ?? '')
                 ];
             }
+            // Số tin cũ đã trôi khỏi cửa sổ 100 tin (đếm TRƯỚC khi thêm tin này)
+            // → AI tóm tắt theo TOÀN PHIÊN chứ không theo mảng đang cầm.
+            $historyOffset = max(0, $messageModel->countBySession((int) $sessionRow['id']) - count($history));
+            // Lưu tin của khách vào CSDL. KHÔNG append vào $history ở đây:
+            // ChatbotService::reply() tự thêm tin hiện tại → tránh lặp 2 lần.
             $messageModel->add((int) $sessionRow['id'], 'user', $message);
-            $history[] = [
-                'role' => 'user',
-                'content' => $message,
-                'at' => date('Y-m-d H:i:s')
-            ];
         }
 
         $service = new ChatbotService();
@@ -114,6 +117,7 @@ class ChatbotController extends BaseController
             'page' => $page,
             'page_title' => $pageTitle,
             'history' => $history,
+            'history_offset' => $historyOffset,
             'user_id' => (int) ($userId ?? 0),
             'is_logged_in' => $isLoggedIn,
             'user_name' => $userName,

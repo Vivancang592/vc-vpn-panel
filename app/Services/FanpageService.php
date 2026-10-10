@@ -6,6 +6,7 @@ use App\AI\Knowledge\SiteKnowledge;
 use App\Models\ChatEvent;
 use App\Models\ChatMessage;
 use App\Models\ChatSession;
+use App\Models\FbContact;
 use App\Models\Post;
 use App\Models\Setting;
 
@@ -54,7 +55,7 @@ class FanpageService
                 if ($isChatEnabled) {
                     foreach ($messagingEvents as $event) {
                         try {
-                            $this->handleMessengerEvent($event);
+                            $this->handleMessengerEvent($event, $pageId);
                         } catch (\Throwable $e) {
                             $this->logFanpage(500, 'Messenger error: ' . $e->getMessage(), 'system');
                         }
@@ -83,8 +84,9 @@ class FanpageService
 
     /**
      * Xử lý tin nhắn 1-1 qua Messenger
+     * $pageId: page sở hữu hội thoại (Bước 5 — cần cho bản đồ vc_fb_contacts).
      */
-    private function handleMessengerEvent(array $event): void
+    private function handleMessengerEvent(array $event, string $pageId = ''): void
     {
         $senderId = (string) ($event['sender']['id'] ?? '');
         $text = trim((string) ($event['message']['text'] ?? ''));
@@ -93,6 +95,30 @@ class FanpageService
         if ($senderId === '' || $text === '' || $isEcho) {
             return;
         }
+
+        // === Bước 5.2 — Cửa sổ 7 ngày + đồng ý nhận tin + liên kết email ===
+        // Mọi lượt khách nhắn (kể cả lặp) đều refresh last_interaction_at
+        // → đây là CỬA SỔ 7 NGÀY hợp lệ của Meta để chiến dịch được phép gửi.
+        $fbContact = new FbContact();
+        $fbContact->touch($senderId, $pageId, (string) ($event['sender']['name'] ?? ''));
+
+        // Lệnh đồng ý/từ chối nhận tin nhắn chăm sóc (không qua AI, không qua truy vấn).
+        $norm = preg_replace('/[!.,?…]+$/u', '', mb_strtolower($text));
+        $norm = trim((string) $norm);
+        if (in_array($norm, ['unstop', 'start', 'tiếp tục', 'tiep tuc'], true)) {
+            $fbContact->optIn($senderId);
+            $this->sendMessage($senderId, 'Cảm ơn bạn! Mình sẽ tiếp tục cập nhật chương trình ưu đãi cho bạn nhé. Gõ STOP bất cứ lúc nào nếu bạn không muốn nhận nữa.');
+            return;
+        }
+        if (in_array($norm, ['stop', 'unsubscribe', 'unsub', 'tắt', 'tat', 'dừng', 'dung', 'hủy', 'huy'], true)) {
+            $fbContact->optOut($senderId, $pageId);
+            $this->sendMessage($senderId, 'Đã ngừng gửi tin nhắn chăm sóc đến bạn. Khi nào bạn muốn nhận lại, chỉ cần nhắn START nhé. Mình vẫn luôn sẵn sàng hỗ trợ bạn tại đây.');
+            return;
+        }
+
+        // Khách tự cung cấp email đăng ký trong chat → gắn PSID với tài khoản
+        // để chiến dịch "khách hàng cũ" nhận diện đúng người (Bước 5.4).
+        $fbContact->tryLinkByEmail($senderId, $text);
 
         if (mb_strlen($text) > 1200) {
             $this->sendMessage($senderId, 'Tin nhắn của bạn hơi dài. Vui lòng rút gọn để mình hỗ trợ chính xác hơn.');
@@ -114,6 +140,7 @@ class FanpageService
             }
         }
 
+        $historyPack = $this->loadHistory($senderId);
         $reply = $this->chatbot->reply($text, [
             'source' => 'fanpage',
             'page' => 'messenger',
@@ -123,7 +150,8 @@ class FanpageService
             'user_name' => '',
             'from_name' => (string) ($event['sender']['name'] ?? ''),
             'message' => $text,
-            'history' => $this->loadHistory($senderId),
+            'history' => $historyPack['history'],
+            'history_offset' => $historyPack['offset'],
             'session_id' => $sessionId
         ]);
 
@@ -638,14 +666,23 @@ class FanpageService
         return (new ChatSession())->getOrCreate($visitorToken, 'fanpage', null, $senderId);
     }
 
+    /**
+     * Lịch sử hội thoại fanpage + số tin cũ đã trôi khỏi cửa sổ đọc.
+     * BƯỚC 3.1: đọc tối đa 100 tin (trước đây chỉ 12) — phần trôi ra ngoài
+     * được ChatbotService tóm tắt luân chuyển, không mất ngữ cảnh.
+     *
+     * @return array{history: array<int, array{role: string, content: string}>, offset: int}
+     */
     private function loadHistory(string $senderId): array
     {
         $session = $this->resolveFanpageSession($senderId);
         if (empty($session['id'])) {
-            return [];
+            return ['history' => [], 'offset' => 0];
         }
 
-        $rows = (new ChatMessage())->getRecentBySession((int) $session['id'], 12);
+        $sessionId = (int) $session['id'];
+        $model = new ChatMessage();
+        $rows = $model->getRecentBySession($sessionId, 100);
         $history = [];
         foreach ($rows as $row) {
             $history[] = [
@@ -654,18 +691,27 @@ class FanpageService
             ];
         }
 
-        return $history;
+        return [
+            'history' => $history,
+            'offset' => max(0, $model->countBySession($sessionId) - count($history)),
+        ];
     }
 
     /**
-     * Gửi tin nhắn Messenger cho một người (public — chiến dịch Trợ Lý Admin
-     * cũng gọi để quảng cáo tới người từng nhắn fanpage).
+     * Gửi tin nhắn Messenger cho một người (public — chiến dịch Remarketing
+     * và Trợ Lý Admin đều gọi).
+     *
+     * Bước 5.6: trả về KẾT QUẢ CÓ CẤU TRÚC để tầng chiến dịch biết mà
+     * retry (chỉ retry khi lỗi THUẬT TOÁN/MẠNG: HTTP 0/5xx/429).
+     * Mọi lời gọi cũ bỏ qua return này vẫn hoạt động nguyên vẹn.
+     *
+     * @return array{ok: bool, status: int, error_code: int, error: string, raw: string}
      */
-    public function sendMessage(string $recipientId, string $text): void
+    public function sendMessage(string $recipientId, string $text): array
     {
         $token = trim((string) ($this->settings['fanpage_page_access_token'] ?? getenv('FANPAGE_PAGE_ACCESS_TOKEN') ?: ''));
         if ($token === '' || $recipientId === '' || trim($text) === '') {
-            return;
+            return ['ok' => false, 'status' => 0, 'error_code' => 0, 'error' => 'missing_token_or_recipient', 'raw' => ''];
         }
 
         $payload = [
@@ -689,6 +735,23 @@ class FanpageService
         curl_close($ch);
 
         $this->logFanpage($status, $raw, $recipientId);
+
+        $rawStr = is_string($raw) ? $raw : '';
+        $decoded = json_decode($rawStr, true);
+        $gErr = is_array($decoded) && !empty($decoded['error']) && is_array($decoded['error'])
+            ? $decoded['error']
+            : null;
+        $httpOk = $status >= 200 && $status < 300;
+
+        return [
+            'ok' => $httpOk && $gErr === null,
+            'status' => $status,
+            'error_code' => $gErr !== null ? (int) ($gErr['code'] ?? 0) : 0,
+            'error' => $gErr !== null
+                ? mb_substr((string) ($gErr['message'] ?? ''), 0, 300)
+                : ($httpOk ? '' : 'http_' . $status),
+            'raw' => $rawStr,
+        ];
     }
 
     private function applyProxy($ch): void

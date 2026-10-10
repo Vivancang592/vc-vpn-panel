@@ -41,4 +41,19 @@ class ChatMessage extends BaseModel
         $row = $stmt->fetch();
         return $row ?: null;
     }
+
+    /**
+     * Tổng số tin của 1 phiên — dùng để biết cửa sổ `getRecentBySession()`
+     * đang trỏ vào đoạn nào của cuộc trò chuyện (BƯỚC 3.1 tóm tắt luân chuyển).
+     */
+    public function countBySession(int $sessionId): int
+    {
+        if ($sessionId <= 0) {
+            return 0;
+        }
+        $stmt = self::$db->prepare("SELECT COUNT(*) FROM `{$this->table}` WHERE `session_id` = :session_id");
+        $stmt->execute(['session_id' => $sessionId]);
+
+        return (int) $stmt->fetchColumn();
+    }
 }

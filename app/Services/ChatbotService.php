@@ -2,9 +2,12 @@
 
 namespace App\Services;
 
+use App\AI\Assistant\ContextBudget;
+use App\AI\Knowledge\CustomerTools;
 use App\AI\Knowledge\SiteKnowledge;
 use App\Models\ChatEvent;
 use App\Models\ChatAiCache;
+use App\Models\ChatSession;
 use App\Models\Coupon;
 use App\Models\Post;
 use App\Models\Setting;
@@ -14,6 +17,8 @@ class ChatbotService
 {
     private array $settings;
     private AIProviderService $provider;
+    /** Phiên bản ưu đãi memoize trong 1 request (xem promotionVersion()). */
+    private string $promoVersion = '';
 
     public function __construct()
     {
@@ -46,9 +51,14 @@ class ChatbotService
         if (!is_array($history)) {
             $history = [];
         }
+        // BƯỚC 3.1: không còn cắt 8 tin / 500 ký tự — đưa TOÀN BỘ lịch sử vào
+        // rồi để ContextBudget cân cửa sổ (phần trôi ra ngoài được tóm tắt luân chuyển).
+        $history = $this->normalizeHistory($history);
 
         $isLoggedIn = !empty($context['is_logged_in']) || (!empty($context['user_id']) && (int) $context['user_id'] > 0);
         $context['is_logged_in'] = $isLoggedIn;
+        $chatUserId = (int) ($context['user_id'] ?? 0);
+        $sessionId = (int) ($context['session_id'] ?? 0);
 
         // Nguồn hội thoại (website vs Fanpage/Facebook) + tên người dùng nếu đã đăng nhập.
         $source = strtolower((string) ($context['source'] ?? 'web'));
@@ -57,24 +67,42 @@ class ChatbotService
 
         $systemPrompt = $this->resolveSystemPrompt($context, $isFacebook, $isLoggedIn, $userName);
         $knowledge = $this->buildKnowledgeSnippet($context, $message);
-        $messages = [
-            ['role' => 'system', 'content' => $systemPrompt],
-            ['role' => 'system', 'content' => $knowledge],
-        ];
 
-        foreach (array_slice($history, -8) as $item) {
-            $role = (string) ($item['role'] ?? 'user');
-            $content = trim((string) ($item['content'] ?? ''));
-            if ($content !== '') {
-                $content = mb_substr($content, 0, 500);
-            }
-            if ($content !== '' && in_array($role, ['user', 'assistant'], true)) {
-                $messages[] = ['role' => $role, 'content' => $content];
+        // ---- BƯỚC 3.4: truy vấn SỰ THẬT từ CSDL trước khi hỏi model ----
+        $factTools = CustomerTools::prefetch($message, $context);
+        $factResults = $factTools !== [] ? CustomerTools::dispatchAll($factTools, $context) : [];
+        $factsUsed = $factResults !== [];
+        $knowledge .= CustomerTools::renderFactBlock($factResults);
+        $knowledge .= CustomerTools::protocolBlock($context);
+
+        // ---- BƯỚC 3.1: cửa sổ ngữ cảnh 2 lượt + bản tóm tắt luân chuyển ----
+        // history_offset = số tin CŨ đã trôi khỏi cửa sổ đọc (phiên > 100 tin) để
+        // covered_through tính theo TOÀN PHIÊN chứ không theo mảng đang cầm.
+        $historyOffset = max(0, (int) ($context['history_offset'] ?? 0));
+        $loadedState = $this->loadContextState($sessionId, $historyOffset + count($history));
+        $ctxState = $this->buildContextWindow($systemPrompt, $knowledge, $history, $loadedState, $historyOffset);
+        if ($sessionId > 0
+            && ((string) $ctxState['summary'] !== $loadedState['summary']
+                || (int) $ctxState['covered_through'] !== $loadedState['covered_through'])
+        ) {
+            try {
+                (new ChatSession())->saveContextState($sessionId, (string) $ctxState['summary'], (int) $ctxState['covered_through']);
+            } catch (\Throwable $e) {
+                // Chưa có cột summary → chat vẫn chạy bình thường ở lượt sau.
             }
         }
+        $digestBlock = ContextBudget::digestBlock((string) $ctxState['summary'], (int) $ctxState['covered_through']);
 
-        $messages[] = ['role' => 'user', 'content' => mb_substr($message, 0, 800)];
+        $messages = [
+            ['role' => 'system', 'content' => $systemPrompt],
+            ['role' => 'system', 'content' => $knowledge . $digestBlock],
+        ];
+        foreach ($ctxState['window'] as $item) {
+            $messages[] = ['role' => (string) $item['role'], 'content' => (string) $item['content']];
+        }
+        $messages[] = ['role' => 'user', 'content' => mb_substr($message, 0, 4000)];
 
+        // ---- BƯỚC 3.3: khóa cache theo người dùng / phiên / phiên bản ưu đãi ----
         $cacheTtl = (int) ($this->settings['ai_cache_ttl_minutes'] ?? 60);
         $cacheTtl = max(1, min(1440, $cacheTtl));
         $cacheScope = $isFacebook ? 'fp_' : 'web_';
@@ -86,11 +114,16 @@ class ChatbotService
                 $cacheScope .= 'page_' . sha1(mb_strtolower($cachePage)) . '_';
             }
         }
-        $cacheKey = sha1($cacheScope . mb_strtolower(preg_replace('/\s+/', ' ', trim($message))));
 
-        if (class_exists(ChatAiCache::class)) {
+        // Câu hỏi phụ thuộc lịch sử / đã nhét dữ liệu thật → KHÔNG đọc & KHÔNG
+        // ghi cache (trả lời trước đó của người khác/session khác sẽ bị rò rỉ).
+        $historyDependent = $this->historyDependent($message, $history);
+        $useCache = !$historyDependent && !$factsUsed;
+        $cacheKey = $this->buildCacheKey($cacheScope, $message, $chatUserId, $sessionId, count($history));
+
+        if ($useCache && class_exists(ChatAiCache::class)) {
             $cached = (new ChatAiCache())->findFresh($cacheKey, $cacheTtl);
-            if ($cached && !empty($cached['answer'])) {
+            if ($cached && !empty($cached['answer']) && !CustomerTools::looksLikeToolJson((string) $cached['answer'])) {
                 return [
                     'success' => true,
                     'answer' => $this->resolveAnswerMacros((string) $cached['answer'], $isFacebook),
@@ -107,11 +140,39 @@ class ChatbotService
         // - Facebook → module `fanpage_comment`
         // Prompt được đọc từ storage/prompts/{module_key}.txt (Admin sửa được).
         $module = $isFacebook ? 'fanpage_comment' : 'support_chat';
-        $result = $this->provider->ask($messages, null, null, [
+        $askOptions = [
             'module' => $module,
             'temperature' => 0.4,
             'max_tokens' => (int) ($this->settings['ai_max_output_tokens'] ?? 700),
-        ]);
+        ];
+        $result = $this->provider->ask($messages, null, null, $askOptions);
+
+        // ---- BƯỚC 3.4: model gọi công cụ dạng JSON → chạy thật → hỏi lại 1 lần ----
+        $toolFactText = '';
+        if ($result['ok']) {
+            $toolCall = CustomerTools::parseToolCall(trim((string) ($result['content'] ?? '')));
+            if ($toolCall !== null) {
+                if (CustomerTools::handles((string) $toolCall['tool'])) {
+                    $toolResult = CustomerTools::dispatch((string) $toolCall['tool'], (array) $toolCall['args'], $context);
+                    $toolFactText = (string) $toolResult['text'];
+                } else {
+                    $toolFactText = 'Công cụ "' . (string) $toolCall['tool'] . '" không tồn tại trong hệ thống.';
+                }
+
+                if ($toolFactText !== '') {
+                    $messages[] = ['role' => 'assistant', 'content' => (string) $result['content']];
+                    $messages[] = ['role' => 'user', 'content' => '[KẾT QUẢ CÔNG CỤ ' . (string) $toolCall['tool'] . "]\n"
+                        . $toolFactText
+                        . "\nTrả lời khách bằng tiếng Việt, DỰA ĐÚNG số liệu vừa nhận. "
+                        . 'Không có số liệu thì nói rõ là chưa có, không được bịa. '
+                        . 'TUYỆT ĐỐI không trả về JSON hay tên công cụ cho khách.'];
+                    $retry = $this->provider->ask($messages, null, null, $askOptions);
+                    if ($retry['ok']) {
+                        $result = $retry;
+                    }
+                }
+            }
+        }
 
         if (!$result['ok']) {
             $this->logEvent('ai_failed', [
@@ -119,16 +180,47 @@ class ChatbotService
                 'module' => $module,
                 'error' => (string) ($result['error'] ?? 'unknown'),
                 'source' => $source,
-                'session_id' => (int) ($context['session_id'] ?? 0),
-                'user_id' => (int) ($context['user_id'] ?? 0),
+                'session_id' => $sessionId,
+                'user_id' => $chatUserId,
             ]);
             return $this->fallbackResponse('Hệ thống AI đang xử lý lượng yêu cầu lớn. Bạn có thể để lại câu hỏi hoặc liên hệ hỗ trợ trực tiếp để được phục vụ ngay nhé.');
         }
 
         $answer = $this->resolveAnswerMacros(trim((string) ($result['content'] ?? '')), $isFacebook);
+        // Chốt chặn cuối: không bao giờ để JSON công cụ lọt ra mắt khách.
+        if (CustomerTools::looksLikeToolJson($answer)) {
+            $answer = $toolFactText !== ''
+                ? $this->resolveAnswerMacros($toolFactText, $isFacebook)
+                : 'Mình chưa lấy được thông tin này. Bạn vui lòng liên hệ nhân viên để được hỗ trợ chính xác nhé.';
+        }
         $handoff = $this->shouldHandoff($message, $answer);
 
-        if ($answer !== '' && class_exists(ChatAiCache::class)) {
+        // ---- BƯỚC 4.3: AnswerGuard — chặn link bịa & giá bịa trước khi trả khách ----
+        if ($answer !== '' && class_exists(\App\AI\Core\AnswerGuard::class)) {
+            $guard = \App\AI\Core\AnswerGuard::inspect($answer, $knowledge, $isFacebook, $this->resolveSiteUrl());
+            $gStatus = (string) ($guard['status'] ?? \App\AI\Core\AnswerGuard::OK);
+            if ($gStatus !== \App\AI\Core\AnswerGuard::OK) {
+                $this->logEvent('answer_guard', [
+                    'status' => $gStatus,
+                    'issues' => implode(' | ', (array) ($guard['issues'] ?? [])),
+                    'module' => $module,
+                    'source' => $source,
+                    'session_id' => $sessionId,
+                    'user_id' => $chatUserId,
+                ]);
+            }
+            if ($gStatus === \App\AI\Core\AnswerGuard::BLOCK) {
+                // Giá bịa = không đủ bằng chứng → fallback + báo người thật,
+                // KHÔNG ghi cache để câu bịa không bị trả lại lần sau.
+                return $this->fallbackResponse(
+                    'Câu trả lời này cần được nhân viên xác minh lại số liệu trước khi gửi cho bạn. '
+                    . 'Bạn vui lòng chờ chút hoặc liên hệ hỗ trợ trực tiếp để được trả lời chính xác ngay nhé!'
+                );
+            }
+            $answer = (string) ($guard['answer'] ?? $answer);
+        }
+
+        if ($answer !== '' && $useCache && !CustomerTools::looksLikeToolJson($answer) && class_exists(ChatAiCache::class)) {
             (new ChatAiCache())->upsert(
                 $cacheKey,
                 $message,
@@ -152,11 +244,254 @@ class ChatbotService
             'module' => $module,
             'handoff' => $handoff ? 1 : 0,
             'source' => $source,
-            'session_id' => (int) ($context['session_id'] ?? 0),
-            'user_id' => (int) ($context['user_id'] ?? 0),
+            'session_id' => $sessionId,
+            'user_id' => $chatUserId,
         ]);
 
         return $response;
+    }
+
+    // =================================================================
+    // BƯỚC 3 — ngữ cảnh hội thoại / cache đúng / công cụ khách hàng
+    // =================================================================
+
+    /** Giữ tin hợp lệ của khách & trợ lý, bỏ role khác, mỗi tin tối đa 4000 ký tự. */
+    private function normalizeHistory(array $history): array
+    {
+        $out = [];
+        foreach ($history as $item) {
+            if (!is_array($item)) {
+                continue;
+            }
+            $role = (string) ($item['role'] ?? '');
+            if (!in_array($role, ['user', 'assistant'], true)) {
+                continue;
+            }
+            $content = trim((string) ($item['content'] ?? ''));
+            if ($content === '') {
+                continue;
+            }
+            $out[] = ['role' => $role, 'content' => mb_substr($content, 0, 4000)];
+        }
+
+        return array_values($out);
+    }
+
+    /**
+     * Đọc trạng thái tóm tắt của phiên (vc_chat_sessions.summary /
+     * covered_through — tính theo TOÀN PHIÊN). Phiếu cũ/hết hạn → tự về rỗng.
+     *
+     * @return array{summary: string, covered_through: int}
+     */
+    private function loadContextState(int $sessionId, int $totalKnown): array
+    {
+        $state = ['summary' => '', 'covered_through' => 0];
+        if ($sessionId > 0) {
+            try {
+                $state = (new ChatSession())->contextState($sessionId);
+            } catch (\Throwable $e) {
+                $state = ['summary' => '', 'covered_through' => 0];
+            }
+        }
+
+        $covered = (int) ($state['covered_through'] ?? 0);
+        if ($covered > $totalKnown) {
+            // Lịch sử bị cắt ngắn/reset → bản tóm tắt không còn khớp → dựng lại.
+            return ['summary' => '', 'covered_through' => 0];
+        }
+
+        return ['summary' => (string) ($state['summary'] ?? ''), 'covered_through' => $covered];
+    }
+
+    /**
+     * Cửa sổ 2 lượt (BƯỚC 3.1):
+     *  1) Tính cửa sổ dựa trên system + knowledge + bản tóm tắt CŨ.
+     *  2) Các tin trôi ra ngoài kể từ covered_through → nén vào tóm tắt MỚI.
+     *  3) Tính lại cửa sổ với bản tóm tắt mới (đảm bảo vẫn vừa ngân sách).
+     *
+     * @param array<int, array{role: string, content: string}> $history
+     * @param array{summary: string, covered_through: int} $state covered_through tính theo TOÀN PHIÊN
+     * @param int $offset số tin toàn phiên đứng TRƯỚC $history[0]
+     * @return array{summary: string, covered_through: int, window: array<int, array{role: string, content: string}>}
+     */
+    private function buildContextWindow(string $systemPrompt, string $knowledge, array $history, array $state, int $offset = 0): array
+    {
+        $budget = ContextBudget::budget();
+        $count = count($history);
+        $coveredAbs = max(0, (int) $state['covered_through']);
+        $coveredRel = max(0, $coveredAbs - $offset);
+        $summary = trim((string) $state['summary']);
+
+        $baseOld = $systemPrompt . "\n" . $knowledge . "\n" . ContextBudget::digestBlock($summary, $coveredAbs);
+        $window = ContextBudget::window($baseOld, $history, 0, $budget);
+        $start = max(0, (int) $window['start']);
+
+        if ($count > 0 && $start > $coveredRel) {
+            $newlyDropped = array_slice($history, $coveredRel, $start - $coveredRel);
+            if ($newlyDropped !== []) {
+                $summary = $this->mergeSummary($summary, ContextBudget::digest($newlyDropped));
+            }
+            $coveredRel = $start;
+            $coveredAbs = $offset + $start;
+        }
+
+        $baseNew = $systemPrompt . "\n" . $knowledge . "\n" . ContextBudget::digestBlock($summary, $coveredAbs);
+        $window2 = ContextBudget::window($baseNew, $history, 0, $budget);
+        $start2 = max(0, (int) $window2['start']);
+
+        if ($count > 0 && $start2 > $coveredRel) {
+            // Ngân sách thay đổi giữa 2 lượt → bù nốt phần còn hụt.
+            $gap = array_slice($history, $coveredRel, $start2 - $coveredRel);
+            if ($gap !== []) {
+                $summary = $this->mergeSummary($summary, ContextBudget::digest($gap));
+            }
+            $coveredRel = $start2;
+            $coveredAbs = $offset + $start2;
+        }
+
+        $kept = array_slice($history, max(0, min($start2, $count)));
+
+        return ['summary' => $summary, 'covered_through' => $coveredAbs, 'window' => $kept];
+    }
+
+    /** Nối bản tóm tắt cũ + phần mới, cắt bớt ĐẦU (dữ liệu cũ nhất) khi quá dài. */
+    private function mergeSummary(string $old, string $newPart): string
+    {
+        $old = trim($old);
+        $newPart = trim($newPart);
+        if ($newPart === '') {
+            return $old;
+        }
+        if ($old === '') {
+            $merged = $newPart;
+        } else {
+            $merged = $old . "\n" . $newPart;
+        }
+
+        $max = ContextBudget::MAX_DIGEST_CHARS;
+        if (mb_strlen($merged, 'UTF-8') <= $max) {
+            return $merged;
+        }
+
+        $merged = mb_substr($merged, -$max, null, 'UTF-8');
+        $nl = mb_strpos($merged, "\n");
+        if ($nl !== false) {
+            $merged = mb_substr($merged, $nl + 1, null, 'UTF-8');
+        }
+
+        return $merged;
+    }
+
+    /**
+     * Câu hỏi CÓ phụ thuộc lịch sử (câu hỏi ngắn / từ chỉ định mơ hồ) →
+     * tuyệt đối không dùng lại câu trả lời cache của phiên/người khác.
+     */
+    private function historyDependent(string $message, array $history): bool
+    {
+        if ($history === []) {
+            return false;
+        }
+
+        $norm = CustomerTools::norm($message);
+        if ($norm === '') {
+            return true;
+        }
+        if (mb_strlen($norm, 'UTF-8') <= 30) {
+            return true;
+        }
+
+        // Thiếu chủ ngữ/đối ngữ: "cái đó", "như trên", "vậy sao", "nhắc lại"...
+        $patterns = [
+            'cai do', 'cai do ay', 'cai kia', 'cai ay', 'cua no', 'cua do',
+            'nhu tren', 'nhu vay', 'vay sao', 'sao lai', 'vi sao', 'tai sao',
+            'da noi', 'truoc do', 'vua roi', 'nhac lai', 'noi ro hon',
+            'giai thich them', 'tra loi truoc', 'chuyen do', 'viec do',
+            'goi do', 'ma do', 'thong tin do', 'duoi nay', 'tren kia',
+        ];
+        foreach ($patterns as $p) {
+            if (str_contains($norm, $p)) {
+                return true;
+            }
+        }
+
+        // Câu có dấu hỏi nhưng không nêu đối tượng cụ thể.
+        return str_ends_with(rtrim($message), '?') && mb_strlen($norm, 'UTF-8') <= 60;
+    }
+
+    /**
+     * Khóa cache: scope trang + người dùng + phiên (khi có lịch sử) + phiên bản
+     * ưu đãi + câu hỏi đã chuẩn hóa. Trả lời phụ thuộc bất kỳ yếu tố nào ở
+     * trên đều KHÔNG dùng chung khóa.
+     */
+    private function buildCacheKey(string $cacheScope, string $message, int $userId, int $sessionId, int $historyCount): string
+    {
+        $normalized = mb_strtolower(preg_replace('/\s+/', ' ', trim($message)) ?? '');
+
+        $parts = $cacheScope;
+        $parts .= 'u' . sha1((string) $userId);
+        if ($historyCount > 0) {
+            $parts .= 'sess' . sha1((string) $sessionId);
+        }
+        $parts .= 'promo' . $this->promotionVersion();
+        $parts .= $normalized;
+
+        return sha1($parts);
+    }
+
+    /**
+     * "Phiên bản" chương trình ưu đãi: đổi mã giảm giá / đổi bảng giá là đổi
+     * khóa cache → câu trả lời cũ về giá/mã giảm giá không còn bị dùng lại.
+     * Memoize trong 1 request (buildKnowledgeSnippet đã query bảng này rồi).
+     */
+    private function promotionVersion(): string
+    {
+        if ($this->promoVersion !== '') {
+            return $this->promoVersion;
+        }
+
+        $bits = [];
+        try {
+            foreach ((new Coupon())->getActiveCoupons() as $c) {
+                $bits[] = implode('|', [
+                    (string) ($c['code'] ?? ''),
+                    (string) ($c['discount_type'] ?? ''),
+                    (string) ($c['discount_value'] ?? ''),
+                    (string) ($c['expires_at'] ?? ''),
+                ]);
+            }
+        } catch (\Throwable $e) {
+            $bits[] = 'coupon-err';
+        }
+        try {
+            foreach ((new VpnPlan())->getAllActive() as $p) {
+                $bits[] = implode('|', [
+                    (string) ($p['code'] ?? ''),
+                    (string) ($p['price'] ?? ''),
+                    (string) ($p['duration_days'] ?? ''),
+                    (string) ($p['status'] ?? ''),
+                ]);
+            }
+        } catch (\Throwable $e) {
+            $bits[] = 'plan-err';
+        }
+        // BƯỚC 4.2 — popup/ưu đãi đang chạy cũng nằm trong snippet [4]:
+        // đổi popup = đổi khóa cache, tránh trả lại câu cũ đã nhắc ưu đãi cũ.
+        try {
+            foreach ((new Post())->getPublishedPopups() as $pp) {
+                $bits[] = 'popup|' . implode('|', [
+                    (string) ($pp['id'] ?? ''),
+                    (string) ($pp['title'] ?? ''),
+                    (string) ($pp['updated_at'] ?? $pp['created_at'] ?? ''),
+                ]);
+            }
+        } catch (\Throwable $e) {
+            $bits[] = 'popup-err';
+        }
+
+        sort($bits);
+        $this->promoVersion = substr(sha1(implode("\n", $bits)), 0, 16);
+
+        return $this->promoVersion;
     }
 
     /**
@@ -472,8 +807,13 @@ class ChatbotService
             ));
         }
 
-        $lines[] = "\n[4. MÃ GIẢM GIÁ ĐANG HOẠT ĐỘNG (DÙNG ĐỂ QUẢNG CÁO & CHỐT ĐƠN)]:";
+        // [4] KHUYẾN MÃI HIỆN HÀNH — mã giảm giá + popup/ưu đãi đang chạy thật
+        // trên site (BƯỚC 4.2). Giữ nguyên tiền tố "[4" vì prompt file tham chiếu.
+        $lines[] = "\n[4. KHUYẾN MÃI HIỆN HÀNH — MÃ GIẢM GIÁ & ƯU ĐÃI ĐANG CHẠY TRÊN SITE]:";
+
+        $couponShown = false;
         if (!empty($activeCoupons)) {
+            $couponShown = true;
             // Gói áp dụng: không có bản ghi = mọi gói; có = chỉ gói được chọn
             $planMap = $couponModel->getPlanAssignmentsForCoupons(array_column($activeCoupons, 'id'));
             foreach ($activeCoupons as $c) {
@@ -489,8 +829,32 @@ class ChatbotService
 
                 $lines[] = "• Mã: **`{$c['code']}`** - Giảm: **{$discountStr}**{$expireStr}{$usesLeft}{$planStr}";
             }
+        }
+
+        // Popup/ưu đãi khách THẤY khi vào trang (vc_posts type=popup, đã xuất bản).
+        $popupShown = false;
+        try {
+            $popups = $postModel->getPublishedPopups();
+        } catch (\Throwable $e) {
+            $popups = [];
+        }
+        if (!empty($popups)) {
+            $popupShown = true;
+            foreach ($popups as $pp) {
+                $excerpt = trim(preg_replace('/\s+/u', ' ', strip_tags((string) ($pp['content'] ?? ''))) ?? '');
+                if (mb_strlen($excerpt) > 220) {
+                    $excerpt = mb_substr($excerpt, 0, 220) . '…';
+                }
+                $slug = trim((string) ($pp['slug'] ?? ''));
+                $slugStr = $slug !== '' ? " (slug: {$slug})" : '';
+                $lines[] = "• **[POPUP/ƯU ĐÃI ĐANG CHẠY]** {$pp['title']}{$slugStr}: " . ($excerpt !== '' ? $excerpt : '(xem chi tiết tại trang chủ)');
+            }
+            $lines[] = "* POPUP là banner ưu đãi khách thấy ngay khi vào website — nhắc lại ĐÚNG nội dung ưu đãi này ở bước chốt đơn, không tự đặt tên/khuyến mại thêm.";
+        }
+
+        if ($couponShown) {
             $lines[] = "* LƯU Ý: Khi khách hỏi về giá hoặc có ý định mua, hãy chủ động nhắc khách áp dụng mã giảm giá này ở bước thanh toán để kích thích chốt đơn!";
-        } else {
+        } elseif (!$popupShown) {
             $lines[] = "- Hiện tại không có mã giảm giá phụ nào đang kích hoạt. Hãy thông báo cho khách rằng giá niêm yết trên website đã là giá ưu đãi trực tiếp tốt nhất.";
         }
 

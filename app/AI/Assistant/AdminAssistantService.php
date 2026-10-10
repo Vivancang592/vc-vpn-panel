@@ -7,19 +7,27 @@ namespace App\AI\Assistant;
 use App\AI\Contracts\AIResult;
 use App\AI\Core\AICore;
 use App\AI\Core\PromptRegistry;
-use App\AI\Knowledge\AdminActionTools;
-use App\AI\Knowledge\AdminStatsTools;
 use App\AI\Knowledge\AssistantStore;
+use App\AI\Knowledge\EntityCatalog;
+use App\AI\Knowledge\EntityCrudTools;
 use App\AI\Knowledge\PageEditTools;
+use App\AI\Knowledge\PendingActionStore;
+use App\AI\Knowledge\ToolRegistry;
+use App\Models\AiConversationState;
+use App\Models\AiToolCall;
 use App\Models\Setting;
 
 /**
- * Trợ Lý Admin — chat AI với protocol công cụ dạng JSON text.
+ * Trợ Lý Admin — chat AI với protocol công cụ KHÉP KÍN.
  *
- * Kira KHÔNG hỗ trợ tools param (đã probe P0) → service tự nhúng khối mô tả
- * công cụ vào system prompt, parse JSON {"tool","args"} trong câu trả lời,
- * chạy hàm whitelist, rồi feed kết quả vào vòng hội thoại (tối đa 3 lượt gọi
- * AI mỗi lần gửi — giữ ý nhịp rate-limit 6 request/khung của key).
+ * Đã probe (BƯỚC 1.7): Kira HỖ TRỢ native function-calling — payload `tools`
+ * trả về HTTP 200 + finish_reason=tool_calls, và vòng round-trip
+ * (assistant.tool_calls → role:tool → câu trả lời cuối) hoạt động đầy đủ.
+ * → service gửi `tools` lấy từ ToolRegistry::nativeSchema() và ưu tiên đọc
+ *   message.tool_calls.
+ * → Protocol JSON text {"tool","args"} vẫn được GIỮ LẠI làm đường dự phòng
+ *   cho provider/model không hỗ trợ tools (KiraProvider chỉ chuyển các key
+ *   nằm trong allowlist, nên nơi khác gọi chat() sẽ không bị ảnh hưởng).
  *
  * Lịch sử chat lưu JSONL qua AssistantStore; trao đổi nội bộ công cụ KHÔNG
  * lưu (số liệu được tra lại mỗi lần cần → không trả lời số cũ).
@@ -41,11 +49,47 @@ final class AdminAssistantService
     private array $pageCtx = [];
     /** Payload bài viết do post_draft soạn ở lượt này — gắn vào reply dạng khối post-preview. */
     private ?array $pendingPostPreview = null;
+    /**
+     * Hành động GHI đang chờ admin bấm xác nhận (phát hành trong lượt này) —
+     * gắn vào reply cuối dạng khối ```action-confirm để UI hiển thị thẻ nút.
+     *
+     * @var array<int, array<string, mixed>>
+     */
+    private array $pendingConfirms = [];
+    private ?AiToolCall $audit = null;
+    private ?AiConversationState $convState = null;
+    private ?PendingActionStore $pending = null;
 
     public function __construct(private AICore $core, ?AssistantStore $store = null, ?PromptRegistry $prompts = null)
     {
         $this->store = $store ?? new AssistantStore();
         $this->prompts = $prompts ?? new PromptRegistry();
+    }
+
+    /** Nhật ký công cụ (bảng vc_ai_tool_calls). Lỗi DB → null, luồng chat vẫn chạy. */
+    private function audit(): ?AiToolCall
+    {
+        try {
+            return $this->audit ??= new AiToolCall();
+        } catch (\Throwable $e) {
+            return null;
+        }
+    }
+
+    /** Trạng thái ngữ cảnh (bảng vc_ai_conversation_state). */
+    private function convState(): ?AiConversationState
+    {
+        try {
+            return $this->convState ??= new AiConversationState();
+        } catch (\Throwable $e) {
+            return null;
+        }
+    }
+
+    /** Kho hành động chờ xác nhận. */
+    private function pending(): PendingActionStore
+    {
+        return $this->pending ??= new PendingActionStore();
     }
 
     /**
@@ -65,45 +109,62 @@ final class AdminAssistantService
         // và để AI biết admin đang đứng ở trang nào ([] khi bong bóng chưa mở).
         $this->pageCtx = $page;
         $this->pendingPostPreview = null;
+        $this->pendingConfirms = [];
 
         $storedText = $this->buildStoredUserText($userText, $attachments);
         $this->store->append($convId, ['role' => 'user', 'content' => $storedText]);
 
         $history = $this->store->messages($convId);
+
+        // Ngân sách ngữ cảnh: tính cửa sổ lịch sử vừa token; phần tin cũ bị đẩy
+        // ra ngoài → tóm tắt tích lũy (lưu DB) để AI vẫn nhớ từ ĐẦU cuộc trò chuyện.
+        // applyContextWindow nối khối digest trực tiếp vào system prompt (by ref).
         $system = $this->systemPrompt($convId);
+        $start = $this->applyContextWindow($convId, $history, $system);
         $images = array_values(array_filter($attachments, fn(array $a): bool => ($a['image_data_uri'] ?? '') !== ''));
 
-        $messages = $this->buildMessages($system, $history, $images, $userText);
+        $messages = $this->buildMessages($system, $history, $images, $userText, $start);
         $toolsRun = 0;
         $fallbackUsed = false;
+        // Lược đồ function-calling gửi cho model (nguồn duy nhất: ToolRegistry).
+        $toolSpec = ToolRegistry::nativeSchema();
 
         for ($call = 1; $call <= self::MAX_AI_CALLS; $call++) {
-            $result = $this->core->chat($messages, [
+            $chatOptions = [
                 'module'      => 'admin_assistant',
                 'model'       => $model,
                 'max_tokens'  => self::MAX_TOKENS,
                 'temperature' => 0.6,
-            ]);
+            ];
+            if ($toolSpec !== []) {
+                $chatOptions['tools']       = $toolSpec;
+                $chatOptions['tool_choice'] = 'auto';
+            }
+            $result = $this->core->chat($messages, $chatOptions);
 
             if (!$result->isOk()) {
                 // Chỉ lưu câu trả lời hoàn chỉnh — lỗi trả về UI (đã có nút gửi lại).
                 return ['ok' => false, 'error' => $this->friendlyError($result, $model)];
             }
 
-            $content = trim((string) $result->content);
-            $finish = (string) ($result->raw['choices'][0]['finish_reason'] ?? '');
-            $toolCall = $content === '' ? null : $this->parseToolCall($content);
+            $content  = trim((string) $result->content);
+            $finish   = (string) ($result->raw['choices'][0]['finish_reason'] ?? '');
+            $native   = $this->nativeToolCall($result);
+            $toolCall = $native;
+            if ($toolCall === null && $content !== '') {
+                $toolCall = $this->parseToolCall($content);
+            }
 
             // Chặn phản hồi hỏng: hết ngân sách token (finish_reason=length) hoặc
             // JSON tool bị cắt mà parse thất bại → KHÔNG lưu, KHÔNG hiện JSON thô.
             // (JSON parse được = nội dung đầy đủ dù báo length → vẫn chạy tool.)
             // Thử mô hình dự phòng 1 lần (chưa chạy tool nào nên không lặp tác dụng phụ).
-            if ($content === '' || ($toolCall === null
-                && ($finish === 'length' || $this->looksLikeRawToolJson($content)))) {
+            if (($content === '' && $native === null)
+                || ($toolCall === null && ($finish === 'length' || $this->looksLikeRawToolJson($content)))) {
                 if (!$fallbackUsed && $toolsRun === 0 && $model !== self::FALLBACK_MODEL) {
                     $fallbackUsed = true;
                     $model = self::FALLBACK_MODEL;
-                    $messages = $this->buildMessages($system, $history, $images, $userText);
+                    $messages = $this->buildMessages($system, $history, $images, $userText, $start);
                     $call = 0; // quay về lượt 1 với mô hình dự phòng
                     continue;
                 }
@@ -120,11 +181,30 @@ final class AdminAssistantService
                     $content = "Kết quả truy vấn:\n```json\n" . json_encode($resultJson, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT) . "\n```";
                 }
                 $content = $this->appendPostPreview($content);
+                $content = $this->appendActionConfirms($content);
                 $this->store->append($convId, ['role' => 'assistant', 'content' => $content]);
                 return ['ok' => true, 'reply' => $content];
             }
 
             // Vòng tool: thêm câu gọi của model + kết quả công cụ (chỉ trong RAM).
+            if ($native !== null) {
+                // Native function-calling: gửi đúng cặp assistant.tool_calls + role:tool.
+                $messages[] = [
+                    'role'       => 'assistant',
+                    'content'    => $content === '' ? null : $content,
+                    'tool_calls' => $native['raw_calls'],
+                ];
+                $toolResult = $this->dispatchTool($convId, (string) $native['tool'], (array) $native['args']);
+                $toolsRun++;
+                $messages[] = [
+                    'role'         => 'tool',
+                    'tool_call_id' => (string) $native['id'],
+                    'name'         => (string) $native['tool'],
+                    'content'      => (string) json_encode($toolResult, JSON_UNESCAPED_UNICODE),
+                ];
+                continue;
+            }
+
             $messages[] = ['role' => 'assistant', 'content' => $content];
             $toolResult = $this->dispatchTool($convId, (string) $toolCall['tool'], (array) $toolCall['args']);
             $toolsRun++;
@@ -137,6 +217,53 @@ final class AdminAssistantService
         }
 
         return ['ok' => false, 'error' => 'Không lấy được phản hồi từ AI.'];
+    }
+
+    /**
+     * Đọc tool call dạng NATIVE (OpenAI-compatible) từ phản hồi của provider.
+     *
+     * Provider giữ nguyên phản hồi trong AIResult::$raw nên chỉ cần soi
+     * raw['choices'][0]['message']['tool_calls']. Tên tool không có trong registry
+     * hoặc arguments không phải JSON object → coi như không có (rơi về protocol
+     * JSON text / câu trả lời thường).
+     *
+     * @return array{tool: string, args: array<string, mixed>, id: string, raw_calls: array<int, array<string, mixed>>}|null
+     */
+    private function nativeToolCall(AIResult $result): ?array
+    {
+        $calls = $result->raw['choices'][0]['message']['tool_calls'] ?? null;
+        if (!is_array($calls) || $calls === []) {
+            return null;
+        }
+
+        $first = null;
+        foreach ($calls as $c) {
+            if (!is_array($c)) {
+                continue;
+            }
+            $name = (string) ($c['function']['name'] ?? '');
+            if ($name !== '' && ToolRegistry::handles($name)) {
+                $first = $c;
+                break;
+            }
+        }
+        if ($first === null) {
+            return null;
+        }
+
+        $name = (string) $first['function']['name'];
+        $rawArgs = (string) ($first['function']['arguments'] ?? '');
+        $decoded = $rawArgs === '' ? [] : json_decode($rawArgs, true);
+        if (!is_array($decoded)) {
+            $decoded = [];
+        }
+
+        return [
+            'tool'      => $name,
+            'args'      => ToolRegistry::sanitizeArgs($name, $decoded),
+            'id'        => (string) ($first['id'] ?? ('call_' . substr(md5($name . $rawArgs), 0, 20))),
+            'raw_calls' => array_values(array_filter($calls, 'is_array')),
+        ];
     }
 
     /**
@@ -187,6 +314,153 @@ final class AdminAssistantService
     }
 
     // -----------------------------------------------------------------
+    // Cổng xác nhận hành động (admin bấm nút trên thẻ action-confirm)
+    // -----------------------------------------------------------------
+
+    /**
+     * Hành động đang chờ xác nhận của một đoạn chat (UI hiển thị lại khi tải
+     * lại trang, hết hạn tự biến mất).
+     *
+     * @return array<int, array<string, mixed>>
+     */
+    public function pendingActions(string $convId): array
+    {
+        try {
+            $list = $this->pending()->forConversation($convId);
+        } catch (\Throwable $e) {
+            return [];
+        }
+        // Thẻ hiển thị lại sau khi tải trang lấy từ store (không còn preview
+        // trong bộ nhớ) — tính lại từ args đã lưu, vẫn là thao tác đọc.
+        foreach ($list as &$row) {
+            if (is_array($row) && ($row['preview'] ?? null) === null) {
+                $row['preview'] = $this->confirmPreview(
+                    (string) ($row['tool'] ?? ''),
+                    is_array($row['args'] ?? null) ? (array) $row['args'] : []
+                );
+            }
+        }
+        unset($row);
+        return $list;
+    }
+
+    /**
+     * Admin bấm "XÁC NHẬN THỰC HIỆN": tiêu dùng token (chạy đúng 1 lần) rồi
+     * chạy tool thật, ghi audit kèm confirmed_by.
+     *
+     * @param array{url?: string, title?: string, text?: string} $page bối cảnh trang đang mở
+     * @return array{ok: bool, result?: array<string, mixed>, error?: string}
+     */
+    public function confirmAction(string $convId, string $token, array $page = []): array
+    {
+        $entry = $this->pending()->claim($token);
+        if ($entry === null) {
+            return ['ok' => false, 'error' => 'Hành động này không còn hiệu lực (đã chạy, đã bỏ qua hoặc hết hạn 30 phút).'];
+        }
+        if ((string) ($entry['conversation'] ?? '') !== $convId) {
+            return ['ok' => false, 'error' => 'Hành động không thuộc đoạn chat này.'];
+        }
+
+        $tool = (string) ($entry['tool'] ?? '');
+        $args = is_array($entry['args'] ?? null) ? $entry['args'] : [];
+        if (!ToolRegistry::handles($tool) || in_array($tool, ToolRegistry::serviceHandled(), true)) {
+            return ['ok' => false, 'error' => 'Công cụ không còn được hỗ trợ: ' . $tool];
+        }
+
+        // Bối cảnh trang dùng cho page_edit — ưu tiên trang đang mở, nếu bong
+        // bóng không gửi kèm thì dùng bản đã lưu lúc phát hành token.
+        $this->pageCtx = $page !== [] ? $page : (array) ($entry['page'] ?? []);
+        $this->pendingConfirms = [];
+
+        $result = $this->runConfirmed($convId, $tool, $args);
+        if (!empty($result['ok'])) {
+            return ['ok' => true, 'result' => $result];
+        }
+
+        return ['ok' => false, 'error' => mb_substr((string) ($result['error'] ?? 'Không thực hiện được.'), 0, 300), 'result' => $result];
+    }
+
+    /**
+     * Admin bấm "BỎ QUA": huỷ hành động, không chạy gì cả.
+     *
+     * @return array{ok: bool, error?: string}
+     */
+    public function cancelAction(string $convId, string $token): array
+    {
+        $entry = $this->pending()->peek($token);
+        if ($entry === null) {
+            return ['ok' => false, 'error' => 'Hành động không còn hiệu lực.'];
+        }
+        if ((string) ($entry['conversation'] ?? '') !== $convId) {
+            return ['ok' => false, 'error' => 'Hành động không thuộc đoạn chat này.'];
+        }
+        if (!$this->pending()->cancel($token)) {
+            return ['ok' => false, 'error' => 'Không bỏ qua được, hãy thử lại.'];
+        }
+
+        $log = $this->audit();
+        $log?->log([
+            'conversation_id' => $convId,
+            'admin_id'        => isset($_SESSION['user_id']) ? (int) $_SESSION['user_id'] : null,
+            'tool'            => mb_substr((string) ($entry['tool'] ?? ''), 0, 64),
+            'risk'            => (string) ($entry['risk'] ?? ToolRegistry::RISK_WRITE),
+            'args_json'       => ToolRegistry::redactJson((array) ($entry['args'] ?? [])),
+            'result_json'     => '{"ok":false,"status":"cancelled"}',
+            'ok'              => 0,
+            'error'           => 'cancelled_by_admin',
+            'duration_ms'     => 0,
+        ]);
+
+        return ['ok' => true];
+    }
+
+    /**
+     * Chạy tool đã được admin xác nhận + ghi audit có confirmed_by.
+     *
+     * @param array<string, mixed> $args
+     * @return array<string, mixed>
+     */
+    private function runConfirmed(string $convId, string $tool, array $args): array
+    {
+        $target = $this->snapshotTarget($tool, $args);
+        $before = null;
+        if ($target !== null) {
+            $before = $this->snapshot($tool, $target[0], $target[1]);
+        }
+
+        $t0 = microtime(true);
+        try {
+            $result = ToolRegistry::dispatch($tool, $args, $this->pageCtx);
+        } catch (\Throwable $e) {
+            $result = ['ok' => false, 'error' => 'Lỗi khi thực hiện: ' . $e->getMessage()];
+        }
+        $ms = (int) round((microtime(true) - $t0) * 1000);
+
+        $after = $target !== null ? $this->afterSnapshot($tool, $target[0], $target[1], $result) : null;
+
+        $log = $this->audit();
+        if ($log !== null) {
+            $ok = !empty($result['ok']);
+            $log->log([
+                'conversation_id' => $convId,
+                'admin_id'        => isset($_SESSION['user_id']) ? (int) $_SESSION['user_id'] : null,
+                'tool'            => mb_substr($tool, 0, 64),
+                'risk'            => (string) (ToolRegistry::get($tool)['risk'] ?? ToolRegistry::RISK_WRITE),
+                'args_json'       => ToolRegistry::redactJson($args),
+                'before_json'     => $before !== null ? ToolRegistry::redactJson($before) : null,
+                'after_json'      => $after !== null ? ToolRegistry::redactJson($after) : null,
+                'result_json'     => ToolRegistry::redactJson($result),
+                'ok'              => $ok ? 1 : 0,
+                'error'           => $ok ? null : mb_substr((string) ($result['error'] ?? 'unknown'), 0, 255),
+                'duration_ms'     => $ms,
+                'confirmed_by'    => isset($_SESSION['user_id']) ? (int) $_SESSION['user_id'] : null,
+            ]);
+        }
+
+        return $result;
+    }
+
+    // -----------------------------------------------------------------
     // Prompt & messages
     // -----------------------------------------------------------------
 
@@ -211,13 +485,48 @@ final class AdminAssistantService
         }
 
         return $system
-            . "\n" . AdminStatsTools::protocolBlock()
-            . "\n" . AdminActionTools::protocolBlock()
-            . "\n" . PageEditTools::protocolBlock()
+            . "\n" . ToolRegistry::protocolBlock()
             . "\n" . $this->planProtocolBlock()
             . "\n" . $this->planContextBlock($convId)
             . "\n" . $this->userUiBlock()
+            . "\n" . $this->entitySchemaBlock()
             . "\n" . $this->pageContextBlock();
+    }
+
+    /**
+     * Khối "LƯỢC ĐỒ DỮ LIỆU THẬT" — sinh trực tiếp từ EntityCatalog nên không bao giờ
+     * lệch schema (khác file prompt do admin sửa tay). Model chỉ được dùng đúng cột
+     * liệt kê ở đây; mọi cột ngoài danh sách sẽ bị sanitizeArgs chặn.
+     */
+    private function entitySchemaBlock(): string
+    {
+        try {
+            $digest = EntityCatalog::promptDigest();
+        } catch (\Throwable $e) {
+            return '';
+        }
+        if (trim($digest) === '') {
+            return '';
+        }
+
+        return <<<'MD'
+
+### LƯỢC ĐỒ DỮ LIỆU THẬT ( EntityCatalog — nguồn duy nhất, tuyệt đối không tự chế cột )
+CRUD bằng 5 tool: entity_list / entity_get (đọc), entity_create / entity_update / entity_delete (ghi).
+- "entity" + "id" + "data" phải khớp từng tên cột dưới đây; cột lạ sẽ bị từ chối trước khi chạy.
+- Trước khi sửa/xóa: entity_get để lấy id thật và giá trị hiện tại. KHÔNG đoán id.
+- Nghiệp vụ KHÔNG được sửa trực tiếp qua data: trạng thái đơn/subscription, duyệt nạp tiền, duyệt rút tiền,
+  trả lời ticket, gán voucher → dùng action_run (order_status, subscription_status, subscription_renew,
+  subscription_reset_traffic, subscription_reset_token, deposit_approve, withdrawal_decision, ticket_reply,
+  coupon_assign, coupon_unassign, coupon_plans).
+- KHÔNG xóa đơn hàng / subscription / payment / ticket (ràng buộc khóa ngoại & tiền thật): dùng action_run
+  để đóng/hủy đúng nghiệp vụ. entity_delete chỉ dành cho bản ghi nháp an toàn (post, coupon, expense,
+  plan, server_group, node_inbound...) — hệ thống sẽ tự chặn và chỉ đường.
+- Mật khẩu / API key / token: không bao giờ yêu cầu, không bao giờ đặt vào data (bị chặn ở tầng tool).
+- Mọi tool ghi đều hiện thẻ "Chờ bạn xác nhận" kèm bảng so sánh trước → sau; chỉ nói "đã thực hiện"
+  SAU khi admin bấm xác nhận và tool trả ok.
+MD
+            . "\n" . $digest;
     }
 
     /**
@@ -306,34 +615,12 @@ final class AdminAssistantService
         ]);
     }
 
-    /** Khối bản đồ GIAO DIỆN TRANG NGƯỜI DÙNG (từng nút + vị trí thật) — neo vào system prompt
-     *  để admin hỏi bất cứ chỗ nào trên trang khách là trả lời ngay, không cần mở trang. */
+    /** Khối bản đồ GIAO DIỆN TRANG NGƯỜI DÙNG — BƯỚC 4.1: nội dung chuyển hẳn về
+     *  SiteKnowledge::userUiBlock() (nguồn chung với AI chat khách, không còn
+     *  hard-code ở 2 nơi). Hàm giữ nguyên tên/tham số để systemPrompt() không đổi. */
     private function userUiBlock(): string
     {
-        return <<<'MD'
-
-### GIAO DIỆN TRANG NGƯỜI DÙNG (USER) — từng nút & vị trí
-Khi admin hỏi về giao diện/trang khách hàng thấy (trang user), trả lời theo khối dưới đây:
-
-**Layout chung (resources/views/layouts/):**
-- navbar.php — đầu MỌI trang: trái — "Trang chủ"(/), "Sản phẩm"(#bang-gia), "Hướng dẫn"(/faq), "Câu hỏi thường gặp"(#cau-hoi-thuong-gap), "Tải ứng dụng"(/download); phải — đã đăng nhập: icon 🔔 → /notifications + dropdown hồ sơ có "Đăng xuất"(/logout), chưa đăng nhập: "Đăng nhập"(/login) + "Đăng ký"(/register); mobile: nút ☰ mở menu.
-- sidebar.php — menu trái khu vực khách (trang đã đăng nhập): Dashboard(/dashboard), Cửa Hàng(/user/plans), Gói Đăng Ký(/subscriptions), Đơn Hàng(/orders), Lịch Sử Giao Dịch(/payments), Ví Tiền(/wallet), Tiếp Thị Liên Kết(/referrals), Rút Hoa Hồng(/withdrawals), Ticket(/tickets), Thông Báo(/notifications), Hướng Dẫn(/user/guides), Tải Ứng Dụng(/user/downloads), Tài Khoản(/profile).
-- footer.php — chân trang: mạng xã hội (Facebook, Zalo, YouTube, Email); "Điều Khoản"(/terms), "Quyền Riêng Tư"(/privacy), "Chính Sách Hoàn Tiền"(/refund); chatbot 💬 neo góc dưới phải (ô "Nhập câu hỏi..." + nút "Gửi").
-
-**Trang chủ (/) — home/index.php:** hero "Bảo vệ kết nối ngay" (cuộn xuống #bang-gia) + nút "Bắt đầu ngay"/"Mở bảng điều khiển"; bảng giá giữa trang: tab nhóm gói (button lọc) + mỗi card gói có "ĐĂNG KÝ GÓI NÀY" → /checkout?id=... (chưa đăng nhập → /login); CTA cuối: "Tải ứng dụng VPN"(/download), "Hướng dẫn cài đặt"(/faq), "Xem gói VPN"(#bang-gia).
-
-**Auth:** /login — ô "Email hoặc Username", ô mật khẩu + nút 👁 hiện/ẩn, nút "ĐĂNG NHẬP", nút "Đăng nhập bằng Google"(/auth/google), link "Quên mật khẩu?"(/forgot-password), link "Đăng ký ngay". /register — ô "Email hoặc Username", ô Email, ô "Mã OTP" 6 số + nút "Gửi mã", ô mật khẩu + 👁, ô "Mã giới thiệu", checkbox đồng ý điều khoản (bắt buộc — thiếu là nút disabled), nút "ĐĂNG KÝ", link "Điều khoản"/"Riêng tư". /forgot-password — ô Email + "Gửi mã", ô OTP, ô mật khẩu mới, nút "CẬP NHẬT MẬT KHẨU".
-
-**Dashboard (/dashboard) — user/dashboard.php:** card gói gần nhất ("Kết nối" → /subscriptions/detail, "Gia hạn" → /checkout?type=renewal, "Tất cả gói của tôi" → /subscriptions); hàng quick-actions: "💳 Nạp tiền"(/payments/deposit), "🛒 Mua gói dịch vụ"(/user/plans), "🎫 Tạo ticket hỗ trợ"(/tickets/create); 4 card thống kê (gói/đơn/ticket/ví, mỗi card có "Xem chi tiết"); CTA "Cửa Hàng", "Đăng ký ngay", "Chọn gói này".
-
-**Mua gói:** /user/plans — tab lọc "Tất cả" + tên nhóm, mỗi card có "Chọn gói này" → /checkout?id=...; /checkout — (đơn chờ: "hoàn tất thanh toán" → /payment/checkout, "hủy đơn"), chọn nhanh số tiền (button), ô "Nhập số tiền", ô mã giảm giá + "Xác nhận mã", khu chọn phương thức thanh toán, link Điều khoản/Hoàn tiền, nút submit cuối form; /payment/checkout — thẻ tài khoản/nội dung CK + nút 📋 sao chép, link "Xem lịch sử giao dịch", "Xem gói dịch vụ", "Xem đơn gia hạn".
-
-**Ví & giao dịch:** /payments — nút "Nạp tiền", giao dịch chờ → menu ⋮ ("Thanh toán ngay"/"Hủy giao dịch"); /wallet — chọn nhanh số tiền (button), ô "Nhập số tiền", nút "Tiếp tục nạp tiền".
-
-**Gói & đơn:** /subscriptions — "Mua gói dịch vụ", mỗi dòng "Chi tiết"(→ /subscriptions/detail) + "Gia hạn"(→ /checkout?type=renewal); /subscriptions/detail — ô readonly chứa connection URL/key + nút "Sao chép", nút "Mở Karing" (deep link karing://), nút "Lấy mã QR" (modal QR); /orders — menu ⋮ (chi tiết, "Thanh toán ngay", "Hủy đơn"); /orders/detail — nút "Thanh toán ngay" cuối hóa đơn.
-
-**Khác:** /profile — username/email/ngày tạo/Google readonly + form đổi mật khẩu ("Mật khẩu hiện tại", "Mật khẩu mới", nút "Lưu thay đổi"); /download (công khai) & /user/downloads — lưới 5 card "iPhone & iPad, Android, Windows, macOS, Linux" → /client?tag=...; /user/guides (bài hướng dẫn), /tickets (tạo/chi tiết ticket), /referrals (form mời bạn + link giới thiệu), /withdrawals (rút hoa hồng), /notifications (danh sách + 🔔 navbar).
-MD;
+        return \App\AI\Knowledge\SiteKnowledge::userUiBlock();
     }
 
     /** Khối thực tế: danh sách kế hoạch đã lưu + kế hoạch đang làm của hội thoại này. */
@@ -385,29 +672,303 @@ MD;
         return implode("\n", $lines);
     }
 
-    /** Phân công tool: nhánh kế hoạch xử lý trong service, còn lại sang AdminStatsTools. */
+    /**
+     * Phân công tool qua ToolRegistry (nguồn duy nhất) + ghi nhật ký + cổng
+     * xác nhận cho hành động GHI/XÓA.
+     *
+     * Trình tự: tool kế hoạch (service tự xử lý) → tool cần xác nhận (phát
+     * hành thẻ, CHƯA chạy) → chạy thật qua registry, đo thời gian, snapshot
+     * trước/sau với page_edit, ghi vc_ai_tool_calls.
+     *
+     * @param array<string, mixed> $args
+     * @return array<string, mixed>
+     */
     private function dispatchTool(string $convId, string $tool, array $args): array
     {
-        if (in_array($tool, ['plan_list', 'plan_read', 'plan_create', 'plan_update'], true)) {
-            return $this->planDispatch($convId, $tool, $args);
-        }
-        if (PageEditTools::handles($tool)) {
-            // Đọc/sửa trang admin bong bóng đang mở — kèm pageCtx để chặn thao tác sai trang
-            return PageEditTools::dispatch($tool, $args, $this->pageCtx);
-        }
-        if (AdminActionTools::handles($tool)) {
-            $result = AdminActionTools::dispatch($tool, $args);
-            if ($tool === 'post_draft' && !empty($result['ok']) && !empty($result['preview'])) {
-                // Bài CHƯA lưu — stash payload để gắn card xem trước vào reply cuối;
-                // trả model bản rút gọn (nội dung model đã tự viết trong args).
-                $this->pendingPostPreview = $result;
-                $result['content'] = '(Bài viết đã hiển thị card xem trước trong đoạn chat cho admin — '
-                    . 'bấm "Lưu Bài" để lưu. Không cần nói thêm.)';
-            }
-            return $result;
+        if (in_array($tool, ToolRegistry::serviceHandled(), true)) {
+            return $this->runAudited($convId, $tool, $args, fn(): array => $this->planDispatch($convId, $tool, $args));
         }
 
-        return AdminStatsTools::dispatch($tool, $args);
+        if (!ToolRegistry::handles($tool)) {
+            // Tool model tự bịa → ghi audit để biết model hay bịa, trả thông báo
+            // rõ ràng để model tự sửa ở lượt kế.
+            return $this->runAudited($convId, $tool, $args, fn(): array => ToolRegistry::dispatch($tool, $args, $this->pageCtx));
+        }
+
+        if (ToolRegistry::needsConfirm($tool)) {
+            return $this->stageConfirm($convId, $tool, $args);
+        }
+
+        $result = $this->runAudited($convId, $tool, $args, fn(): array => ToolRegistry::dispatch($tool, $args, $this->pageCtx));
+
+        if ($tool === 'post_draft' && !empty($result['ok']) && !empty($result['preview'])) {
+            // Bài CHƯA lưu — stash payload để gắn card xem trước vào reply cuối;
+            // trả model bản rút gọn (nội dung model đã tự viết trong args).
+            $this->pendingPostPreview = $result;
+            $result['content'] = '(Bài viết đã hiển thị card xem trước trong đoạn chat cho admin — '
+                . 'bấm "Lưu Bài" để lưu. Không cần nói thêm.)';
+        }
+
+        return $result;
+    }
+
+    /**
+     * Cổng xác nhận: hành động rủi ro KHÔNG chạy ngay — phát hành token và
+     * báo model rằng đang chờ admin bấm nút.
+     *
+     * @param array<string, mixed> $args
+     * @return array<string, mixed>
+     */
+    private function stageConfirm(string $convId, string $tool, array $args): array
+    {
+        $summary = ToolRegistry::describe($tool, $args);
+        try {
+            $issued = $this->pending()->issue(
+                $convId,
+                $tool,
+                $args,
+                (string) (ToolRegistry::get($tool)['risk'] ?? ToolRegistry::RISK_WRITE),
+                $summary,
+                $this->pageCtx
+            );
+        } catch (\Throwable $e) {
+            return ['ok' => false, 'error' => 'Không thể chuẩn bị hành động chờ xác nhận. Hãy thao tác thủ công trong admin.'];
+        }
+
+        $this->pendingConfirms[] = $issued + ['preview' => $this->confirmPreview($tool, $args)];
+        $this->auditCall($convId, $tool, $args, [
+            'ok'      => true,
+            'status'  => 'pending_confirmation',
+            'token'   => $issued['token'],
+            'summary' => $issued['summary'],
+        ], 0, null, null, 'pending');
+
+        return [
+            'ok'      => true,
+            'status'  => 'pending_confirmation',
+            'summary' => $issued['summary'],
+            'note'    => 'Hệ thống đã hiển thị thẻ "XÁC NHẬN THỰC HIỆN" cho admin. '
+                . 'Hành động CHƯA chạy. Hãy nói với admin rằng em đã chuẩn bị xong và '
+                . 'đang chờ admin bấm xác nhận — TUYỆT ĐỐI không nói "đã thực hiện".',
+        ];
+    }
+
+    /**
+     * Bảng "sẽ thay đổi gì" hiển thị trên thẻ xác nhận. Best effort: mọi lỗi
+     * đều trả mảng rỗng để thẻ vẫn hiển thị được phần summary chữ.
+     *
+     * @param array<string, mixed> $args
+     * @return array<string, mixed>
+     */
+    private function confirmPreview(string $tool, array $args): array
+    {
+        try {
+            if ($tool === 'page_edit') {
+                return $this->pageEditPreview($args);
+            }
+            if (in_array($tool, ['entity_create', 'entity_update', 'entity_delete', 'action_run'], true)) {
+                return EntityCrudTools::previewFor($tool, $args);
+            }
+        } catch (\Throwable $e) {
+            return [];
+        }
+        return [];
+    }
+
+    /**
+     * So ảnh chụp hiện tại của trang đang mở với đúng các cột mà AI định ghi.
+     *
+     * @param array<string, mixed> $args
+     * @return array<string, mixed>
+     */
+    private function pageEditPreview(array $args): array
+    {
+        $entity = strtolower(trim((string) ($args['entity'] ?? '')));
+        $id = (int) ($args['id'] ?? 0);
+        if ($entity === '') {
+            return [];
+        }
+        $current = $id > 0 ? PageEditTools::snapshot($entity, $id) : null;
+        $rows = [];
+        $data = is_array($args['data'] ?? null) ? (array) $args['data'] : [];
+        foreach ($data as $col => $val) {
+            if (!is_string($col)) {
+                continue;
+            }
+            $before = is_array($current) ? ($current[$col] ?? null) : null;
+            $rows[] = [
+                'column' => $col,
+                'before' => self::flatPreview($before),
+                'after'  => self::flatPreview($val),
+            ];
+        }
+        return [
+            'entity' => $entity,
+            'label'  => $entity,
+            'id'     => $id,
+            'url'    => (string) ($this->pageCtx['url'] ?? ''),
+            'mode'   => 'update',
+            'rows'   => $rows,
+        ];
+    }
+
+    private static function flatPreview(mixed $v): ?string
+    {
+        if ($v === null) {
+            return null;
+        }
+        if (is_bool($v)) {
+            return $v ? '1' : '0';
+        }
+        if (is_array($v)) {
+            $v = json_encode($v, JSON_UNESCAPED_UNICODE);
+        }
+        $s = (string) $v;
+        return mb_strlen($s) > 200 ? mb_substr($s, 0, 200) . '…' : $s;
+    }
+
+    /**
+     * Chạy tool + đo thời gian + snapshot trước/sau (page_edit) + ghi audit.
+     *
+     * @param array<string, mixed> $args
+     * @param callable(): array<string, mixed> $run
+     * @return array<string, mixed>
+     */
+    private function runAudited(string $convId, string $tool, array $args, callable $run): array
+    {
+        $target = $this->snapshotTarget($tool, $args);
+        $before = null;
+        if ($target !== null) {
+            $before = $this->snapshot($tool, $target[0], $target[1]);
+        }
+
+        $t0 = microtime(true);
+        $result = $run();
+        $ms = (int) round((microtime(true) - $t0) * 1000);
+
+        $after = $target !== null ? $this->afterSnapshot($tool, $target[0], $target[1], $result) : null;
+
+        $this->auditCall($convId, $tool, $args, $result, $ms, $before, $after, null);
+
+        return $result;
+    }
+
+    /**
+     * Ảnh chụp dữ liệu thật của một bản ghi (cho cột before/after của audit).
+     *
+     * Hai nguồn ảnh chụp: `page_edit` dùng PageEditTools (giữ nguyên hành vi
+     * BƯỚC 1 — đọc qua chính trang đang mở), mọi tool CRUD/danh bạ khác dùng
+     * EntityCrudTools (đọc theo bảng của danh bạ, đã che cột mật khẩu/token).
+     *
+     * @return array<string, mixed>|null
+     */
+    private function snapshot(string $tool, string $entity, int $id): ?array
+    {
+        if ($id <= 0) {
+            return null;
+        }
+        try {
+            if ($tool === 'page_edit') {
+                return PageEditTools::snapshot($entity, $id);
+            }
+            return EntityCrudTools::snapshot($entity, $id);
+        } catch (\Throwable $e) {
+            return null;
+        }
+    }
+
+    /**
+     * Bản ghi nào bị lời gọi tool tác động? null = không có bản ghi cụ thể.
+     *
+     * @param array<string, mixed> $args
+     * @return array{0:string,1:int}|null
+     */
+    private function snapshotTarget(string $tool, array $args): ?array
+    {
+        if ($tool === 'page_edit') {
+            $entity = strtolower(trim((string) ($args['entity'] ?? '')));
+            $id = (int) ($args['id'] ?? 0);
+            return ($entity !== '' && $id > 0) ? [$entity, $id] : null;
+        }
+
+        if (!in_array($tool, ['entity_create', 'entity_update', 'entity_delete', 'action_run'], true)) {
+            return null;
+        }
+
+        try {
+            return EntityCrudTools::targetOf($tool, $args);
+        } catch (\Throwable $e) {
+            return null;
+        }
+    }
+
+    /**
+     * Ảnh chụp sau khi chạy. Với thao tác tạo mới, id chỉ có sau khi INSERT
+     * thành công nên phải lấy từ kết quả của tool. Thao tác xóa thành công thì
+     * không còn gì để chụp — nhật ký chỉ giữ ảnh "trước".
+     *
+     * @param array<string, mixed> $result
+     */
+    private function afterSnapshot(string $tool, string $entity, int $id, array $result): ?array
+    {
+        if (empty($result['ok'])) {
+            return null;
+        }
+        $finalId = $id > 0 ? $id : (int) ($result['id'] ?? 0);
+        if ($finalId <= 0) {
+            return null;
+        }
+        if ($tool === 'entity_delete') {
+            return ['deleted' => true, 'entity' => $entity, 'id' => $finalId];
+        }
+        return $this->snapshot($tool, $entity, $finalId);
+    }
+
+    /**
+     * Ghi một dòng nhật ký công cụ — best effort, không bao giờ làm hỏng chat.
+     *
+     * @param array<string, mixed>    $args
+     * @param array<string, mixed>    $result
+     * @param array<string, mixed>|null $before
+     * @param array<string, mixed>|null $after
+     */
+    private function auditCall(
+        string $convId,
+        string $tool,
+        array $args,
+        array $result,
+        int $durationMs,
+        ?array $before,
+        ?array $after,
+        ?string $status = null
+    ): void {
+        $log = $this->audit();
+        if ($log === null) {
+            return;
+        }
+
+        $ok = $status === 'pending' ? true : !empty($result['ok']);
+        $error = $status === 'pending'
+            ? 'pending_confirmation'
+            : ($ok ? null : mb_substr((string) ($result['error'] ?? 'unknown'), 0, 255));
+
+        try {
+            $log->log([
+                'conversation_id' => $convId,
+                'admin_id'        => isset($_SESSION['user_id']) ? (int) $_SESSION['user_id'] : null,
+                'tool'            => mb_substr($tool, 0, 64),
+                'risk'            => (string) (ToolRegistry::get($tool)['risk'] ?? ToolRegistry::RISK_READ),
+                'args_json'       => ToolRegistry::redactJson($args),
+                'before_json'     => $before !== null ? ToolRegistry::redactJson($before) : null,
+                'after_json'      => $after !== null ? ToolRegistry::redactJson($after) : null,
+                'result_json'     => ToolRegistry::redactJson($result),
+                'ok'              => $ok ? 1 : 0,
+                'error'           => $error,
+                'duration_ms'     => $durationMs,
+            ]);
+        } catch (\Throwable $e) {
+            // Bỏ qua — audit không được chặn nghiệp vụ.
+        }
     }
 
     /** Xử lý công cụ kế hoạch đọc/ghi file thật. */
@@ -511,23 +1072,30 @@ MD;
      *
      * @param array<int, array{role: string, content: mixed}> $history
      * @param array<int, array{name: string, image_data_uri: string}> $images
+     * @param int $start chỉ số tin ĐẦU TIÊN được đưa vào cửa sổ ngữ cảnh
      * @return array<int, array{role: string, content: mixed}>
      */
-    private function buildMessages(string $system, array $history, array $images, string $userText): array
+    private function buildMessages(string $system, array $history, array $images, string $userText, int $start = 0): array
     {
         $messages = [['role' => 'system', 'content' => $system]];
 
         foreach ($history as $i => $msg) {
+            if ($i < $start) {
+                continue; // đã được tóm tắt trong system prompt (digest)
+            }
             $role = (string) ($msg['role'] ?? '');
             if (!in_array($role, ['user', 'assistant'], true)) {
                 continue;
             }
             $content = (string) ($msg['content'] ?? '');
             if ($role === 'assistant') {
-                // Khối post-preview (bài xem trước) là UI-render — loại khỏi
-                // message gửi model: model không "nhìn" lại nội dung đã soạn.
+                // Khối post-preview (bài xem trước) + action-confirm (thẻ xác nhận)
+                // là UI-render — loại khỏi message gửi model: model không "nhìn"
+                // lại nội dung đã soạn cũng như token xác nhận.
                 $content = (string) preg_replace('/```post-preview\n.*?\n```/s', '', $content);
+                $content = (string) preg_replace('/```action-confirm\n.*?\n```/s', '', $content);
             }
+            $content = trim($content);
             if ($content === '') {
                 continue;
             }
@@ -541,6 +1109,64 @@ MD;
         }
 
         return $messages;
+    }
+
+    /**
+     * Áp ngân sách ngữ cảnh cho lịch sử: tính cửa sổ vừa token, dựng bản tóm tắt
+     * tích luỹ cho phần tin bị đẩy ra ngoài và lưu vào vc_ai_conversation_state.
+     *
+     * KHÔNG bao giờ sửa lịch sử JSONL — chỉ quyết định gì được gửi lên model.
+     *
+     * @param array<int, array{role: string, content: mixed}> $history
+     * @param-out string $system
+     * @return int chỉ số tin đầu tiên được giữ
+     */
+    private function applyContextWindow(string $convId, array $history, string &$system): int
+    {
+        $count = count($history);
+        if ($convId === '' || $count === 0) {
+            return 0;
+        }
+
+        $state = $this->convState();
+        $saved = $state?->forConversation($convId);
+        $covered = (int) ($saved['covered_through'] ?? 0);
+
+        // Digest cũ đã bao phủ các tin [0, covered) — chỉ tóm tắt thêm phần mới
+        // bị đẩy ra ngoài. Chốt an toàn: không bao giờ bỏ hết lịch sử.
+        $win = ContextBudget::window($system, $history);
+        $start = (int) $win['start'];
+        if ($covered > $start) {
+            $start = min($covered, max(0, $count - 1));
+        }
+
+        if ($start <= 0) {
+            // Còn vừa ngân sách: giữ nguyên digest đã có (nếu có) cho mượt hội thoại.
+            $system .= ContextBudget::digestBlock((string) ($saved['summary'] ?? ''), $covered);
+            $state?->touchTokens($convId, (int) $win['tokens']);
+
+            return 0;
+        }
+
+        $digest = (string) ($saved['summary'] ?? '');
+        $fresh = ContextBudget::digest(array_slice($history, $covered, $start - $covered));
+        if ($fresh !== '') {
+            $digest = $digest === '' ? $fresh : $digest . "\n" . $fresh;
+        }
+        if (mb_strlen($digest, 'UTF-8') > ContextBudget::MAX_DIGEST_CHARS) {
+            $digest = (string) mb_substr($digest, -$this->digestKeepChars(), null, 'UTF-8');
+        }
+
+        $state?->save($convId, $digest, $start, (int) $win['tokens']);
+        $system .= ContextBudget::digestBlock($digest, $start);
+
+        return $start;
+    }
+
+    /** Số ký tự digest giữ lại khi cắt (dành cho bản mới nhất). */
+    private function digestKeepChars(): int
+    {
+        return (int) (ContextBudget::MAX_DIGEST_CHARS * 0.9);
     }
 
     /**
@@ -568,6 +1194,42 @@ MD;
         $json = str_replace('`', "\u{2027}", $json);
         $this->pendingPostPreview = null;
         return $content . "\n\n```post-preview\n" . $json . "\n```";
+    }
+
+    /**
+     * Gắn mọi hành động đang chờ xác nhận (phát hành ở lượt này) vào cuối reply
+     * dạng ```action-confirm\n{json}\n``` — giao diện render thẻ có nút
+     * "XÁC NHẬN THỰC HIỆN" / "BỎ QUA" trỏ tới /admin/assistant/action/confirm.
+     * Token là chuỗi hex an toàn; cùng kỹ thuật thoát backtick như post-preview.
+     */
+    private function appendActionConfirms(string $content): string
+    {
+        if ($this->pendingConfirms === []) {
+            return $content;
+        }
+
+        foreach ($this->pendingConfirms as $c) {
+            $payload = [
+                'token'      => (string) ($c['token'] ?? ''),
+                'tool'       => (string) ($c['tool'] ?? ''),
+                'summary'    => (string) ($c['summary'] ?? ''),
+                'risk'       => (string) ($c['risk'] ?? ToolRegistry::RISK_WRITE),
+                'expires_at' => (string) ($c['expires_at'] ?? ''),
+                'preview'    => is_array($c['preview'] ?? null) ? $c['preview'] : null,
+            ];
+            if ($payload['token'] === '') {
+                continue;
+            }
+            $json = json_encode($payload, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+            if ($json === false) {
+                continue;
+            }
+            $content .= "\n\n```action-confirm\n" . str_replace('`', "\u{2027}", $json) . "\n```";
+        }
+
+        $this->pendingConfirms = [];
+
+        return $content;
     }
 
     /**

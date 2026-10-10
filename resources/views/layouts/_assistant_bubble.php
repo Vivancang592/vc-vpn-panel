@@ -341,6 +341,45 @@ $suggestions = [
         border-top: 1px solid rgba(22, 119, 255, 0.2);
     }
     .asst-post-hint { font-size: 12px; color: var(--ios-text-secondary, #617087); }
+
+    /* —— Card hành động chờ xác nhận (action-confirm) — AI CHƯA chạy gì —— */
+    .asst-confirm-card {
+        border: 1px solid rgba(217, 119, 6, 0.45);
+        box-shadow: 0 0 0 1px rgba(217, 119, 6, 0.08) inset;
+    }
+    .asst-confirm-card .asst-post-head {
+        border-bottom-color: rgba(217, 119, 6, 0.28);
+    }
+    .asst-confirm-card .asst-post-title { font-size: 13.5px; }
+    .asst-confirm-chip {
+        font-size: 11px; padding: 2px 9px; border-radius: 999px; font-weight: 600;
+        background: rgba(217, 119, 6, 0.12); color: var(--ios-warning, #d97706);
+        border: 1px solid rgba(217, 119, 6, 0.38);
+    }
+    .asst-confirm-chip.done {
+        background: rgba(34, 160, 107, 0.12); color: var(--ios-success, #22a06b);
+        border-color: rgba(34, 160, 107, 0.38);
+    }
+    .asst-confirm-chip.off {
+        background: rgba(100, 116, 139, 0.14); color: var(--ios-text-secondary, #617087);
+        border-color: rgba(100, 116, 139, 0.34);
+    }
+    .asst-confirm-body { font-size: 13.5px; color: var(--ios-text, #132238); white-space: pre-wrap; word-break: break-word; }
+    .asst-confirm-meta { font-size: 11.5px; color: var(--ios-text-secondary, #617087); margin-top: 6px; }
+    .asst-confirm-result { font-size: 13px; margin-top: 8px; padding: 7px 9px; border-radius: 8px; white-space: pre-wrap; word-break: break-word; }
+    .asst-confirm-result.ok { background: rgba(34, 160, 107, 0.1); border: 1px solid rgba(34, 160, 107, 0.3); }
+    .asst-confirm-result.err { background: rgba(220, 38, 38, 0.1); border: 1px solid rgba(220, 38, 38, 0.3); }
+    /* Bảng so sánh "trước → sau" trên thẻ xác nhận */
+    .asst-diff { margin-top: 8px; border: 1px solid rgba(19, 34, 56, 0.12); border-radius: 9px; overflow: hidden; }
+    .asst-diff-head { margin: 0; padding: 6px 9px; background: rgba(19, 34, 56, 0.05); font-weight: 600; }
+    .asst-diff-table { width: 100%; border-collapse: collapse; font-size: 12.5px; table-layout: fixed; }
+    .asst-diff-table td { padding: 5px 8px; border-top: 1px solid rgba(19, 34, 56, 0.08); vertical-align: top; word-break: break-word; }
+    .asst-diff-col { width: 30%; color: var(--ios-text-secondary, #617087); }
+    .asst-diff-old { color: #b0453f; text-decoration: line-through; text-decoration-color: rgba(176, 69, 63, 0.45); }
+    .asst-diff-arrow { width: 22px; text-align: center; color: var(--ios-text-secondary, #617087); }
+    .asst-diff-new { color: #1d7a52; font-weight: 600; }
+    .asst-confirm-link { display: inline-block; margin-top: 7px; font-size: 12.5px; color: var(--ios-primary, #0a66ff); text-decoration: none; }
+    .asst-confirm-link:hover { text-decoration: underline; }
     .asst-plan-body code { font-family: Consolas, Monaco, monospace; font-size: 0.85em; }
     .asst-plan-body :not(pre) > code { background: rgba(0, 122, 255, 0.12); padding: 0.08em 0.35em; border-radius: 4px; }
 
@@ -657,6 +696,15 @@ $suggestions = [
                         continue;
                     }
                 }
+                if (fl === 'action-confirm') {
+                    var co = null;
+                    try { co = JSON.parse(t.slice(nl + 1).trim()); } catch (e) { co = null; }
+                    if (co && co.token) {
+                        CONFIRMS[co.token] = co;
+                        html += confirmInner(co);
+                        continue;
+                    }
+                }
                 if (nl > -1 && /^[a-zA-Z0-9+#._-]*\s*$/.test(t.slice(0, nl))) t = t.slice(nl + 1);
                 html += '<pre><code>' + esc(t.replace(/\n$/, '')) + '</code></pre>';
             } else if (parts[i] !== '') {
@@ -690,6 +738,141 @@ $suggestions = [
      * nhúng ```post-preview\n{json}\n``` vào reply → md() render card TRƯỚC khi
      * lưu; admin bấm "Lưu Bài" → POST post/save mới ghi bài nháp.            */
     var POSTS = {};
+
+    /* ============ Hành động chờ xác nhận (action-confirm) ==================
+     * ToolRegistry::needsConfirm() chặn ghi DB → stageConfirm() phát token một
+     * lần; reply nhúng ```action-confirm\n{json}\n``` → card có 2 nút.
+     * Chỉ khi admin bấm "Xác Nhận Thực Hiện" server mới chạy tool (đúng 1 lần). */
+    var CONFIRMS = {};
+    var TOOL_LABELS = {
+        campaign_create: 'Tạo chiến dịch Remarketing Facebook',
+        campaign_status: 'Đổi trạng thái chiến dịch',
+        page_edit: 'Sửa dữ liệu trên trang admin đang mở',
+        entity_create: 'Thêm bản ghi mới',
+        entity_update: 'Sửa bản ghi',
+        entity_delete: 'Xóa bản ghi',
+        action_run: 'Chạy nghiệp vụ hệ thống'
+    };
+    var MODE_LABELS = { create: 'Sẽ thêm', update: 'Sẽ đổi', delete: 'Sẽ xóa', action: 'Sẽ thực hiện' };
+
+    /* Bảng "sẽ thay đổi gì" — server gửi lên từ args + ảnh chụp dữ liệu thật,
+     * đã che cột mật khẩu/token. Admin nhìn rõ trước khi bấm xác nhận. */
+    function previewInner(p) {
+        if (!p || !p.rows || !p.rows.length) { return ''; }
+        var rows = p.rows.slice(0, 24).map(function (r) {
+            var b = (r.before === null || r.before === undefined || r.before === '') ? '—' : String(r.before);
+            var a = (r.after === null || r.after === undefined || r.after === '') ? '—' : String(r.after);
+            return '<tr><td class="asst-diff-col">' + esc(r.column || '') + '</td>'
+                + '<td class="asst-diff-old">' + esc(b) + '</td>'
+                + '<td class="asst-diff-arrow">→</td>'
+                + '<td class="asst-diff-new">' + esc(a) + '</td></tr>';
+        }).join('');
+        var more = p.rows.length > 24 ? '<div class="asst-confirm-meta">… ' + (p.rows.length - 24) + ' thay đổi khác không hiển thị.</div>' : '';
+        var head = (MODE_LABELS[p.mode] || 'Thay đổi') + (p.label ? ': ' + p.label : '') + (p.id ? ' #' + p.id : '');
+        return '<div class="asst-diff">'
+            + '<div class="asst-confirm-meta asst-diff-head">' + esc(head) + '</div>'
+            + '<table class="asst-diff-table"><tbody>' + rows + '</tbody></table>' + more
+            + '</div>';
+    }
+
+    function confirmInner(c) {
+        var state = c.state || 'pending';
+        var label = TOOL_LABELS[c.tool] ? TOOL_LABELS[c.tool] : ('Công cụ ' + (c.tool || '?'));
+        var chip = state === 'done' ? '<span class="asst-confirm-chip done">Đã thực hiện</span>'
+            : state === 'cancelled' ? '<span class="asst-confirm-chip off">Đã bỏ qua</span>'
+            : state === 'failed' ? '<span class="asst-confirm-chip off">Không thành công</span>'
+            : state === 'expired' ? '<span class="asst-confirm-chip off">Hết hiệu lực</span>'
+            : '<span class="asst-confirm-chip">Chờ bạn xác nhận</span>';
+        var link = (c.preview && c.preview.url)
+            ? '<a class="asst-confirm-link" href="' + escAttr(c.preview.url) + '" target="_blank" rel="noopener">Mở bản ghi ↗</a>'
+            : '';
+        var foot = state === 'pending'
+            ? '<button type="button" class="asst-btn primary" data-confirm-action="' + escAttr(c.token) + '">Xác Nhận Thực Hiện</button>'
+                + '<button type="button" class="asst-btn danger" data-cancel-action="' + escAttr(c.token) + '">Bỏ Qua</button>'
+                + '<span class="asst-post-hint">Hệ thống CHƯA thay đổi dữ liệu — bấm "Xác Nhận" để thi hành.</span>'
+            : '<span class="asst-post-hint">' + (state === 'cancelled' ? 'Hành động đã bị bỏ qua, dữ liệu không thay đổi.' : '') + '</span>';
+        return '<div class="asst-plan-card asst-post-card asst-confirm-card" data-confirm-card="' + escAttr(c.token) + '">'
+            + '<div class="asst-post-head"><span style="font-size:16px">⚠</span>'
+            + '<span class="asst-post-title">' + esc(label) + '</span>' + chip + '</div>'
+            + '<div class="asst-confirm-body">' + esc(c.summary || '(không có mô tả)') + '</div>'
+            + previewInner(c.preview)
+            + (c.expires_at ? '<div class="asst-confirm-meta">Hiệu lực đến ' + esc(c.expires_at) + ' (30 phút, chạy đúng một lần).</div>' : '')
+            + link
+            + (c.message ? '<div class="asst-confirm-result ' + (state === 'done' ? 'ok' : 'err') + '">' + esc(c.message) + '</div>' : '')
+            + '<div class="asst-post-foot">' + foot + '</div>'
+            + '</div>';
+    }
+
+    function markConfirm(token, patch) {
+        if (!CONFIRMS[token]) { CONFIRMS[token] = { token: token }; }
+        Object.keys(patch).forEach(function (k) { CONFIRMS[token][k] = patch[k]; });
+        var card = document.querySelector('[data-confirm-card="' + token + '"]');
+        if (card) { card.innerHTML = confirmInner(CONFIRMS[token]); }
+    }
+
+    function runConfirm(btn) {
+        var token = btn.getAttribute('data-confirm-action');
+        var c = CONFIRMS[token];
+        if (!c || c.state && c.state !== 'pending') { return; }
+        btn.disabled = true;
+        btn.textContent = 'Đang thực hiện...';
+        var fd = new FormData();
+        fd.append('conv_id', current);
+        fd.append('token', token);
+        var pg = pageSnapshot();
+        fd.append('page_url', pg.url);
+        fd.append('page_title', pg.title);
+        fd.append('page_text', pg.text);
+        post('/admin/assistant/action/confirm', fd).then(function (res) {
+            if (!res || !res.ok) {
+                btn.disabled = false;
+                btn.textContent = 'Xác Nhận Thực Hiện';
+                markConfirm(token, { state: 'failed', message: (res && res.error) || 'Không thực hiện được.' });
+                toast('danger', (res && res.error) || 'Không thực hiện được hành động.');
+                return;
+            }
+            markConfirm(token, { state: 'done', message: res.message || 'Đã thực hiện.' });
+            toast('success', res.message || 'Đã thực hiện hành động.');
+        }).catch(function () {
+            btn.disabled = false;
+            btn.textContent = 'Xác Nhận Thực Hiện';
+            toast('danger', 'Mất kết nối — hành động CHƯA được thực hiện.');
+        });
+    }
+
+    function dropConfirm(btn) {
+        var token = btn.getAttribute('data-cancel-action');
+        var c = CONFIRMS[token];
+        if (!c || (c.state && c.state !== 'pending')) { return; }
+        btn.disabled = true;
+        post('/admin/assistant/action/cancel', { conv_id: current, token: token }).then(function (res) {
+            if (!res || !res.ok) {
+                btn.disabled = false;
+                toast('danger', (res && res.error) || 'Không bỏ qua được.');
+                return;
+            }
+            markConfirm(token, { state: 'cancelled' });
+            toast('success', 'Đã bỏ qua — dữ liệu không thay đổi.');
+        }).catch(function () { btn.disabled = false; });
+    }
+
+    /* Sau khi mở lại đoạn chat: ẩn các thẻ action-confirm đã chạy/bỏ qua, và
+     * thẻ quá hạn (server không còn token) → đánh dấu hết hiệu lực. */
+    function syncConfirms() {
+        var tokens = [];
+        Object.keys(CONFIRMS).forEach(function (k) {
+            if (!CONFIRMS[k].state || CONFIRMS[k].state === 'pending') { tokens.push(k); }
+        });
+        if (!tokens.length) { return; }
+        get('/admin/assistant/action/pending?conv_id=' + encodeURIComponent(current)).then(function (res) {
+            var alive = {};
+            ((res && res.items) || []).forEach(function (it) { alive[it.token] = it; });
+            tokens.forEach(function (k) {
+                if (!alive[k]) { markConfirm(k, { state: 'expired', message: 'Hành động đã hết hiệu lực (quá 30 phút hoặc đã chạy).' }); }
+                else if (alive[k].preview) { markConfirm(k, { preview: alive[k].preview }); }
+            });
+        }).catch(function () { /* noop */ });
+    }
 
     function postPreviewInner(p) {
         var typeLabels = { news: 'Tin tức', tutorial: 'Hướng dẫn', faq: 'FAQ', popup: 'Popup' };
@@ -855,6 +1038,7 @@ $suggestions = [
                 modelSel.value = res.meta.model;
             }
             syncSavedPosts();
+            syncConfirms();
             scrollBottom();
         }).catch(function () { toast('danger', 'Mất kết nối khi tải lịch sử chat.'); });
     }
@@ -1257,6 +1441,10 @@ $suggestions = [
     msgsEl.addEventListener('click', function (e) {
         var psv = e.target.closest ? e.target.closest('[data-post-save]') : null;
         if (psv) { savePostCard(psv); return; }
+        var cfm = e.target.closest ? e.target.closest('[data-confirm-action]') : null;
+        if (cfm) { runConfirm(cfm); return; }
+        var ccl = e.target.closest ? e.target.closest('[data-cancel-action]') : null;
+        if (ccl) { dropConfirm(ccl); return; }
         var sug = e.target.closest ? e.target.closest('.asst-sug') : null;
         if (sug) { inputEl.value = sug.getAttribute('data-q') || ''; inputEl.focus(); autoGrow(); return; }
         var img = e.target.closest ? e.target.closest('.asst-img') : null;

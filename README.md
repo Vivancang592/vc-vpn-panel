@@ -167,8 +167,14 @@ crontab -e
 #?key=YOUR_CRON_SECRET_KEY — lấy giá trị CRON_SECRET_KEY trong file .env
 */5 * * * * curl -s "https://vpn2s.linksub24h.com/api/cron/check-subscriptions?key=YOUR_CRON_SECRET_KEY" > /dev/null 2>&1
 
+# Đăng bài Fanpage từ hàng đợi lên lịch (bỏ dòng này nếu không dùng tính năng lên lịch đăng bài)
+*/10 * * * * curl -s "https://vpn2s.linksub24h.com/api/cron/auto-post?key=YOUR_CRON_SECRET_KEY" > /dev/null 2>&1
+
 # Worker AI nền — xử lý task AI còn xếp hàng (không dùng AI nền thì bỏ dòng này)
 */1 * * * * cd /www/wwwroot/vpn2s.linksub24h.com && php tools/ai_worker.php > /dev/null 2>&1
+
+# Remarketing Facebook chu kỳ tháng — chạy HẰNG NGÀY (đến ngày `day_of_month` mới tự quay chu kỳ + gửi; các ngày còn lại tự bỏ qua, an toàn chạy lặp)
+0 9 * * * curl -s "https://vpn2s.linksub24h.com/api/cron/monthly-remarketing?key=YOUR_CRON_SECRET_KEY" > /dev/null 2>&1
 ```
 
 ---

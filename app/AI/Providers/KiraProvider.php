@@ -327,10 +327,17 @@ final class KiraProvider implements AIProviderInterface
             $payload['model'] = (string) $options['model'];
         }
 
-        foreach (['temperature', 'top_p', 'max_tokens', 'stream', 'stop', 'frequency_penalty', 'presence_penalty'] as $key) {
+        // `tools`/`tool_choice` đã probe thành công trên Kira (HTTP 200,
+        // finish_reason=tool_calls, vòng tool-trip role:tool hoạt động).
+        foreach (['temperature', 'top_p', 'max_tokens', 'stream', 'stop', 'frequency_penalty', 'presence_penalty', 'tools', 'tool_choice'] as $key) {
             if (array_key_exists($key, $options)) {
                 $payload[$key] = $options[$key];
             }
+        }
+
+        // Chuỗi rỗng hoặc mảng rỗng → không gửi (nhà cung cấp lạ sẽ báo lỗi tham số).
+        if (isset($payload['tools']) && (!is_array($payload['tools']) || $payload['tools'] === [])) {
+            unset($payload['tools'], $payload['tool_choice']);
         }
 
         // Không cho phép stream ở Phase 5.

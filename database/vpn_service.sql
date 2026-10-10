@@ -347,6 +347,8 @@ CREATE TABLE IF NOT EXISTS `vc_chat_sessions` (
     `source` ENUM('web','fanpage') NOT NULL DEFAULT 'web',
     `external_id` VARCHAR(100) NULL,
     `status` ENUM('open','handoff','closed') NOT NULL DEFAULT 'open',
+    `summary` MEDIUMTEXT NULL COMMENT 'bản tóm tắt tích lũy các tin cũ nhất đã trôi ra ngoài cửa sổ token',
+    `covered_through` INT UNSIGNED NOT NULL DEFAULT 0 COMMENT 'số tin đầu cuộc hội thoại đã nằm trong summary',
     `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     `updated_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     UNIQUE KEY `uniq_chat_session` (`visitor_token`, `source`),
@@ -617,9 +619,17 @@ CREATE TABLE IF NOT EXISTS `vc_campaigns` (
   `title` VARCHAR(191) NOT NULL,
   `subject` VARCHAR(191) NOT NULL DEFAULT '' COMMENT 'chỉ kind=email',
   `body` MEDIUMTEXT NOT NULL COMMENT 'nội dung AI soạn (HTML cho email, text cho fb)',
-  `target_mode` VARCHAR(20) NOT NULL DEFAULT 'all' COMMENT 'all_users | all_fans | specific',
+  `target_mode` VARCHAR(20) NOT NULL DEFAULT 'all' COMMENT 'all_users | all_fans | old_customers | specific',
   `target_ref` TEXT NULL COMMENT 'JSON: {user_ids:[..],emails:[..]} hoặc {psids:[..]} khi specific',
   `daily_limit` INT UNSIGNED NOT NULL DEFAULT 50 COMMENT 'số người tối đa mỗi ngày',
+  `recurrence` VARCHAR(10) NOT NULL DEFAULT 'once' COMMENT 'once | monthly',
+  `day_of_month` TINYINT UNSIGNED NOT NULL DEFAULT 1 COMMENT 'ngày chạy trong tháng (1-31)',
+  `next_run_at` DATE NULL COMMENT 'ngày bắt đầu chu kỳ tới',
+  `cycle_no` INT UNSIGNED NOT NULL DEFAULT 0 COMMENT 'số chu kỳ đã chạy',
+  `audience_mode` VARCHAR(20) NOT NULL DEFAULT 'legacy' COMMENT 'legacy | old_customers',
+  `personalize` TINYINT(1) NOT NULL DEFAULT 0 COMMENT '1 = AI soạn theo chu kỳ + chèn dữ liệu thật',
+  `cycle_body` MEDIUMTEXT NULL COMMENT 'nội dung AI soạn cho chu kỳ hiện tại',
+  `cycle_body_cycle` INT UNSIGNED NOT NULL DEFAULT 0 COMMENT 'chu kỳ mà cycle_body thuộc về',
   `status` VARCHAR(20) NOT NULL DEFAULT 'active' COMMENT 'active | paused | done | cancelled',
   `last_sent_date` DATE NULL COMMENT 'ngày gửi gần nhất (chống gửi 2 lần trong ngày)',
   `total_sent` INT UNSIGNED NOT NULL DEFAULT 0,
@@ -634,11 +644,70 @@ CREATE TABLE IF NOT EXISTS `vc_campaign_sends` (
   `id` INT UNSIGNED NOT NULL AUTO_INCREMENT,
   `campaign_id` INT UNSIGNED NOT NULL,
   `target_key` VARCHAR(191) NOT NULL COMMENT 'email hoặc psid — khóa chống trùng',
-  `status` VARCHAR(20) NOT NULL DEFAULT 'pending' COMMENT 'pending | sent | failed',
+  `cycle_no` INT UNSIGNED NOT NULL DEFAULT 0 COMMENT 'chu kỳ mà dòng này thuộc về',
+  `status` VARCHAR(20) NOT NULL DEFAULT 'pending' COMMENT 'pending | sent | failed | skipped',
   `detail` VARCHAR(512) NOT NULL DEFAULT '',
   `sent_at` DATETIME NOT NULL,
   PRIMARY KEY (`id`),
-  UNIQUE KEY `uq_campaign_target` (`campaign_id`, `target_key`),
+  UNIQUE KEY `uq_campaign_target_cycle` (`campaign_id`, `target_key`, `cycle_no`),
   CONSTRAINT `fk_sends_campaign` FOREIGN KEY (`campaign_id`)
     REFERENCES `vc_campaigns` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Bản đồ danh tính Messenger cho Remarketing (BƯỚC 5): PSID ↔ user website,
+-- cửa sổ 7 ngày của Meta (last_interaction_at) + opt-out (opted_out_at).
+CREATE TABLE IF NOT EXISTS `vc_fb_contacts` (
+  `id` INT UNSIGNED NOT NULL AUTO_INCREMENT,
+  `psid` VARCHAR(100) NOT NULL COMMENT 'Persistent Sender ID của Messenger',
+  `page_id` VARCHAR(64) NOT NULL DEFAULT '' COMMENT 'Fanpage sở hữu PSID',
+  `user_id` BIGINT UNSIGNED NULL COMMENT 'liên kết vc_users (khớp email trong chat)',
+  `first_name` VARCHAR(100) NOT NULL DEFAULT '' COMMENT 'tên lấy từ profile Messenger',
+  `consent_at` DATETIME NULL COMMENT 'lần nhắn đầu tiên (opt-in)',
+  `last_interaction_at` DATETIME NOT NULL COMMENT 'lần nhắn gần nhất — cửa sổ 7 ngày',
+  `last_sent_at` DATETIME NULL COMMENT 'chiến dịch gần nhất đã gửi tới PSID này',
+  `opted_out_at` DATETIME NULL COMMENT 'khách gõ STOP/... → cấm mọi chiến dịch',
+  `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uq_fb_contact_psid` (`psid`, `page_id`),
+  KEY `idx_fb_contact_user` (`user_id`),
+  KEY `idx_fb_contact_window` (`opted_out_at`, `last_interaction_at`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- ============================================================================
+-- Trợ Lý Admin — BƯỚC 1 (2026-10-10): audit công cụ + trạng thái ngữ cảnh.
+-- Chỉ thêm bảng mới; chạy lại không lỗi (CREATE TABLE IF NOT EXISTS).
+-- Bản migration độc lập: database/migrations/20261010_add_ai_tool_registry_tables.sql
+-- ============================================================================
+
+CREATE TABLE IF NOT EXISTS `vc_ai_tool_calls` (
+  `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+  `conversation_id` VARCHAR(64) NOT NULL DEFAULT '' COMMENT 'id đoạn chat trợ lý (storage/assistant/chats)',
+  `admin_id` INT UNSIGNED NULL COMMENT 'người quản trị thực hiện phiên chat',
+  `tool` VARCHAR(64) NOT NULL COMMENT 'tên công cụ đã chạy',
+  `risk` VARCHAR(16) NOT NULL DEFAULT 'read' COMMENT 'read | write | destructive',
+  `args_json` MEDIUMTEXT NULL COMMENT 'tham số AI đưa vào (đã rút gọn + ẩn mật)',
+  `before_json` MEDIUMTEXT NULL COMMENT 'snapshot dữ liệu TRƯỚC khi ghi',
+  `after_json` MEDIUMTEXT NULL COMMENT 'snapshot dữ liệu SAU khi ghi',
+  `result_json` MEDIUMTEXT NULL COMMENT 'kết quả trả về cho AI (đã rút gọn)',
+  `ok` TINYINT(1) NOT NULL DEFAULT 0 COMMENT 'tool chạy thành công',
+  `error` VARCHAR(512) NOT NULL DEFAULT '' COMMENT 'thông báo lỗi (nếu có)',
+  `duration_ms` INT UNSIGNED NOT NULL DEFAULT 0 COMMENT 'thời gian chạy tool',
+  `confirmed_by` INT UNSIGNED NULL COMMENT 'admin bấm nút xác nhận hành động (nếu qua cổng xác nhận)',
+  `created_at` DATETIME NOT NULL,
+  PRIMARY KEY (`id`),
+  KEY `idx_tool_calls_conv` (`conversation_id`, `id`),
+  KEY `idx_tool_calls_tool` (`tool`, `created_at`),
+  KEY `idx_tool_calls_admin` (`admin_id`, `id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS `vc_ai_conversation_state` (
+  `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+  `conversation_id` VARCHAR(64) NOT NULL COMMENT 'id đoạn chat trợ lý',
+  `summary` MEDIUMTEXT NULL COMMENT 'bản tóm tắt tích lũy các tin cũ nhất',
+  `covered_through` INT UNSIGNED NOT NULL DEFAULT 0 COMMENT 'số tin đã nằm trong summary',
+  `tokens_in` INT UNSIGNED NOT NULL DEFAULT 0 COMMENT 'ước lượng token của prompt lượt gần nhất',
+  `updated_at` DATETIME NOT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uq_conv_state` (`conversation_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

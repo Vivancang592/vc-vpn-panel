@@ -101,6 +101,37 @@ final class PageEditTools
         '#^/admin/settings(?:/|\?|$)#'    => 'setting',
     ];
 
+    /** Danh sách tool + mô tả — nguồn duy nhất cho ToolRegistry. @return array<string,string> */
+    public static function toolDescriptions(): array
+    {
+        return self::TOOLS;
+    }
+
+    /**
+     * Snapshot dữ liệu hiện tại của đối tượng, phục vụ audit trước/sau khi ghi.
+     * Im lặng trả null khi không đọc được (không bao giờ làm hỏng luồng chính).
+     *
+     * @return array<string, mixed>|null
+     */
+    public static function snapshot(string $entity, int $id): ?array
+    {
+        if (!isset(self::ENTITIES[$entity])) {
+            return null;
+        }
+        try {
+            $res = self::pageGet($entity, $entity === 'setting' ? 0 : $id);
+        } catch (\Throwable $e) {
+            return null;
+        }
+        if (empty($res['ok'])) {
+            return null;
+        }
+        if ($entity === 'setting') {
+            return isset($res['settings']) && is_array($res['settings']) ? $res['settings'] : null;
+        }
+        return isset($res['row']) && is_array($res['row']) ? $res['row'] : null;
+    }
+
     /** Khối mô tả protocol nhúng vào system prompt lúc runtime. */
     public static function protocolBlock(): string
     {

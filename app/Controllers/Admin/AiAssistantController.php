@@ -7,6 +7,7 @@ namespace App\Controllers\Admin;
 use App\AI\Knowledge\AssistantStore;
 use App\AI\Knowledge\AdminActionTools;
 use App\AI\Assistant\AdminAssistantService;
+use App\Models\AiToolCall;
 
 /**
  * Trợ Lý Admin — chat AI riêng cho trang admin (kiểu OpenAI).
@@ -273,6 +274,113 @@ class AiAssistantController extends AiBaseController
     {
         $ids = array_filter(array_map('trim', explode(',', (string) ($_GET['ids'] ?? ''))));
         $this->json(AdminActionTools::saveStatus($ids));
+    }
+
+    /**
+     * POST /admin/assistant/action/confirm — admin bấm "XÁC NHẬN THỰC HIỆN"
+     * trên thẻ action-confirm: chạy đúng MỘT lần hành động đã chờ xác nhận.
+     */
+    public function confirmAction(): void
+    {
+        $this->requirePost();
+        $this->requireCsrf();
+
+        $convId = trim((string) ($_POST['conv_id'] ?? ''));
+        $token = trim((string) ($_POST['token'] ?? ''));
+        if ($this->findMeta($convId) === null) {
+            $this->json(['ok' => false, 'error' => 'Hội thoại không tồn tại.'], 404);
+        }
+        if (!preg_match('/^[a-f0-9]{32}$/', $token)) {
+            $this->json(['ok' => false, 'error' => 'Mã xác nhận không hợp lệ.'], 400);
+        }
+
+        $page = $this->sanitizePageContext();
+
+        try {
+            $res = $this->assistant()->confirmAction($convId, $token, $page);
+        } catch (\Throwable $e) {
+            $this->json(['ok' => false, 'error' => 'Lỗi thực hiện hành động: ' . $e->getMessage()]);
+        }
+
+        if (empty($res['ok'])) {
+            $this->logActivity('ai_assistant_action_rejected', 'Trợ lý AI: hành động bị từ chối — ' . (string) ($res['error'] ?? ''));
+            $this->json(['ok' => false, 'error' => (string) ($res['error'] ?? 'Không thực hiện được.')], 400);
+        }
+
+        $this->logActivity('ai_assistant_action_confirmed', 'Trợ lý AI: admin xác nhận hành động ' . $token);
+        $this->json([
+            'ok'     => true,
+            'result' => $res['result'] ?? [],
+            'message' => (string) (($res['result']['message'] ?? null) ?: 'Đã thực hiện.'),
+        ]);
+    }
+
+    /**
+     * POST /admin/assistant/action/cancel — admin bấm "BỎ QUA": huỷ hành động,
+     * không chạy bất kỳ thao tác nào.
+     */
+    public function cancelAction(): void
+    {
+        $this->requirePost();
+        $this->requireCsrf();
+
+        $convId = trim((string) ($_POST['conv_id'] ?? ''));
+        $token = trim((string) ($_POST['token'] ?? ''));
+        if (!preg_match('/^[a-f0-9]{32}$/', $token)) {
+            $this->json(['ok' => false, 'error' => 'Mã xác nhận không hợp lệ.'], 400);
+        }
+
+        try {
+            $res = $this->assistant()->cancelAction($convId, $token);
+        } catch (\Throwable $e) {
+            $this->json(['ok' => false, 'error' => 'Lỗi bỏ qua hành động: ' . $e->getMessage()]);
+        }
+
+        if (empty($res['ok'])) {
+            $this->json(['ok' => false, 'error' => (string) ($res['error'] ?? 'Không bỏ qua được.')], 400);
+        }
+
+        $this->json(['ok' => true]);
+    }
+
+    /**
+     * GET /admin/assistant/action/pending?conv_id=… — hành động còn hiệu lực
+     * đang chờ xác nhận (UI gắn lại thẻ khi tải lại trang).
+     */
+    public function pendingActions(): void
+    {
+        $convId = trim((string) ($_GET['conv_id'] ?? ''));
+        $items = [];
+        foreach ($this->assistant()->pendingActions($convId) as $e) {
+            $items[] = [
+                'token'      => (string) ($e['token'] ?? ''),
+                'tool'       => (string) ($e['tool'] ?? ''),
+                'risk'       => (string) ($e['risk'] ?? ''),
+                'summary'    => (string) ($e['summary'] ?? ''),
+                'expires_at' => (string) ($e['expires_at'] ?? ''),
+                'preview'    => is_array($e['preview'] ?? null) ? $e['preview'] : null,
+            ];
+        }
+        $this->json(['ok' => true, 'items' => $items]);
+    }
+
+    /**
+     * GET /admin/assistant/tool-calls?conv_id=… — nhật ký thao tác công cụ của
+     * một đoạn chat (mới nhất trước) cho Admin theo dõi AI đã làm gì.
+     */
+    public function toolCalls(): void
+    {
+        $convId = trim((string) ($_GET['conv_id'] ?? ''));
+        if ($this->findMeta($convId) === null) {
+            $this->json(['ok' => false, 'error' => 'Hội thoại không tồn tại.'], 404);
+        }
+        $limit = max(1, min(200, (int) ($_GET['limit'] ?? 50)));
+        try {
+            $rows = (new AiToolCall())->forConversation($convId, $limit);
+        } catch (\Throwable $e) {
+            $rows = [];
+        }
+        $this->json(['ok' => true, 'items' => $rows]);
     }
 
     /**

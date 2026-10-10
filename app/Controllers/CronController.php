@@ -385,4 +385,38 @@ class CronController extends BaseController
             'stats' => $stats
         ]);
     }
+
+    /**
+     * BƯỚC 5.7 — Cron remarketing định kỳ (gợi ý chạy 1 lần/ngày, ví dụ 09:00):
+     * quay chu kỳ monthly tới hạn (5.1) rồi gửi bù các ngày trong chu kỳ
+     * (kèm hàng rào tuân thủ Meta 5.4). Xác thực y hệt checkSubscriptions:
+     * cron_secret_key (setting) hoặc CRON_SECRET_KEY (env), header X-Cron-Key
+     * hoặc ?key=, hash_equals — sai/không có → 403.
+     */
+    public function monthlyRemarketing(): void
+    {
+        $settingModel = new Setting();
+        $cronSecret = trim((string) ($settingModel->get('cron_secret_key', '') ?: getenv('CRON_SECRET_KEY')));
+        $providedKey = $_SERVER['HTTP_X_CRON_KEY'] ?? $_GET['key'] ?? '';
+        $providedKey = is_string($providedKey) ? trim($providedKey) : '';
+
+        if ($cronSecret === '' || !hash_equals($cronSecret, $providedKey)) {
+            $this->json(['status' => false, 'message' => 'Truy cập không hợp lệ.'], 403);
+            return;
+        }
+
+        try {
+            $summary = (new CampaignService())->sendDueCampaigns();
+            $this->json([
+                'status' => true,
+                'message' => 'Remarketing: đã quét chiến dịch tới hạn.',
+                'stats' => $summary,
+            ]);
+        } catch (\Throwable $e) {
+            $this->json([
+                'status' => false,
+                'message' => 'Lỗi remarketing: ' . mb_substr($e->getMessage(), 0, 300),
+            ], 500);
+        }
+    }
 }

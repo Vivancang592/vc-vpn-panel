@@ -73,6 +73,14 @@ final class AiFanpageController extends AiBaseController
             (string) ($this->moduleRegistry()->capabilityOf('content_article') ?? 'text')
         ));
 
+        // BƯỚC 5.8 — Giám sát chu kỳ remarketing (monthly/old_customers).
+        $cycleProgress = [];
+        try {
+            $cycleProgress = (new \App\Services\CampaignService())->cycleProgress();
+        } catch (\Throwable $e) {
+            $cycleProgress = [];
+        }
+
         $this->render('admin.ai.tab-fanpage', [
             'activeMenu' => 'ai-fanpage',
             'pageTitle'  => 'Nội Dung Fanpage - Trung Tâm AI',
@@ -91,6 +99,8 @@ final class AiFanpageController extends AiBaseController
             'postStatus'   => self::POST_STATUS,
             // Ảnh tab Tạo Ảnh → chọn đính kèm trong popup lên lịch.
             'imageGallery' => $this->galleryItems('image'),
+            // BƯỚC 5.8 — Tiến độ chu kỳ remarketing (CAB giám sát).
+            'cycleProgress' => $cycleProgress,
         ]);
     }
 
