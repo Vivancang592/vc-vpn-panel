@@ -100,6 +100,31 @@ fi
 ADMIN_HASH=$(php -r "echo password_hash('$ADMIN_PASS', PASSWORD_DEFAULT);")
 mysql -h 127.0.0.1 -u "$DB_USER" "$DB_NAME" -e "INSERT INTO vc_users (username, email, password_hash, role, status, created_at, updated_at) VALUES ('$ADMIN_USER', '$ADMIN_EMAIL', '$ADMIN_HASH', 'admin', 'active', NOW(), NOW()) ON DUPLICATE KEY UPDATE password_hash='$ADMIN_HASH', role='admin', status='active';"
 echo -e " ${GREEN}✔ Khởi tạo tài khoản Admin ($ADMIN_USER) thành công.${NC}"
+
+# 3.1. Áp dụng toàn bộ migration trong database/migrations (idempotent — an toàn chạy lại).
+# BẮT BUỘC cả khi schema đã tồn tại: DB tạo từ bản SQL cũ sẽ thiếu cột mới
+# (vd. vc_campaigns.recurrence → SQLSTATE[42S22] Unknown column 'recurrence').
+MIGRATIONS_DIR="$APP_PATH/database/migrations"
+if [[ -d "$MIGRATIONS_DIR" ]]; then
+    MIG_TOTAL=0
+    MIG_FAILED=""
+    while IFS= read -r MIG_FILE; do
+        MIG_TOTAL=$((MIG_TOTAL + 1))
+        echo -e " ${CYAN}→ Migration:${NC} $(basename "$MIG_FILE")"
+        if ! mysql -h 127.0.0.1 -u "$DB_USER" "$DB_NAME" < "$MIG_FILE"; then
+            MIG_FAILED="$(basename "$MIG_FILE")"
+            break
+        fi
+    done < <(find "$MIGRATIONS_DIR" -maxdepth 1 -type f -name '*.sql' | LC_ALL=C sort)
+
+    if [[ -n "$MIG_FAILED" ]]; then
+        echo -e " ${RED}✘ Migration thất bại: ${MIG_FAILED}${NC}"
+        exit 1
+    fi
+    echo -e " ${GREEN}✔ Hoàn tất migration (${MIG_TOTAL} file, idempotent — chạy lại an toàn).${NC}"
+else
+    echo -e " ${YELLOW}ℹ Không tìm thấy thư mục database/migrations — bỏ qua migration.${NC}"
+fi
 unset MYSQL_PWD
 
 # 4. Cấu hình file .env

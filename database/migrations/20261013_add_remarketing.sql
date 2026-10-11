@@ -69,13 +69,23 @@ SET @has_send_cycle := (
       AND TABLE_NAME   = 'vc_campaign_sends'
       AND COLUMN_NAME  = 'cycle_no'
 );
+-- Chỉ DROP index cũ khi nó TỒN TẠI (DB cũ có thể đã đặt tên khác / đổi từ trước).
+SET @drop_old_uq := (
+    SELECT IF(COUNT(*) > 0, '        DROP INDEX `uq_campaign_target`,' , '')
+    FROM information_schema.STATISTICS
+    WHERE TABLE_SCHEMA = DATABASE()
+      AND TABLE_NAME   = 'vc_campaign_sends'
+      AND INDEX_NAME   = 'uq_campaign_target'
+);
 SET @sql := IF(
     @has_send_cycle = 0,
-    'ALTER TABLE `vc_campaign_sends`
+    CONCAT(
+        'ALTER TABLE `vc_campaign_sends`
         ADD COLUMN `cycle_no` INT UNSIGNED NOT NULL DEFAULT 0
             COMMENT ''chu kỳ mà dòng này thuộc về'' AFTER `target_key`,
-        DROP INDEX `uq_campaign_target`,
-        ADD UNIQUE KEY `uq_campaign_target_cycle` (`campaign_id`, `target_key`, `cycle_no`)',
+', @drop_old_uq, '
+        ADD UNIQUE KEY `uq_campaign_target_cycle` (`campaign_id`, `target_key`, `cycle_no`)'
+    ),
     'SELECT 1'
 );
 PREPARE stmt FROM @sql;
