@@ -1,12 +1,8 @@
 <?php
 $settings = isset($settings) && is_array($settings) ? $settings : [];
 $siteTitle = (string)($settings['site_title'] ?? 'VC VPN PANEL');
-// Mô tả dưới tên web trong footer — ưu tiên site_description admin set,
-// fallback đúng câu meta description SEO (từ khóa ẩn IP/mã hóa/VPN uy tín).
-$footerDesc = trim((string)($settings['site_description'] ?? ''));
-if ($footerDesc === '') {
-    $footerDesc = 'Dịch vụ VPN uy tín giúp ẩn IP, mã hóa kết nối và bảo vệ quyền riêng tư trên mọi thiết bị. Bảng giá minh bạch, hướng dẫn cài đặt chi tiết, hỗ trợ 24/7.';
-}
+// Dòng SEO cố định hiển thị dưới tên web trong footer (không lấy từ site_description).
+$footerDesc = 'Dịch vụ VPN uy tín giúp ẩn IP, mã hóa kết nối và bảo vệ quyền riêng tư trên mọi thiết bị. Bảng giá minh bạch, hướng dẫn cài đặt chi tiết, hỗ trợ 24/7.';
 
 $fanpageUrl = trim((string)($settings['fanpage_url'] ?? ''));
 $zaloUrl = trim((string)($settings['zalo_url'] ?? ''));

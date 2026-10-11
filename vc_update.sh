@@ -73,135 +73,39 @@ if [ -f "$APP_PATH/.env" ] && ! grep -q "^CRON_SECRET_KEY=..*" "$APP_PATH/.env";
     echo -e " ${GREEN}✔ Đã sinh CRON_SECRET_KEY trong .env — hãy cập nhật URL crontab cho khớp.${NC}"
 fi
 
-# 3.1. Áp dụng migration audit đơn hàng (an toàn khi chạy lại nhiều lần)
-ORDER_AUDIT_MIGRATION="$APP_PATH/database/migrations/20260918_add_order_audit_users.sql"
-if [ -f "$ORDER_AUDIT_MIGRATION" ] && [ -f "$APP_PATH/.env" ]; then
+# 3.1. Áp dụng toàn bộ migration trong database/migrations (idempotent — an toàn chạy lại)
+MIGRATIONS_DIR="$APP_PATH/database/migrations"
+if [ -f "$APP_PATH/.env" ] && [ -d "$MIGRATIONS_DIR" ]; then
+    if ! command -v mysql &> /dev/null; then
+        echo -e " ${RED}Lỗi: Không tìm thấy lệnh mysql nên không thể chạy migration.${NC}"
+        exit 1
+    fi
     set -a
     . "$APP_PATH/.env"
     set +a
-    MYSQL_PWD="${DB_PASSWORD:-}" mysql \
-        -h "${DB_HOST:-127.0.0.1}" \
-        -P "${DB_PORT:-3306}" \
-        -u "${DB_USERNAME:-root}" \
-        "${DB_DATABASE:-vpn_service}" < "$ORDER_AUDIT_MIGRATION"
-    echo -e " ${GREEN}✔ Hoàn tất cập nhật cấu trúc audit đơn hàng.${NC}"
-fi
 
-# 3.2. Áp dụng migration AI Core (an toàn khi chạy lại nhiều lần)
-AI_CORE_MIGRATION="$APP_PATH/database/migrations/20260927_add_ai_core_tables.sql"
-if [ -f "$AI_CORE_MIGRATION" ] && [ -f "$APP_PATH/.env" ]; then
-    set -a
-    . "$APP_PATH/.env"
-    set +a
-    MYSQL_PWD="${DB_PASSWORD:-}" mysql \
-        -h "${DB_HOST:-127.0.0.1}" \
-        -P "${DB_PORT:-3306}" \
-        -u "${DB_USERNAME:-root}" \
-        "${DB_DATABASE:-vpn_service}" < "$AI_CORE_MIGRATION"
-    echo -e " ${GREEN}✔ Hoàn tất cập nhật cấu trúc AI Core.${NC}"
-fi
-
-# 3.3. Dọn bảng AI chết (P6: 7 bảng, P9: 2 bảng prompt — chạy lại an toàn)
-AI_DROP_MIGRATION="$APP_PATH/database/migrations/20260928_drop_unused_ai_tables.sql"
-AI_DROP_PROMPT_MIGRATION="$APP_PATH/database/migrations/20260928_drop_prompt_tables.sql"
-for MIG in "$AI_DROP_MIGRATION" "$AI_DROP_PROMPT_MIGRATION"; do
-    if [ -f "$MIG" ] && [ -f "$APP_PATH/.env" ]; then
-        set -a
-        . "$APP_PATH/.env"
-        set +a
-        MYSQL_PWD="${DB_PASSWORD:-}" mysql \
+    MIG_TOTAL=0
+    MIG_FAILED=""
+    while IFS= read -r MIG_FILE; do
+        MIG_TOTAL=$((MIG_TOTAL + 1))
+        echo -e " ${CYAN}→ Migration:${NC} $(basename "$MIG_FILE")"
+        if ! MYSQL_PWD="${DB_PASSWORD:-}" mysql \
             -h "${DB_HOST:-127.0.0.1}" \
             -P "${DB_PORT:-3306}" \
             -u "${DB_USERNAME:-root}" \
-            "${DB_DATABASE:-vpn_service}" < "$MIG"
+            "${DB_DATABASE:-vpn_service}" < "$MIG_FILE"; then
+            MIG_FAILED="$(basename "$MIG_FILE")"
+            break
+        fi
+    done < <(find "$MIGRATIONS_DIR" -maxdepth 1 -type f -name '*.sql' | LC_ALL=C sort)
+
+    if [ -n "$MIG_FAILED" ]; then
+        echo -e " ${RED}✘ Migration thất bại: ${MIG_FAILED}${NC}"
+        exit 1
     fi
-done
-if [ -f "$AI_DROP_MIGRATION" ]; then
-    echo -e " ${GREEN}✔ Hoàn tất dọn bảng AI chết (7 bảng P6 + 2 bảng prompt P9).${NC}"
-fi
-
-# 3.4. Liên kết Bài Viết AI với hàng đợi đăng Fanpage (an toàn khi chạy lại)
-OUTPUT_LINK_MIGRATION="$APP_PATH/database/migrations/20260930_add_output_id_scheduled_posts.sql"
-if [ -f "$OUTPUT_LINK_MIGRATION" ] && [ -f "$APP_PATH/.env" ]; then
-    set -a
-    . "$APP_PATH/.env"
-    set +a
-    MYSQL_PWD="${DB_PASSWORD:-}" mysql \
-        -h "${DB_HOST:-127.0.0.1}" \
-        -P "${DB_PORT:-3306}" \
-        -u "${DB_USERNAME:-root}" \
-        "${DB_DATABASE:-vpn_service}" < "$OUTPUT_LINK_MIGRATION"
-    echo -e " ${GREEN}✔ Hoàn tất liên kết Bài Viết AI ↔ hàng đợi đăng Fanpage (output_id).${NC}"
-fi
-
-# 3.5. Cột khóa mạng 1 phút khi vượt số thiết bị (an toàn khi chạy lại)
-DEVICE_LOCK_MIGRATION="$APP_PATH/database/migrations/20261005_add_network_locked_until.sql"
-if [ -f "$DEVICE_LOCK_MIGRATION" ] && [ -f "$APP_PATH/.env" ]; then
-    set -a
-    . "$APP_PATH/.env"
-    set +a
-    MYSQL_PWD="${DB_PASSWORD:-}" mysql \
-        -h "${DB_HOST:-127.0.0.1}" \
-        -P "${DB_PORT:-3306}" \
-        -u "${DB_USERNAME:-root}" \
-        "${DB_DATABASE:-vpn_service}" < "$DEVICE_LOCK_MIGRATION"
-    echo -e " ${GREEN}✔ Hoàn tất thêm cột network_locked_until (khóa mạng 1 phút).${NC}"
-fi
-
-# 3.6. Cột số IP đang kết nối theo inbound (Phase 2, an toàn khi chạy lại)
-INBOUND_CONN_MIGRATION="$APP_PATH/database/migrations/20261006_add_connected_devices.sql"
-if [ -f "$INBOUND_CONN_MIGRATION" ] && [ -f "$APP_PATH/.env" ]; then
-    set -a
-    . "$APP_PATH/.env"
-    set +a
-    MYSQL_PWD="${DB_PASSWORD:-}" mysql \
-        -h "${DB_HOST:-127.0.0.1}" \
-        -P "${DB_PORT:-3306}" \
-        -u "${DB_USERNAME:-root}" \
-        "${DB_DATABASE:-vpn_service}" < "$INBOUND_CONN_MIGRATION"
-    echo -e " ${GREEN}✔ Hoàn tất thêm cột connected_devices (số IP đang kết nối inbound).${NC}"
-fi
-
-# 3.7. Tồn kho gói + cờ giữ suất (reserveForPurchase/restock — cần cho 3 nút đơn hàng)
-STOCK_MIGRATION="$APP_PATH/database/migrations/20261002_add_vpn_plan_stock.sql"
-if [ -f "$STOCK_MIGRATION" ] && [ -f "$APP_PATH/.env" ]; then
-    set -a
-    . "$APP_PATH/.env"
-    set +a
-    MYSQL_PWD="${DB_PASSWORD:-}" mysql \
-        -h "${DB_HOST:-127.0.0.1}" \
-        -P "${DB_PORT:-3306}" \
-        -u "${DB_USERNAME:-root}" \
-        "${DB_DATABASE:-vpn_service}" < "$STOCK_MIGRATION"
-    echo -e " ${GREEN}✔ Hoàn tất thêm cột stock_quantity/stock_reserved (tồn kho đơn hàng).${NC}"
-fi
-
-# 3.7.1. Hoan luot mua khi goi bi huy (vc_subscriptions.stock_state — idempotent)
-SUB_STATE_MIGRATION="$APP_PATH/database/migrations/20261007_add_subscription_stock_state.sql"
-if [ -f "$SUB_STATE_MIGRATION" ] && [ -f "$APP_PATH/.env" ]; then
-    set -a
-    . "$APP_PATH/.env"
-    set +a
-    MYSQL_PWD="${DB_PASSWORD:-}" mysql \
-        -h "${DB_HOST:-127.0.0.1}" \
-        -P "${DB_PORT:-3306}" \
-        -u "${DB_USERNAME:-root}" \
-        "${DB_DATABASE:-vpn_service}" < "$SUB_STATE_MIGRATION"
-    echo -e " ${GREEN}✔ Hoàn tất thêm cột stock_state (hoàn lượt mua khi hủy gói).${NC}"
-fi
-
-# 3.8. Cột error_msg cho vc_node_tasks (contract §4 — update_task_status)
-TASK_ERR_MIGRATION="$APP_PATH/database/migrations/20261006_add_task_error_msg.sql"
-if [ -f "$TASK_ERR_MIGRATION" ] && [ -f "$APP_PATH/.env" ]; then
-    set -a
-    . "$APP_PATH/.env"
-    set +a
-    MYSQL_PWD="${DB_PASSWORD:-}" mysql \
-        -h "${DB_HOST:-127.0.0.1}" \
-        -P "${DB_PORT:-3306}" \
-        -u "${DB_USERNAME:-root}" \
-        "${DB_DATABASE:-vpn_service}" < "$TASK_ERR_MIGRATION"
-    echo -e " ${GREEN}✔ Hoàn tất thêm cột error_msg (báo lỗi task từ VPS).${NC}"
+    echo -e " ${GREEN}✔ Hoàn tất migration (${MIG_TOTAL} file, idempotent — chạy lại an toàn).${NC}"
+else
+    echo -e " ${YELLOW}ℹ Không tìm thấy .env hoặc thư mục database/migrations — bỏ qua migration.${NC}"
 fi
 
 # 4. Thiết lập lại phân quyền thư mục
