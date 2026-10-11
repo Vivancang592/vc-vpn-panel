@@ -705,6 +705,16 @@ $suggestions = [
                         continue;
                     }
                 }
+                // Danh sách chủ đề (topics_stage) → card "Mở tab Nội Dung".
+                if (fl === 'topics-list') {
+                    var tl = null;
+                    try { tl = JSON.parse(t.slice(nl + 1).trim()); } catch (e) { tl = null; }
+                    if (tl && tl.card_id && tl.topics && tl.topics.length) {
+                        TOPICS[tl.card_id] = tl.topics;
+                        html += topicsCardInner(tl.card_id, tl.topics);
+                        continue;
+                    }
+                }
                 if (nl > -1 && /^[a-zA-Z0-9+#._-]*\s*$/.test(t.slice(0, nl))) t = t.slice(nl + 1);
                 html += '<pre><code>' + esc(t.replace(/\n$/, '')) + '</code></pre>';
             } else if (parts[i] !== '') {
@@ -739,6 +749,13 @@ $suggestions = [
      * lưu; admin bấm "Lưu Bài" → POST post/save mới ghi bài nháp.            */
     var POSTS = {};
 
+    /* ============ Chuyển chủ đề sang tab Nội Dung (topics_stage) ===========
+     * AI rút chủ đề từ chiến dịch/bài viết → ```topics-list\n{json}\n``` →
+     * md() render card; bấm "Mở tab Nội Dung" → localStorage (dùng 1 lần,
+     * hết hạn 10 phút) + window.open → tab fanpage tự dán vào textarea.
+     * KHÔNG ghi database, KHÔNG thêm route.                                 */
+    var TOPICS = {};
+
     /* ============ Hành động chờ xác nhận (action-confirm) ==================
      * ToolRegistry::needsConfirm() chặn ghi DB → stageConfirm() phát token một
      * lần; reply nhúng ```action-confirm\n{json}\n``` → card có 2 nút.
@@ -751,7 +768,9 @@ $suggestions = [
         entity_create: 'Thêm bản ghi mới',
         entity_update: 'Sửa bản ghi',
         entity_delete: 'Xóa bản ghi',
-        action_run: 'Chạy nghiệp vụ hệ thống'
+        action_run: 'Chạy nghiệp vụ hệ thống',
+        image_delete: 'Xóa ảnh trong thư mục AI',
+        post_schedule: 'Lên lịch đăng bài lên Fanpage'
     };
     var MODE_LABELS = { create: 'Sẽ thêm', update: 'Sẽ đổi', delete: 'Sẽ xóa', action: 'Sẽ thực hiện' };
 
@@ -877,11 +896,12 @@ $suggestions = [
     function postPreviewInner(p) {
         var typeLabels = { news: 'Tin tức', tutorial: 'Hướng dẫn', faq: 'FAQ', popup: 'Popup' };
         var saved = p.saved_post_id;
-        var foot = saved
+        var foot = (saved
             ? '<a class="asst-btn" href="/admin/posts/edit?id=' + saved + '">Mở bài nháp</a>'
                 + '<span class="asst-post-hint">Đã lưu — hiển thị trong Danh Sách Bài Viết.</span>'
             : '<button type="button" class="asst-btn primary" data-post-save="' + escAttr(p.preview_id) + '">Lưu Bài</button>'
-                + '<span class="asst-post-hint">Bài CHƯA lưu — bấm "Lưu Bài" để vào Danh Sách Bài Viết.</span>';
+                + '<span class="asst-post-hint">Bài CHƯA lưu — bấm "Lưu Bài" để vào Danh Sách Bài Viết.</span>')
+            + '<button type="button" class="asst-btn" data-post-topics="' + escAttr(p.preview_id) + '">Chủ đề → tab Nội Dung</button>';
         return '<div class="asst-plan-card asst-post-card" data-post-card="' + escAttr(p.preview_id) + '">'
             + '<div class="asst-post-head"><span style="font-size:16px">▣</span>'
             + '<span class="asst-post-title">' + esc(p.title || '(không có tiêu đề)') + '</span>'
@@ -942,6 +962,50 @@ $suggestions = [
                 if (card) { card.innerHTML = postPreviewInner(POSTS[id]); }
             });
         }).catch(function () { /* noop */ });
+    }
+
+    /* ============ Card chủ đề + chuyển sang tab Nội Dung ============ */
+    function topicsCardInner(cid, topics) {
+        var list = (topics || []).slice(0, 50);
+        var items = list.map(function (t) { return '<li>' + esc(t) + '</li>'; }).join('');
+        return '<div class="asst-plan-card asst-post-card" data-topics-card="' + escAttr(cid) + '">'
+            + '<div class="asst-post-head"><span style="font-size:16px">☰</span>'
+            + '<span class="asst-post-title">Chủ đề → tab Nội Dung</span>'
+            + '<span class="asst-post-chip">' + list.length + ' chủ đề</span></div>'
+            + '<div class="asst-post-body"><ul>' + items + '</ul></div>'
+            + '<div class="asst-post-foot">'
+            + '<button type="button" class="asst-btn primary" data-topics-open="' + escAttr(cid) + '">Mở tab Nội Dung &amp; dán chủ đề</button>'
+            + '<span class="asst-post-hint">Mở form viết bài ở tab mới và tự dán danh sách chủ đề.</span>'
+            + '</div></div>';
+    }
+
+    /* Gửi chủ đề sang tab Nội Dung qua localStorage (dùng 1 lần, hết hạn 10
+     * phút) rồi mở tab — không thêm route, tab đích tự dán vào textarea. */
+    function stageTopicsAndOpen(topics) {
+        var list = (topics || []).map(function (t) { return String(t || '').trim(); })
+            .filter(function (t) { return t !== ''; });
+        if (!list.length) { toast('danger', 'Không có chủ đề nào để chuyển.'); return; }
+        try {
+            localStorage.setItem('vc_fanpage_topics', JSON.stringify({ topics: list, ts: Date.now() }));
+        } catch (e) { /* localStorage bị chặn → tab đích sẽ báo hết hạn */ }
+        toast('success', 'Đã chuẩn bị ' + list.length + ' chủ đề — tab Nội Dung sẽ tự dán vào ô viết bài.');
+        window.open('/admin/ai/fanpage', '_blank', 'noopener');
+    }
+
+    /* Nút "Chủ đề → tab Nội Dung" trên card bài viết: lấy TIÊU ĐỀ bài làm chủ đề. */
+    function openPostTopics(btn) {
+        var p = POSTS[btn.getAttribute('data-post-topics')];
+        if (!p) { return; }
+        var t = String(p.title || '').trim();
+        if (!t) { toast('danger', 'Bài viết không có tiêu đề để chuyển.'); return; }
+        stageTopicsAndOpen([t]);
+    }
+
+    /* Nút trên card topics-list: chuyển đúng bộ chủ đề AI đã chuẩn bị. */
+    function openTopicsCard(btn) {
+        var list = TOPICS[btn.getAttribute('data-topics-open')];
+        if (!list || !list.length) { toast('danger', 'Danh sách chủ đề đã mất — hãy gọi lại AI.'); return; }
+        stageTopicsAndOpen(list);
     }
 
     /* ================= Sidebar ================= */
@@ -1437,10 +1501,14 @@ $suggestions = [
         if (item) showPlanInChat(item.getAttribute('data-plan'));
     });
 
-    // Gợi ý trong khung chào + ảnh bấm để xem + nút Lưu Bài trên card bài viết
+    // Gợi ý trong khung chào + ảnh bấm để xem + nút Lưu Bài / chuyển chủ đề
     msgsEl.addEventListener('click', function (e) {
         var psv = e.target.closest ? e.target.closest('[data-post-save]') : null;
         if (psv) { savePostCard(psv); return; }
+        var ptp = e.target.closest ? e.target.closest('[data-post-topics]') : null;
+        if (ptp) { openPostTopics(ptp); return; }
+        var top = e.target.closest ? e.target.closest('[data-topics-open]') : null;
+        if (top) { openTopicsCard(top); return; }
         var cfm = e.target.closest ? e.target.closest('[data-confirm-action]') : null;
         if (cfm) { runConfirm(cfm); return; }
         var ccl = e.target.closest ? e.target.closest('[data-cancel-action]') : null;

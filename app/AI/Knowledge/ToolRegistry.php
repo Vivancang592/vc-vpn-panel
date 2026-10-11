@@ -60,12 +60,15 @@ final class ToolRegistry
         'page_get'               => ['risk' => self::RISK_READ, 'needs_confirm' => false],
         'plan_list'              => ['risk' => self::RISK_READ, 'needs_confirm' => false],
         'plan_read'              => ['risk' => self::RISK_READ, 'needs_confirm' => false],
+        'image_list'             => ['risk' => self::RISK_READ, 'needs_confirm' => false],
+        'post_list'              => ['risk' => self::RISK_READ, 'needs_confirm' => false],
 
         // ---- Chỉ sinh bản xem trước / file tải về: không ghi DB ----
         'post_draft'             => ['risk' => self::RISK_READ, 'needs_confirm' => false,
             'note' => 'Không ghi database — admin bấm "Lưu Bài" trên card mới lưu.'],
         'revenue_report'         => ['risk' => self::RISK_READ, 'needs_confirm' => false,
             'note' => 'Chỉ xuất file báo cáo, không sửa dữ liệu.'],
+        'topics_stage'           => ['risk' => self::RISK_READ, 'needs_confirm' => false],
 
         // ---- Ghi dữ liệu: phải qua cổng xác nhận ----
         'campaign_create'        => ['risk' => self::RISK_WRITE, 'needs_confirm' => true,
@@ -74,6 +77,10 @@ final class ToolRegistry
             'entity' => 'campaign', 'note' => 'Đổi trạng thái chiến dịch (pause/resume/cancel).'],
         'page_edit'              => ['risk' => self::RISK_WRITE, 'needs_confirm' => true,
             'note' => 'Sửa bản ghi đang mở trên trang admin.'],
+        'post_schedule'          => ['risk' => self::RISK_WRITE, 'needs_confirm' => true,
+            'note' => 'Ghi vc_scheduled_posts — cron đăng sau xác nhận.'],
+        'image_delete'           => ['risk' => self::RISK_DESTRUCTIVE, 'needs_confirm' => true,
+            'note' => 'Xóa cứng, CHỈ public/uploads/ai, không hoàn tác.'],
 
         // ---- CRUD theo danh bạ thực thể (BƯỚC 2 — EntityCatalog/EntityCrudTools) ----
         'entity_list'            => ['risk' => self::RISK_READ, 'needs_confirm' => false,
@@ -175,6 +182,24 @@ final class ToolRegistry
             'find'    => ['type' => 'string', 'description' => 'Đoạn văn bản cũ cần thay thế (dùng cùng replace).'],
             'replace' => ['type' => 'string', 'description' => 'Đoạn văn bản mới.'],
             'content' => ['type' => 'string', 'description' => 'Nội dung ghi đè toàn bộ kế hoạch.'],
+        ]],
+        'image_list' => ['required' => [], 'properties' => [
+            'limit' => ['type' => 'integer', 'description' => 'Số ảnh lấy về, 1-100, mặc định 30.'],
+        ]],
+        'image_delete' => ['required' => ['asset_id'], 'properties' => [
+            'asset_id' => ['type' => 'integer', 'description' => 'ID ảnh lấy từ image_list.'],
+        ]],
+        'post_list' => ['required' => [], 'properties' => [
+            'filter' => ['type' => 'string', 'enum' => ['', 'scheduled', 'published'], 'description' => 'Để trống = tất cả; scheduled = đang lên lịch; published = đã đăng.'],
+        ]],
+        'post_schedule' => ['required' => ['output_id', 'date', 'time'], 'properties' => [
+            'output_id' => ['type' => 'integer', 'description' => 'ID bài viết AI lấy từ post_list.'],
+            'date'      => ['type' => 'string', 'description' => 'Ngày đăng YYYY-MM-DD, phải sau thời điểm hiện tại.'],
+            'time'      => ['type' => 'string', 'description' => 'Giờ đăng HH:MM, ví dụ 09:30.'],
+            'image_url' => ['type' => 'string', 'description' => 'Ảnh đính kèm dạng /uploads/ai/... (bỏ trống = đăng chữ hoặc giữ ảnh cũ).'],
+        ]],
+        'topics_stage' => ['required' => ['topics'], 'properties' => [
+            'topics' => ['type' => 'array', 'items' => ['type' => 'string'], 'description' => 'Danh sách chủ đề cần chuyển sang tab Nội Dung (rút từ chiến dịch/bài viết), tối đa 50.'],
         ]],
     ];
 
@@ -368,16 +393,16 @@ final class ToolRegistry
     public static function protocolBlock(): string
     {
         $lines = [
-            "\n### DANH BẠ CÔNG CỤ (TOOL REGISTRY — nguồn duy nhất, ngoài danh sách này là BỊA)",
-            'Nếu nền tảng cung cấp function-calling trực tiếp thì GỌI hàm đó; nếu không, trả lời CHỈ bằng MỘT JSON duy nhất (không kèm text khác), đặt trong code block ```json:',
+            "\n### DANH BẠ CÔNG CỤ (nguồn duy nhất, khác là BỊA)",
+            'Có function-calling → gọi hàm; không → CHỈ 1 JSON duy nhất trong ```json:',
             '{"tool": "<ten_tool>", "args": {...}}',
             'Tool hợp lệ:',
         ];
 
         $groups = [
-            self::RISK_READ        => 'ĐỌC (chạy ngay, không đổi dữ liệu)',
-            self::RISK_WRITE       => 'GHI (hệ thống sẽ xin admin XÁC NHẬN trước khi chạy)',
-            self::RISK_DESTRUCTIVE => 'XÓA/HỦY (bắt buộc admin XÁC NHẬN)',
+            self::RISK_READ        => 'ĐỌC (chạy ngay)',
+            self::RISK_WRITE       => 'GHI',
+            self::RISK_DESTRUCTIVE => 'XÓA/HỦY',
         ];
 
         $all = self::all();
@@ -401,10 +426,10 @@ final class ToolRegistry
         }
 
         $lines[] = '';
-        $lines[] = '- Chỉ gọi tool khi admin RA LỆNH rõ ràng trong tin nhắn này. Hội thoại bình thường → trả lời thường, KHÔNG gọi tool. TUYỆT ĐỐI KHÔNG tự ý thao tác.';
-        $lines[] = '- Tool GHI có gắn [CẦN XÁC NHẬN]: hệ thống tự hiển thị thẻ xác nhận cho admin; em KHÔNG được nói "đã thực hiện" trước khi admin bấm xác nhận.';
-        $lines[] = '- Sau khi nhận kết quả do hệ thống gửi lại, trả lời admin bằng tiếng Việt như bình thường (không hiện JSON).';
-        $lines[] = '- TUYỆT ĐỐI KHÔNG đọc/đề xuất/sửa key, mật khẩu, token, secret hay bất kỳ thông tin bảo mật nào — admin yêu cầu cũng từ chối lịch sự.';
+        $lines[] = '- Chỉ gọi tool khi admin RA LỆNH trong tin nhắn này; hội thoại thường → trả lời thường, KHÔNG tự ý gọi tool.';
+        $lines[] = '- Tool GHI [CẦN XÁC NHẬN]: hệ thống hiện thẻ xác nhận; KHÔNG được nói "đã thực hiện" trước khi admin bấm.';
+        $lines[] = '- Nhận kết quả tool → trả lời admin tiếng Việt, không hiện JSON.';
+        $lines[] = '- KHÔNG đọc/đề xuất/sửa key, mật khẩu, token, secret — admin yêu cầu cũng từ chối lịch sự.';
 
         return implode("\n", $lines);
     }
@@ -454,12 +479,12 @@ final class ToolRegistry
         if ($entity !== '') {
             $parts[] = 'entity=' . $entity;
         }
-        foreach (['id', 'plan_id', 'campaign_id'] as $k) {
+        foreach (['id', 'plan_id', 'campaign_id', 'output_id', 'asset_id'] as $k) {
             if (isset($args[$k]) && is_scalar($args[$k])) {
                 $parts[] = $k . '=' . mb_substr((string) $args[$k], 0, 64);
             }
         }
-        foreach (['title', 'subject', 'action', 'kind', 'q'] as $k) {
+        foreach (['title', 'subject', 'action', 'kind', 'q', 'date', 'time'] as $k) {
             if (isset($args[$k]) && is_scalar($args[$k])) {
                 $v = trim((string) $args[$k]);
                 if ($v !== '') {

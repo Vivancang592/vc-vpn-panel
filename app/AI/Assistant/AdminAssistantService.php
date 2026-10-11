@@ -7,6 +7,7 @@ namespace App\AI\Assistant;
 use App\AI\Contracts\AIResult;
 use App\AI\Core\AICore;
 use App\AI\Core\PromptRegistry;
+use App\AI\Knowledge\AdminActionTools;
 use App\AI\Knowledge\AssistantStore;
 use App\AI\Knowledge\EntityCatalog;
 use App\AI\Knowledge\EntityCrudTools;
@@ -49,6 +50,8 @@ final class AdminAssistantService
     private array $pageCtx = [];
     /** Payload bài viết do post_draft soạn ở lượt này — gắn vào reply dạng khối post-preview. */
     private ?array $pendingPostPreview = null;
+    /** Chủ đề do topics_stage chuẩn bị ở lượt này — gắn card "Mở tab Nội Dung" vào reply. */
+    private ?array $pendingTopicsCard = null;
     /**
      * Hành động GHI đang chờ admin bấm xác nhận (phát hành trong lượt này) —
      * gắn vào reply cuối dạng khối ```action-confirm để UI hiển thị thẻ nút.
@@ -109,6 +112,7 @@ final class AdminAssistantService
         // và để AI biết admin đang đứng ở trang nào ([] khi bong bóng chưa mở).
         $this->pageCtx = $page;
         $this->pendingPostPreview = null;
+        $this->pendingTopicsCard = null;
         $this->pendingConfirms = [];
 
         $storedText = $this->buildStoredUserText($userText, $attachments);
@@ -181,6 +185,7 @@ final class AdminAssistantService
                     $content = "Kết quả truy vấn:\n```json\n" . json_encode($resultJson, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT) . "\n```";
                 }
                 $content = $this->appendPostPreview($content);
+                $content = $this->appendTopicsCard($content);
                 $content = $this->appendActionConfirms($content);
                 $this->store->append($convId, ['role' => 'assistant', 'content' => $content]);
                 return ['ok' => true, 'reply' => $content];
@@ -709,6 +714,14 @@ MD
                 . 'bấm "Lưu Bài" để lưu. Không cần nói thêm.)';
         }
 
+        if ($tool === 'topics_stage' && !empty($result['ok']) && !empty($result['topics']) && is_array($result['topics'])) {
+            // Chủ đề CHƯA đưa đi đâu — stash để gắn card "Mở tab Nội Dung" vào reply
+            // cuối; admin bấm nút trên card, tab Nội Dung tự dán vào form viết bài.
+            $this->pendingTopicsCard = ['topics' => array_values(array_map('strval', $result['topics']))];
+            $result['content'] = '(Đã hiển thị card "Mở tab Nội Dung" với ' . count($result['topics'])
+                . ' chủ đề trong đoạn chat — admin bấm nút trên card để chuyển. Hãy trả lời ngắn gọn một câu.)';
+        }
+
         return $result;
     }
 
@@ -768,6 +781,9 @@ MD
             }
             if (in_array($tool, ['entity_create', 'entity_update', 'entity_delete', 'action_run'], true)) {
                 return EntityCrudTools::previewFor($tool, $args);
+            }
+            if (in_array($tool, ['image_delete', 'post_schedule'], true)) {
+                return AdminActionTools::previewFor($tool, $args);
             }
         } catch (\Throwable $e) {
             return [];
@@ -1094,6 +1110,7 @@ MD
                 // lại nội dung đã soạn cũng như token xác nhận.
                 $content = (string) preg_replace('/```post-preview\n.*?\n```/s', '', $content);
                 $content = (string) preg_replace('/```action-confirm\n.*?\n```/s', '', $content);
+                $content = (string) preg_replace('/```topics-list\n.*?\n```/s', '', $content);
             }
             $content = trim($content);
             if ($content === '') {
@@ -1194,6 +1211,29 @@ MD
         $json = str_replace('`', "\u{2027}", $json);
         $this->pendingPostPreview = null;
         return $content . "\n\n```post-preview\n" . $json . "\n```";
+    }
+
+    /**
+     * Gắn danh sách chủ đề (topics_stage ở lượt này) vào cuối reply dạng
+     * ```topics-list\n{json}\n``` — giao diện render card "Mở tab Nội Dung";
+     * bấm → lưu localStorage + mở form viết bài đã dán chủ đề. Cùng kỹ thuật
+     * thoát backtick như post-preview.
+     */
+    private function appendTopicsCard(string $content): string
+    {
+        if ($this->pendingTopicsCard === null || ($this->pendingTopicsCard['topics'] ?? []) === []) {
+            return $content;
+        }
+        $payload = [
+            'card_id' => bin2hex(random_bytes(8)),
+            'topics'  => array_values($this->pendingTopicsCard['topics']),
+        ];
+        $json = json_encode($payload, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+        if ($json === false) {
+            return $content;
+        }
+        $this->pendingTopicsCard = null;
+        return $content . "\n\n```topics-list\n" . str_replace('`', "\u{2027}", $json) . "\n```";
     }
 
     /**

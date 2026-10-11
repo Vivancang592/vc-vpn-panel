@@ -81,6 +81,54 @@ require __DIR__ . '/_tab-header.php';
         try { localStorage.setItem(KEY, sel.value); } catch (e) {}
     });
 })();
+
+// NHẬN CHỦ ĐỀ TỪ TRỢ LÝ AI (bấm card trong chat → localStorage + mở tab này):
+// dán vào ô "Danh sách chủ đề" nếu chưa quá hạn 10 phút (dùng 1 lần), đánh
+// dấu + cuộn tới ô; cũng bắt sự kiện storage khi tab này đã mở sẵn.
+(function () {
+    var KEY = 'vc_fanpage_topics';
+    var TTL = 10 * 60 * 1000; // 10 phút
+    function consume() {
+        var raw = '';
+        try { raw = localStorage.getItem(KEY) || ''; } catch (e) { return; }
+        if (!raw) return;
+        try { localStorage.removeItem(KEY); } catch (e) {}
+        var data = null;
+        try { data = JSON.parse(raw); } catch (e) { data = null; }
+        if (!data || !data.ts || (Date.now() - data.ts) > TTL
+            || !data.topics || !data.topics.length) return;
+        var ta = document.querySelector('textarea[name="topics"]');
+        if (!ta) return;
+
+        // Dedupe theo dòng/phẩy: chủ đề trùng (không phân biệt hoa thường) bỏ qua.
+        var have = {};
+        ta.value.split(/[\n,]/).forEach(function (line) {
+            line = line.trim().toLowerCase();
+            if (line) have[line] = 1;
+        });
+        var fresh = [];
+        data.topics.forEach(function (t) {
+            t = String(t || '').trim();
+            if (!t || have[t.toLowerCase()]) return;
+            have[t.toLowerCase()] = 1;
+            fresh.push(t);
+        });
+        if (!fresh.length) return;
+
+        var base = ta.value.replace(/\s+$/, '');
+        ta.value = (base === '' ? '' : base + '\n') + fresh.join('\n');
+
+        // Đánh dấu ô + cuộn tới để admin thấy ngay chỗ chủ đề vừa được dán.
+        ta.style.outline = '2px solid var(--ios-blue)';
+        ta.style.outlineOffset = '2px';
+        ta.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        ta.focus();
+        setTimeout(function () { ta.style.outline = ''; }, 1800);
+    }
+    consume();
+    // Tab đã mở sẵn khi admin bấm nút trên card ở tab chat → vẫn nhận được.
+    window.addEventListener('storage', function (e) { if (e.key === KEY) consume(); });
+})();
 </script>
 
 <!-- ============ CAB 2: TIẾN TRÌNH VIẾT TUẦN TỰ (phía dưới form) ============ -->
