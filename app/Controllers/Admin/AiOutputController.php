@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Controllers\Admin;
 
+use App\AI\Core\OutputHandler;
 use App\Models\AIModule;
 use App\Models\AIOutput;
 use App\Models\AIOutputVersion;
@@ -24,8 +25,10 @@ use App\Models\ScheduledPost;
  *                            CronController::autoPostFanpage tự đăng bài
  *   4. Xóa bài viết        → POST /admin/ai/outputs/delete
  *                            (xóa output + versions[cascade] + hàng đợi liên kết)
+ *   5. Sửa bài chưa lên lịch → POST /admin/ai/outputs/update
+ *                            (append-only: OutputHandler::addVersion)
  *   + GET  /admin/ai/outputs (URL danh sách cũ, routes/web.php — Section H
- *     cấm sửa) → index() redirect về /admin/ai/fanpage.
+ *     chỉ kiểm tra file tồn tại) → index() redirect về /admin/ai/fanpage.
  *
  * 3 tab lọc (Tất cả / Đang lên lịch / Đã đăng) + POST_STATUS kế thừa từ
  * AiBaseController (OUTPUT_TABS). Trạng thái SUY RA từ vc_scheduled_posts;
@@ -35,7 +38,7 @@ final class AiOutputController extends AiBaseController
 {
     /**
      * URL DANH SÁCH cũ (route GET /admin/ai/outputs vẫn còn trong
-     * routes/web.php — Section H cấm sửa file đó). View outputs.php đã gỡ
+     * routes/web.php — Section H chỉ kiểm tra file tồn tại). View outputs.php đã gỡ
      * → chuyển hướng sang tab Nội Dung Fanpage (danh sách hiển thị ở đây).
      * Giữ nguyên tham số ?tab= để link lọc cũ không chết.
      */
@@ -141,7 +144,9 @@ final class AiOutputController extends AiBaseController
             return;
         }
 
-        $body = trim((string) ($article['body'] ?? ''));
+        // Strip macro Markdown cấm (**in đậm**/## tiêu đề) — Fanpage hiển thị
+        // thô nên macro làm lỗi bài; chặn tại đây dù prompt đã cấm ở MỤC 1.
+        $body = self::stripFanpageMacros(trim((string) ($article['body'] ?? '')));
 
         if ($body === '') {
             $this->flash('Bài viết này chưa có nội dung để đăng.', 'danger', $back);
@@ -194,6 +199,114 @@ final class AiOutputController extends AiBaseController
             'success',
             '/admin/ai/outputs'
         );
+    }
+
+    /**
+     * Sửa bài viết CHƯA lên lịch (admin sửa tay từ tab Nội Dung Fanpage,
+     * hoặc AI Trợ lý Admin gọi tool post_edit trong chat).
+     *
+     * Ghi qua OutputHandler::addVersion — append-only: thêm version MỚI
+     * (is_current=1), version cũ giữ nguyên trong lịch sử. Bài đã có lịch
+     * (schedule_id > 0) bị chặn: phải hủy lịch trước khi sửa để hàng đợi
+     * không giữ nội dung cũ trong khi ta ghi bản mới.
+     */
+    public function update(): void
+    {
+        $filter = (string) ($_POST['tab'] ?? '');
+        if (!array_key_exists($filter, self::OUTPUT_TABS)) {
+            $filter = '';
+        }
+        $page = max(1, (int) ($_POST['page'] ?? 1));
+        $qs = [];
+        if ($filter !== '') {
+            $qs['tab'] = $filter;
+        }
+        if ($page > 1) {
+            $qs['page'] = $page;
+        }
+        $back = '/admin/ai/fanpage' . ($qs !== [] ? '?' . http_build_query($qs) : '');
+
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            $this->flash('Phương thức không hợp lệ.', 'danger', $back);
+            return;
+        }
+
+        if (!$this->validateCsrfToken((string) ($_POST['csrf_token'] ?? ''))) {
+            $this->flash('CSRF token không hợp lệ.', 'danger', $back);
+            return;
+        }
+
+        $outputId    = (int) ($_POST['output_id'] ?? 0);
+        $content     = trim((string) ($_POST['content'] ?? ''));
+        $imagePrompt = trim((string) ($_POST['image_prompt'] ?? ''));
+
+        $article = null;
+        try {
+            $article = (new AIOutput())->articleById($outputId);
+        } catch (\Throwable $e) {
+            $article = null;
+        }
+        if (!is_array($article)) {
+            $this->flash('Bài viết không tồn tại.', 'danger', $back);
+            return;
+        }
+
+        // Row thô → title/body/image_prompt (đã thay macro {domain} như list).
+        $article = $this->decorate($article);
+
+        if ((int) ($article['schedule_id'] ?? 0) > 0) {
+            $this->flash('Bài đã lên lịch — hủy lịch trước khi sửa nội dung.', 'danger', $back);
+            return;
+        }
+        if ($content === '') {
+            $this->flash('Nội dung bài viết không được để trống.', 'danger', $back);
+            return;
+        }
+
+        // Không đổi → không tạo version rỗng mới.
+        if ($content === trim((string) ($article['body'] ?? ''))
+            && $imagePrompt === trim((string) ($article['image_prompt'] ?? ''))) {
+            $this->flash('Nội dung không thay đổi — không tạo version mới.', 'success', $back);
+            return;
+        }
+
+        $content = self::stripFanpageMacros($content);
+
+        // Ghép lại snapshot theo đúng format splitArticle() tách lúc đọc.
+        $snapshot = $content;
+        if ($imagePrompt !== '') {
+            $snapshot .= "\n\n---\n\nẢNH MINH HOẠ:\n" . $imagePrompt;
+        }
+
+        try {
+            (new OutputHandler())->addVersion($outputId, [
+                'content'      => $snapshot,
+                'requested_by' => (int) ($_SESSION['user_id'] ?? 0),
+                'meta'         => ['source' => 'admin_manual_edit'],
+            ]);
+        } catch (\Throwable $e) {
+            $this->logActivity('ai_output_update_failed', $e->getMessage());
+            $this->flash('Không lưu được bản sửa: ' . $e->getMessage(), 'danger', $back);
+            return;
+        }
+
+        $this->logActivity('ai_output_update', sprintf('Output #%d edited → version mới.', $outputId));
+        $this->flash('Đã lưu bản sửa — bài viết #' . $outputId . ' (version cũ vẫn giữ trong lịch sử).', 'success', $back);
+    }
+
+    /**
+     * Bỏ macro Markdown cấm khỏi nội dung sắp ghi/đăng: Fanpage hiển thị thô
+     * **in đậm** / __in đậm__ / ## tiêu đề → lỗi hiển thị. Chặn tại server vì
+     * prompt (content_article.txt) chỉ là lớp phòng ngừa phía model.
+     *
+     * KHÔNG đụng single * (italic) lẫn # không có space (hashtag thật).
+     */
+    private static function stripFanpageMacros(string $text): string
+    {
+        $text = (string) preg_replace('/\*\*(.+?)\*\*/su', '$1', $text);
+        $text = (string) preg_replace('/__(.+?)__/su', '$1', $text);
+        $text = (string) preg_replace('/^[ \t]*#{1,6}[ \t]+/mu', '', $text);
+        return $text;
     }
 
     /**

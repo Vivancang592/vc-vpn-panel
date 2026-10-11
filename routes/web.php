@@ -284,6 +284,8 @@ return [
     'GET /admin/ai/outputs/detail'      => ['Admin\AiOutputController', 'detail'],
     // Lên lịch → tạo dòng vc_scheduled_posts (output_id) → cron tự đăng
     'POST /admin/ai/outputs/schedule'   => ['Admin\AiOutputController', 'schedule'],
+    // Sửa bài CHƯA lên lịch (admin tay / AI post_edit) → append version mới
+    'POST /admin/ai/outputs/update'     => ['Admin\AiOutputController', 'update'],
     'POST /admin/ai/outputs/delete'     => ['Admin\AiOutputController', 'delete'],
     'POST /admin/ai/outputs/delete-bulk' => ['Admin\AiOutputController', 'deleteBulk'],
 

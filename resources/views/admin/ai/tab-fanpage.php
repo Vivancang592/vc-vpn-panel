@@ -242,6 +242,17 @@ require __DIR__ . '/_tab-header.php';
                                             <a href="/admin/ai/outputs/detail?id=<?= (int) $article['id'] ?>" class="action-item">
                                                 <span>◉</span> Xem
                                             </a>
+                                            <?php if ((int) ($article['schedule_id'] ?? 0) <= 0): ?>
+                                                <button type="button" class="action-item js-edit-open"
+                                                        data-edit-id="<?= (int) $article['id'] ?>"
+                                                        data-edit-title="<?= htmlspecialchars((string) $article['title'], ENT_QUOTES) ?>"
+                                                        data-edit-content="<?= htmlspecialchars((string) ($article['body'] ?? ''), ENT_QUOTES) ?>"
+                                                        data-edit-prompt="<?= htmlspecialchars((string) ($article['image_prompt'] ?? ''), ENT_QUOTES) ?>"
+                                                        title="Sửa nội dung (bài chưa lên lịch)"
+                                                        style="font-family: inherit; width: 100%; text-align: left;">
+                                                    <span>✎</span> Sửa
+                                                </button>
+                                            <?php endif; ?>
                                             <?php if ((int) ($article['task_id'] ?? 0) > 0): ?>
                                                 <a href="/admin/ai/tasks/detail?id=<?= (int) $article['task_id'] ?>" class="action-item">
                                                     <span>⧉</span> Tác vụ #<?= (int) $article['task_id'] ?>
@@ -592,6 +603,7 @@ require __DIR__ . '/_tab-header.php';
             if (!fresh) { return; }
             host.innerHTML = fresh.innerHTML;
             if (typeof window.fpBindScheduleOpen === 'function') { window.fpBindScheduleOpen(host); }
+            if (typeof window.fpBindEditOpen === 'function') { window.fpBindEditOpen(host); }
             if (typeof window.vcBindActionMenus === 'function') { window.vcBindActionMenus(host); }
             if (typeof window.vcBindCopyButtons === 'function') { window.vcBindCopyButtons(host); }
             if (typeof window.vcBulkUpdate === 'function') { window.vcBulkUpdate(); }
@@ -766,6 +778,37 @@ require __DIR__ . '/_tab-header.php';
     </div>
 </div>
 
+<!-- ===== POPUP SỬA BÀI CHƯA LÊN LỊCH (admin sửa tay / AI post_edit) ===== -->
+<div id="edit-popup" style="display: none; position: fixed; inset: 0; z-index: 1020; background: rgba(0, 0, 0, 0.55); backdrop-filter: blur(6px); align-items: center; justify-content: center; padding: 1rem;">
+    <div class="glass-card" style="width: 100%; max-width: 640px; padding: 1.5rem; max-height: 90vh; overflow-y: auto;">
+        <h3 style="margin: 0 0 0.35rem; font-size: 1.05rem; font-weight: 700;">Sửa bài viết — chưa lên lịch</h3>
+        <p id="edit-popup-title" style="margin: 0 0 1rem; font-size: 0.82rem; color: var(--ios-text-secondary); overflow: hidden; text-overflow: ellipsis; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;"></p>
+        <form method="POST" action="/admin/ai/outputs/update" style="margin: 0;">
+            <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrf_token ?? '') ?>">
+            <input type="hidden" name="output_id" id="edit-popup-output" value="">
+            <input type="hidden" name="tab" value="<?= htmlspecialchars($filter) ?>">
+            <input type="hidden" name="page" value="<?= (int) $page ?>">
+            <div style="margin-bottom: 0.85rem;">
+                <label for="edit-popup-content" style="display: block; font-size: 0.8rem; font-weight: 600; margin-bottom: 0.3rem;">Nội dung bài viết</label>
+                <textarea id="edit-popup-content" name="content" rows="14" required
+                          style="width: 100%; padding: 0.55rem 0.7rem; border-radius: var(--radius-sm); border: 1px solid var(--ios-border, rgba(255,255,255,0.18)); background: var(--ios-bg-secondary, rgba(255,255,255,0.06)); color: var(--ios-text); font-family: inherit; font-size: 0.85rem; line-height: 1.55; resize: vertical; box-sizing: border-box;"></textarea>
+            </div>
+            <div style="margin-bottom: 0.85rem;">
+                <label for="edit-popup-prompt" style="display: block; font-size: 0.8rem; font-weight: 600; margin-bottom: 0.3rem;">Prompt ảnh minh họa <span style="font-weight: 500; color: var(--ios-text-secondary);">— để trống nếu không cần ảnh</span></label>
+                <textarea id="edit-popup-prompt" name="image_prompt" rows="3"
+                          style="width: 100%; padding: 0.55rem 0.7rem; border-radius: var(--radius-sm); border: 1px solid var(--ios-border, rgba(255,255,255,0.18)); background: var(--ios-bg-secondary, rgba(255,255,255,0.06)); color: var(--ios-text); font-family: inherit; font-size: 0.85rem; line-height: 1.55; resize: vertical; box-sizing: border-box;"></textarea>
+            </div>
+            <p style="margin: 0 0 1rem; font-size: 0.74rem; color: var(--ios-text-secondary);">
+                Lưu ý: Fanpage hiển thị thô — KHÔNG dùng <code>**in đậm**</code> hay <code>## tiêu đề</code> (server tự bỏ macro cấm nếu còn sót).
+            </p>
+            <div style="display: flex; gap: 0.6rem; justify-content: flex-end;">
+                <button type="button" class="glass-btn" id="edit-popup-cancel" style="font-size: 0.82rem; cursor: pointer;">Hủy</button>
+                <button type="submit" class="glass-btn glass-btn-primary" style="font-size: 0.82rem; cursor: pointer;">Lưu bản sửa</button>
+            </div>
+        </form>
+    </div>
+</div>
+
 <script>
     (function () {
         const popup = document.getElementById('schedule-popup');
@@ -838,12 +881,54 @@ require __DIR__ . '/_tab-header.php';
         };
         window.fpBindScheduleOpen(document);
 
+        /* ---------- POPUP SỬA BÀI CHƯA LÊN LỊCH ---------- */
+        const editPopup = document.getElementById('edit-popup');
+        const editIdField = document.getElementById('edit-popup-output');
+        const editTitleField = document.getElementById('edit-popup-title');
+        const editContentField = document.getElementById('edit-popup-content');
+        const editPromptField = document.getElementById('edit-popup-prompt');
+
+        function openEditPopup(id, title, content, prompt) {
+            closeActionMenus();
+            editIdField.value = id;
+            editTitleField.textContent = title;
+            editContentField.value = content || '';
+            editPromptField.value = prompt || '';
+            editPopup.style.display = 'flex';
+            editContentField.focus();
+        }
+
+        function closeEditPopup() {
+            editPopup.style.display = 'none';
+        }
+
+        // refreshArticles() nạp lại HTML list → gọi fpBindEditOpen(root) bind nút Sửa mới.
+        window.fpBindEditOpen = function (root) {
+            (root || document).querySelectorAll('.js-edit-open').forEach(function (btn) {
+                if (btn.dataset.editBound === '1') { return; }
+                btn.dataset.editBound = '1';
+                btn.addEventListener('click', function (e) {
+                    e.stopPropagation();
+                    openEditPopup(btn.dataset.editId || '', btn.dataset.editTitle || '',
+                        btn.dataset.editContent || '', btn.dataset.editPrompt || '');
+                });
+            });
+        };
+        window.fpBindEditOpen(document);
+
+        document.getElementById('edit-popup-cancel').addEventListener('click', closeEditPopup);
+        editPopup.addEventListener('click', function (e) {
+            if (e.target === editPopup) closeEditPopup();
+        });
+
         document.getElementById('schedule-popup-cancel').addEventListener('click', closePopup);
         popup.addEventListener('click', function (e) {
             if (e.target === popup) closePopup();
         });
         var closeOnEsc = function (e) {
-            if (e.key === 'Escape' && popup.style.display === 'flex') closePopup();
+            if (e.key !== 'Escape') { return; }
+            if (popup.style.display === 'flex') closePopup();
+            if (editPopup && editPopup.style.display === 'flex') closeEditPopup();
         };
         document.addEventListener('keydown', closeOnEsc);
         /* Dọn listener cấp document khi rời trang bằng partial-load: script nhúng

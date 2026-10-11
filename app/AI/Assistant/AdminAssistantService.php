@@ -782,7 +782,7 @@ MD
             if (in_array($tool, ['entity_create', 'entity_update', 'entity_delete', 'action_run'], true)) {
                 return EntityCrudTools::previewFor($tool, $args);
             }
-            if (in_array($tool, ['image_delete', 'post_schedule'], true)) {
+            if (in_array($tool, ['image_delete', 'post_schedule', 'post_edit'], true)) {
                 return AdminActionTools::previewFor($tool, $args);
             }
         } catch (\Throwable $e) {

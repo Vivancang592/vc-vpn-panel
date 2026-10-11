@@ -25,6 +25,7 @@ use App\Support\XlsxWriter;
  *   - image_delete     : xóa 1 ảnh TRONG thư mục AI (destructive, cần xác nhận)
  *   - post_list        : liệt kê bài AI + lịch đăng (lấy output_id)
  *   - post_schedule    : lên lịch bài AI đăng Fanpage (ghi vc_scheduled_posts, cần xác nhận)
+ *   - post_edit        : sửa bài AI CHƯA lên lịch (append version, cần xác nhận)
  *   - topics_stage     : gắn card chủ đề vào chat → admin bấm chuyển sang tab Nội Dung
  *
  * Tool chỉ TẠO/LẬP LỊCH — việc gửi thật do cron (CampaignService) đảm nhiệm.
@@ -39,7 +40,7 @@ final class AdminActionTools
 
     /** @var array<string, string> mô tả từng tool cho system prompt. */
     private const TOOLS = [
-        'post_draft'      => 'Soạn bài viết CHƯA lưu: trả về bản xem trước hiển thị TRONG ĐOẠN CHAT cho admin xem trước, admin bấm "Lưu Bài" mới ghi thành bài nháp (tool KHÔNG ghi database). args: {title: string, content: string (Markdown/HTML), type: "news"|"tutorial"|"faq"|"popup", slug?: string}.',
+        'post_draft'      => 'Soạn bài CHƯA lưu: hiện preview TRONG ĐOẠN CHAT, admin bấm "Lưu Bài" mới ghi nháp (KHÔNG ghi DB). args: {title, content, type, slug?}.',
         'user_lookup'     => 'Tìm tài khoản user (id, username, email) để chọn người nhận mail. args: {q?: string (tên hoặc email — để trống lấy tối đa 50).}',
         'campaign_create' => 'Lập lịch chiến dịch gửi theo ngày (cron gửi dần, CHỐNG GỬI TRÙNG trong mỗi chu kỳ). args: {kind: "email"|"fb", title, subject (bắt buộc khi email), body (nội dung đã soạn), target_mode: "all_users"|"all_fans"|"specific"|"old_customers", user_ids?: int[], emails?: string[], psids?: string[], daily_limit?: int (1-500, mặc định 50), recurrence?: "once"|"monthly" (mặc định once), day_of_month?: int (1-31, ngày chạy khi monthly), personalize?: bool (true = AI soạn lại mỗi chu kỳ + điền {ten}/{goi_cu}/{uu_dai} thật)}.',
         'campaign_list'   => 'Liệt kê chiến dịch + trạng thái + số đã gửi. args: {}.',
@@ -49,6 +50,7 @@ final class AdminActionTools
         'image_delete'    => 'Xóa ảnh trong thư mục AI. args:{asset_id}',
         'post_list'       => 'Liệt kê bài AI + lịch. args:{filter?:scheduled|published}',
         'post_schedule'   => 'Lên lịch bài AI lên Fanpage. args:{output_id,date:YYYY-MM-DD,time:HH:MM,image_url?}',
+        'post_edit'       => 'Sửa bài AI CHƯA lên lịch (append version mới, KHÔNG đè version cũ). args:{output_id:int, content:string, image_prompt?:string}',
         'topics_stage'    => 'Card chủ đề → tab Nội Dung, không ghi DB. args:{topics:[...]}',
     ];
 
@@ -118,6 +120,8 @@ final class AdminActionTools
                     return self::postList((string) ($args['filter'] ?? ''));
                 case 'post_schedule':
                     return self::postSchedule($args);
+                case 'post_edit':
+                    return self::postEdit($args);
                 case 'topics_stage':
                     return self::topicsStage($args);
             }
@@ -562,6 +566,8 @@ final class AdminActionTools
         // nếu không tách, khối "ẢNH MINH HOẠ" sẽ bị đăng lên Fanpage.
         $raw  = self::replaceDomainMacro((string) ($article['content_snapshot'] ?? ''));
         [$body, $imagePrompt] = self::splitArticle($raw);
+        // Strip macro Markdown cấm (**in đậm**/##) — Fanpage hiển thị thô.
+        $body = self::stripFanpageMacros($body);
         if (trim($body) === '') {
             return ['ok' => false, 'error' => 'Bài viết này chưa có nội dung để đăng.'];
         }
@@ -619,6 +625,89 @@ final class AdminActionTools
     }
 
     /**
+     * Sửa bài AI CHƯA lên lịch — validate Y HỆT AiOutputController::update():
+     * chặn bài ĐÃ có lịch (phải hủy trước), không đổi thì không ghi, strip
+     * macro cấm, ghi append-only qua OutputHandler (KHÔNG new controller —
+     * constructor AiBaseController redirect+exit khi thiếu session admin).
+     */
+    private static function postEdit(array $args): array
+    {
+        $outputId = (int) ($args['output_id'] ?? 0);
+        $content  = trim((string) ($args['content'] ?? ''));
+        $prompt   = trim((string) ($args['image_prompt'] ?? ''));
+
+        $article = null;
+        try {
+            $article = (new AIOutput())->articleById($outputId);
+        } catch (\Throwable $e) {
+            $article = null;
+        }
+        if (!is_array($article)) {
+            return ['ok' => false, 'error' => 'Bài viết #' . $outputId . ' không tồn tại — dùng post_list để xem output_id.'];
+        }
+        if ((int) ($article['schedule_id'] ?? 0) > 0) {
+            return ['ok' => false, 'error' => 'Bài #' . $outputId . ' ĐÃ lên lịch — hủy lịch trước khi sửa nội dung.'];
+        }
+        if ($content === '') {
+            return ['ok' => false, 'error' => 'Nội dung bài viết không được để trống.'];
+        }
+
+        // So với body đã decorate (mirror: {domain} + tách prompt) — không đổi → không tạo version.
+        $raw = self::replaceDomainMacro((string) ($article['content_snapshot'] ?? ''));
+        [$oldBody, $oldPrompt] = self::splitArticle($raw);
+        if ($content === trim($oldBody) && $prompt === trim($oldPrompt)) {
+            return [
+                'ok'      => true,
+                'changed' => false,
+                'message' => 'Nội dung không thay đổi — không tạo version mới.',
+            ];
+        }
+
+        $content = self::stripFanpageMacros($content);
+
+        // Ghép lại snapshot đúng format splitArticle() tách lúc đọc.
+        $snapshot = $content;
+        if ($prompt !== '') {
+            $snapshot .= "\n\n---\n\nẢNH MINH HOẠ:\n" . $prompt;
+        }
+
+        $versionNo = 0;
+        try {
+            $res = (new \App\AI\Core\OutputHandler())->addVersion($outputId, [
+                'content'      => $snapshot,
+                'requested_by' => (int) ($_SESSION['user_id'] ?? 0),
+                'meta'         => ['source' => 'assistant_post_edit'],
+            ]);
+            $versionNo = (int) ($res['version_no'] ?? 0);
+        } catch (\Throwable $e) {
+            return ['ok' => false, 'error' => 'Không lưu được bản sửa: ' . $e->getMessage()];
+        }
+
+        return [
+            'ok'          => true,
+            'output_id'   => $outputId,
+            'version_no'  => $versionNo,
+            'message'     => 'Đã lưu bản sửa bài #' . $outputId
+                . ($versionNo > 0 ? ' (version ' . $versionNo . ')' : '')
+                . ' — version cũ giữ trong lịch sử. Bài CHƯA lên lịch, dùng post_schedule để lên lịch.',
+        ];
+    }
+
+    /**
+     * Mirror AiOutputController::stripFanpageMacros — bỏ macro Markdown cấm
+     * (in đậm kiểu **text** hoặc __text__, đề mục ## tiêu đề) trước khi ghi/đăng:
+     * Fanpage hiển thị thô nên macro làm lỗi bài. KHÔNG đụng single * (italic)
+     * lẫn # không space (hashtag thật).
+     */
+    private static function stripFanpageMacros(string $text): string
+    {
+        $text = (string) preg_replace('/\*\*(.+?)\*\*/su', '$1', $text);
+        $text = (string) preg_replace('/__(.+?)__/su', '$1', $text);
+        $text = (string) preg_replace('/^[ \t]*#{1,6}[ \t]+/mu', '', $text);
+        return $text;
+    }
+
+    /**
      * Chuẩn bị danh sách chủ đề → service gắn card ```topics-list``` vào reply;
      * admin bấm "Mở tab Nội Dung" trên card → JS lưu localStorage + mở form
      * viết bài, tab đó tự dán chủ đề vào ô textarea. KHÔNG ghi database.
@@ -651,7 +740,7 @@ final class AdminActionTools
 
     /**
      * Bảng before/after cho thẻ xác nhận — AdminAssistantService::confirmPreview
-     * delegate về đây cho image_delete và post_schedule. Mọi lỗi → mảng rỗng
+     * delegate về đây cho image_delete, post_schedule và post_edit. Mọi lỗi → mảng rỗng
      * (thẻ vẫn hiện summary do ToolRegistry::describe tạo, chỉ thiếu bảng so sánh).
      *
      * @param array<string, mixed> $args
@@ -709,6 +798,43 @@ final class AdminActionTools
                 'rows'  => [
                     ['column' => 'Lịch đăng', 'before' => $oldSchedule, 'after' => trim($date . ' ' . $time)],
                     ['column' => 'Ảnh đăng', 'before' => (string) ($article['scheduled_image_url'] ?? ''), 'after' => trim((string) ($args['image_url'] ?? ''))],
+                ],
+                'url'   => '/admin/ai/outputs/detail?id=' . $outputId,
+            ];
+        }
+
+        if ($tool === 'post_edit') {
+            $outputId = (int) ($args['output_id'] ?? 0);
+
+            $article = null;
+            try {
+                $article = (new AIOutput())->articleById($outputId);
+            } catch (\Throwable $e) {
+                $article = null;
+            }
+            if (!is_array($article)) {
+                return [];
+            }
+
+            $raw = self::replaceDomainMacro((string) ($article['content_snapshot'] ?? ''));
+            [$oldBody, $oldPrompt] = self::splitArticle($raw);
+
+            $title = trim((string) ($article['topic'] ?? ''));
+            $title = $title !== '' ? mb_substr($title, 0, 140) : 'Bài viết #' . $outputId;
+
+            // Cắt ngắn cho thẻ xác nhận — nội dung có thể hàng KB.
+            $cut = static function (string $s): string {
+                $s = trim((string) preg_replace('/\s+/', ' ', $s));
+                return mb_strlen($s) > 160 ? mb_substr($s, 0, 160) . '…' : $s;
+            };
+
+            return [
+                'mode'  => 'update',
+                'label' => $title,
+                'id'    => $outputId,
+                'rows'  => [
+                    ['column' => 'Nội dung',   'before' => $cut($oldBody), 'after' => $cut((string) ($args['content'] ?? ''))],
+                    ['column' => 'Prompt ảnh', 'before' => $cut($oldPrompt), 'after' => $cut((string) ($args['image_prompt'] ?? ''))],
                 ],
                 'url'   => '/admin/ai/outputs/detail?id=' . $outputId,
             ];

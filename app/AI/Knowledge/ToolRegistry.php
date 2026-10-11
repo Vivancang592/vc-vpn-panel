@@ -65,20 +65,22 @@ final class ToolRegistry
 
         // ---- Chỉ sinh bản xem trước / file tải về: không ghi DB ----
         'post_draft'             => ['risk' => self::RISK_READ, 'needs_confirm' => false,
-            'note' => 'Không ghi database — admin bấm "Lưu Bài" trên card mới lưu.'],
+            'note' => 'Không ghi DB — admin bấm "Lưu Bài" mới lưu.'],
         'revenue_report'         => ['risk' => self::RISK_READ, 'needs_confirm' => false,
             'note' => 'Chỉ xuất file báo cáo, không sửa dữ liệu.'],
         'topics_stage'           => ['risk' => self::RISK_READ, 'needs_confirm' => false],
 
         // ---- Ghi dữ liệu: phải qua cổng xác nhận ----
         'campaign_create'        => ['risk' => self::RISK_WRITE, 'needs_confirm' => true,
-            'entity' => 'campaign', 'note' => 'Lập lịch chiến dịch gửi tin cho khách (once hoặc monthly hằng tháng, tập khách gồm cả khách hàng cũ).'],
+            'entity' => 'campaign', 'note' => 'Lập lịch gửi once/monthly, tập khách gồm cả khách hàng cũ.'],
         'campaign_status'        => ['risk' => self::RISK_WRITE, 'needs_confirm' => true,
             'entity' => 'campaign', 'note' => 'Đổi trạng thái chiến dịch (pause/resume/cancel).'],
         'page_edit'              => ['risk' => self::RISK_WRITE, 'needs_confirm' => true,
             'note' => 'Sửa bản ghi đang mở trên trang admin.'],
         'post_schedule'          => ['risk' => self::RISK_WRITE, 'needs_confirm' => true,
             'note' => 'Ghi vc_scheduled_posts — cron đăng sau xác nhận.'],
+        'post_edit'              => ['risk' => self::RISK_WRITE, 'needs_confirm' => true,
+            'note' => 'Bài CHƯA có lịch; đã lịch → hủy trước.'],
         'image_delete'           => ['risk' => self::RISK_DESTRUCTIVE, 'needs_confirm' => true,
             'note' => 'Xóa cứng, CHỈ public/uploads/ai, không hoàn tác.'],
 
@@ -197,6 +199,11 @@ final class ToolRegistry
             'date'      => ['type' => 'string', 'description' => 'Ngày đăng YYYY-MM-DD, phải sau thời điểm hiện tại.'],
             'time'      => ['type' => 'string', 'description' => 'Giờ đăng HH:MM, ví dụ 09:30.'],
             'image_url' => ['type' => 'string', 'description' => 'Ảnh đính kèm dạng /uploads/ai/... (bỏ trống = đăng chữ hoặc giữ ảnh cũ).'],
+        ]],
+        'post_edit' => ['required' => ['output_id', 'content'], 'properties' => [
+            'output_id'    => ['type' => 'integer', 'description' => 'ID bài viết AI CHƯA lên lịch lấy từ post_list.'],
+            'content'      => ['type' => 'string', 'description' => 'Nội dung bài viết mới (KHÔNG dùng macro **in đậm**/## tiêu đề).'],
+            'image_prompt' => ['type' => 'string', 'description' => 'Prompt ảnh minh họa mới; bỏ trống = xóa prompt cũ.'],
         ]],
         'topics_stage' => ['required' => ['topics'], 'properties' => [
             'topics' => ['type' => 'array', 'items' => ['type' => 'string'], 'description' => 'Danh sách chủ đề cần chuyển sang tab Nội Dung (rút từ chiến dịch/bài viết), tối đa 50.'],

@@ -1289,6 +1289,31 @@ if (!response.ok || !result.valid) {
     background: #0070e0;
 }
 
+/* Bảng Markdown trong popup chat (giá | gói | ...) */
+.vc-md-table {
+    border-collapse: collapse;
+    margin: 6px 0 4px;
+    width: 100%;
+    table-layout: fixed;
+    font-size: 12.5px;
+    line-height: 1.45;
+}
+.vc-md-table th, .vc-md-table td {
+    border: 1px solid #d6dade;
+    padding: 5px 8px;
+    text-align: left;
+    vertical-align: top;
+    word-break: break-word;
+}
+.vc-md-table th {
+    background: #f1f5f9;
+    font-weight: 700;
+    color: #111827;
+}
+.vc-md-table tr:nth-child(even) td {
+    background: #fafbfc;
+}
+
 /* Giao diện Full Màn Hình & Trượt từ trên xuống cho Mobile */
 @media (max-width: 767px) {
     #vc-chatbot {
@@ -1419,6 +1444,34 @@ if (!response.ok || !result.valid) {
             // Markdown link [label](url)
             safe = safe.replace(/\[([^\]]+)\]\((https?:\/\/[^\s)]+|\/[^\s)]+)\)/g, function (_match, label, href) {
                 return '<a href="' + href + '" style="color: #0a84ff; text-decoration: underline; font-weight: 600;" target="_self">' + label + '</a>';
+            });
+            // Bảng Markdown (block ≥2 dòng |...| có dòng phân cách |---|) → <table>.
+            // Chạy TRƯỚC khi đổi \n → <br>; cell đã escape HTML ở trên nên an toàn XSS.
+            safe = safe.replace(/(?:^[ \t]*\|.*\|[ \t]*(?:\n|$))+/gm, function (block) {
+                const rows = [];
+                const lines = block.split('\n');
+                for (let li = 0; li < lines.length; li++) {
+                    let t = lines[li].trim();
+                    if (!t) continue;
+                    if (t.charAt(0) === '|') t = t.slice(1);
+                    if (t.charAt(t.length - 1) === '|') t = t.slice(0, -1);
+                    rows.push(t.split('|').map(function (c) { return c.trim(); }));
+                }
+                if (rows.length < 2) return block;
+                let sepIdx = -1;
+                for (let ri = 1; ri < rows.length; ri++) {
+                    if (rows[ri].every(function (c) { return /^:?-{3,}:?$/.test(c); })) { sepIdx = ri; break; }
+                }
+                if (sepIdx < 1) return block;
+                let html = '<table class="vc-md-table"><thead><tr>';
+                rows[sepIdx - 1].forEach(function (c) { html += '<th>' + c + '</th>'; });
+                html += '</tr></thead><tbody>';
+                for (let ri2 = sepIdx + 1; ri2 < rows.length; ri2++) {
+                    html += '<tr>';
+                    rows[ri2].forEach(function (c) { html += '<td>' + c + '</td>'; });
+                    html += '</tr>';
+                }
+                return html + '</tbody></table>';
             });
             // Newlines
             safe = safe.replace(/\n/g, '<br>');
