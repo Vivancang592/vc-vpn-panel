@@ -32,12 +32,11 @@ ob_start();
                 <strong>Phân Loại:</strong> 
                 <?php
                 $typeBadge = [
-                    'news'     => ['label' => 'TIN TỨC', 'style' => 'background: rgba(0, 122, 255, 0.15); color: var(--ios-blue);'],
                     'tutorial' => ['label' => 'HƯỚNG DẪN', 'style' => 'background: rgba(255, 149, 0, 0.15); color: var(--ios-warning);'],
                     'faq'      => ['label' => 'FAQ', 'style' => 'background: rgba(175, 82, 222, 0.15); color: #af52de;'],
-                    'popup'    => ['label' => 'POPUP', 'style' => 'background: rgba(255, 59, 48, 0.15); color: var(--ios-danger, #ff3b30);']
+                    'popup'    => ['label' => 'POPUP', 'style' => 'background: rgba(255, 59, 48, 0.15); color: var(--ios-danger, #ff3b30);'],
                 ];
-                $t = $typeBadge[$post['type'] ?? 'news'] ?? $typeBadge['news'];
+                $t = $typeBadge[$post['type'] ?? 'tutorial'] ?? $typeBadge['tutorial'];
                 ?>
                 <span style="padding: 0.2rem 0.5rem; border-radius: var(--radius-sm); font-size: 0.75rem; font-weight: 700; <?= $t['style'] ?>">
                     <?= $t['label'] ?>

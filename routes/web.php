@@ -176,7 +176,7 @@ return [
     'GET /admin/withdrawals/detail' => ['Admin\WithdrawalController', 'detail'],
     'POST /admin/withdrawals/detail' => ['Admin\WithdrawalController', 'detail'],
 
-    // Quản lý bài viết & tin tức (Posts)
+    // Quản lý bài viết (Posts)
     'GET /admin/posts'            => ['Admin\PostController', 'index'],
     'GET /admin/posts/create'     => ['Admin\PostController', 'showCreate'],
     'POST /admin/posts/create'    => ['Admin\PostController', 'create'],

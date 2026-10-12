@@ -270,7 +270,7 @@ CREATE TABLE `vc_posts` (
     `title` VARCHAR(255) NOT NULL,
     `slug` VARCHAR(255) NOT NULL UNIQUE,
     `content` LONGTEXT NOT NULL,
-    `type` ENUM('news', 'tutorial', 'faq', 'popup') NOT NULL DEFAULT 'news',
+    `type` ENUM('tutorial', 'faq', 'popup') NOT NULL DEFAULT 'tutorial',
     `status` ENUM('published', 'draft', 'hidden') NOT NULL DEFAULT 'published',
     `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (`author_id`) REFERENCES `vc_users`(`id`) ON DELETE CASCADE

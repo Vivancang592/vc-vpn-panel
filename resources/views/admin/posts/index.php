@@ -23,8 +23,8 @@ ob_start();
 
 <div style="margin-bottom: 1rem; width: 100%; box-sizing: border-box;">
     <div>
-        <h1 style="font-size: 1.5rem; font-weight: 700; word-break: break-word;">Quản Lý Bài Viết & Tin Tức</h1>
-        <p style="color: var(--ios-text-secondary); font-size: 0.85rem;">Danh sách bài viết tin tức, hướng dẫn và câu hỏi thường gặp</p>
+        <h1 style="font-size: 1.5rem; font-weight: 700; word-break: break-word;">Quản Lý Bài Viết</h1>
+        <p style="color: var(--ios-text-secondary); font-size: 0.85rem;">Danh sách hướng dẫn, hỏi đáp và thông báo popup</p>
     </div>
     <div style="display: flex; justify-content: flex-end; margin-top: 0.75rem;">
         <a href="/admin/posts/create" class="glass-btn" style="text-decoration: none; white-space: nowrap;">+ Thêm</a>
@@ -58,12 +58,11 @@ ob_start();
                             <td>
                                 <?php
                                 $typeBadge = [
-                                    'news'     => ['label' => 'TIN TỨC', 'style' => 'background: rgba(0, 122, 255, 0.15); color: var(--ios-blue);'],
                                     'tutorial' => ['label' => 'HƯỚNG DẪN', 'style' => 'background: rgba(255, 149, 0, 0.15); color: var(--ios-warning);'],
                                     'faq'      => ['label' => 'FAQ', 'style' => 'background: rgba(175, 82, 222, 0.15); color: #af52de;'],
-                                    'popup'    => ['label' => 'POPUP', 'style' => 'background: rgba(255, 59, 48, 0.15); color: var(--ios-danger, #ff3b30);']
+                                    'popup'    => ['label' => 'POPUP', 'style' => 'background: rgba(255, 59, 48, 0.15); color: var(--ios-danger, #ff3b30);'],
                                 ];
-                                $t = $typeBadge[$post['type'] ?? 'news'] ?? $typeBadge['news'];
+                                                $t = $typeBadge[$post['type'] ?? 'tutorial'] ?? $typeBadge['tutorial'];
                                 ?>
                                 <span style="padding: 0.2rem 0.5rem; border-radius: var(--radius-sm); font-size: 0.75rem; font-weight: 700; <?= $t['style'] ?>">
                                     <?= $t['label'] ?>

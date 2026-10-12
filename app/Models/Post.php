@@ -10,7 +10,7 @@ class Post extends BaseModel
      * Loại bài viết hợp lệ — khớp ENUM `vc_posts.type` trong database/vpn_service.sql.
      * Nguồn tham chiếu DUY NHẤT cho mọi whitelist `type` trong hệ thống.
      */
-    public const TYPES = ['news', 'tutorial', 'faq', 'popup'];
+    public const TYPES = ['tutorial', 'faq', 'popup'];
 
     /**
      * Lấy toàn bộ bài viết kèm tên tác giả
