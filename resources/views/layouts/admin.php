@@ -36,23 +36,6 @@ $adminGroups = [
             'referrals' => ['label' => 'Hoa Hồng', 'icon' => 'REF', 'url' => '/admin/referrals'],
             'withdrawals' => ['label' => 'Rút Tiền', 'icon' => 'WDR', 'url' => '/admin/withdrawals']
         ]
-    ],
-    'ai' => [
-        // menus = danh sách id đầy đủ (kể cả trang kỹ thuật không còn là tab
-        // như ai-tasks/ai-models/ai-conversations/ai-outputs —
-        // ai-modules/ai-prompts đã gộp/bỏ, ai-assets đã XOÁ, xem
-        // /admin/ai/settings) để group highlight đúng activeMenu khi Admin
-        // truy cập từ dashboard. KHÔNG dùng để hiển thị tab.
-        'menus' => ['ai-dashboard', 'ai-image', 'ai-tasks', 'ai-fanpage', 'ai-reply', 'ai-settings', 'ai-models', 'ai-conversations', 'ai-outputs', 'ai-assistant'],
-        'label' => 'Trung Tâm AI',
-        // 5 tab chức năng — trang kỹ thuật truy cập từ dashboard.
-        'tabs' => [
-            'ai-dashboard' => ['label' => 'Tổng Quan Hệ Thống AI', 'icon' => 'OVW', 'url' => '/admin/ai'],
-            'ai-image'     => ['label' => 'Tạo Ảnh', 'icon' => 'IMG', 'url' => '/admin/ai/image'],
-            'ai-fanpage'   => ['label' => 'Nội Dung Fanpage', 'icon' => 'FPG', 'url' => '/admin/ai/fanpage'],
-            'ai-reply'     => ['label' => 'Trả Lời Tự Động', 'icon' => 'RPL', 'url' => '/admin/ai/reply'],
-            'ai-settings'  => ['label' => 'Cấu Hình AI', 'icon' => 'CFG', 'url' => '/admin/ai/settings']
-        ]
     ]
 ];
 $activeMenu = $activeMenu ?? '';
@@ -141,7 +124,6 @@ require_once __DIR__ . '/header.php';
                 <?= $renderGroupTabs() ?>
                 <?= $content ?? '' ?>
             </div>
-            <?php require_once __DIR__ . '/_assistant_bubble.php'; // Bong bóng trợ lý — chỉ nhánh trang đầy đủ (fragment JSON đã exit ở nhánh trên) ?>
             <?php require_once __DIR__ . '/footer.php'; ?>
         </main>
     </div>

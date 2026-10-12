@@ -11,80 +11,7 @@
  * ========================================================================= */
 window.vcPageInits = window.vcPageInits || [];
 
-/* ===== 1. Menu ba chấm (action dropdown) trên bảng dữ liệu ===== */
-window.vcPageInits.push(function vcInitActionDropdown(root) {
-    'use strict';
-    // 1. Xử lý toggle Menu Ba Chấm (Action Dropdown)
-    const actionBtns = root.querySelectorAll('.action-btn');
-
-    function closeAllActionMenus() {
-        document.querySelectorAll('.action-menu.show').forEach(menu => {
-            menu.classList.remove('show');
-            if (menu._triggerBtn) {
-                menu._triggerBtn.classList.remove('active');
-            } else if (menu.previousElementSibling) {
-                menu.previousElementSibling.classList.remove('active');
-            }
-        });
-    }
-
-    actionBtns.forEach(btn => {
-        if (btn.dataset.actionBound) return;
-        btn.dataset.actionBound = '1';
-
-        btn.addEventListener('click', function (e) {
-            e.stopPropagation();
-
-            // Lấy menu tương ứng (kề sau nút hoặc đã được gán trước đó)
-            let currentMenu = this.nextElementSibling;
-            if (!currentMenu || !currentMenu.classList.contains('action-menu')) {
-                currentMenu = this._actionMenu;
-            }
-
-            if (!currentMenu) return;
-
-            // Lưu tham chiếu 2 chiều giữa nút bấm và menu
-            this._actionMenu = currentMenu;
-            currentMenu._triggerBtn = this;
-
-            const isCurrentlyShown = currentMenu.classList.contains('show');
-
-            // Đóng tất cả các menu khác đang mở
-            closeAllActionMenus();
-
-            // Nếu menu chưa mở -> Đưa ra body và tính vị trí fixed chuẩn theo viewport
-            if (!isCurrentlyShown) {
-                if (currentMenu.parentNode !== document.body) {
-                    document.body.appendChild(currentMenu);
-                }
-
-                currentMenu.classList.add('show');
-                this.classList.add('active');
-
-                const rect = this.getBoundingClientRect();
-                const viewportHeight = window.visualViewport?.height || document.documentElement.clientHeight;
-                const spaceAbove = rect.top - 8;
-
-                currentMenu.style.maxHeight = Math.max(0, spaceAbove) + 'px';
-                currentMenu.style.top = 'auto';
-                currentMenu.style.bottom = Math.max(8, viewportHeight - rect.top + 4) + 'px';
-                currentMenu.style.left = 'auto';
-                currentMenu.style.right = (window.innerWidth - rect.right) + 'px';
-            }
-        });
-    });
-
-    if (!window._actionDropdownEventsBound) {
-        window._actionDropdownEventsBound = true;
-        // Bấm ra ngoài vùng menu, cuộn trang hoặc đổi kích thước màn hình -> Tự động đóng tất cả dropdown
-        document.addEventListener('click', closeAllActionMenus);
-        window.addEventListener('scroll', closeAllActionMenus, true);
-        window.addEventListener('resize', closeAllActionMenus);
-    }
-
-});
-
-/* ===== 2. Thông báo flash: tự ẩn sau 4 giây, nút ✕ tắt ngay ===== */
+/* ===== 1. Thông báo flash: tự ẩn sau 4 giây, nút ✕ tắt ngay ===== */
 window.vcPageInits.push(function vcInitGlassAlerts(root) {
     'use strict';
     const alerts = root.querySelectorAll('.glass-alert');
@@ -443,7 +370,7 @@ window.vcPageInits.push(function vcInitDashboardChart(root) {
         try { if (window.tinymce) window.tinymce.remove(); } catch (e) { /* noop */ }
 
         // Thay sidebar + vùng nội dung (navbar/footer giữ nguyên → listener
-        // profile dropdown / chatbot không bị mất)
+        // profile dropdown không bị mất)
         const sidebar = document.querySelector('.admin-sidebar');
         const sidebarY = sidebar ? sidebar.scrollTop : 0; // vị trí menu sidebar trước khi thay
         if (sidebar && typeof json.sidebar === 'string' && json.sidebar.trim() !== '') {

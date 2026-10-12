@@ -26,13 +26,6 @@ $logTabs = [
         'title'       => 'Nhật Ký Gửi Email Hệ Thống',
         'description' => 'Theo dõi trạng thái gửi email thông báo, khôi phục mật khẩu và hóa đơn.'
     ],
-    'chatbot' => [
-        'label'       => 'Chatbot AI',
-        'icon'        => 'AI',
-        'url'         => '/admin/logs/chatbot',
-        'title'       => 'Nhật Ký Chatbot Và Chuyển Đổi',
-        'description' => 'Theo dõi sự kiện chat web/fanpage, hành vi chuyển đổi và tình trạng chuyển người thật.'
-    ],
     'macrodroid' => [
         'label'       => 'Webhook',
         'icon'        => 'MSG',
@@ -241,108 +234,6 @@ ob_start();
                         <?php endforeach; ?>
                     <?php else: ?>
                         <tr><td colspan="7" class="logs-empty">Chưa có nhật ký gửi email nào.</td></tr>
-                    <?php endif; ?>
-                </tbody>
-                </table>
-            </div>
-        </form>
-    <?php elseif ($activeLogTab === 'chatbot'): ?>
-        <form method="POST" action="/admin/logs/delete" class="logs-bulk-form">
-            <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrf_token) ?>">
-            <input type="hidden" name="log_type" value="chatbot">
-            <input type="hidden" name="page" value="<?= (int)($pagination['page'] ?? 1) ?>">
-            <div class="logs-bulk-actions">
-                <label class="logs-select-all-label"><input type="checkbox" class="logs-select-all"> Chọn tất cả trang này</label>
-                <div class="logs-delete-actions">
-                    <button type="submit" class="logs-delete-selected" onclick="return confirm('Bạn có chắc chắn muốn xóa các bản ghi đã chọn?');">Purge</button>
-                </div>
-            </div>
-            <div class="table-responsive">
-                <table class="glass-table">
-                <thead>
-                    <tr>
-                        <th class="logs-select-column"><span class="sr-only">Chọn</span></th>
-                        <th>ID</th>
-                        <th>Sự Kiện</th>
-                        <th>Nguồn</th>
-                        <th>Phiên / Đối Tượng</th>
-                        <th>Người Dùng</th>
-                        <th>Nội Dung Chi Tiết</th>
-                        <th>Thời Gian</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <?php if (!empty($logs)): ?>
-                        <?php foreach ($logs as $log): ?>
-                            <?php
-                                $rawData = trim((string)($log['event_data'] ?? ''));
-                                $decoded = $rawData !== '' ? json_decode($rawData, true) : null;
-                                $eventName = (string)($log['event_name'] ?? '-');
-
-                                $badgeClass = match($eventName) {
-                                    'fanpage_comment_reply'  => 'logs-badge-green',
-                                    'fanpage_comment_failed' => 'logs-badge-danger',
-                                    'fanpage_comment_skipped'=> 'logs-badge-blue',
-                                    'fanpage_inbound'        => 'logs-badge-blue',
-                                    'ai_reply'               => 'logs-badge-green',
-                                    'ai_failed'              => 'logs-badge-danger',
-                                    default                  => 'logs-badge-blue'
-                                };
-
-                                $eventLabel = match($eventName) {
-                                    'fanpage_comment_reply'  => 'Bình luận Fanpage',
-                                    'fanpage_comment_failed' => '✕ Lỗi Comment',
-                                    'fanpage_comment_skipped'=> '» Bỏ qua Comment',
-                                    'fanpage_inbound'        => 'Messenger 1-1',
-                                    'ai_reply'               => 'AI Trả Lời',
-                                    'ai_failed'              => '▲ AI Lỗi',
-                                    default                  => $eventName
-                                };
-
-                                $authorName = (string)($log['username'] ?? '');
-                                if ($authorName === '' && is_array($decoded) && !empty($decoded['from_name'])) {
-                                    $authorName = (string)$decoded['from_name'];
-                                }
-                                if ($authorName === '') {
-                                    $authorName = 'Khách';
-                                }
-                            ?>
-                            <tr>
-                                <td class="logs-select-column"><input type="checkbox" name="log_ids[]" value="<?= (int)$log['id'] ?>" class="logs-row-select" aria-label="Chọn log #<?= (int)$log['id'] ?>"></td>
-                                <td class="logs-id">#<?= (int)$log['id'] ?></td>
-                                <td><span class="logs-badge <?= $badgeClass ?>"><?= htmlspecialchars($eventLabel) ?></span></td>
-                                <td><span class="logs-badge logs-badge-green"><?= htmlspecialchars((string)($log['source'] ?? $log['session_source'] ?? 'web')) ?></span></td>
-                                <td>
-                                    <?php if (!empty($log['session_id'])): ?>
-                                        <div class="logs-user-name"><?= vc_admin_icon('SID', 13) ?>: <?= (int)$log['session_id'] ?></div>
-                                        <div class="logs-user-email"><?= htmlspecialchars((string)($log['external_id'] ?? $log['visitor_token'] ?? '-')) ?></div>
-                                    <?php elseif (is_array($decoded) && !empty($decoded['comment_id'])): ?>
-                                        <div class="logs-user-name"><?= vc_admin_icon('CMT', 13) ?>: <?= htmlspecialchars((string)$decoded['comment_id']) ?></div>
-                                    <?php else: ?>
-                                        <div class="logs-user-email">-</div>
-                                    <?php endif; ?>
-                                </td>
-                                <td>
-                                    <div class="logs-user-name"><?= htmlspecialchars($authorName) ?></div>
-                                    <div class="logs-user-email"><?= htmlspecialchars((string)($log['email'] ?? '')) ?></div>
-                                </td>
-                                <td class="logs-truncate" style="max-width: 480px; white-space: normal;">
-                                    <?php if ($eventName === 'fanpage_comment_reply' && is_array($decoded)): ?>
-                                        <div style="font-weight: 600; color: var(--ios-blue); font-size: 0.82rem; margin-bottom: 0.2rem;"><?= vc_admin_icon('USR', 13) ?> <?= htmlspecialchars((string)($decoded['from_name'] ?? 'Khách')) ?>: &ldquo;<?= htmlspecialchars((string)($decoded['user_message'] ?? '')) ?>&rdquo;</div>
-                                        <div style="font-size: 0.82rem; color: var(--ios-text-primary); background: rgba(255,255,255,0.05); padding: 0.35rem 0.5rem; border-radius: 6px;"><?= vc_admin_icon('RPL', 13) ?> <strong>Bot:</strong> <?= htmlspecialchars((string)($decoded['ai_reply'] ?? '')) ?></div>
-                                    <?php elseif ($eventName === 'fanpage_comment_skipped' && is_array($decoded)): ?>
-                                        <div style="font-size: 0.82rem; color: var(--ios-text-secondary);">» Bỏ qua bình luận của <strong><?= htmlspecialchars((string)($decoded['from_name'] ?? 'Khách')) ?></strong> (Lý do: <?= htmlspecialchars((string)($decoded['reason'] ?? $decoded['keyword'] ?? '')) ?>)</div>
-                                    <?php elseif ($eventName === 'fanpage_comment_failed' && is_array($decoded)): ?>
-                                        <div style="font-size: 0.82rem; color: var(--ios-danger);>✕ Lỗi phản hồi: <?= htmlspecialchars((string)($decoded['error'] ?? '')) ?></div>
-                                    <?php else: ?>
-                                        <?= htmlspecialchars(is_array($decoded) ? json_encode($decoded, JSON_UNESCAPED_UNICODE) : ($rawData !== '' ? $rawData : '-')) ?>
-                                    <?php endif; ?>
-                                </td>
-                                <td class="logs-time"><?= !empty($log['created_at']) ? date('d/m/Y H:i:s', strtotime($log['created_at'])) : '-' ?></td>
-                            </tr>
-                        <?php endforeach; ?>
-                    <?php else: ?>
-                        <tr><td colspan="8" class="logs-empty">Chưa có nhật ký chatbot nào.</td></tr>
                     <?php endif; ?>
                 </tbody>
                 </table>

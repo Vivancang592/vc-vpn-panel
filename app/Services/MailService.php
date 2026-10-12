@@ -54,8 +54,7 @@ class MailService
     }
 
     /**
-     * Gửi Email bằng nội dung HTML có sẵn (không qua template) + ghi Log.
-     * Dùng cho chiến dịch của Trợ Lý Admin (nội dung AI soạn).
+     * Gửi Email bằng nội dung HTML có sẵn (không qua template) + ghi Log
      */
     public function sendRaw(string $to, string $subject, string $htmlBody): bool
     {

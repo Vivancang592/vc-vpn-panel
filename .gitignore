@@ -4,7 +4,6 @@
 /storage/backups/
 /storage/tmp/
 /storage/_legacy_backup/
-/storage/assistant/
 .claude/
 /public/uploads/*
 !/public/uploads/.htaccess
@@ -12,9 +11,4 @@
 /SECURITY_FIX_PLAN.md
 /SKILL.md
 /docs/task-contract.md
-/tools/ai_core_selftest.php
-/tools/ai_tool_registry_test.php
-/tools/ai_chatbot_eval.php
-/tools/seed_prompts.php
-/tools/verify_phase2_ai_flow.php
 /public/assets/images/logo.png

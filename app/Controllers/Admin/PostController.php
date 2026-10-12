@@ -44,7 +44,7 @@ class PostController extends BaseController
         $status  = $_POST['status'] ?? 'published';
         $content = $_POST['content'] ?? '';
 
-        if (!in_array($type, ['news', 'tutorial', 'faq', 'popup'], true)) {
+        if (!in_array($type, Post::TYPES, true)) {
             $type = 'tutorial';
         }
 
@@ -121,7 +121,7 @@ class PostController extends BaseController
         $status  = $_POST['status'] ?? 'published';
         $content = $_POST['content'] ?? '';
 
-        if (!in_array($type, ['news', 'tutorial', 'faq', 'popup'], true)) {
+        if (!in_array($type, Post::TYPES, true)) {
             $type = 'tutorial';
         }
 

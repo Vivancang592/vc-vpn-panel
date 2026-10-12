@@ -7,7 +7,7 @@ namespace App\Support;
 /**
  * Ghi file .xlsx tối giản KHÔNG cần thư viện ngoài:
  * ZipArchive + OOXML cơ bản (1 sheet, ô chuỗi inlineStr, ô số <v>).
- * Đủ dùng cho báo cáo Excel mà Trợ Lý Admin xuất cho admin tải về.
+ * Đủ dùng cho báo cáo Excel mà admin tải về.
  */
 final class XlsxWriter
 {

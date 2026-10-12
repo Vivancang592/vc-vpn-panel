@@ -26,20 +26,6 @@ $normalizeUrl = static function (string $value, string $prefix = ''): string {
 $fanpageHref = $normalizeUrl($fanpageUrl, 'https://');
 $youtubeHref = $normalizeUrl($youtubeUrl, 'https://');
 $zaloHref = $normalizeUrl($zaloUrl, 'https://zalo.me/');
-$chatbotEnabled = (($settings['ai_chatbot_enabled'] ?? '1') === '1');
-$chatbotTitle = trim((string) ($settings['site_title'] ?? 'VC VPN'));
-$chatbotTitle = $chatbotTitle !== '' ? $chatbotTitle : 'VC VPN';
-
-// Trạng thái đăng nhập + tên người dùng hiển thị rõ ràng trên khung chat.
-$chatUser = is_array($currentUser ?? null) ? $currentUser : [];
-$chatIsLoggedIn = !empty($chatUser['id']) || !empty($_SESSION['user_id']);
-$chatUserName = trim((string) ($chatUser['name'] ?? ''));
-if ($chatUserName === '') {
-    $chatUserName = trim((string) ($chatUser['username'] ?? ''));
-}
-if ($chatUserName === '') {
-    $chatUserName = trim((string) ($_SESSION['name'] ?? $_SESSION['username'] ?? ''));
-}
 ?>
 
 <footer class="vc-footer">
@@ -95,31 +81,6 @@ if ($chatUserName === '') {
     </div>
 </footer>
 
-<?php
-// Bong bóng chat CHỈ hiển thị ở trang công khai + trang user.
-// Trang admin ($extraJs = 'admin') ẩn hoàn toàn — admin xem hội thoại
-// qua cab "Hội Thoại" trong Trung Tâm AI thay vì chat popup.
-$showChatbot = $chatbotEnabled && (($extraJs ?? '') !== 'admin');
-?>
-<?php if ($showChatbot): ?>
-    <div id="vc-chatbot" data-enabled="1" data-site-title="<?= htmlspecialchars($chatbotTitle) ?>" data-page="<?= htmlspecialchars((string) parse_url((string) ($_SERVER['REQUEST_URI'] ?? '/'), PHP_URL_PATH)) ?>" data-logged-in="<?= $chatIsLoggedIn ? '1' : '0' ?>" data-user-name="<?= htmlspecialchars($chatUserName) ?>" style="position: relative; z-index: 2147483647;">
-        <button id="vc-chatbot-toggle" type="button" aria-label="Mở trợ lý AI">💬</button>
-        <div id="vc-chatbot-panel" hidden class="vc-chatbot-panel-wrapper">
-            <div class="vc-chatbot-header">
-                <div style="display: flex; align-items: center; gap: 8px; min-width: 0;">
-                    <span style="display: inline-block; width: 9px; height: 9px; border-radius: 50%; background: #34c759; box-shadow: 0 0 8px #34c759; flex: 0 0 auto;"></span>
-                    <span style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">Trợ lý AI - <?= htmlspecialchars($chatbotTitle) ?></span>
-                </div>
-                <button id="vc-chatbot-close" type="button" aria-label="Đóng">✕</button>
-            </div>
-            <div id="vc-chatbot-messages"></div>
-            <form id="vc-chatbot-form" data-no-loader="true">
-                <input id="vc-chatbot-input" type="text" placeholder="Nhập câu hỏi của bạn..." maxlength="500" autocomplete="off">
-                <button type="submit">Gửi</button>
-            </form>
-        </div>
-    </div>
-<?php endif; ?>
 
 <!-- Tải app.js với version theo filemtime (cache hit nếu file không đổi) -->
 <script src="/assets/js/app.js?v=<?= vc_asset_ver('js/app.js') ?>"></script>

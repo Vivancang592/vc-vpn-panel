@@ -7,7 +7,7 @@
  *
  * Cách dùng:
  *   <?= vc_admin_icon('GRP') ?>              // <svg> của Users
- *   <?= vc_admin_icon('RPL', 20) ?>          // <svg> Bot, 20px
+ *   <?= vc_admin_icon('RPL', 20) ?>          // <svg> 20px
  *   <?= vc_admin_icon_svg('bot', 20, 'asst-avatar-icon') ?>  // gọi thẳng tên icon
  *   var VC_ICONS = <?= vc_admin_icon_js_map(['bot', 'users']) ?>;  // cho JS
  */
@@ -63,10 +63,7 @@ if (!function_exists('vc_admin_icon_paths')) {
     function vc_admin_icon_map(): array
     {
         return [
-            // Trợ lý AI & chat
             'RPL' => 'bot',
-            'AI'  => 'sparkles',
-            'BOT' => 'bot',
             // Bảng ánh xạ danh mục hệ thống
             'GRP' => 'users',
             'SRV' => 'server',

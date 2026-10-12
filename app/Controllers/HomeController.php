@@ -27,21 +27,6 @@ class HomeController extends BaseController
         ]);
     }
 
-    public function plans(): void
-    {
-        $plans = []; 
-        if (class_exists('App\Models\VpnPlan')) {
-            $planModel = new VpnPlan();
-            $plans = $planModel->getAllActive();
-        }
-
-        $this->render('home.plans', [
-            'activeMenu' => 'plans',
-            'plans' => $plans,
-            'showSidebar' => !empty($_SESSION['user_id'])
-        ]);
-    }
-
     public function download(): void
     {
         $this->render('home.download', [

@@ -8,10 +8,7 @@ use App\Models\User;
 use App\Models\Setting;
 use App\Models\Order;
 use App\Models\Payment;
-use App\Models\ScheduledPost;
 use App\Services\MailService;
-use App\Services\FanpageService;
-use App\Services\CampaignService;
 use App\Services\NodeTaskService;
 
 class CronController extends BaseController
@@ -264,14 +261,6 @@ class CronController extends BaseController
             }
         }
 
-        // Gửi CHIẾN DỊCH của Trợ Lý Admin (mail/Fanpage theo lịch — mỗi ngày
-        // tối đa daily_limit người, chống trùng vĩnh viễn qua vc_campaign_sends).
-        try {
-            $stats['campaigns'] = (new CampaignService())->sendDueCampaigns();
-        } catch (\Throwable $e) {
-            $stats['campaigns'] = ['error' => $e->getMessage()];
-        }
-
         $this->json([
             'status'  => true,
             'message' => 'Hoàn tất tiến trình tự động quét gói cước.',
@@ -300,123 +289,4 @@ class CronController extends BaseController
         return ((int)$stmt->fetchColumn()) > 0;
     }
 
-    /**
-     * Cronjob đăng bài Fanpage từ hàng đợi đã xếp lịch.
-     *
-     * LUỒNG THỐNG NHẤT: bài phải "tạo xong rồi mới đăng" — cron chỉ publish
-     * snapshot nội dung/ảnh do khâu lên lịch chuẩn bị (KHÔNG sinh AI ở đây).
-     */
-    public function autoPostFanpage(): void
-    {
-        $settingModel = new Setting();
-        $cronSecret = trim((string) ($settingModel->get('cron_secret_key', '') ?: getenv('CRON_SECRET_KEY')));
-        $providedKey = $_SERVER['HTTP_X_CRON_KEY'] ?? $_GET['key'] ?? '';
-        $providedKey = is_string($providedKey) ? trim($providedKey) : '';
-
-        if ($cronSecret === '' || !hash_equals($cronSecret, $providedKey)) {
-            $this->json(['status' => false, 'message' => 'Truy cập không hợp lệ.'], 403);
-            return;
-        }
-
-        $postModel = new ScheduledPost();
-        $fanpageService = new FanpageService();
-
-        $posts = $postModel->getPendingQueue(5);
-        if (empty($posts)) {
-            $this->json([
-                'status' => true,
-                'message' => 'Không có bài viết nào trong hàng đợi cần đăng.',
-                'processed' => 0
-            ]);
-            return;
-        }
-
-        $stats = [
-            'total' => count($posts),
-            'success' => 0,
-            'failed' => 0,
-            'details' => []
-        ];
-
-        foreach ($posts as $post) {
-            $postId = (int) $post['id'];
-            $postModel->markAsGenerating($postId);
-
-            $content = trim((string) ($post['generated_content'] ?? ''));
-            // Hàng đợi cũ (đặt trước khi pipeline thay macro) có thể còn
-            // {domain} nguyên văn — thay lần cuối trước khi đăng lên Fanpage.
-            $content = $this->replaceDomainMacro($content);
-            $imageUrl = trim((string) ($post['image_url'] ?? ''));
-            $metaData = !empty($post['meta_data']) ? (is_array($post['meta_data']) ? $post['meta_data'] : json_decode((string) $post['meta_data'], true)) : [];
-
-            // Snapshot phải đầy đủ từ khâu lên lịch — cron KHÔNG sinh nội dung/
-            // ảnh bằng AI (bài "tạo xong rồi mới đăng", không lặp việc viết).
-            if ($content === '') {
-                $errorMsg = 'Hàng đợi thiếu nội dung — hãy xếp lịch lại bài viết này.';
-                $postModel->markAsFailed($postId, $errorMsg);
-                $stats['failed']++;
-                $stats['details'][] = ['id' => $postId, 'status' => 'failed', 'error' => $errorMsg];
-                continue;
-            }
-
-            // Đăng lên Fanpage qua Meta Graph API — đúng ảnh đã chọn;
-            // không có ảnh → đăng bài chữ (không tự sinh ảnh).
-            if ($imageUrl !== '') {
-                $publishResult = $fanpageService->publishPhoto($content, $imageUrl);
-            } else {
-                $publishResult = $fanpageService->publishPost($content);
-            }
-
-            if ($publishResult['ok'] && !empty($publishResult['id'])) {
-                $postModel->markAsPublished($postId, $publishResult['id'], $content, $imageUrl ?: null, $metaData);
-                $stats['success']++;
-                $stats['details'][] = ['id' => $postId, 'status' => 'published', 'facebook_post_id' => $publishResult['id']];
-            } else {
-                $errorMsg = 'Lỗi đăng Fanpage: ' . ($publishResult['error'] ?? 'Không rõ nguyên nhân');
-                $postModel->markAsFailed($postId, $errorMsg);
-                $stats['failed']++;
-                $stats['details'][] = ['id' => $postId, 'status' => 'failed', 'error' => $errorMsg];
-            }
-        }
-
-        $this->json([
-            'status' => true,
-            'message' => 'Đã hoàn tất tiến trình quét và đăng bài Fanpage.',
-            'stats' => $stats
-        ]);
-    }
-
-    /**
-     * BƯỚC 5.7 — Cron remarketing định kỳ (gợi ý chạy 1 lần/ngày, ví dụ 09:00):
-     * quay chu kỳ monthly tới hạn (5.1) rồi gửi bù các ngày trong chu kỳ
-     * (kèm hàng rào tuân thủ Meta 5.4). Xác thực y hệt checkSubscriptions:
-     * cron_secret_key (setting) hoặc CRON_SECRET_KEY (env), header X-Cron-Key
-     * hoặc ?key=, hash_equals — sai/không có → 403.
-     */
-    public function monthlyRemarketing(): void
-    {
-        $settingModel = new Setting();
-        $cronSecret = trim((string) ($settingModel->get('cron_secret_key', '') ?: getenv('CRON_SECRET_KEY')));
-        $providedKey = $_SERVER['HTTP_X_CRON_KEY'] ?? $_GET['key'] ?? '';
-        $providedKey = is_string($providedKey) ? trim($providedKey) : '';
-
-        if ($cronSecret === '' || !hash_equals($cronSecret, $providedKey)) {
-            $this->json(['status' => false, 'message' => 'Truy cập không hợp lệ.'], 403);
-            return;
-        }
-
-        try {
-            $summary = (new CampaignService())->sendDueCampaigns();
-            $this->json([
-                'status' => true,
-                'message' => 'Remarketing: đã quét chiến dịch tới hạn.',
-                'stats' => $summary,
-            ]);
-        } catch (\Throwable $e) {
-            $this->json([
-                'status' => false,
-                'message' => 'Lỗi remarketing: ' . mb_substr($e->getMessage(), 0, 300),
-            ], 500);
-        }
-    }
 }

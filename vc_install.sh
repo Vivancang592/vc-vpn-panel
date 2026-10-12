@@ -103,7 +103,7 @@ echo -e " ${GREEN}✔ Khởi tạo tài khoản Admin ($ADMIN_USER) thành công
 
 # 3.1. Áp dụng toàn bộ migration trong database/migrations (idempotent — an toàn chạy lại).
 # BẮT BUỘC cả khi schema đã tồn tại: DB tạo từ bản SQL cũ sẽ thiếu cột mới
-# (vd. vc_campaigns.recurrence → SQLSTATE[42S22] Unknown column 'recurrence').
+# (vd. thiếu bảng trong SQL cũ → chạy lại để tạo).
 MIGRATIONS_DIR="$APP_PATH/database/migrations"
 if [[ -d "$MIGRATIONS_DIR" ]]; then
     MIG_TOTAL=0

@@ -72,8 +72,9 @@ ob_start();
             <div>
                 <label style="display: block; font-weight: 600; font-size: 0.85rem; margin-bottom: 0.4rem;">Phân Loại (*)</label>
                 <select name="type" class="glass-input" style="width: 100%; cursor: pointer;">
+                    <option value="news" <?= ($post['type'] ?? '') === 'news' ? 'selected' : '' ?>>Tin tức (News)</option>
                     <option value="tutorial" <?= ($post['type'] ?? '') === 'tutorial' ? 'selected' : '' ?>>Hướng dẫn (Tutorial)</option>
-                    <option value="faq" <?= ($post['type'] ?? '') === 'faq' ? 'selected' : '' ?>>Thông báo (Notice)</option>
+                    <option value="faq" <?= ($post['type'] ?? '') === 'faq' ? 'selected' : '' ?>>Hỏi đáp (FAQ)</option>
                     <option value="popup" <?= ($post['type'] ?? '') === 'popup' ? 'selected' : '' ?>>Thông báo Popup (Popup)</option>
                 </select>
             </div>

@@ -11,14 +11,4 @@ return [
 
     // API Webhook xử lý thanh toán tự động
     'POST /api/payment/webhook'     => ['Api\PaymentController', 'webhook'],
-
-    // API Chatbot AI cho website
-    'POST /api/chat/message'        => ['Api\ChatbotController', 'message'],
-    'GET /api/chat/history'         => ['Api\ChatbotController', 'history'],
-    'POST /api/chat/event'          => ['Api\ChatbotController', 'event'],
-    'POST /api/chat/reset'          => ['Api\ChatbotController', 'reset'],
-
-    // API Webhook Facebook Fanpage
-    'GET /api/fanpage/webhook'      => ['Api\FanpageWebhookController', 'verify'],
-    'POST /api/fanpage/webhook'     => ['Api\FanpageWebhookController', 'webhook'],
 ];

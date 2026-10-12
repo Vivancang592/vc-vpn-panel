@@ -36,7 +36,6 @@ ob_start();
     <button class="settings-tab-btn" data-target="tab-trial">Thử</button>
     <button class="settings-tab-btn" data-target="tab-bank">Thanh Toán</button>
     <button class="settings-tab-btn" data-target="tab-email">Email</button>
-    <button class="settings-tab-btn" data-target="tab-ai">Fanpage</button>
 </div>
 
 <div class="settings-content">
@@ -352,93 +351,6 @@ ob_start();
         </form>
     </div>
 
-    <!-- TAB 6: FANPAGE -->
-    <div id="tab-ai" class="settings-tab-pane">
-        <form method="POST" action="/admin/settings/save" class="glass-card settings-form" style="padding: 1.5rem; width: 100%; display: flex; flex-direction: column; gap: 1.25rem;">
-
-            <div style="padding: 0.9rem 1rem; border-radius: 8px; background: rgba(10,132,255,0.07); border: 1px solid rgba(10,132,255,0.25); font-size: 0.85rem; line-height: 1.65;">
-                <strong>Cấu hình AI đã chuyển sang TRUNG TÂM AI.</strong><br>
-                Nhà cung cấp AI, API key, model, prompt và nhật ký hội thoại được quản lý duy nhất tại:
-                <a href="/admin/ai/settings" style="color: var(--ios-blue); font-weight: 600;">AI</a> ·
-                <a href="/admin/ai#ai-models-catalog" style="color: var(--ios-blue); font-weight: 600;">Model</a>.
-                Tab này chỉ còn cấu hình kết nối Facebook Fanpage.
-            </div>
-
-            <h2 style="font-size: 1.1rem; font-weight: 700; margin-bottom: 0.5rem; border-bottom: 1px solid var(--glass-border); padding-bottom: 0.5rem; color: #1877f2;">
-                Facebook Fanpage Webhook & Graph API
-            </h2>
-
-            <div class="settings-field-list">
-                <div>
-                    <label data-hint="Đường dẫn Callback URL để điền vào mục Webhook trên cổng Meta for Developers." style="display: block; font-weight: 600; font-size: 0.85rem;">Webhook Callback URL</label>
-                    <?php
-                        $protocol = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https://' : 'http://';
-                        $host = $_SERVER['HTTP_HOST'] ?? 'yourdomain.com';
-                        $webhookUrl = $protocol . $host . '/api/fanpage/webhook';
-                    ?>
-                    <div style="display: flex; gap: 0.4rem; width: 100%;">
-                        <input type="text" id="fanpage_webhook_url" class="glass-input" value="<?= htmlspecialchars($webhookUrl) ?>" readonly style="flex: 1; min-width: 0; background: rgba(0,0,0,0.1); color: var(--ios-blue); font-weight: 600;">
-                        <button type="button" class="glass-btn" onclick="navigator.clipboard.writeText(document.getElementById('fanpage_webhook_url').value); alert('Đã sao chép Webhook URL!');" style="padding: 0 0.85rem; white-space: nowrap; cursor: pointer; font-size: 0.8rem;">
-                            Copy
-                        </button>
-                    </div>
-                </div>
-
-                <div>
-                    <label data-hint="Verify Token tự đặt để nhập vào cấu hình Webhook trên Meta Developers." style="display: block; font-weight: 600; font-size: 0.85rem;">Verify Token</label>
-                    <div style="display: flex; gap: 0.4rem; width: 100%;">
-                        <input type="text" id="fanpage_verify_token_input" name="settings[fanpage_verify_token]" class="glass-input" value="<?= htmlspecialchars($settings['fanpage_verify_token'] ?? '') ?>" placeholder="token xác thực webhook" style="flex: 1; min-width: 0;">
-                        <button type="button" class="glass-btn" onclick="generateRandomApiKey('fanpage_verify_token_input')" title="Tạo token ngẫu nhiên" style="padding: 0 0.75rem; white-space: nowrap; cursor: pointer; background: rgba(255,255,255,0.08); font-size: 0.85rem;">
-                            Tạo
-                        </button>
-                    </div>
-                </div>
-
-                <div>
-                    <label data-hint="Mã bí mật của ứng dụng Meta dùng để kiểm tra chữ ký xác thực X-Hub-Signature-256." style="display: block; font-weight: 600; font-size: 0.85rem;">App Secret (Verify Signature)</label>
-                    <input type="password" name="settings[fanpage_app_secret]" class="glass-input" value="<?= !empty($settings['fanpage_app_secret']) ? '************' : '' ?>" placeholder="Meta app secret" style="width: 100%;">
-                </div>
-
-                <div>
-                    <label data-hint="Page Access Token dài hạn của Fanpage để cho phép bot gửi tin phản hồi khách hàng và đăng bài tự động." style="display: block; font-weight: 600; font-size: 0.85rem;">Page Access Token</label>
-                    <input type="password" name="settings[fanpage_page_access_token]" class="glass-input" value="<?= !empty($settings['fanpage_page_access_token']) ? '************' : '' ?>" placeholder="EAAG..." style="width: 100%;">
-                </div>
-            </div>
-
-            <div style="background: rgba(24, 119, 242, 0.05); border: 1px solid rgba(24, 119, 242, 0.2); border-radius: 8px; padding: 0.85rem 1rem; margin-top: 0.25rem; font-size: 0.8rem; line-height: 1.5; color: var(--ios-text-secondary);">
-                <strong style="color: #1877f2;">Yêu cầu trên Meta for Developers để AI nhận & trả lời bình luận:</strong>
-                <ul style="margin: 0.35rem 0 0 1.2rem; padding: 0;">
-                    <li>Trong mục <strong>Webhooks &gt; Page</strong>: Bấm <em>Subscribe to this object</em> và tích chọn trường <code>feed</code> (để nhận bình luận) và <code>messages</code> (để nhận tin nhắn).</li>
-                    <li>Page Access Token cần các quyền tối thiểu: <code>pages_manage_posts</code>, <code>pages_manage_engagement</code>, <code>pages_read_user_content</code>, <code>pages_messaging</code>.</li>
-                </ul>
-            </div>
-
-            <h2 style="font-size: 1.1rem; font-weight: 700; margin-top: 0.5rem; margin-bottom: 0.5rem; border-bottom: 1px solid var(--glass-border); padding-bottom: 0.5rem; color: #ff9500;">
-                Tự Trả Lời
-            </h2>
-
-            <div class="settings-field-list">
-                <div>
-                    <label data-hint="Tự động lắng nghe webhook và phản hồi công khai các bình luận mới trên Fanpage." style="display: block; font-weight: 600; font-size: 0.85rem;">Tự Động Trả Lời Bình Luận</label>
-                    <select name="settings[ai_comment_auto_reply]" class="glass-input" style="width: 100%; cursor: pointer;">
-                        <option value="1" <?= ($settings['ai_comment_auto_reply'] ?? '1') === '1' ? 'selected' : '' ?>>Bật</option>
-                        <option value="0" <?= ($settings['ai_comment_auto_reply'] ?? '1') === '0' ? 'selected' : '' ?>>Tắt</option>
-                    </select>
-                </div>
-
-                <div>
-                    <label data-hint="Danh sách từ khóa cấm, spam hoặc nhạy cảm cách nhau bằng dấu phẩy (nếu comment chứa từ này bot sẽ bỏ qua không trả lời)." style="display: block; font-weight: 600; font-size: 0.85rem;">Danh Sách Từ Khóa Bỏ Qua (Blacklist)</label>
-                    <input type="text" name="settings[ai_comment_keywords_blacklist]" class="glass-input" value="<?= htmlspecialchars($settings['ai_comment_keywords_blacklist'] ?? '') ?>" placeholder="lừa đảo, chửi thề, spam, vay tiền..." style="width: 100%;">
-                </div>
-            </div>
-
-            <div style="display: flex; justify-content: flex-end; margin-top: 0.5rem;">
-                <button type="submit" class="glass-btn" style="padding: 0.75rem 2rem; background: #0f6bf2; color: #fff; border: none; font-weight: 600; cursor: pointer;">
-                    Lưu
-                </button>
-            </div>
-        </form>
-    </div>
 
 </div>
 

@@ -56,42 +56,6 @@ ob_start();
         <div class="value" style="color: #8ab4ff;"><?= (int)($stats['connected_inbounds'] ?? 0) ?> / <?= (int)($stats['active_inbounds'] ?? 0) ?></div>
         <div style="font-size: 0.75rem; color: var(--ios-text-secondary);">đang kết nối</div>
     </div>
-
-    <div class="glass-card stat-card">
-        <div style="display: flex; justify-content: space-between; align-items: center;">
-            <span class="title">Chat Hôm Nay</span>
-            <span class="mono stat-icon"><?= vc_admin_icon('BOT', 18) ?></span>
-        </div>
-        <div class="value" style="color: var(--soc-cyan);"><?= number_format($stats['chat_started_today'] ?? 0) ?></div>
-        <div style="font-size: 0.75rem; color: var(--ios-text-secondary);">phiên mới</div>
-    </div>
-
-    <div class="glass-card stat-card">
-        <div style="display: flex; justify-content: space-between; align-items: center;">
-            <span class="title">Chờ Nhân Viên</span>
-            <span class="mono stat-icon"><?= vc_admin_icon('NV', 18) ?></span>
-        </div>
-        <div class="value" style="color: var(--soc-amber);"><?= number_format($stats['chat_handoff_pending'] ?? 0) ?></div>
-        <div style="font-size: 0.75rem; color: var(--ios-text-secondary);">chờ xử lý</div>
-    </div>
-
-    <div class="glass-card stat-card">
-        <div style="display: flex; justify-content: space-between; align-items: center;">
-            <span class="title">CTA Click</span>
-            <span class="mono stat-icon"><?= vc_admin_icon('CTA', 18) ?></span>
-        </div>
-        <div class="value" style="color: var(--soc-green);"><?= number_format($stats['chat_cta_clicked_today'] ?? 0) ?></div>
-        <div style="font-size: 0.75rem; color: var(--ios-text-secondary);">tương tác hôm nay</div>
-    </div>
-
-    <div class="glass-card stat-card">
-        <div style="display: flex; justify-content: space-between; align-items: center;">
-            <span class="title">Checkout</span>
-            <span class="mono stat-icon"><?= vc_admin_icon('PAY', 18) ?></span>
-        </div>
-        <div class="value" style="color: var(--soc-cyan);"><?= number_format($stats['chat_checkout_clicked_today'] ?? 0) ?></div>
-        <div style="font-size: 0.75rem; color: var(--ios-text-secondary);">tới thanh toán</div>
-    </div>
 </div>
 
 <!-- Layout 2 Cột Responsive -->

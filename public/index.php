@@ -133,6 +133,14 @@ $webRoutes = file_exists(BASE_PATH . '/routes/web.php') ? require BASE_PATH . '/
 $apiRoutes = file_exists(BASE_PATH . '/routes/api.php') ? require BASE_PATH . '/routes/api.php' : [];
 $routes = array_merge($webRoutes, $apiRoutes);
 
+// Chuẩn hóa key route (gộp khoảng trắng thừa thành 1 space) — chống 404 im lặng
+// khi khai báo sai `'GET  /path'` (2 space) trong file routes.
+$routesNormalized = [];
+foreach ($routes as $routeKeyDef => $routeHandler) {
+    $routesNormalized[preg_replace('/\s+/', ' ', trim((string) $routeKeyDef))] = $routeHandler;
+}
+$routes = $routesNormalized;
+
 // 6. Xử lý Request & Router
 $requestMethod = $_SERVER['REQUEST_METHOD'] ?? 'GET';
 $requestUri = parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH);

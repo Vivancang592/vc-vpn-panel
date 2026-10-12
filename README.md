@@ -166,30 +166,7 @@ crontab -e
 ```bash
 #?key=YOUR_CRON_SECRET_KEY — lấy giá trị CRON_SECRET_KEY trong file .env
 */5 * * * * curl -s "https://vpn2s.linksub24h.com/api/cron/check-subscriptions?key=YOUR_CRON_SECRET_KEY" > /dev/null 2>&1
-
-# Đăng bài Fanpage từ hàng đợi lên lịch (bỏ dòng này nếu không dùng tính năng lên lịch đăng bài)
-*/10 * * * * curl -s "https://vpn2s.linksub24h.com/api/cron/auto-post?key=YOUR_CRON_SECRET_KEY" > /dev/null 2>&1
-
-# Worker AI nền — xử lý task AI còn xếp hàng (không dùng AI nền thì bỏ dòng này)
-*/1 * * * * cd /www/wwwroot/vpn2s.linksub24h.com && php tools/ai_worker.php > /dev/null 2>&1
-
-# Remarketing Facebook chu kỳ tháng — chạy HẰNG NGÀY (đến ngày `day_of_month` mới tự quay chu kỳ + gửi; các ngày còn lại tự bỏ qua, an toàn chạy lặp)
-0 9 * * * curl -s "https://vpn2s.linksub24h.com/api/cron/monthly-remarketing?key=YOUR_CRON_SECRET_KEY" > /dev/null 2>&1
 ```
-
----
-
-## 🤖 Cấu Hình AI Tự Động (Lần Đầu)
-
-* **Module AI:** bản SQL hiện tại đã seed sẵn 4 module trong bảng `vc_ai_modules`. Nếu bạn đang dùng bản SQL cũ và gặp lỗi *"Module ... chưa được đăng ký trong cơ sở dữ liệu"*, hãy chạy một lần:
-
-```bash
-php tools/ai_worker.php --sync-modules
-```
-
-* **Bước 1 — Nhập khoá Kira API:** Đăng nhập Admin → **Trung Tâm AI** → **Cài đặt** → thẻ **Khoá API** → dán khoá → bấm **Lưu**.
-* **Bước 2 — Đồng bộ danh sách model:** **Trung Tâm AI** → **Tổng Quan** → mục **Danh Sách Model AI** → bấm **Sync** (mới cài danh sách đang rỗng — hệ thống sẽ lấy catalog từ Kira).
-* **Bước 3 — Chọn model cho phân hệ:** mở **Trả Lời Tự Động** (và các tab phân hệ khác) → chọn model muốn dùng cho trả lời tự động.
 
 ---
 
@@ -197,47 +174,8 @@ php tools/ai_worker.php --sync-modules
 ```
 vc-vpn-2027/
 ├── app/
-│   ├── AI/
-│   │   ├── Assets/
-│   │   │   └── AssetManager.php
-│   │   ├── Contracts/
-│   │   │   ├── AICapability.php
-│   │   │   ├── AIException.php
-│   │   │   ├── AIProviderInterface.php
-│   │   │   └── AIResult.php
-│   │   ├── Core/
-│   │   │   ├── AICore.php
-│   │   │   ├── AILogger.php
-│   │   │   ├── DirectMediaService.php
-│   │   │   ├── ErrorHandler.php
-│   │   │   ├── InputHandler.php
-│   │   │   ├── ModelResolver.php
-│   │   │   ├── ModuleRegistry.php
-│   │   │   ├── ModuleSynchronizer.php
-│   │   │   ├── OutputHandler.php
-│   │   │   ├── PromptFileStore.php
-│   │   │   ├── PromptRegistry.php
-│   │   │   ├── RequestBuilder.php
-│   │   │   ├── ResponseParser.php
-│   │   │   ├── RetryPolicy.php
-│   │   │   ├── TaskDispatcher.php
-│   │   │   └── TaskRunner.php
-│   │   └── Providers/
-│   │       └── KiraProvider.php
 │   ├── Controllers/
 │   │   ├── Admin/
-│   │   │   ├── AiBaseController.php
-│   │   │   ├── AiConversationController.php
-│   │   │   ├── AiDashboardController.php
-│   │   │   ├── AiFanpageController.php
-│   │   │   ├── AiImageController.php
-│   │   │   ├── AiModelController.php
-│   │   │   ├── AiModuleController.php
-│   │   │   ├── AiOutputController.php
-│   │   │   ├── AiPromptController.php
-│   │   │   ├── AiReplyController.php
-│   │   │   ├── AiSettingController.php
-│   │   │   ├── AiTaskController.php
 │   │   │   ├── CouponController.php
 │   │   │   ├── DashboardController.php
 │   │   │   ├── ExpenseController.php
@@ -256,9 +194,7 @@ vc-vpn-2027/
 │   │   │   ├── UserController.php
 │   │   │   └── WithdrawalController.php
 │   │   ├── Api/
-│   │   │   ├── ChatbotController.php
 │   │   │   ├── ClientController.php
-│   │   │   ├── FanpageWebhookController.php
 │   │   │   ├── PaymentController.php
 │   │   │   └── ServerController.php
 │   │   ├── AuthController.php
@@ -268,18 +204,7 @@ vc-vpn-2027/
 │   │   └── UserController.php
 │   ├── Models/
 │   │   ├── AccessLog.php
-│   │   ├── AIAsset.php
-│   │   ├── AIModel.php
-│   │   ├── AIModule.php
-│   │   ├── AIOutput.php
-│   │   ├── AIOutputVersion.php
-│   │   ├── AITask.php
-│   │   ├── AITaskActivity.php
 │   │   ├── BaseModel.php
-│   │   ├── ChatAiCache.php
-│   │   ├── ChatEvent.php
-│   │   ├── ChatMessage.php
-│   │   ├── ChatSession.php
 │   │   ├── Coupon.php
 │   │   ├── EmailLog.php
 │   │   ├── Expense.php
@@ -289,7 +214,6 @@ vc-vpn-2027/
 │   │   ├── Payment.php
 │   │   ├── Post.php
 │   │   ├── ReferralCommission.php
-│   │   ├── ScheduledPost.php
 │   │   ├── Server.php
 │   │   ├── ServerGroup.php
 │   │   ├── Setting.php
@@ -302,9 +226,6 @@ vc-vpn-2027/
 │   │   ├── VpnPlan.php
 │   │   └── Withdrawal.php
 │   └── Services/
-│       ├── AIProviderService.php
-│       ├── ChatbotService.php
-│       ├── FanpageService.php
 │       ├── MailService.php
 │       ├── NodeTaskService.php
 │       ├── NotificationService.php
@@ -312,7 +233,6 @@ vc-vpn-2027/
 │       ├── PaymentService.php
 │       └── VpnService.php
 ├── config/
-│   ├── ai.php
 │   ├── app.php
 │   └── database.php
 ├── database/
@@ -327,7 +247,6 @@ vc-vpn-2027/
 │   │   │   └── user.css
 │   │   ├── images/
 │   │   │   ├── apple-touch-icon.png
-│   │   │   ├── favicon.png
 │   │   │   ├── favicon-48.png
 │   │   │   ├── icon.svg
 │   │   │   ├── icon-192.png
@@ -346,20 +265,6 @@ vc-vpn-2027/
 ├── resources/
 │   └── views/
 │       ├── admin/
-│       │   ├── ai/
-│       │   │   ├── _flash.php
-│       │   │   ├── _media-gallery.php
-│       │   │   ├── _tab-header.php
-│       │   │   ├── conversation-detail.php
-│       │   │   ├── conversations.php
-│       │   │   ├── dashboard.php
-│       │   │   ├── output-detail.php
-│       │   │   ├── prompt-edit.php
-│       │   │   ├── settings.php
-│       │   │   ├── tab-fanpage.php
-│       │   │   ├── tab-image.php
-│       │   │   ├── tab-reply.php
-│       │   │   └── task-detail.php
 │       │   ├── coupons/
 │       │   │   ├── create.php
 │       │   │   ├── edit.php
@@ -510,15 +415,7 @@ vc-vpn-2027/
 │   ├── backups/
 │   ├── logs/
 │   │   └── .gitkeep
-│   ├── prompts/
-│   │   ├── admin_assistant.txt
-│   │   ├── content_article.txt
-│   │   ├── fanpage_comment.txt
-│   │   ├── image_generation.txt
-│   │   └── support_chat.txt
 │   └── tmp/
-├── tools/
-│   └── ai_worker.php
 ├── .env.example
 ├── .gitignore
 ├── .htaccess

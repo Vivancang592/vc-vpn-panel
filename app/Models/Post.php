@@ -7,6 +7,12 @@ class Post extends BaseModel
     protected string $table = 'vc_posts';
 
     /**
+     * Loại bài viết hợp lệ — khớp ENUM `vc_posts.type` trong database/vpn_service.sql.
+     * Nguồn tham chiếu DUY NHẤT cho mọi whitelist `type` trong hệ thống.
+     */
+    public const TYPES = ['news', 'tutorial', 'faq', 'popup'];
+
+    /**
      * Lấy toàn bộ bài viết kèm tên tác giả
      */
     public function allWithAuthor(): array
